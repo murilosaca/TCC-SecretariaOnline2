@@ -1,0 +1,31 @@
+# Ambiente e segredos
+.env
+*.pem
+*.p12
+*.jks
+
+# Java / Maven
+backend/target/
+backend/.idea/
+*.class
+*.jar
+*.war
+hs_err_pid*
+
+# Node / React (Vite)
+frontend-react/node_modules/
+frontend-react/dist/
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+npm-debug.log*
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+
+# SO
+.DS_Store
+Thumbs.db

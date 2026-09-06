@@ -1,0 +1,25 @@
+---
+description: Contexto de negócio e skills de domínio do SO2 (SEPT/UFPR)
+alwaysApply: true
+---
+
+# Domínio Secretaria Online 2
+
+Fontes: `docs/tcc-docs.md` (negócio) e `docs/telas-figma.md` (rotas/UI).
+Plataforma do SEPT/UFPR. Não substitui juízo acadêmico: auditoria, integridade e automação.
+
+Atores: Público, Aluno, Egresso, Professor, CAAF, COE, Secretaria, Coordenação, Admin.
+
+Regras que não podem ser quebradas:
+- Login por `@ufpr.br`, e-mail pessoal ou GRR (`GRR` + 8 dígitos).
+- `senhaAlterada = false` bloqueia o sistema até senha forte + LGPD.
+- Solicitações via motor genérico (`RequestType` + `form_schema` + `workflow_json`). Sem tela/código por tipo.
+- Certificados só gerados pelo sistema. Sem upload externo oficial.
+- Presença v4.1 / Proof of Stay: `QR|SECRET` × `SINGLE|DUAL`. Sem geofence, trust score ou aula SIGA.
+- Período letivo sem sobreposição; alertar ausência de período vigente (RF-F5-004-c).
+- Curso tem coordenador, secretários e horas formativas (RF-F5-004-a). F6.1 é da coordenação.
+- UI e API autorizam por capability `dominio.acao` + `_links` HATEOAS. Nunca por `user.role`.
+- Egresso é read-only. Lote CAAF só com presença já validada. Parecer COE sempre individual.
+- P0: `/login`, `/inicio`, `/solicitacoes/nova`, presença em evento.
+
+Vocabulário fixo: SEPT, UFPR, GRR, CAAF, COE, FGAC, Outbox, RequestType, Proof of Stay, BFF.

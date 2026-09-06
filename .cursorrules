@@ -1,0 +1,241 @@
+# Secretaria Online 2 (SO2) — Regras do Repositório Oficial
+
+Você é um engenheiro do TCC Secretaria Online 2 (SO2), plataforma digital do
+SEPT/UFPR para modernizar fluxos administrativos acadêmicos.
+
+Fontes de verdade (nesta ordem):
+1. `docs/tcc-docs.md` — requisitos de negócio, RFs, RNFs e arquitetura.
+2. `docs/telas-figma.md` e `docs/telas/` — rotas, shells e fluxo de UI.
+3. Este arquivo e `.cursor/rules/`.
+
+Se houver conflito entre código legado, conversa anterior ou “atalho” de stack,
+prevalece o que está em `docs/tcc-docs.md`. Não invente regra de negócio.
+
+## Contexto de negócio (skills obrigatórias)
+
+Domínio: secretaria acadêmica universitária. O SO2 NÃO substitui o juízo de
+valor de docentes, comissões ou secretaria; ele garante trilha de auditoria,
+integridade de dados e automação de trâmites repetitivos.
+
+Atores e portais (F0–F8):
+- Público (F0): `/login`, `/recuperar-senha`, `/nova-senha`, `/contato`,
+  `/erro/:codigo`, verificação pública de protocolo e certificado.
+- Aluno (F1): `/inicio`, primeiro acesso (senha + LGPD), perfil, comunicações,
+  solicitações, formativas, estágio, TCC, presença, certificados, atendimentos.
+- Egresso (F2): `/egresso/inicio` estritamente read-only; diploma e reemissão
+  de certificados (mesmo hash/chave, sem nova assinatura).
+- Professor (F3): dashboard, eventos, deliberação (fila e deep-link JWT),
+  pareceres, comunicados.
+- Comissões (F4): pool CAAF (formativas; lote só se presença já validada) e
+  pool COE (estágios; parecer sempre individual).
+- Secretaria (F5): triagem/SLA, cadastros (aluno, curso, disciplina, período
+  letivo), egressos/diplomas, atendimentos, eventos, import/export, kanban.
+- Coordenação (F6): parâmetros do curso (`/coordenacao/cursos/:id/configurar`)
+  e relatórios. Escopo por curso do coordenador (403 se outro curso).
+- Admin (F7): usuários, perfis, authorities FGAC, workflow, templates, jobs,
+  auditoria, saúde.
+- Transversal (F8): busca global, FAQ/ticket, motor de solicitações, Outbox,
+  certificados anti-fraude, auditoria imutável, HATEOAS, BFF, presença v4.1.
+
+Identificadores e regras que não podem ser “simplificadas”:
+- GRR: `GRR` + 8 dígitos. Login aceita `@ufpr.br`, e-mail pessoal ou GRR.
+- Primeiro acesso: `senhaAlterada = false` bloqueia o sistema até senha forte
+  + aceite LGPD. Token de acesso só em memória (nunca `localStorage`).
+- Solicitações: motor genérico (`RequestType` + `form_schema` + `workflow_json`).
+  Proibido duplicar código/tela por tipo de requerimento.
+- Certificados só gerados pelo sistema (evento validado ou formativa aprovada).
+  Nunca aceitar upload de PDF externo como certificado oficial.
+- Presença v4.1 (Proof of Stay): `QR_SINGLE`, `QR_DUAL`, `SECRET_SINGLE`,
+  `SECRET_DUAL`. Sem geofence, trust score ou chamada de aula regular (SIGA).
+- Período letivo: sem sobreposição de datas; alertar se não houver período
+  vigente (RF-F5-004-c). Eventos de calendário têm tipos semânticos.
+- Curso: coordenador, secretários do curso e horas formativas mínimas
+  (RF-F5-004-a). Configuração F6.1 (calendário, banca, regimento) é da
+  coordenação, não da secretaria.
+- Egresso não acessa rotas exclusivas de aluno.
+- UI cega a perfil: ações só via `_links` HATEOAS + `useActions`.
+  Autorização de API: `@PreAuthorize("hasAuthority('dominio.acao')")`.
+  Nunca `user.role`, `hasRole('SECRETARIO')` nem `ROLE_*`.
+
+P0 (MVP, não pular para CRUD secundário): login, dashboard `/inicio`,
+`/solicitacoes/nova`, presença em evento.
+
+Vocabulário institucional (não traduzir): SEPT, UFPR, GRR, CAAF, COE, FGAC,
+HATEOAS, Outbox, Proof of Stay, LGPD, SLA, RequestType, BFF, authority
+(`dominio.acao`).
+
+## Stack oficial (docs/tcc-docs.md)
+
+| Camada | Obrigatório na spec | Situação neste repo |
+|---|---|---|
+| Backend | Kotlin + Spring Boot 3 + Maven | Java 21 temporário; contratos estáveis; migrar sem mudar API |
+| Web | React 18 + Vite + TypeScript + TanStack Query + Vitest | `frontend-react/` |
+| Mobile | React Native + Expo | ainda não |
+| Auth | JWT RS256 15 min + refresh opaco httpOnly + Argon2id | ainda não (módulo `iam`) |
+| Banco | PostgreSQL 16 + Flyway + UUID v7 | sim |
+| Arquivos | S3-compatível (MinIO no dev) | ainda não |
+
+- Frontend oficial: `frontend-react`. Não reintroduza Angular.
+- `frontend/` é legado Angular a remover quando o processo `ng serve` soltar a pasta.
+- Sem Lombok no Java restante (decisão do time; a spec Kotlin não usa Lombok).
+- Não copiar o CRUD didático do legado (`idade` em Aluno, `ddl-auto=update`,
+  senha hardcoded).
+- Não criar pasta de módulo vazia. Só nasce `iam`, `solicitacoes`, etc. com
+  o primeiro caso de uso real do sprint.
+- BFF (`modules.bff`) existe para agregar dashboards; a UI não monta o
+  dashboard com N fetches soltos quando a spec mandar um endpoint BFF.
+
+## Proibição absoluta de Lombok
+
+É proibido qualquer uso de Lombok (`@Data`, `@Getter`, `@Setter`, `@Builder`,
+`@Value`, `@RequiredArgsConstructor`, `@NoArgsConstructor`, `@AllArgsConstructor`,
+`@Slf4j`, dependência `lombok` no `pom.xml`).
+
+- Entidades JPA: construtor vazio (JPA), factory/`merge`, getters e setters
+  escritos à mão.
+- DTOs, comandos e value objects: `record` Java (não é Lombok) ou `data class`
+  Kotlin no futuro.
+- Builder, se necessário: classe `Builder` manual.
+- Logs: `LoggerFactory.getLogger(Classe.class)`.
+
+```java
+// PROIBIDO
+@Data
+public class Curso { private String nome; }
+
+// CORRETO — DTO
+public record CursoRequest(String nome, String sigla, String codigo) {}
+
+// CORRETO — entidade: acessores manuais
+public class CursoJpaEntity extends BaseEntity { /* campos + acessores */ }
+```
+
+## Nomenclatura — Spring Boot
+
+| Artefato | Padrão | Exemplo |
+|---|---|---|
+| Pacote raiz | `br.ufpr.sept.so2` | — |
+| Módulo | `modules.<dominio>` | `modules.academico` |
+| Controller | `*Controller` | `CursoController` |
+| Caso de uso | `*ApplicationService` ou `*UseCase` | `CursoApplicationService` |
+| Porta de saída | `*Repository` ou `*Port` | `CursoRepository` |
+| Adapter JPA | `*JpaAdapter` | `CursoJpaAdapter` |
+| Entidade de persistência | `*JpaEntity` | `CursoJpaEntity` |
+| Spring Data | `*JpaRepository` | `CursoJpaRepository` |
+| DTO de entrada | `*Request` | `CursoRequest` |
+| DTO de saída | `*Response` | `CursoResponse` |
+| Exceção de domínio | `*Exception` | `RecursoNaoEncontradoException` |
+| Value object | nome do conceito | `Grr`, `Email`, `Cpf` |
+| Tabela | snake_case singular | `curso`, `periodo_letivo` |
+| Coluna | snake_case | `horas_formativas_minimas` |
+| Endpoint API | plural, português, kebab | `/academico/cursos`, `/auth/recuperar-senha` |
+| Authority FGAC | `dominio.acao` | `event.manage`, `request.deliberate` |
+| Migration Flyway | `V###__descricao.sql` | `V002__create_academico.sql` |
+
+- Classes e métodos em inglês técnico (`findById`, `create`); termos de
+  negócio em português (`Curso`, `Aluno`, `Solicitacao`, `PeriodoLetivo`).
+- JSON em camelCase. Datas em ISO-8601 UTC.
+- Só anotar `@PreAuthorize` quando o JWT/FGAC existir. Com `permitAll` de
+  fundação, capability vai nos `_links`, não em 403 universal.
+
+## Nomenclatura e rotas — React (docs/telas-figma.md)
+
+Rotas de UI são as do Figma, não “atalhos” planos.
+
+| Área | Rotas |
+|---|---|
+| Público | `/login`, `/recuperar-senha`, `/nova-senha`, `/contato`, `/erro/:codigo` |
+| Verificação | `/publico/verificar-protocolo/:id`, `/publico/verificar-certificado/:hash` |
+| Autenticado | `/inicio`, `/primeiro-acesso` |
+| Secretaria | `/secretaria/alunos`, `/secretaria/cursos`, `/secretaria/disciplinas`, `/secretaria/calendarios` |
+
+| Artefato | Padrão | Exemplo |
+|---|---|---|
+| Página | PascalCase | `Cursos`, `Contato` |
+| Pasta | `src/pages/<fluxo>/` | `pages/secretaria/Cursos.tsx` |
+| Layout | `AuthLayout` (F0), `AppLayout` (autenticado) | `src/layouts/` |
+| Hook | `use*` | `useActions` |
+| Cliente HTTP | `*Api` | `academicoApi` |
+| Model | sem prefixo `I` | `Curso`, `CursoRequest` |
+
+- Sem `localStorage` para access token (RNF-SEC-02).
+- UI cega a perfil: `useActions(resource._links)` — nunca `user.role`.
+- Todo bloco de dados: loading, empty e error.
+- Acessibilidade WCAG 2.1 AA.
+- Redirects temporários das rotas planas antigas (`/cursos` → `/secretaria/cursos`)
+  são permitidos até o fim da fundação.
+
+## Organização de pacotes (Clean Architecture)
+
+```
+br.ufpr.sept.so2
+├── shared/
+│   ├── api/                   # PageResponse, exception handler, HATEOAS
+│   ├── config/                # OpenAPI, CORS, Security, Jackson
+│   ├── domain/                # VOs, AggregateRoot, DomainEvent, exceções
+│   └── infrastructure/        # BaseEntity, Uuids
+└── modules/<contexto>/
+    ├── domain/                # puro — zero Spring/JPA/Jackson
+    ├── application/           # casos de uso
+    │   └── ports/
+    ├── infrastructure/
+    └── api/
+```
+
+Regras de dependência (ArchUnit, quando o teste existir):
+1. `domain` não importa `org.springframework`, `jakarta.persistence`, Hibernate.
+2. `infrastructure` de um módulo não importa `infrastructure` de outro.
+3. Módulos conversam só por ports em `application/ports`.
+4. Controllers não recebem nem devolvem `*JpaEntity`.
+5. Listagens sempre `Pageable` (size padrão 20, máximo 100).
+
+Módulos previstos (criar só com requisito no sprint):
+`iam`, `academico`, `solicitacoes`, `formativas`, `estagio`, `tcc`,
+`presenca`, `comunicacao`, `certificados`, `auditoria`, `arquivos`, `bff`.
+
+## Tratamento de exceções
+
+Todas as respostas 4xx/5xx usam RFC 7807 (`application/problem+json`):
+`type`, `title`, `status`, `detail`, `instance`. Validação 422 inclui `erros`.
+500 inclui `incidentId` e nunca stack trace ao cliente.
+
+| Exceção | HTTP | type |
+|---|---|---|
+| `RecursoNaoEncontradoException` | 404 | `not-found` |
+| `DadoInvalidoException` / Bean Validation | 422 | `validation-error` |
+| `ConflitoEstadoException` / `IllegalStateException` | 409 | `conflict` |
+| `AcessoNegadoException` / AccessDenied | 403 | `access-denied` |
+| autenticação / JWT | 401 | `authentication-required` |
+| rate limit | 429 | `rate-limit` |
+| genérica | 500 | `internal-error` |
+
+- Controllers não capturam exceção de negócio para montar `ResponseEntity`.
+- Auth anti-enumeração: respostas idênticas se o identificador existe ou não.
+- Não logar CPF, GRR completo, senha ou dados bancários.
+
+## Segurança, dados e qualidade (RNF)
+
+- Senha: somente Argon2id (OWASP). Proibido MD5, SHA-1, SHA-256 e bcrypt
+  para senha.
+- JWT de acesso RS256, TTL 15 min, só em memória no cliente. Refresh opaco,
+  cookie `httpOnly; Secure; SameSite=Lax`, rotação com detecção de reuse.
+- Segredos apenas por variável de ambiente. Versionar `.env.example`.
+- CORS com origens explícitas (`CORS_ALLOWED_ORIGINS`). Sem `*`.
+- Flyway imutável. Sem `ddl-auto=update` em qualquer profile.
+- Outbox na mesma transação da mutação. Sem e-mail/push síncrono.
+- `audit_log` append-only. Sem DELETE/PATCH na trilha.
+- OpenAPI 3 via SpringDoc; Swagger UI só fora de produção, em `/swagger-ui`.
+- Testes: domínio ≥ 85% (JUnit 5 + Kotest na meta Kotlin), aplicação ≥ 70%,
+  backend ≥ 75%, hooks frontend ≥ 70% (Vitest).
+- Complexidade ciclomática ≤ 10. Sem blocos duplicados.
+
+## O que não fazer
+
+- Não copiar o legado Kotlin (`legado-referencia`) na íntegra.
+- Não recriar Aluno com `idade`; cadastro acadêmico usa GRR, e-mails, curso
+  e situação (RF-F5-003).
+- Não implementar autorização por role na UI ou no backend.
+- Não gerar certificado a partir de upload externo.
+- Não commitar `.env`, chaves JWT, `application-prod.yml` com segredos.
+- Não tratar Angular como stack oficial.
+- Não criar endpoint ou tela “genérica de admin” fora do mapa F0–F8.

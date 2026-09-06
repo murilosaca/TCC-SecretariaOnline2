@@ -1,0 +1,32 @@
+---
+description: Padrões Spring Boot, pacotes e exceções do backend SO2
+globs: backend/**/*.{java,kt}
+alwaysApply: false
+---
+
+# Spring Boot SO2
+
+Spec: Kotlin. Código atual: Java 21. Contratos da API não mudam na migração.
+Sem Lombok em qualquer linguagem desta base.
+
+Pacotes: `br.ufpr.sept.so2.modules.<ctx>.{domain,application,infrastructure,api}`.
+
+- `domain`: puro. Sem Spring, JPA ou Jackson.
+- Controllers não expõem `*JpaEntity`. DTOs: `*Request` / `*Response`.
+- Autorização (quando IAM existir): `@PreAuthorize("hasAuthority('dominio.acao')")`.
+- Listagens: `Pageable` (size 20, máx. 100) + `PageResponse` com `_links`.
+- Erros: RFC 7807 via `GlobalExceptionHandler`. Não tratar no controller.
+- IDs: UUID v7. Flyway imutável. Sem `ddl-auto=update`.
+- Período letivo: validar semestre {1,2}, `fim > inicio` e sem sobreposição.
+- Segredos só em variável de ambiente.
+
+```java
+// ❌
+return ResponseEntity.status(404).body(entity);
+
+// ✅
+Curso curso = cursoService.buscarPorId(id); // lança RecursoNaoEncontradoException
+return CursoResponse.from(curso);
+```
+
+Endpoints em português plural: `/academico/cursos`, `/academico/periodos`. Tabelas `snake_case`.

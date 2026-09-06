@@ -1,0 +1,73 @@
+spring:
+  application:
+    name: secretaria-online-2
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/secretaria_dev}
+    username: ${SPRING_DATASOURCE_USERNAME:secretaria}
+    password: ${SPRING_DATASOURCE_PASSWORD:localdev}
+    hikari:
+      pool-name: SecretariaHikariCP
+      maximum-pool-size: 10
+      minimum-idle: 2
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+    validate-on-migrate: true
+    locations: classpath:db/migration
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    default-property-inclusion: non_null
+    time-zone: UTC
+
+server:
+  port: ${SERVER_PORT:8080}
+
+app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+  contato:
+    nome: ${APP_CONTATO_NOME:Secretaria SEPT — UFPR}
+    endereco: ${APP_CONTATO_ENDERECO:Rua Dr. Alcides Vieira Arcoverde, 1225 — Jardim das Américas, Curitiba/PR}
+    telefone: ${APP_CONTATO_TELEFONE:(41) 3360-4900}
+    email: ${APP_CONTATO_EMAIL:secretaria.sept@ufpr.br}
+    horario: ${APP_CONTATO_HORARIO:Segunda a sexta, 8h–17h}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, metrics
+      base-path: /actuator
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: when-authorized
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui
+    operations-sorter: method
+    tags-sorter: alpha
+    try-it-out-enabled: true
+    enabled: true
+
+logging:
+  level:
+    root: INFO
+    br.ufpr.sept.so2: DEBUG

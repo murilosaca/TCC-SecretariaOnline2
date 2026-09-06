@@ -1,0 +1,27 @@
+---
+description: Padrões React 18 + Vite, rotas Figma e UI orientada a HATEOAS
+globs: frontend-react/**/*.{ts,tsx,css}
+alwaysApply: false
+---
+
+# React SO2 (RNF-POR-01)
+
+React 18 + Vite + TypeScript em `frontend-react/`. Sem Angular. Testes de hooks com Vitest.
+
+Rotas oficiais (`docs/telas-figma.md`):
+- Público / `AuthLayout`: `/login`, `/recuperar-senha`, `/nova-senha`, `/contato`, `/erro/:codigo`
+- Autenticado / `AppLayout`: `/inicio`, `/secretaria/alunos|cursos|disciplinas|calendarios`
+- Páginas em `src/pages/<fluxo>/`. Layouts em `src/layouts/`.
+
+- Access token só em memória. Nunca `localStorage`.
+- Botões de ação apenas via `useActions(resource._links)`. Sem `user.role`.
+- Todo bloco de dados: loading, empty e error (TanStack Query).
+- WCAG 2.1 AA: teclado, contraste, `aria-*`.
+
+```tsx
+// ❌
+{usuario.role === 'SECRETARIO' && <button>Novo</button>}
+
+// ✅
+{actions.can('criar') && <button>Novo</button>}
+```

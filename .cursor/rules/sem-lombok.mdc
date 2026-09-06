@@ -1,0 +1,30 @@
+---
+description: Proibição absoluta de Lombok — acessores manuais ou records Java
+globs: backend/**/*.java
+alwaysApply: false
+---
+
+# Sem Lombok
+
+Proibido: `@Data`, `@Getter`, `@Setter`, `@Builder`, `@Value`, `@Slf4j`,
+`@RequiredArgsConstructor` e dependência `lombok` no `pom.xml`.
+
+```java
+// ❌
+@Data
+public class Curso { private String nome; }
+
+// ✅ DTO / VO
+public record CursoRequest(String nome, String sigla) {}
+
+// ✅ Entidade JPA: construtor vazio + completo + getters/setters manuais
+public class CursoJpaEntity extends BaseEntity {
+    private String nome;
+    protected CursoJpaEntity() {}
+    public String getNome() { return nome; }
+    public void setNome(String nome) { this.nome = nome; }
+}
+```
+
+Records Java são permitidos. Builders, se existirem, são classes manuais.
+Log: `LoggerFactory.getLogger(getClass())`.

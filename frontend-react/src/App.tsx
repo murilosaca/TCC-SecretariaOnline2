@@ -2,7 +2,10 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { RedirectIfAuthenticated, RequireAuth } from './auth/guards'
 import { AppLayout } from './layouts/AppLayout'
 import { AuthLayout } from './layouts/AuthLayout'
+import { NovaSolicitacao } from './pages/aluno/NovaSolicitacao'
 import { PrimeiroAcesso } from './pages/aluno/PrimeiroAcesso'
+import { SolicitacaoDetalhe } from './pages/aluno/SolicitacaoDetalhe'
+import { Solicitacoes } from './pages/aluno/Solicitacoes'
 import { Inicio } from './pages/inicio/Inicio'
 import { Contato } from './pages/publico/Contato'
 import { Erro } from './pages/publico/Erro'
@@ -34,6 +37,9 @@ export default function App() {
         <Route element={<AppLayout />}>
           <Route path="inicio" element={<Inicio />} />
           <Route path="primeiro-acesso" element={<PrimeiroAcesso />} />
+          <Route path="solicitacoes/nova" element={<NovaSolicitacao />} />
+          <Route path="solicitacoes/:id" element={<SolicitacaoDetalhe />} />
+          <Route path="solicitacoes" element={<Solicitacoes />} />
           <Route path="secretaria/cursos" element={<Cursos />} />
           <Route path="secretaria/disciplinas" element={<Disciplinas />} />
           <Route path="secretaria/alunos" element={<Alunos />} />

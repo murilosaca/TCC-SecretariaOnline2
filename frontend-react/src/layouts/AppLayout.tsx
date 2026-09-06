@@ -13,6 +13,7 @@ export function AppLayout() {
         {!mustChangePassword && (
           <nav>
             <NavLink to="/inicio">Início</NavLink>
+            <NavLink to="/solicitacoes">Solicitações</NavLink>
             <NavLink to="/secretaria/cursos">Cursos</NavLink>
             <NavLink to="/secretaria/disciplinas">Disciplinas</NavLink>
             <NavLink to="/secretaria/alunos">Alunos</NavLink>

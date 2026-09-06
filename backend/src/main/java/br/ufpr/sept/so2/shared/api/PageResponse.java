@@ -5,7 +5,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.springframework.data.domain.Page;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -27,8 +30,16 @@ public class PageResponse<T> {
     }
 
     public static <T, R> PageResponse<R> ofWithLinks(Page<T> page, Function<T, R> mapper) {
+        return ofWithLinks(page, mapper, Map.of());
+    }
+
+    public static <T, R> PageResponse<R> ofWithLinks(
+            Page<T> page,
+            Function<T, R> mapper,
+            Map<String, String> extraLinks
+    ) {
         String base = currentBaseUri();
-        PageLinks pageLinks = base == null ? null : buildLinks(base, page);
+        PageLinks pageLinks = base == null ? null : buildLinks(base, page, extraLinks);
         return new PageResponse<>(
                 page.getContent().stream().map(mapper).toList(),
                 new PageMeta(page.getNumber(), page.getSize(), page.getTotalElements(), page.getTotalPages()),
@@ -61,14 +72,15 @@ public class PageResponse<T> {
         }
     }
 
-    private static PageLinks buildLinks(String base, Page<?> page) {
+    private static PageLinks buildLinks(String base, Page<?> page, Map<String, String> extraLinks) {
         int last = Math.max(page.getTotalPages() - 1, 0);
         return new PageLinks(
                 pageUrl(base, page.getNumber(), page.getSize()),
                 pageUrl(base, 0, page.getSize()),
                 pageUrl(base, last, page.getSize()),
                 page.hasNext() ? pageUrl(base, page.getNumber() + 1, page.getSize()) : null,
-                page.hasPrevious() ? pageUrl(base, page.getNumber() - 1, page.getSize()) : null
+                page.hasPrevious() ? pageUrl(base, page.getNumber() - 1, page.getSize()) : null,
+                extraLinks
         );
     }
 
@@ -115,13 +127,26 @@ public class PageResponse<T> {
         private final String last;
         private final String next;
         private final String prev;
+        private final Map<String, String> extra;
 
         public PageLinks(String self, String first, String last, String next, String prev) {
+            this(self, first, last, next, prev, Map.of());
+        }
+
+        public PageLinks(
+                String self,
+                String first,
+                String last,
+                String next,
+                String prev,
+                Map<String, String> extra
+        ) {
             this.self = self;
             this.first = first;
             this.last = last;
             this.next = next;
             this.prev = prev;
+            this.extra = extra == null || extra.isEmpty() ? Map.of() : Map.copyOf(extra);
         }
 
         public String getSelf() {
@@ -142,6 +167,11 @@ public class PageResponse<T> {
 
         public String getPrev() {
             return prev;
+        }
+
+        @JsonAnyGetter
+        public Map<String, String> getExtra() {
+            return extra;
         }
     }
 }

@@ -75,7 +75,15 @@ public class IamDevDataLoader implements ApplicationRunner {
             OffsetDateTime lgpd,
             OffsetDateTime agora
     ) {
-        if (usuarioRepository.findByEmail(email).isPresent()) {
+        var existente = usuarioRepository.findByEmail(email);
+        if (existente.isPresent()) {
+            Usuario usuario = existente.get();
+            if (usuario.concederAuthorities(
+                    List.of("dashboard.view_own", "request.view_own", "request.open"),
+                    agora
+            )) {
+                usuarioRepository.save(usuario);
+            }
             return;
         }
         Usuario usuario = new Usuario(
@@ -91,7 +99,7 @@ public class IamDevDataLoader implements ApplicationRunner {
                 true,
                 0,
                 null,
-                List.of("dashboard.view_own"),
+                List.of("dashboard.view_own", "request.view_own", "request.open"),
                 agora,
                 agora
         );

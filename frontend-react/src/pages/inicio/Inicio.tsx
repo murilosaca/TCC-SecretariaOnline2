@@ -8,6 +8,10 @@ export function Inicio() {
         Portal web em React 18 + Vite. Rotas alinhadas a `docs/telas-figma.md` (RNF-POR-01).
       </p>
       <div className="cards">
+        <Link to="/solicitacoes" className="card">
+          <h2>Solicitações</h2>
+          <p>Motor genérico RequestType + form_schema (RF-F1-005 / RF-TR-001).</p>
+        </Link>
         <Link to="/secretaria/cursos" className="card">
           <h2>Cursos</h2>
           <p>Cadastro institucional (RF-F5-004-a).</p>

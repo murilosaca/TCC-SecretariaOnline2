@@ -130,6 +130,7 @@ public class SecurityConfig {
                                 "/auth/redefinir-senha"
                         ).permitAll()
                         .requestMatchers("/auth/primeiro-acesso", "/auth/me", "/auth/logout").authenticated()
+                        .requestMatchers("/request-types", "/request-types/**", "/requests", "/requests/**").authenticated()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         // CRUD acadêmico permanece aberto até o FGAC (F7) ter usuários/capabilities.
                         // Ver docs/auditoria-fundacao.md — plano @PreAuthorize.

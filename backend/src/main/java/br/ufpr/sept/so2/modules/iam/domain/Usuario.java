@@ -117,6 +117,20 @@ public class Usuario {
         return !senhaAlterada;
     }
 
+    public boolean concederAuthorities(List<String> novas, OffsetDateTime agora) {
+        boolean mudou = false;
+        for (String authority : novas) {
+            if (authority != null && !authority.isBlank() && !authorities.contains(authority)) {
+                authorities.add(authority);
+                mudou = true;
+            }
+        }
+        if (mudou) {
+            this.updatedAt = agora;
+        }
+        return mudou;
+    }
+
     private static String truncar(String valor, int max) {
         if (valor == null) {
             return null;

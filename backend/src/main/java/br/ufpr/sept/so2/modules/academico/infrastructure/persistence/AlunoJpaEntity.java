@@ -26,10 +26,10 @@ public class AlunoJpaEntity extends BaseEntity {
     @Column(nullable = false, unique = true, length = 11)
     private String grr;
 
-    @Column(name = "email_institucional", nullable = false, unique = true)
+    @Column(name = "email_institucional", nullable = false, unique = true, columnDefinition = "citext")
     private String emailInstitucional;
 
-    @Column(name = "email_pessoal")
+    @Column(name = "email_pessoal", columnDefinition = "citext")
     private String emailPessoal;
 
     @Column(length = 30)

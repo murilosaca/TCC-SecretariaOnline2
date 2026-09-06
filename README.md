@@ -44,9 +44,14 @@ O frontend Vite encaminha `/academico`, `/publico` e `/auth` para `http://localh
 
 - Configuração OpenAPI / Swagger UI.
 - CRUDs acadêmicos: Curso (RF-F5-004-a), Disciplina (RF-F5-004-b), Aluno (RF-F5-003, com GRR — sem `idade` do legado) e Período letivo (RF-F5-004-c, sem sobreposição).
-- Página pública de contato (RF-F0-004), erros HTTP (RF-F0-005) e esqueleto das rotas Figma (`/login`, `/secretaria/*`, etc.).
+- Página pública de contato (RF-F0-004), erros HTTP (RF-F0-005) e rotas Figma (`/login`, `/secretaria/*`, etc.).
+- IAM P0: login JWT RS256, refresh httpOnly, recuperação/redefinição, primeiro acesso + LGPD.
 - Value objects `Grr`, `Email`, `Cpf`; erros RFC 7807; paginação com `_links` HATEOAS; UUID v7.
+
+Em `dev`, se `IAM_DEV_SEED=true`: `aluno.dev@ufpr.br` / `GRR20240001` (senha já alterada) e
+`novo.dev@ufpr.br` / `GRR20240002` (primeiro acesso). Senha: `IAM_DEV_SEED_PASSWORD` ou
+`TroqueEstaSenha1!` (somente local).
 
 ## Módulos previstos (ainda não implementados)
 
-`iam`, `solicitacoes`, `formativas`, `estagio`, `tcc`, `presenca`, `comunicacao`, `certificados`, `auditoria`, `arquivos`, `bff`.
+`solicitacoes`, `formativas`, `estagio`, `tcc`, `presenca`, `comunicacao`, `certificados`, `auditoria`, `arquivos`, `bff`.

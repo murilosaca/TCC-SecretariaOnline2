@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:h2:mem:so2;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
+    url: jdbc:h2:mem:so2;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;INIT=CREATE DOMAIN IF NOT EXISTS citext AS varchar
     username: sa
     password:
     driver-class-name: org.h2.Driver
@@ -9,3 +9,13 @@ spring:
       ddl-auto: create-drop
   flyway:
     enabled: false
+
+app:
+  iam:
+    cookie-secure: false
+    argon2:
+      memory-kb: 8192
+      iterations: 1
+    seed:
+      enabled: false
+      password:

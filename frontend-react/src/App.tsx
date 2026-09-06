@@ -1,4 +1,5 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
+import { RedirectIfAuthenticated, RequireAuth } from './auth/guards'
 import { AppLayout } from './layouts/AppLayout'
 import { AuthLayout } from './layouts/AuthLayout'
 import { PrimeiroAcesso } from './pages/aluno/PrimeiroAcesso'
@@ -19,21 +20,25 @@ export default function App() {
   return (
     <Routes>
       <Route element={<AuthLayout />}>
-        <Route path="login" element={<Login />} />
-        <Route path="recuperar-senha" element={<RecuperarSenha />} />
+        <Route element={<RedirectIfAuthenticated />}>
+          <Route path="login" element={<Login />} />
+          <Route path="recuperar-senha" element={<RecuperarSenha />} />
+        </Route>
         <Route path="nova-senha" element={<NovaSenha />} />
         <Route path="contato" element={<Contato />} />
         <Route path="erro/:codigo" element={<Erro />} />
         <Route path="publico/verificar-protocolo/:id" element={<VerificarProtocolo />} />
         <Route path="publico/verificar-certificado/:hash" element={<VerificarCertificado />} />
       </Route>
-      <Route element={<AppLayout />}>
-        <Route path="inicio" element={<Inicio />} />
-        <Route path="primeiro-acesso" element={<PrimeiroAcesso />} />
-        <Route path="secretaria/cursos" element={<Cursos />} />
-        <Route path="secretaria/disciplinas" element={<Disciplinas />} />
-        <Route path="secretaria/alunos" element={<Alunos />} />
-        <Route path="secretaria/calendarios" element={<Calendarios />} />
+      <Route element={<RequireAuth />}>
+        <Route element={<AppLayout />}>
+          <Route path="inicio" element={<Inicio />} />
+          <Route path="primeiro-acesso" element={<PrimeiroAcesso />} />
+          <Route path="secretaria/cursos" element={<Cursos />} />
+          <Route path="secretaria/disciplinas" element={<Disciplinas />} />
+          <Route path="secretaria/alunos" element={<Alunos />} />
+          <Route path="secretaria/calendarios" element={<Calendarios />} />
+        </Route>
       </Route>
       <Route path="/" element={<Navigate to="/inicio" replace />} />
       <Route path="cursos" element={<Navigate to="/secretaria/cursos" replace />} />

@@ -1,8 +1,13 @@
 package br.ufpr.sept.so2.shared.api;
 
+import br.ufpr.sept.so2.modules.iam.domain.SenhaReutilizadaException;
+import br.ufpr.sept.so2.shared.domain.exception.AcessoNegadoException;
 import br.ufpr.sept.so2.shared.domain.exception.ConflitoEstadoException;
+import br.ufpr.sept.so2.shared.domain.exception.CredenciaisInvalidasException;
 import br.ufpr.sept.so2.shared.domain.exception.DadoInvalidoException;
+import br.ufpr.sept.so2.shared.domain.exception.RateLimitExcedidoException;
 import br.ufpr.sept.so2.shared.domain.exception.RecursoNaoEncontradoException;
+import br.ufpr.sept.so2.shared.domain.exception.TokenResetInvalidoException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -10,6 +15,7 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -26,6 +32,16 @@ public class GlobalExceptionHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(GlobalExceptionHandler.class);
     private static final String ERROR_BASE = "https://secretariaonline.ufpr.br/errors/";
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ProblemDetail handleUnreadable(HttpMessageNotReadableException ex) {
+        return problemDetail(
+                HttpStatus.BAD_REQUEST,
+                "Dados inválidos",
+                "Corpo da requisição ausente ou inválido.",
+                "bad-request"
+        );
+    }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ProblemDetail handleValidation(MethodArgumentNotValidException ex) {
@@ -55,9 +71,51 @@ public class GlobalExceptionHandler {
         return problemDetail(HttpStatus.NOT_FOUND, "Recurso não encontrado", ex.getMessage(), "not-found");
     }
 
+    @ExceptionHandler(SenhaReutilizadaException.class)
+    public ProblemDetail handleSenhaReutilizada(SenhaReutilizadaException ex) {
+        return problemDetail(HttpStatus.UNPROCESSABLE_ENTITY, "Senha reutilizada", ex.getMessage(), "senha-reutilizada");
+    }
+
     @ExceptionHandler(DadoInvalidoException.class)
     public ProblemDetail handleInvalid(DadoInvalidoException ex) {
         return problemDetail(HttpStatus.UNPROCESSABLE_ENTITY, "Dados inválidos", ex.getMessage(), "validation-error");
+    }
+
+    @ExceptionHandler(CredenciaisInvalidasException.class)
+    public ProblemDetail handleCredenciais(CredenciaisInvalidasException ex) {
+        return problemDetail(
+                HttpStatus.UNAUTHORIZED,
+                "Não autenticado",
+                CredenciaisInvalidasException.MENSAGEM,
+                "authentication-required"
+        );
+    }
+
+    @ExceptionHandler(TokenResetInvalidoException.class)
+    public ProblemDetail handleResetToken(TokenResetInvalidoException ex) {
+        return problemDetail(
+                HttpStatus.UNAUTHORIZED,
+                "Não autenticado",
+                TokenResetInvalidoException.MENSAGEM,
+                "authentication-required"
+        );
+    }
+
+    @ExceptionHandler(RateLimitExcedidoException.class)
+    public ProblemDetail handleRateLimit(RateLimitExcedidoException ex) {
+        ProblemDetail detail = problemDetail(
+                HttpStatus.TOO_MANY_REQUESTS,
+                "Muitas tentativas",
+                ex.getMessage(),
+                "rate-limit"
+        );
+        detail.setProperty("retryAfterSeconds", ex.getRetryAfterSeconds());
+        return detail;
+    }
+
+    @ExceptionHandler(AcessoNegadoException.class)
+    public ProblemDetail handleAcessoNegado(AcessoNegadoException ex) {
+        return problemDetail(HttpStatus.FORBIDDEN, "Acesso negado", ex.getMessage(), "access-denied");
     }
 
     @ExceptionHandler(ConflitoEstadoException.class)

@@ -14,21 +14,44 @@ Data: 2026-09-06. Fontes: `docs/tcc-docs.md`, `docs/telas-figma.md`, código e `
 - Frontend React: `AuthLayout` / `AppLayout`, pastas por fluxo e rotas Figma
   (`/login`, `/secretaria/*`, `/inicio`). Rotas planas antigas redirecionam.
 
+## IAM (sprint P0)
+
+Módulo `modules.iam` implementado: `usuario` + `usuario_authority` (`dominio.acao`),
+refresh opaco, histórico de senha, JTI blacklist, `outbox_event` mínimo e `audit_log`
+append-only. Login JWT RS256 15 min; cookie `so2_refresh` (`httpOnly; Secure; SameSite=Lax;
+Path=/auth`); Argon2id; primeiro acesso (RF-F1-002); recuperação via Outbox (sem e-mail
+síncrono). Telas React `/login`, `/recuperar-senha`, `/nova-senha`, `/primeiro-acesso`
+ligadas. Access token só em memória.
+
+## Plano — `@PreAuthorize` no CRUD acadêmico
+
+O CRUD `/academico/**` permanece `permitAll` (sem `@PreAuthorize`) para não quebrar a
+fundação: ITs, telas de secretaria e bootstrap ainda não têm matriz FGAC (F7) nem
+vínculo usuário↔curso. Quando F7 existir:
+
+1. Fechar `anyRequest()` para `authenticated()` (exceto F0 público e `/auth/*` anônimos).
+2. Anotar comandos acadêmicos com capabilities (`curso.manage`, `student.manage`,
+   `calendar.manage`) — nunca `hasRole`.
+3. Continuar emitindo `_links` HATEOAS; a UI segue cega a perfil (`useActions`).
+4. Escopo por curso (coordenação/secretaria) entra com a tabela N:N de secretários.
+
 ## Discrepâncias que permanecem (dívida consciente)
 
 | Item | Spec | Situação | Ação |
 |---|---|---|---|
 | Linguagem do backend | Kotlin + Kotest + MockK | Java 21 + JUnit 5 | Migrar sem mudar contratos |
-| IAM / JWT / Argon2id | P0 — RF-F0-001..003, RF-F1-002 | Telas stub; `SecurityConfig` em `permitAll` | Próximo sprint (`modules.iam`) |
 | Motor de solicitações | RequestType + workflow | Inexistente | Depois do IAM |
 | Secretários do curso | RF-F5-004-a | Só `idCoordenador` + horas | Tabela N:N quando houver cadastro de usuários |
 | Config F6.1 | calendário, banca, regimento | Fora do CRUD de secretaria | Módulo coordenação |
 | Eventos de calendário | tipos semânticos em F5.9 | Só período letivo | Segunda aba quando o schema existir |
-| ArchUnit | regras de dependência | Não há teste | Adicionar com o primeiro módulo extra |
+| ArchUnit | regras de dependência | Não há teste | Adicionar no próximo módulo |
 | Ports com `Pageable` | domain/application puros | Ports importam Spring Data | Extrair paginações próprias na migração Kotlin |
 | Angular em `frontend/` | React oficial | Pasta legado travada | Apagar quando o `ng serve` soltar |
-| Cobertura 85/70/75 | RNF de testes | Abaixo da meta | Ampliar com IAM e domínio |
+| Dispatcher de e-mail | Outbox → SMTP | Eventos ficam `PENDING` | Módulo comunicação / Outbox |
+| Bucket4j + Redis | RNF-SEC-04 | Janela em memória no processo | Trocar quando houver Redis |
+| Cobertura 85/70/75 | RNF de testes | Ampliar com IAM | Continuar nos módulos seguintes |
 
 Lombok: **conforme**. Zero ocorrências. Proibição registrada nas rules.
 Aluno sem `idade`: **conforme** (RF-F5-003).
 HATEOAS + `useActions`: **conforme** nas telas de CRUD.
+IAM / JWT / Argon2id: **entregue neste sprint** (CRUD acadêmico ainda sem FGAC).

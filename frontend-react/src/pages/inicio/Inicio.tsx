@@ -29,8 +29,8 @@ export function Inicio() {
           <p>Página pública da secretaria (RF-F0-004).</p>
         </Link>
         <Link to="/login" className="card">
-          <h2>Login</h2>
-          <p>Tela P0 prevista. IAM ainda não implementado (RF-F0-001).</p>
+          <h2>Sessão</h2>
+          <p>Access token só em memória. Refresh no cookie httpOnly (RNF-SEC-02).</p>
         </Link>
       </div>
     </section>

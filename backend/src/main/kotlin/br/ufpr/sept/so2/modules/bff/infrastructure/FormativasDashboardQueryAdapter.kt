@@ -17,9 +17,9 @@ class FormativasDashboardQueryAdapter(
 ) : FormativasDashboardQueryPort {
 
     @Transactional(readOnly = true)
-    override fun consultar(usuarioId: UUID): FormativasDashboard {
+    override fun consultar(usuarioId: UUID): FormativasDashboard? {
         val aluno = alunoPorUsuarioPort.resolver(usuarioId)
-            ?: return FormativasDashboard(0, 0, emptyList())
+            ?: return null
         val validadas = formativaRepository.somarCargaHoraria(aluno.id, FormativaEstado.APROVADA)
         val pendentes = formativaRepository.findPendentesConfirmacao(aluno.id, 3).map { item ->
             PendenciaFormativa(

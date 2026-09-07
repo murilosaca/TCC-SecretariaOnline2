@@ -3,7 +3,7 @@ package br.ufpr.sept.so2.modules.bff.application.ports
 import java.util.UUID
 
 fun interface FormativasDashboardQueryPort {
-    fun consultar(usuarioId: UUID): FormativasDashboard
+    fun consultar(usuarioId: UUID): FormativasDashboard?
 
     data class FormativasDashboard(
         val horasValidadas: Int,

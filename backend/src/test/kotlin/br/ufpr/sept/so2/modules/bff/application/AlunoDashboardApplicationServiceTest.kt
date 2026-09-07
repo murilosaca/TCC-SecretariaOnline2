@@ -138,4 +138,23 @@ class AlunoDashboardApplicationServiceTest : StringSpec({
         response.kpis.certificados.shouldBeNull()
         response.links["novaFormativa"].shouldBeNull()
     }
+
+    "sem cadastro acadêmico não inventa horas 0/0" {
+        val service = AlunoDashboardApplicationService(
+            AlunoIdentidadeQueryPort { AlunoIdentidadeQueryPort.AlunoIdentidade("Aluno Dev", "TADS") },
+            PeriodoVigenteQueryPort { null },
+            SolicitacoesDashboardQueryPort {
+                SolicitacoesDashboardQueryPort.SolicitacoesDashboard(0, emptyList(), emptyList())
+            },
+            EventosDashboardQueryPort { EventosDashboardQueryPort.EventosDashboard(0, emptyList()) },
+            FormativasDashboardQueryPort { null },
+            sync,
+        )
+
+        val response = service.execute(alunoId, listOf("dashboard.view_own"))
+
+        response.kpis.horasFormativas.shouldBeNull()
+        response.pendenciasFormativas.shouldBeNull()
+        response.kpis.solicitacoesAbertas shouldBe 0
+    }
 })

@@ -56,7 +56,7 @@ A ordem das fatias **depois** do P0 (deliberação → CAAF individual → QR, c
 
 | Item | Spec | Situação | Ação |
 |---|---|---|---|
-| Horas formativas no `/inicio` | KPI F1.1 | Query do módulo `formativas` (soma `APROVADA`); validadas ainda 0 até CAAF. Falha do módulo → `null`, HTTP 200 | CAAF individual (item 3 do plano no README) |
+| Horas formativas no `/inicio` | KPI F1.1 | Query do módulo `formativas` (soma `APROVADA`); com cadastro acadêmico, validadas ainda 0 até CAAF. Falha do módulo **ou JWT sem `aluno`** → `null`, HTTP 200 (não inventa `0/0`) | CAAF individual (item 3 do plano no README) |
 | Certificados no `/inicio` | KPI F1.1 | `null` (módulo inexistente) | Não fingir número; módulo certificados |
 | F0.7 certificado público | Verificação de PDF/hash | `TelaPendente` | Módulo certificados |
 | F3.1 dashboard professor | BFF próprio | Ausente; `/inicio` 403 honesto | BFF professor |

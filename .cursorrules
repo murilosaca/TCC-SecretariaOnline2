@@ -68,15 +68,15 @@ HATEOAS, Outbox, Proof of Stay, LGPD, SLA, RequestType, BFF, authority
 
 | Camada | Obrigatório na spec | Situação neste repo |
 |---|---|---|
-| Backend | Kotlin + Spring Boot 3 + Maven | Java 21 temporário; contratos estáveis; migrar sem mudar API |
+| Backend | Kotlin + Spring Boot 3 + Maven | Kotlin + JVM 21; contratos estáveis |
 | Web | React 18 + Vite + TypeScript + TanStack Query + Vitest | `frontend-react/` |
 | Mobile | React Native + Expo | ainda não |
-| Auth | JWT RS256 15 min + refresh opaco httpOnly + Argon2id | ainda não (módulo `iam`) |
+| Auth | JWT RS256 15 min + refresh opaco httpOnly + Argon2id | sim (módulo `iam`) |
 | Banco | PostgreSQL 16 + Flyway + UUID v7 | sim |
 | Arquivos | S3-compatível (MinIO no dev) | ainda não |
 
 - Frontend oficial: `frontend-react`. Não reintroduza Angular.
-- Sem Lombok no Java restante (decisão do time; a spec Kotlin não usa Lombok).
+- Sem Lombok (decisão do time; a spec Kotlin não usa Lombok).
 - Não copiar o CRUD didático do legado (`idade` em Aluno, `ddl-auto=update`,
   senha hardcoded).
 - Não criar pasta de módulo vazia. Só nasce `iam`, `solicitacoes`, etc. com
@@ -90,23 +90,21 @@ HATEOAS, Outbox, Proof of Stay, LGPD, SLA, RequestType, BFF, authority
 `@Value`, `@RequiredArgsConstructor`, `@NoArgsConstructor`, `@AllArgsConstructor`,
 `@Slf4j`, dependência `lombok` no `pom.xml`).
 
-- Entidades JPA: construtor vazio (JPA), factory/`merge`, getters e setters
-  escritos à mão.
-- DTOs, comandos e value objects: `record` Java (não é Lombok) ou `data class`
-  Kotlin no futuro.
+- Entidades JPA: construtor no-arg (plugin `jpa`) + mapeamento; sem `@Data`.
+- DTOs, comandos e value objects: `data class` / `value class`.
 - Builder, se necessário: classe `Builder` manual.
 - Logs: `LoggerFactory.getLogger(Classe.class)`.
 
-```java
+```kotlin
 // PROIBIDO
 @Data
-public class Curso { private String nome; }
+class Curso { var nome: String? = null }
 
 // CORRETO — DTO
-public record CursoRequest(String nome, String sigla, String codigo) {}
+data class CursoRequest(val nome: String, val sigla: String, val codigo: String)
 
-// CORRETO — entidade: acessores manuais
-public class CursoJpaEntity extends BaseEntity { /* campos + acessores */ }
+// CORRETO — entidade JPA (plugin jpa gera no-arg)
+class CursoJpaEntity : BaseEntity() { /* campos + mapeamento */ }
 ```
 
 ## Nomenclatura — Spring Boot

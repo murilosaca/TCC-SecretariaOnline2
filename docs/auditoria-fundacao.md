@@ -54,7 +54,6 @@ Sessão JWT que não é aluno: BFF devolve 403; `/inicio` mostra empty honesto, 
 
 | Item | Spec | Situação | Ação |
 |---|---|---|---|
-| Linguagem do backend | Kotlin + Kotest + MockK | Java 21 + JUnit 5 | Migrar sem mudar contratos |
 | Horas formativas / certificados no `/inicio` | KPIs F1.1 | `null` (módulos inexistentes) | Não fingir número; entrar com os módulos |
 | F0.7 certificado público | Verificação de PDF/hash | `TelaPendente` | Módulo certificados |
 | F3.1 dashboard professor | BFF próprio | Ausente; `/inicio` 403 honesto | BFF professor |
@@ -67,7 +66,7 @@ Sessão JWT que não é aluno: BFF devolve 403; `/inicio` mostra empty honesto, 
 | Config F6.1 | calendário, banca, regimento | Fora do CRUD de secretaria | Módulo coordenação |
 | Eventos de calendário | tipos semânticos em F5.9 | Só período letivo | Segunda aba quando o schema existir |
 | ArchUnit | regras de dependência | Não há teste | Adicionar no próximo módulo |
-| Ports com `Pageable` | domain/application puros | Ports importam Spring Data | Extrair paginações próprias na migração Kotlin |
+| Ports com `Pageable` | domain/application puros | Ports importam Spring Data | Extrair paginações próprias numa fatia seguinte |
 | Angular em `frontend/` | React oficial | Não é stack deste repo | Não recriar nem commitar |
 | Bucket4j + Redis | RNF-SEC-04 | Janela em memória no processo | Trocar quando houver Redis |
 | Cobertura 85/70/75 | RNF de testes | Ampliar por módulo | Continuar nas fatias seguintes |

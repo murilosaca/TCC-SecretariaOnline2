@@ -25,7 +25,7 @@ O P0 do Figma cobre só o núcleo que prova o produto:
 
 O resto do mapa F0–F8 (formativas, CAAF, estágio, TCC, certificados, FGAC de menu, dashboard professor/secretaria) **ainda não foi aberto**. Está especificado; não está implementado.
 
-A spec original cita Kotlin + React. **Neste repositório o grupo adotou Java 21 + React 18.** Preserve domínio, RNFs e contratos. Não reintroduza Kotlin, Lombok, Angular nem o CRUD didático do legado (`idade` em Aluno, `ddl-auto=update`).
+A spec do TCC é **Kotlin + Spring Boot** no back e **React 18 + Vite** na web (mobile: React Native + Expo, ainda não aberto). **Neste repositório o backend já é Kotlin + JVM 21 e o portal é React 18.** Os dois clientes (web agora, Expo depois) reutilizam a mesma API — não as telas. Preserve domínio, RNFs e contratos. Não reintroduza Lombok, Angular, Java-fonte nem o CRUD didático do legado (`idade` em Aluno, `ddl-auto=update`).
 
 ---
 
@@ -33,7 +33,7 @@ A spec original cita Kotlin + React. **Neste repositório o grupo adotou Java 21
 
 | Onde | Para quê |
 |---|---|
-| [`docs/tcc-docs.md`](docs/tcc-docs.md) | Requisitos (RFs/RNFs), atores, regras de negócio, segurança, qualidade. A spec ainda fala Kotlin; os contratos valem. |
+| [`docs/tcc-docs.md`](docs/tcc-docs.md) | Requisitos (RFs/RNFs), atores, regras de negócio, segurança, qualidade. |
 | [`docs/telas-figma.md`](docs/telas-figma.md) | Mapa de rotas F0–F8. Detalhe de cada tela em [`docs/telas/`](docs/telas/). |
 | [`docs/auditoria-fundacao.md`](docs/auditoria-fundacao.md) | O que a fundação e o P0 entregaram, e a lista de dívidas conscientes. |
 | [`.cursorrules`](.cursorrules) e [`.cursor/rules/`](.cursor/rules/) | Convenções do time e da IA (nomenclatura, Clean Architecture, proibições). |
@@ -47,8 +47,8 @@ Swagger (fora de produção): `http://localhost:8080/swagger-ui`. OpenAPI: `/v3/
 
 ```
 TCC-SecretariaOnline2/
-├── backend/                 API Java 21 + Spring Boot 3 (Maven)
-│   └── src/main/java/br/ufpr/sept/so2/
+├── backend/                 API Kotlin + Spring Boot 3 + JVM 21 (Maven)
+│   └── src/main/kotlin/br/ufpr/sept/so2/
 │       ├── shared/          Transversal: RFC 7807, Security, CORS, UUID v7, VOs
 │       └── modules/         Um bounded context por pasta
 ├── frontend-react/          Portal oficial (React 18 + Vite + TypeScript)
@@ -115,14 +115,16 @@ Rotas da UI (`/cursos` redireciona para `/secretaria/cursos`) **não** repetem o
 
 | Camada | Tecnologia |
 |---|---|
-| Backend | Java 21 + Spring Boot 3 + Maven + PostgreSQL 16 + Flyway |
-| Frontend | React 18 + Vite + TypeScript + TanStack Query (`frontend-react/`) |
+| Backend | Kotlin + Spring Boot 3 + JVM 21 + Maven + PostgreSQL 16 + Flyway. Testes: Kotest + MockK |
+| Web | React 18 + Vite + TypeScript + TanStack Query (`frontend-react/`). CSS próprio (`index.css`). Sem Tailwind |
+| Mobile | Spec: React Native + Expo, **mesmo backend**. Ainda não há pasta no repo. NativeWind só faria sentido se a web adotasse Tailwind |
+| Docker | Só Postgres 16 no `docker-compose.yml`. A spec pede também MinIO, Mailpit e observabilidade — não estão |
 | Arquivos (futuro) | API S3-compatível (MinIO no desenvolvimento) |
 | IDs | UUID v7. Proibido `Long`/`IDENTITY` em entidade de negócio |
 | Senha | Só Argon2id. Proibido MD5, SHA-1, SHA-256 e bcrypt para senha |
 | Autorização | Capability `dominio.acao` + `_links` HATEOAS. Nunca `hasRole` / `ROLE_*` |
 | Erros | RFC 7807 (`application/problem+json`) |
-| Lombok | **Proibido** (entidade com getters manuais; DTO como `record`) |
+| Lombok | **Proibido** (entidade JPA com plugin `jpa`; DTO como `data class`) |
 
 Outras invariantes: login aceita `@ufpr.br`, e-mail pessoal ou GRR (`GRR` + 8 dígitos). `senhaAlterada = false` bloqueia tudo até senha forte + aceite LGPD. Solicitações não se duplicam por tipo. Certificado oficial só gerado pelo sistema (módulo ainda inexistente). Presença sem geofence, trust score ou aula SIGA. Access token nunca vai para `localStorage`.
 
@@ -154,9 +156,10 @@ Ordem sugerida — uma fatia vertical por vez, sem abrir dois módulos no mesmo 
 5. **Certificados** — só gerados pelo sistema; F0.7 deixa de ser stub. Sem upload externo oficial.
 6. **Comunicação + dispatcher do Outbox** — hoje os eventos (`presenca.confirmada`, `evento.encerrado`, recuperação de senha) ficam `PENDING`. Sem e-mail síncrono nunca.
 7. **FGAC (F7)** — fechar `/academico/**`, nav por `_links` (hoje o menu ainda mostra atalhos de dev: Eventos prof., CRUD da secretaria), escopo por curso.
-8. **Egresso, estágio, TCC, coordenação (F6.1)** — quando o requisito entrar no sprint.
+8. **Cliente Expo (React Native)** — mesmo `/auth`, `/bff`, `/events`; token em Keychain/Keystore. Sem reescrever o back.
+9. **Egresso, estágio, TCC, coordenação (F6.1)** — quando o requisito entrar no sprint.
 
-Dívida consciente (não é P0): ver a tabela em [`docs/auditoria-fundacao.md`](docs/auditoria-fundacao.md). Destaques: BFF professor (F3.1) ausente; horas/certificados `null`; F0.7 stub; `/academico/**` aberto; PIN da host-session some se a API reiniciar; backend em Java (spec Kotlin); sem ArchUnit; rate limit em memória (sem Redis).
+Dívida consciente (não é P0): ver a tabela em [`docs/auditoria-fundacao.md`](docs/auditoria-fundacao.md). Destaques: BFF professor (F3.1) ausente; horas/certificados `null`; F0.7 stub; `/academico/**` aberto; PIN da host-session some se a API reiniciar; sem ArchUnit; rate limit em memória (sem Redis).
 
 ---
 
@@ -193,7 +196,7 @@ cd backend && mvn -q test
 cd frontend-react && npm test
 ```
 
-Não é obrigatório rodar a suíte inteira se 5433 + `:8080` + `:5174` já estiverem no ar. Reinicie a API depois de mudar Java.
+Não é obrigatório rodar a suíte inteira se 5433 + `:8080` + `:5174` já estiverem no ar. Reinicie a API depois de mudar o backend.
 
 ---
 

@@ -440,6 +440,155 @@ textarea:focus {
   outline-offset: 2px;
 }
 
+.caption {
+  margin: 0;
+}
+
+.dashboard-main {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.2rem;
+}
+
+.dashboard-col {
+  display: grid;
+  gap: 1rem;
+}
+
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.8rem;
+  margin-top: 1.2rem;
+}
+
+.kpi-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 1rem 1.1rem;
+}
+
+.kpi-label {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.kpi-value {
+  margin: 0.35rem 0 0;
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.kpi-progress {
+  width: 100%;
+  margin-top: 0.5rem;
+  accent-color: var(--brand);
+}
+
+.pendencia-list {
+  list-style: none;
+  margin: 0.6rem 0 0;
+  padding: 0;
+}
+
+.pendencia-list li + li {
+  margin-top: 0.6rem;
+}
+
+.evento-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.evento-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #e8eef5 25%, #f7fafc 50%, #e8eef5 75%);
+  background-size: 200% 100%;
+  animation: skeleton 1.2s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+.skeleton-title {
+  width: min(18rem, 70%);
+  height: 2rem;
+}
+
+.skeleton-kpi {
+  height: 6.2rem;
+}
+
+@keyframes skeleton {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+@media (max-width: 1279px) {
+  .kpi-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.attendance-card {
+  width: min(30rem, 100%);
+  padding: 1.2rem 1.3rem;
+}
+
+.attendance-widget label,
+.attendance-widget input,
+.attendance-widget button {
+  display: block;
+  width: 100%;
+}
+
+.attendance-widget input,
+.attendance-widget button {
+  min-height: 44px;
+  margin-top: 0.4rem;
+}
+
+.attendance-widget button {
+  margin-top: 0.9rem;
+}
+
+.pin-display {
+  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  font-size: 2rem;
+  letter-spacing: 0.16em;
+  margin: 0.4rem 0 1rem;
+}
+
+.countdown {
+  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  font-size: 2rem;
+  letter-spacing: 0.06em;
+  margin: 0 0 1rem;
+}
+
+.badge.estado-em_andamento {
+  background: #e5f6ea;
+  color: #1b6b34;
+}
+
+.badge.estado-concluido {
+  background: #eef1f4;
+  color: #44515c;
+}
+
 @media (max-width: 700px) {
   .topbar nav {
     width: 100%;

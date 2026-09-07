@@ -36,6 +36,16 @@ public class AlunoJpaAdapter implements AlunoRepository {
     }
 
     @Override
+    public Optional<Aluno> findByGrr(String grr) {
+        return jpaRepository.findByGrrIgnoreCase(grr).map(AlunoJpaEntity::toDomain);
+    }
+
+    @Override
+    public Optional<Aluno> findByEmailInstitucional(String email) {
+        return jpaRepository.findByEmailInstitucionalIgnoreCase(email).map(AlunoJpaEntity::toDomain);
+    }
+
+    @Override
     public Page<Aluno> findAll(UUID idCurso, String termo, Pageable pageable) {
         Specification<AlunoJpaEntity> spec = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();

@@ -13,6 +13,10 @@ public interface AlunoRepository {
 
     Optional<Aluno> findById(UUID id);
 
+    Optional<Aluno> findByGrr(String grr);
+
+    Optional<Aluno> findByEmailInstitucional(String email);
+
     Page<Aluno> findAll(UUID idCurso, String termo, Pageable pageable);
 
     boolean existsByGrr(String grr);

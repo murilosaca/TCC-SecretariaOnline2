@@ -3,6 +3,7 @@ package br.ufpr.sept.so2.shared.config;
 import br.ufpr.sept.so2.modules.iam.application.ports.JwtTokenService;
 import br.ufpr.sept.so2.modules.iam.application.ports.UsuarioRepository;
 import br.ufpr.sept.so2.modules.iam.infrastructure.IamProperties;
+import br.ufpr.sept.so2.modules.presenca.infrastructure.EventoProperties;
 import br.ufpr.sept.so2.modules.iam.infrastructure.security.AuthRateLimitFilter;
 import br.ufpr.sept.so2.modules.iam.infrastructure.security.FirstAccessGateFilter;
 import br.ufpr.sept.so2.modules.iam.infrastructure.security.JwtAuthenticationFilter;
@@ -31,7 +32,7 @@ import java.util.List;
 
 @Configuration
 @EnableMethodSecurity
-@EnableConfigurationProperties({CorsProperties.class, ContatoProperties.class, IamProperties.class})
+@EnableConfigurationProperties({CorsProperties.class, ContatoProperties.class, IamProperties.class, EventoProperties.class})
 public class SecurityConfig {
 
     private final CorsProperties corsProperties;
@@ -131,6 +132,8 @@ public class SecurityConfig {
                         ).permitAll()
                         .requestMatchers("/auth/primeiro-acesso", "/auth/me", "/auth/logout").authenticated()
                         .requestMatchers("/request-types", "/request-types/**", "/requests", "/requests/**").authenticated()
+                        .requestMatchers("/bff/**").authenticated()
+                        .requestMatchers("/events", "/events/**").authenticated()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         // CRUD acadêmico permanece aberto até o FGAC (F7) ter usuários/capabilities.
                         // Ver docs/auditoria-fundacao.md — plano @PreAuthorize.

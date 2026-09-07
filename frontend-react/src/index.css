@@ -589,6 +589,31 @@ textarea:focus {
   color: #44515c;
 }
 
+.badge.estado-pendente_confirmacao {
+  background: #fff4d6;
+  color: #8a5a00;
+}
+
+.badge.estado-aguardando_caaf {
+  background: #e6f0fb;
+  color: var(--brand);
+}
+
+.badge.estado-aprovada {
+  background: #e5f6ea;
+  color: #1b6b34;
+}
+
+.badge.estado-cancelada,
+.badge.estado-indeferida {
+  background: #eef1f4;
+  color: #44515c;
+}
+
+.formativa-widget {
+  margin-bottom: 1rem;
+}
+
 @media (max-width: 700px) {
   .topbar nav {
     width: 100%;

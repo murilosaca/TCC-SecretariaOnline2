@@ -1,6 +1,7 @@
 package br.ufpr.sept.so2.modules.bff.api
 
 import br.ufpr.sept.so2.modules.bff.application.ports.EventosDashboardQueryPort
+import br.ufpr.sept.so2.modules.bff.application.ports.FormativasDashboardQueryPort
 import br.ufpr.sept.so2.modules.bff.application.ports.SolicitacoesDashboardQueryPort
 import br.ufpr.sept.so2.modules.iam.application.ports.PasswordHasher
 import br.ufpr.sept.so2.modules.iam.application.ports.UsuarioRepository
@@ -47,12 +48,17 @@ class AlunoDashboardDegradacaoIT {
     @MockitoBean
     private lateinit var eventosDashboardQueryPort: EventosDashboardQueryPort
 
+    @MockitoBean
+    private lateinit var formativasDashboardQueryPort: FormativasDashboardQueryPort
+
     @BeforeEach
     fun seed() {
-        `when`(solicitacoesDashboardQueryPort.consultar(any(UUID::class.java)))
+        `when`(solicitacoesDashboardQueryPort.consultar(anyUuid()))
             .thenThrow(IllegalStateException("módulo de solicitações indisponível"))
-        `when`(eventosDashboardQueryPort.consultar(any()))
+        `when`(eventosDashboardQueryPort.consultar(anyMomento()))
             .thenThrow(IllegalStateException("módulo de presença indisponível"))
+        `when`(formativasDashboardQueryPort.consultar(anyUuid()))
+            .thenThrow(IllegalStateException("módulo de formativas indisponível"))
         if (usuarioRepository.findByEmail("it.dashboard.degradacao@ufpr.br").isPresent) {
             return
         }
@@ -103,6 +109,7 @@ class AlunoDashboardDegradacaoIT {
             .andExpect(jsonPath("$.kpis.solicitacoesAbertas").value(nullValue()))
             .andExpect(jsonPath("$.kpis.eventosHoje").value(nullValue()))
             .andExpect(jsonPath("$.pendencias").value(nullValue()))
+            .andExpect(jsonPath("$.pendenciasFormativas").value(nullValue()))
             .andExpect(jsonPath("$.ultimasSolicitacoes").value(nullValue()))
             .andExpect(jsonPath("$.proximosEventos").value(nullValue()))
             .andExpect(jsonPath("$._links.self").value("/bff/dashboard/aluno"))
@@ -114,6 +121,18 @@ class AlunoDashboardDegradacaoIT {
             val from = start + startToken.length
             val end = json.indexOf(endToken, from)
             return json.substring(from, end)
+        }
+
+        @Suppress("UNCHECKED_CAST")
+        private fun anyUuid(): UUID {
+            any(UUID::class.java)
+            return UUID(0, 0)
+        }
+
+        @Suppress("UNCHECKED_CAST")
+        private fun anyMomento(): OffsetDateTime {
+            any(OffsetDateTime::class.java)
+            return OffsetDateTime.MIN
         }
     }
 }

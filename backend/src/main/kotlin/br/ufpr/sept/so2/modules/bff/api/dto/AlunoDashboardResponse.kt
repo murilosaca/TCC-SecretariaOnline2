@@ -15,6 +15,7 @@ data class AlunoDashboardResponse(
     val pendencias: List<PendenciaResponse>?,
     val ultimasSolicitacoes: List<UltimaSolicitacaoResponse>?,
     val proximosEventos: List<ProximoEventoResponse>?,
+    val pendenciasFormativas: List<PendenciaResponse>?,
     @get:JsonProperty("_links")
     val links: Map<String, String>,
 ) {

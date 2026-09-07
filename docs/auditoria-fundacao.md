@@ -50,14 +50,17 @@ O P0 oficial (`docs/telas-figma.md`) mais o hospedeiro F3.2 (único jeito de pro
 
 Sessão JWT que não é aluno: BFF devolve 403; `/inicio` mostra empty honesto, sem “Olá, aluno”. Deep link: login respeita `state.from` se a rota for interna segura. Refresh falho após 401 limpa o access token e vai para `/erro/401` (CTA “Fazer login”), não para `/inicio` anônimo.
 
+A ordem das fatias **depois** do P0 (deliberação → CAAF individual → QR, com COE só junto de estágio) está no README. Este arquivo lista dívida; não redefine o cronograma.
+
 ## Discrepâncias que permanecem (dívida consciente — não é P0)
 
 | Item | Spec | Situação | Ação |
 |---|---|---|---|
-| Horas formativas / certificados no `/inicio` | KPIs F1.1 | `null` (módulos inexistentes) | Não fingir número; entrar com os módulos |
+| Horas formativas no `/inicio` | KPI F1.1 | Query do módulo `formativas` (soma `APROVADA`); validadas ainda 0 até CAAF. Falha do módulo → `null`, HTTP 200 | CAAF individual (item 3 do plano no README) |
+| Certificados no `/inicio` | KPI F1.1 | `null` (módulo inexistente) | Não fingir número; módulo certificados |
 | F0.7 certificado público | Verificação de PDF/hash | `TelaPendente` | Módulo certificados |
 | F3.1 dashboard professor | BFF próprio | Ausente; `/inicio` 403 honesto | BFF professor |
-| QR / SECRET_DUAL / janela de saída | Presença v4.1 completa | Só SECRET_SINGLE | Fatias seguintes |
+| QR / SECRET_DUAL / janela de saída | Presença v4.1 completa | Só SECRET_SINGLE | Item 4 do plano (depois de deliberação e CAAF individual) |
 | FGAC em `/academico/**` | `@PreAuthorize` | `permitAll` | Depois da matriz F7 |
 | Nav HATEOAS | UI cega a perfil | Atalhos de dev (Eventos prof., CRUD secretaria) | Esconder quando houver `_links` de menu |
 | Dispatcher de e-mail | Outbox → SMTP | Eventos ficam `PENDING` | Módulo comunicação / Outbox |

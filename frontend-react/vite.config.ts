@@ -18,6 +18,15 @@ export default defineConfig({
       '/requests': { target: 'http://localhost:8080', changeOrigin: true },
       '/request-types': { target: 'http://localhost:8080', changeOrigin: true },
       '/events': { target: 'http://localhost:8080', changeOrigin: true },
+      '/formativas': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        bypass(req) {
+          if (req.headers.accept?.includes('text/html')) {
+            return '/index.html'
+          }
+        },
+      },
       '/v3': { target: 'http://localhost:8080', changeOrigin: true },
       '/swagger-ui': { target: 'http://localhost:8080', changeOrigin: true },
       '/actuator': { target: 'http://localhost:8080', changeOrigin: true },

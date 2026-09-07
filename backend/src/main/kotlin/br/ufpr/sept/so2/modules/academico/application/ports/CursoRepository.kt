@@ -17,5 +17,7 @@ interface CursoRepository {
 
     fun existsByCodigo(codigo: String): Boolean
 
+    fun findByCodigo(codigo: String): Optional<Curso>
+
     fun deleteById(id: UUID)
 }

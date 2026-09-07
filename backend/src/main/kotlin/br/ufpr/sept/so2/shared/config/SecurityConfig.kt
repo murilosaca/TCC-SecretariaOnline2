@@ -139,6 +139,7 @@ class SecurityConfig(
                     .requestMatchers("/request-types", "/request-types/**", "/requests", "/requests/**").authenticated()
                     .requestMatchers("/bff/**").authenticated()
                     .requestMatchers("/events", "/events/**").authenticated()
+                    .requestMatchers("/formativas", "/formativas/**").authenticated()
                     .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                     // CRUD acadêmico permanece aberto até o FGAC (F7) ter usuários/capabilities.
                     // Ver docs/auditoria-fundacao.md — plano @PreAuthorize.

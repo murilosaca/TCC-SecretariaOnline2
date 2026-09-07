@@ -110,6 +110,8 @@ class IamDevDataLoader(
                 "request.open",
                 "attendance.view_open",
                 "attendance.check_in",
+                "formative.view_own",
+                "formative.confirm_own",
             )
 
         private fun authoritiesProfessor(): List<String> =

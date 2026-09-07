@@ -30,6 +30,9 @@ class CursoJpaAdapter(
     override fun existsByCodigo(codigo: String): Boolean =
         jpaRepository.existsByCodigoIgnoreCase(codigo)
 
+    override fun findByCodigo(codigo: String): Optional<Curso> =
+        jpaRepository.findByCodigoIgnoreCase(codigo).map { it.toDomain() }
+
     override fun deleteById(id: UUID) {
         jpaRepository.deleteById(id)
     }

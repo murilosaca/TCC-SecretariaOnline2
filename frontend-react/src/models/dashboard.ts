@@ -59,5 +59,6 @@ export type AlunoDashboard = {
   pendencias: PendenciaDashboard[] | null
   ultimasSolicitacoes: UltimaSolicitacaoDashboard[] | null
   proximosEventos: ProximoEventoDashboard[] | null
+  pendenciasFormativas?: PendenciaDashboard[] | null
   _links?: HateoasLinks
 }

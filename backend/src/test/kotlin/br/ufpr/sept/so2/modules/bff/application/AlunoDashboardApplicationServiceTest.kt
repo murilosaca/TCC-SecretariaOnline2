@@ -2,6 +2,7 @@ package br.ufpr.sept.so2.modules.bff.application
 
 import br.ufpr.sept.so2.modules.bff.application.ports.AlunoIdentidadeQueryPort
 import br.ufpr.sept.so2.modules.bff.application.ports.EventosDashboardQueryPort
+import br.ufpr.sept.so2.modules.bff.application.ports.FormativasDashboardQueryPort
 import br.ufpr.sept.so2.modules.bff.application.ports.PeriodoVigenteQueryPort
 import br.ufpr.sept.so2.modules.bff.application.ports.SolicitacoesDashboardQueryPort
 import io.kotest.core.spec.style.StringSpec
@@ -32,6 +33,7 @@ class AlunoDashboardApplicationServiceTest : StringSpec({
             },
             SolicitacoesDashboardQueryPort { error("solicitações indisponível") },
             EventosDashboardQueryPort { error("presença indisponível") },
+            FormativasDashboardQueryPort { error("formativas indisponível") },
             sync,
         )
 
@@ -46,6 +48,7 @@ class AlunoDashboardApplicationServiceTest : StringSpec({
         response.kpis.certificados.shouldBeNull()
         response.kpis.solicitacoesAbertas.shouldBeNull()
         response.pendencias.shouldBeNull()
+        response.pendenciasFormativas.shouldBeNull()
         response.ultimasSolicitacoes.shouldBeNull()
         response.proximosEventos.shouldBeNull()
         response.links["self"] shouldBe "/bff/dashboard/aluno"
@@ -74,6 +77,9 @@ class AlunoDashboardApplicationServiceTest : StringSpec({
                 )
             },
             EventosDashboardQueryPort { EventosDashboardQueryPort.EventosDashboard(0, emptyList()) },
+            FormativasDashboardQueryPort {
+                FormativasDashboardQueryPort.FormativasDashboard(0, 120, emptyList())
+            },
             sync,
         )
 
@@ -83,8 +89,11 @@ class AlunoDashboardApplicationServiceTest : StringSpec({
         response.alertaPeriodoAusente shouldBe true
         response.kpis.solicitacoesAbertas shouldBe 1
         response.kpis.eventosHoje shouldBe 0
+        response.kpis.horasFormativas?.validadas shouldBe 0
+        response.kpis.horasFormativas?.requeridas shouldBe 120
         response.pendencias.shouldNotBe(null)
         response.pendencias!!.isEmpty() shouldBe true
+        response.pendenciasFormativas!!.isEmpty() shouldBe true
         response.proximosEventos!!.isEmpty() shouldBe true
         response.ultimasSolicitacoes!!.first().protocolo shouldBe "PROT-2026-00001"
         response.links["novaSolicitacao"].shouldBeNull()
@@ -112,6 +121,9 @@ class AlunoDashboardApplicationServiceTest : StringSpec({
                     ),
                 )
             },
+            FormativasDashboardQueryPort {
+                FormativasDashboardQueryPort.FormativasDashboard(0, 120, emptyList())
+            },
             sync,
         )
 
@@ -122,7 +134,8 @@ class AlunoDashboardApplicationServiceTest : StringSpec({
         response.proximosEventos!!.first().titulo shouldBe "Oficina Proof of Stay"
         response.proximosEventos!!.first().href shouldBe "/eventos/$eventoId/presenca"
         response.proximosEventos!!.first().janelaAtiva shouldBe true
-        response.kpis.horasFormativas.shouldBeNull()
+        response.kpis.horasFormativas?.validadas shouldBe 0
         response.kpis.certificados.shouldBeNull()
+        response.links["novaFormativa"].shouldBeNull()
     }
 })

@@ -82,6 +82,11 @@ export function Inicio() {
                 itens={dashboard.data.pendencias}
                 onRetry={() => dashboard.refetch()}
               />
+              <FormativasPendenciasBloco
+                loading={dashboard.isLoading}
+                itens={dashboard.data.pendenciasFormativas}
+                onRetry={() => dashboard.refetch()}
+              />
               <SolicitacoesBloco
                 loading={dashboard.isLoading}
                 itens={dashboard.data.ultimasSolicitacoes}
@@ -194,6 +199,50 @@ function PendenciasBloco({
         </div>
       )}
       {!loading && estado === 'empty' && <p className="empty">Nenhuma pendência no momento.</p>}
+      {!loading && estado === 'ok' && itens && (
+        <ul className="pendencia-list">
+          {itens.map((item) => (
+            <li key={item.id}>
+              <Link to={item.href}>
+                {item.titulo} <span className={`badge estado-${item.estado.toLowerCase()}`}>{item.estado}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  )
+}
+
+function FormativasPendenciasBloco({
+  loading,
+  itens,
+  onRetry,
+}: {
+  loading: boolean
+  itens?: PendenciaDashboard[] | null
+  onRetry: () => void
+}) {
+  if (!loading && itens != null && itens.length === 0) {
+    return null
+  }
+  const estado = blocoLista(itens)
+  return (
+    <section className="panel" aria-labelledby="formativas-pendencias-titulo">
+      <h2 id="formativas-pendencias-titulo">Formativas a confirmar</h2>
+      {loading && (
+        <p className="muted" aria-busy="true">
+          Carregando formativas…
+        </p>
+      )}
+      {!loading && estado === 'error' && (
+        <div className="banner warning" role="status">
+          Não foi possível carregar as formativas no momento.{' '}
+          <button type="button" onClick={onRetry}>
+            Tentar de novo
+          </button>
+        </div>
+      )}
       {!loading && estado === 'ok' && itens && (
         <ul className="pendencia-list">
           {itens.map((item) => (

@@ -1,5 +1,6 @@
 package br.ufpr.sept.so2.modules.presenca.application
 
+import br.ufpr.sept.so2.modules.formativas.application.ports.FormativaPorPresencaPort
 import br.ufpr.sept.so2.modules.iam.application.ports.OutboxPort
 import br.ufpr.sept.so2.modules.iam.application.ports.PasswordHasher
 import br.ufpr.sept.so2.modules.presenca.application.ports.EventoRepository
@@ -24,6 +25,7 @@ class ConfirmarPresencaUseCase(
     private val passwordHasher: PasswordHasher,
     private val outboxPort: OutboxPort,
     private val objectMapper: ObjectMapper,
+    private val formativaPorPresencaPort: FormativaPorPresencaPort,
 ) {
     @Transactional
     fun execute(
@@ -57,6 +59,14 @@ class ConfirmarPresencaUseCase(
         )
         presencaRepository.save(presenca)
         outboxPort.enqueue("presenca.confirmada", payload(eventoId, usuarioId, fase, presenca.id))
+        if (fase == FasePresenca.ENTRADA && evento.attendanceMode == AttendanceMode.SECRET_SINGLE) {
+            formativaPorPresencaPort.criarPendenteSeAusente(
+                eventoId,
+                usuarioId,
+                evento.titulo,
+                evento.cargaHoraria,
+            )
+        }
         val fases = presencaRepository.findByEventoAndUsuario(eventoId, usuarioId).map { it.fase }
         return ObterSessaoPresencaUseCase.SessaoPresenca(evento, fases)
     }

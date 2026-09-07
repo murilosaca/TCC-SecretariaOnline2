@@ -117,14 +117,17 @@ class AlunoDashboardControllerIT {
         )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.saudacao.nome").value("Aluno Dev"))
-            .andExpect(jsonPath("$.kpis.horasFormativas").value(nullValue()))
+            .andExpect(jsonPath("$.kpis.horasFormativas.validadas").value(0))
+            .andExpect(jsonPath("$.kpis.horasFormativas.requeridas").isNumber)
             .andExpect(jsonPath("$.kpis.eventosHoje").isNumber)
             .andExpect(jsonPath("$.kpis.certificados").value(nullValue()))
             .andExpect(jsonPath("$.kpis.solicitacoesAbertas").isNumber)
             .andExpect(jsonPath("$.proximosEventos").isArray)
+            .andExpect(jsonPath("$.pendenciasFormativas").isArray)
             .andExpect(jsonPath("$.ultimasSolicitacoes[0].protocolo", startsWith("PROT-")))
             .andExpect(jsonPath("$._links.self").value("/bff/dashboard/aluno"))
             .andExpect(jsonPath("$._links.novaSolicitacao").value("/solicitacoes/nova"))
+            .andExpect(jsonPath("$._links.novaFormativa").doesNotExist())
     }
 
     @Test

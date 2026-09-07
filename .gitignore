@@ -15,9 +15,6 @@ hs_err_pid*
 # Node / React (Vite)
 frontend-react/node_modules/
 frontend-react/dist/
-frontend/node_modules/
-frontend/dist/
-frontend/.angular/
 npm-debug.log*
 
 # IDE

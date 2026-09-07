@@ -86,6 +86,24 @@ function shouldRefresh(path: string): boolean {
   return !PUBLIC_AUTH.includes(pathname)
 }
 
+function redirecionarSessaoExpirada() {
+  if (typeof window === 'undefined') {
+    return
+  }
+  const path = window.location.pathname
+  if (
+    path.startsWith('/login') ||
+    path.startsWith('/erro/') ||
+    path.startsWith('/recuperar-senha') ||
+    path.startsWith('/nova-senha') ||
+    path.startsWith('/contato') ||
+    path.startsWith('/publico/')
+  ) {
+    return
+  }
+  window.location.assign('/erro/401')
+}
+
 async function refreshAccessToken(): Promise<boolean> {
   if (!refreshInFlight) {
     refreshInFlight = fetch('/auth/refresh', {
@@ -96,11 +114,13 @@ async function refreshAccessToken(): Promise<boolean> {
       .then(async (response) => {
         if (!response.ok) {
           authSession.setAccessToken(null)
+          redirecionarSessaoExpirada()
           return false
         }
         const body = (await response.json()) as { accessToken?: string }
         if (!body.accessToken) {
           authSession.setAccessToken(null)
+          redirecionarSessaoExpirada()
           return false
         }
         authSession.setAccessToken(body.accessToken)

@@ -35,23 +35,45 @@ vínculo usuário↔curso. Quando F7 existir:
 3. Continuar emitindo `_links` HATEOAS; a UI segue cega a perfil (`useActions`).
 4. Escopo por curso (coordenação/secretaria) entra com a tabela N:N de secretários.
 
-## Discrepâncias que permanecem (dívida consciente)
+## P0 demonstrável (fechamento)
+
+O P0 oficial (`docs/telas-figma.md`) mais o hospedeiro F3.2 (único jeito de provar a presença) está fechado ponta a ponta:
+
+| Fatia | Situação |
+|---|---|
+| `/login` + IAM | JWT RS256 15 min, refresh `so2_refresh` httpOnly Secure SameSite=Lax Path=/auth, Argon2id, anti-enumeração, primeiro acesso senha+LGPD (`6997339`) |
+| `/solicitacoes/nova` | Motor genérico `RequestType` + `form_schema` + `workflow_json` (`0e882d2`) |
+| `/inicio` | BFF `GET /bff/dashboard/aluno`, degradação por bloco, HTTP 200, `eventosHoje`/`proximosEventos` via porta no módulo `presenca`, `_links.novaSolicitacao` só com `request.open` |
+| Presença aluno | SECRET_SINGLE (`V005`), `/eventos`, Proof of Stay sem geofence |
+| Hospedeiro F3.2 | SECRET_SINGLE (`V006`), PIN em claro só na host-session (`HostPinPort` / `HostPinStore` em memória) |
+| F0.6 | `GET /publico/protocolos/{protocolo}` + UI loading / not-found / ok (hash truncado, sem PDF) |
+
+Sessão JWT que não é aluno: BFF devolve 403; `/inicio` mostra empty honesto, sem “Olá, aluno”. Deep link: login respeita `state.from` se a rota for interna segura. Refresh falho após 401 limpa o access token e vai para `/erro/401` (CTA “Fazer login”), não para `/inicio` anônimo.
+
+## Discrepâncias que permanecem (dívida consciente — não é P0)
 
 | Item | Spec | Situação | Ação |
 |---|---|---|---|
 | Linguagem do backend | Kotlin + Kotest + MockK | Java 21 + JUnit 5 | Migrar sem mudar contratos |
-| Motor de solicitações | RequestType + workflow | Inexistente | Depois do IAM |
-| Secretários do curso | RF-F5-004-a | Só `idCoordenador` + horas | Tabela N:N quando houver cadastro de usuários |
+| Horas formativas / certificados no `/inicio` | KPIs F1.1 | `null` (módulos inexistentes) | Não fingir número; entrar com os módulos |
+| F0.7 certificado público | Verificação de PDF/hash | `TelaPendente` | Módulo certificados |
+| F3.1 dashboard professor | BFF próprio | Ausente; `/inicio` 403 honesto | BFF professor |
+| QR / SECRET_DUAL / janela de saída | Presença v4.1 completa | Só SECRET_SINGLE | Fatias seguintes |
+| FGAC em `/academico/**` | `@PreAuthorize` | `permitAll` | Depois da matriz F7 |
+| Nav HATEOAS | UI cega a perfil | Atalhos de dev (Eventos prof., CRUD secretaria) | Esconder quando houver `_links` de menu |
+| Dispatcher de e-mail | Outbox → SMTP | Eventos ficam `PENDING` | Módulo comunicação / Outbox |
+| HostPin em memória | PIN na host-session | Some no restart da API | Persistência ou reabertura de janela |
+| Secretários do curso | RF-F5-004-a | Só `idCoordenador` + horas | Tabela N:N |
 | Config F6.1 | calendário, banca, regimento | Fora do CRUD de secretaria | Módulo coordenação |
 | Eventos de calendário | tipos semânticos em F5.9 | Só período letivo | Segunda aba quando o schema existir |
 | ArchUnit | regras de dependência | Não há teste | Adicionar no próximo módulo |
 | Ports com `Pageable` | domain/application puros | Ports importam Spring Data | Extrair paginações próprias na migração Kotlin |
-| Angular em `frontend/` | React oficial | Pasta legado travada | Apagar quando o `ng serve` soltar |
-| Dispatcher de e-mail | Outbox → SMTP | Eventos ficam `PENDING` | Módulo comunicação / Outbox |
+| Angular em `frontend/` | React oficial | Não é stack deste repo | Não recriar nem commitar |
 | Bucket4j + Redis | RNF-SEC-04 | Janela em memória no processo | Trocar quando houver Redis |
-| Cobertura 85/70/75 | RNF de testes | Ampliar com IAM | Continuar nos módulos seguintes |
+| Cobertura 85/70/75 | RNF de testes | Ampliar por módulo | Continuar nas fatias seguintes |
 
 Lombok: **conforme**. Zero ocorrências. Proibição registrada nas rules.
 Aluno sem `idade`: **conforme** (RF-F5-003).
-HATEOAS + `useActions`: **conforme** nas telas de CRUD.
-IAM / JWT / Argon2id: **entregue neste sprint** (CRUD acadêmico ainda sem FGAC).
+HATEOAS + `useActions`: **conforme** nas telas de dados (atalhos de nav de dev são dívida).
+IAM / JWT / Argon2id: **entregue** (CRUD acadêmico ainda sem FGAC).
+Motor de solicitações: **entregue** (`0e882d2`) — não está mais inexistente.

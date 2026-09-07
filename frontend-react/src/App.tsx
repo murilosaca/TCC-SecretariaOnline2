@@ -2,7 +2,13 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { RedirectIfAuthenticated, RequireAuth } from './auth/guards'
 import { AppLayout } from './layouts/AppLayout'
 import { AuthLayout } from './layouts/AuthLayout'
+import { Eventos } from './pages/aluno/Eventos'
+import { ProfessorEventoDetalhe } from './pages/professor/ProfessorEventoDetalhe'
+import { ProfessorEventoNova } from './pages/professor/ProfessorEventoNova'
+import { ProfessorEventoOperacao } from './pages/professor/ProfessorEventoOperacao'
+import { ProfessorEventos } from './pages/professor/ProfessorEventos'
 import { NovaSolicitacao } from './pages/aluno/NovaSolicitacao'
+import { PresencaEvento } from './pages/aluno/PresencaEvento'
 import { PrimeiroAcesso } from './pages/aluno/PrimeiroAcesso'
 import { SolicitacaoDetalhe } from './pages/aluno/SolicitacaoDetalhe'
 import { Solicitacoes } from './pages/aluno/Solicitacoes'
@@ -30,6 +36,7 @@ export default function App() {
         <Route path="nova-senha" element={<NovaSenha />} />
         <Route path="contato" element={<Contato />} />
         <Route path="erro/:codigo" element={<Erro />} />
+        <Route path="publico/verificar-protocolo" element={<VerificarProtocolo />} />
         <Route path="publico/verificar-protocolo/:id" element={<VerificarProtocolo />} />
         <Route path="publico/verificar-certificado/:hash" element={<VerificarCertificado />} />
       </Route>
@@ -40,6 +47,12 @@ export default function App() {
           <Route path="solicitacoes/nova" element={<NovaSolicitacao />} />
           <Route path="solicitacoes/:id" element={<SolicitacaoDetalhe />} />
           <Route path="solicitacoes" element={<Solicitacoes />} />
+          <Route path="eventos/:id/presenca" element={<PresencaEvento />} />
+          <Route path="eventos" element={<Eventos />} />
+          <Route path="professor/eventos/nova" element={<ProfessorEventoNova />} />
+          <Route path="professor/eventos/:id/operacao" element={<ProfessorEventoOperacao />} />
+          <Route path="professor/eventos/:id" element={<ProfessorEventoDetalhe />} />
+          <Route path="professor/eventos" element={<ProfessorEventos />} />
           <Route path="secretaria/cursos" element={<Cursos />} />
           <Route path="secretaria/disciplinas" element={<Disciplinas />} />
           <Route path="secretaria/alunos" element={<Alunos />} />

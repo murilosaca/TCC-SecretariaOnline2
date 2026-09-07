@@ -76,7 +76,6 @@ HATEOAS, Outbox, Proof of Stay, LGPD, SLA, RequestType, BFF, authority
 | Arquivos | S3-compatível (MinIO no dev) | ainda não |
 
 - Frontend oficial: `frontend-react`. Não reintroduza Angular.
-- `frontend/` é legado Angular a remover quando o processo `ng serve` soltar a pasta.
 - Sem Lombok no Java restante (decisão do time; a spec Kotlin não usa Lombok).
 - Não copiar o CRUD didático do legado (`idade` em Aluno, `ddl-auto=update`,
   senha hardcoded).

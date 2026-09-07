@@ -1,12 +1,17 @@
 import { FormEvent, useRef, useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { ApiError } from '../../api/client'
 import { useAuth } from '../../auth/AuthContext'
+import { destinoPosLogin } from '../../lib/destinoPosLogin'
+import { normalizarProtocolo, protocoloValido } from '../../lib/protocoloPublico'
 
 export function Login() {
   const { login } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [params] = useSearchParams()
+  const [protocolo, setProtocolo] = useState('')
+  const [erroProtocolo, setErroProtocolo] = useState<string | null>(null)
   const senhaRef = useRef<HTMLInputElement>(null)
   const [identificador, setIdentificador] = useState('')
   const [senha, setSenha] = useState('')
@@ -46,7 +51,8 @@ export function Login() {
     setEnviando(true)
     try {
       const result = await login(identificador.trim(), senha)
-      navigate(result.mustChangePassword ? '/primeiro-acesso' : '/inicio', { replace: true })
+      const from = (location.state as { from?: unknown } | null)?.from
+      navigate(destinoPosLogin(result.mustChangePassword, from), { replace: true })
     } catch (error) {
       setSenha('')
       if (error instanceof ApiError && error.status === 429) {
@@ -116,10 +122,42 @@ export function Login() {
           {enviando ? 'Entrando...' : 'Entrar'}
         </button>
       </form>
+      <form
+        className="panel auth-form"
+        onSubmit={(event) => {
+          event.preventDefault()
+          const valor = normalizarProtocolo(protocolo)
+          if (!protocoloValido(valor)) {
+            setErroProtocolo('Informe um protocolo no formato PROT-AAAA-NNNNN.')
+            return
+          }
+          setErroProtocolo(null)
+          navigate(`/publico/verificar-protocolo/${valor}`)
+        }}
+      >
+        <label>
+          Verificar protocolo
+          <input
+            name="protocolo"
+            placeholder="PROT-2026-00001"
+            value={protocolo}
+            onChange={(event) => setProtocolo(event.target.value)}
+            aria-invalid={Boolean(erroProtocolo)}
+          />
+          {erroProtocolo && <span className="field-error">{erroProtocolo}</span>}
+        </label>
+        <button type="submit">Consultar protocolo</button>
+        <p className="muted">
+          Em desenvolvimento, abra uma declaração simples em /solicitacoes/nova para obter um número
+          PROT-AAAA-NNNNN. Certificado digital (F0.7) ainda não está disponível.
+        </p>
+      </form>
       <p className="muted auth-links">
         <Link to="/contato">Contato</Link>
         {' · '}
-        <Link to="/publico/verificar-protocolo/demo">Verificar protocolo ou certificado</Link>
+        <Link to="/publico/verificar-protocolo">Verificar protocolo</Link>
+        {' · '}
+        <Link to="/publico/verificar-certificado/demo">Verificar certificado</Link>
       </p>
     </section>
   )

@@ -69,6 +69,8 @@ app:
     seed:
       enabled: ${IAM_DEV_SEED:true}
       password: ${IAM_DEV_SEED_PASSWORD:}
+  eventos:
+    dev-pin: ${EVENT_DEV_PIN:123456}
   contato:
     nome: ${APP_CONTATO_NOME:Secretaria SEPT — UFPR}
     endereco: ${APP_CONTATO_ENDERECO:Rua Dr. Alcides Vieira Arcoverde, 1225 — Jardim das Américas, Curitiba/PR}

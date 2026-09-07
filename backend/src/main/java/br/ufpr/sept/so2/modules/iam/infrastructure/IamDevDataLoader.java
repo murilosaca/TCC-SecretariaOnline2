@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Profile;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import java.time.OffsetDateTime;
@@ -18,6 +19,7 @@ import java.util.List;
 
 @Component
 @Profile("dev")
+@Order(10)
 public class IamDevDataLoader implements ApplicationRunner {
 
     private static final Logger LOG = LoggerFactory.getLogger(IamDevDataLoader.class);
@@ -54,7 +56,8 @@ public class IamDevDataLoader implements ApplicationRunner {
                 hash,
                 true,
                 agora,
-                agora
+                agora,
+                authoritiesAluno()
         );
         criarSeAusente(
                 "novo.dev@ufpr.br",
@@ -62,9 +65,19 @@ public class IamDevDataLoader implements ApplicationRunner {
                 hash,
                 false,
                 null,
-                agora
+                agora,
+                authoritiesAluno()
         );
-        LOG.info("Usuários de desenvolvimento IAM prontos (aluno.dev@ufpr.br / novo.dev@ufpr.br).");
+        criarSeAusente(
+                "professor.dev@ufpr.br",
+                "GRR20240003",
+                hash,
+                true,
+                agora,
+                agora,
+                authoritiesProfessor()
+        );
+        LOG.info("Usuários de desenvolvimento IAM prontos (aluno.dev / novo.dev / professor.dev).");
     }
 
     private void criarSeAusente(
@@ -73,15 +86,13 @@ public class IamDevDataLoader implements ApplicationRunner {
             String hash,
             boolean senhaAlterada,
             OffsetDateTime lgpd,
-            OffsetDateTime agora
+            OffsetDateTime agora,
+            List<String> authorities
     ) {
         var existente = usuarioRepository.findByEmail(email);
         if (existente.isPresent()) {
             Usuario usuario = existente.get();
-            if (usuario.concederAuthorities(
-                    List.of("dashboard.view_own", "request.view_own", "request.open"),
-                    agora
-            )) {
+            if (usuario.concederAuthorities(authorities, agora)) {
                 usuarioRepository.save(usuario);
             }
             return;
@@ -99,10 +110,28 @@ public class IamDevDataLoader implements ApplicationRunner {
                 true,
                 0,
                 null,
-                List.of("dashboard.view_own", "request.view_own", "request.open"),
+                authorities,
                 agora,
                 agora
         );
         usuarioRepository.save(usuario);
+    }
+
+    private static List<String> authoritiesAluno() {
+        return List.of(
+                "dashboard.view_own",
+                "request.view_own",
+                "request.open",
+                "attendance.view_open",
+                "attendance.check_in"
+        );
+    }
+
+    private static List<String> authoritiesProfessor() {
+        return List.of(
+                "dashboard.view_own",
+                "event.manage",
+                "event.host"
+        );
     }
 }

@@ -39,6 +39,7 @@ class CursoController(
         authentication: Authentication,
     ): PageResponse<CursoResponse> {
         val usuarioId = principal(authentication).userId
+        val cursoIds = cursoApplicationService.cursoIdsDoUsuario(usuarioId)
         val pagina = cursoApplicationService.listar(usuarioId, pageable)
         val secretarios = cursoApplicationService.secretariosPorCursos(pagina.content.map { it.id })
         return PageResponse.ofWithLinks(
@@ -47,7 +48,7 @@ class CursoController(
                 CursoResponse.from(
                     curso,
                     secretarios[curso.id].orEmpty(),
-                    cursoApplicationService.estaNoEscopo(usuarioId, curso.id),
+                    curso.id in cursoIds,
                 )
             },
             mapOf("criar" to "/academico/cursos"),

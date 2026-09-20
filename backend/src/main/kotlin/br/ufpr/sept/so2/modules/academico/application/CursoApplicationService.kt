@@ -1,13 +1,16 @@
 package br.ufpr.sept.so2.modules.academico.application
 
+import br.ufpr.sept.so2.modules.academico.application.ports.AlunoRepository
 import br.ufpr.sept.so2.modules.academico.application.ports.CursoEscopoPort
 import br.ufpr.sept.so2.modules.academico.application.ports.CursoRepository
 import br.ufpr.sept.so2.modules.academico.application.ports.CursoSecretarioRepository
+import br.ufpr.sept.so2.modules.academico.application.ports.DisciplinaRepository
 import br.ufpr.sept.so2.modules.academico.domain.Curso
 import br.ufpr.sept.so2.shared.domain.exception.ConflitoEstadoException
 import br.ufpr.sept.so2.shared.domain.exception.RecursoNaoEncontradoException
 import br.ufpr.sept.so2.shared.infrastructure.Uuids
 import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -20,6 +23,8 @@ class CursoApplicationService(
     private val cursoRepository: CursoRepository,
     private val cursoSecretarioRepository: CursoSecretarioRepository,
     private val cursoEscopoPort: CursoEscopoPort,
+    private val alunoRepository: AlunoRepository,
+    private val disciplinaRepository: DisciplinaRepository,
 ) {
     @Transactional(readOnly = true)
     fun listar(usuarioId: UUID, pageable: Pageable): Page<Curso> {
@@ -45,6 +50,9 @@ class CursoApplicationService(
     @Transactional(readOnly = true)
     fun estaNoEscopo(usuarioId: UUID, cursoId: UUID): Boolean =
         cursoId in cursoEscopoPort.cursoIdsDoUsuario(usuarioId)
+
+    @Transactional(readOnly = true)
+    fun cursoIdsDoUsuario(usuarioId: UUID): Set<UUID> = cursoEscopoPort.cursoIdsDoUsuario(usuarioId)
 
     fun criar(
         usuarioId: UUID,
@@ -118,6 +126,13 @@ class CursoApplicationService(
 
     fun excluir(id: UUID, usuarioId: UUID) {
         buscarPorId(id, usuarioId)
+        val temAlunos = alunoRepository.findByIdCursoIn(listOf(id)).isNotEmpty()
+        val temDisciplinas = disciplinaRepository.findAll(id, setOf(id), PageRequest.of(0, 1)).hasContent()
+        if (temAlunos || temDisciplinas) {
+            throw ConflitoEstadoException(
+                "Curso possui alunos ou disciplinas vinculados; desvincule antes de excluir.",
+            )
+        }
         cursoSecretarioRepository.deleteByCursoId(id)
         cursoRepository.deleteById(id)
     }

@@ -18,6 +18,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
@@ -309,6 +310,52 @@ class CursoControllerIT {
 
         mockMvc.perform(get(href).header("Authorization", "Bearer $token"))
             .andExpect(status().isOk)
+    }
+
+    @Test
+    fun excluirCursoComAlunoRetorna409ELiberaAposDesvincular() {
+        val token = login(EMAIL_SEC)
+        val (sigla, codigo) = codigoUnico("EX")
+        val created = mockMvc.perform(
+            post("/academico/cursos")
+                .header("Authorization", "Bearer $token")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(payloadCurso("Curso com dependente", sigla, codigo, emptyList())),
+        )
+            .andExpect(status().isCreated)
+            .andReturn()
+        val id = ItJson.text(created.response.contentAsString, "id")
+        val grr = "GRR20248" + (System.nanoTime() % 1000).toString().padStart(3, '0')
+        val email = "it.fgac.dep.${codigo.lowercase()}@ufpr.br"
+        val aluno = mockMvc.perform(
+            post("/academico/alunos")
+                .header("Authorization", "Bearer $token")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {
+                      "nome": "Aluno dependente",
+                      "grr": "$grr",
+                      "emailInstitucional": "$email",
+                      "idCurso": "$id",
+                      "situacao": "MATRICULADO"
+                    }
+                    """.trimIndent(),
+                ),
+        )
+            .andExpect(status().isCreated)
+            .andReturn()
+        val alunoId = ItJson.text(aluno.response.contentAsString, "id")
+
+        mockMvc.perform(delete("/academico/cursos/$id").header("Authorization", "Bearer $token"))
+            .andExpect(status().isConflict)
+            .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.containsString("conflict")))
+            .andExpect(jsonPath("$.detail").value(org.hamcrest.Matchers.containsString("alunos ou disciplinas")))
+
+        mockMvc.perform(delete("/academico/alunos/$alunoId").header("Authorization", "Bearer $token"))
+            .andExpect(status().isNoContent)
+        mockMvc.perform(delete("/academico/cursos/$id").header("Authorization", "Bearer $token"))
+            .andExpect(status().isNoContent)
     }
 
     @Test

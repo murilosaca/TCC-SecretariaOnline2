@@ -2,8 +2,10 @@ package br.ufpr.sept.so2.modules.academico.infrastructure.persistence
 
 import br.ufpr.sept.so2.modules.academico.application.ports.DisciplinaRepository
 import br.ufpr.sept.so2.modules.academico.domain.Disciplina
+import jakarta.persistence.criteria.Predicate
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
+import org.springframework.data.jpa.domain.Specification
 import org.springframework.stereotype.Component
 import java.util.UUID
 
@@ -24,13 +26,18 @@ class DisciplinaJpaAdapter(
         if (cursoIds != null && cursoIds.isEmpty()) {
             return Page.empty(pageable)
         }
-        if (idCurso != null) {
-            return jpaRepository.findByIdCurso(idCurso, pageable).map { it.toDomain() }
+        val spec = Specification<DisciplinaJpaEntity> { root, _, cb ->
+            val predicates = buildList<Predicate> {
+                if (idCurso != null) {
+                    add(cb.equal(root.get<UUID>("idCurso"), idCurso))
+                }
+                if (cursoIds != null) {
+                    add(root.get<UUID>("idCurso").`in`(cursoIds))
+                }
+            }
+            cb.and(*predicates.toTypedArray())
         }
-        if (cursoIds != null) {
-            return jpaRepository.findByIdCursoIn(cursoIds, pageable).map { it.toDomain() }
-        }
-        return jpaRepository.findAll(pageable).map { it.toDomain() }
+        return jpaRepository.findAll(spec, pageable).map { it.toDomain() }
     }
 
     override fun existsByCursoAndCodigo(idCurso: UUID, codigo: String): Boolean =

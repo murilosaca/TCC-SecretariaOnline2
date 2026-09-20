@@ -52,12 +52,25 @@ class SolicitacaoJpaAdapter(
         somenteAtraso: Boolean,
         agora: OffsetDateTime,
         pageable: Pageable,
+        solicitanteIds: Collection<UUID>?,
     ): Page<Solicitacao> {
         if (estados.isEmpty()) {
             return Page.empty(pageable)
         }
-        return jpaRepository.findParaDeliberar(estados.toList(), tipoCodigo, somenteAtraso, agora, pageable)
-            .map(SolicitacaoJpaEntity::toDomainSemEventos)
+        if (solicitanteIds != null && solicitanteIds.isEmpty()) {
+            return Page.empty(pageable)
+        }
+        val filtrar = solicitanteIds != null
+        val ids = solicitanteIds?.toList() ?: listOf(UUID(0, 0))
+        return jpaRepository.findParaDeliberar(
+            estados.toList(),
+            tipoCodigo,
+            somenteAtraso,
+            agora,
+            filtrar,
+            ids,
+            pageable,
+        ).map(SolicitacaoJpaEntity::toDomainSemEventos)
     }
 
     private fun carregar(id: UUID): Optional<Solicitacao> =

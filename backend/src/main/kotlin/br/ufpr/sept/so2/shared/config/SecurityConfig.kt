@@ -141,11 +141,10 @@ class SecurityConfig(
                     .requestMatchers("/events", "/events/**").authenticated()
                     .requestMatchers("/formativas", "/formativas/**").authenticated()
                     .requestMatchers("/certificates", "/certificates/**").authenticated()
+                    .requestMatchers("/academico", "/academico/**").authenticated()
                     .requestMatchers("/.well-known/**").permitAll()
                     .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                    // CRUD acadêmico permanece aberto até o FGAC (F7) ter usuários/capabilities.
-                    // Ver docs/auditoria-fundacao.md — plano @PreAuthorize.
-                    .anyRequest().permitAll()
+                    .anyRequest().authenticated()
             }
             .addFilterBefore(authRateLimitFilter, UsernamePasswordAuthenticationFilter::class.java)
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter::class.java)

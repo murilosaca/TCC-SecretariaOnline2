@@ -19,8 +19,13 @@ data class PeriodoLetivoResponse(
     val links: Map<String, String>,
 ) {
     companion object {
-        fun from(periodo: PeriodoLetivo): PeriodoLetivoResponse {
+        fun from(periodo: PeriodoLetivo, podeGerenciar: Boolean): PeriodoLetivoResponse {
             val base = "/academico/periodos/${periodo.id}"
+            val links = linkedMapOf("self" to base)
+            if (podeGerenciar) {
+                links["atualizar"] = base
+                links["excluir"] = base
+            }
             return PeriodoLetivoResponse(
                 id = periodo.id,
                 ano = periodo.ano,
@@ -30,11 +35,7 @@ data class PeriodoLetivoResponse(
                 ativo = periodo.ativo,
                 createdAt = periodo.createdAt,
                 updatedAt = periodo.updatedAt,
-                links = mapOf(
-                    "self" to base,
-                    "atualizar" to base,
-                    "excluir" to base,
-                ),
+                links = links,
             )
         }
     }

@@ -15,7 +15,9 @@ interface AlunoRepository {
 
     fun findByEmailInstitucional(email: String): Optional<Aluno>
 
-    fun findAll(idCurso: UUID?, termo: String?, pageable: Pageable): Page<Aluno>
+    fun findAll(idCurso: UUID?, termo: String?, cursoIds: Collection<UUID>?, pageable: Pageable): Page<Aluno>
+
+    fun findByIdCursoIn(cursoIds: Collection<UUID>): List<Aluno>
 
     fun existsByGrr(grr: String): Boolean
 

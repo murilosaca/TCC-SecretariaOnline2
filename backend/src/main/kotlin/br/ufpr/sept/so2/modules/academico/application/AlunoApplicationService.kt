@@ -1,6 +1,7 @@
 package br.ufpr.sept.so2.modules.academico.application
 
 import br.ufpr.sept.so2.modules.academico.application.ports.AlunoRepository
+import br.ufpr.sept.so2.modules.academico.application.ports.CursoEscopoPort
 import br.ufpr.sept.so2.modules.academico.application.ports.CursoRepository
 import br.ufpr.sept.so2.modules.academico.domain.Aluno
 import br.ufpr.sept.so2.modules.academico.domain.AlunoSituacao
@@ -21,17 +22,32 @@ import java.util.UUID
 class AlunoApplicationService(
     private val alunoRepository: AlunoRepository,
     private val cursoRepository: CursoRepository,
+    private val cursoEscopoPort: CursoEscopoPort,
 ) {
     @Transactional(readOnly = true)
-    fun listar(idCurso: UUID?, termo: String?, pageable: Pageable): Page<Aluno> =
-        alunoRepository.findAll(idCurso, termo, pageable)
+    fun listar(usuarioId: UUID, idCurso: UUID?, termo: String?, pageable: Pageable): Page<Aluno> {
+        val cursoIds = cursoEscopoPort.cursoIdsDoUsuario(usuarioId)
+        val filtroCurso = when {
+            idCurso == null -> cursoIds
+            idCurso in cursoIds -> setOf(idCurso)
+            else -> emptySet()
+        }
+        return alunoRepository.findAll(idCurso?.takeIf { it in cursoIds }, termo, filtroCurso, pageable)
+    }
 
     @Transactional(readOnly = true)
-    fun buscarPorId(id: UUID): Aluno =
-        alunoRepository.findById(id)
-            .orElseThrow { RecursoNaoEncontradoException("Aluno não encontrado: $id") }
+    fun buscarPorId(id: UUID, usuarioId: UUID): Aluno {
+        val aluno = alunoRepository.findById(id)
+            .orElseThrow { RecursoNaoEncontradoException("Aluno não encontrado.") }
+        exigirCursoNoEscopo(usuarioId, aluno.idCurso)
+        return aluno
+    }
+
+    @Transactional(readOnly = true)
+    fun cursoIdsDoUsuario(usuarioId: UUID): Set<UUID> = cursoEscopoPort.cursoIdsDoUsuario(usuarioId)
 
     fun criar(
+        usuarioId: UUID,
         nome: String,
         nomeSocial: String?,
         grr: String,
@@ -41,8 +57,9 @@ class AlunoApplicationService(
         idCurso: UUID,
         situacao: AlunoSituacao?,
     ): Aluno {
+        exigirCursoNoEscopo(usuarioId, idCurso)
         cursoRepository.findById(idCurso)
-            .orElseThrow { RecursoNaoEncontradoException("Curso não encontrado: $idCurso") }
+            .orElseThrow { RecursoNaoEncontradoException("Curso não encontrado.") }
         val grrVo = Grr.of(grr)
         val institucional = Email.of(emailInstitucional)
         if (alunoRepository.existsByGrr(grrVo.value)) {
@@ -71,6 +88,7 @@ class AlunoApplicationService(
 
     fun atualizar(
         id: UUID,
+        usuarioId: UUID,
         nome: String?,
         nomeSocial: String?,
         emailPessoal: String?,
@@ -79,18 +97,25 @@ class AlunoApplicationService(
         situacao: AlunoSituacao?,
         ativo: Boolean?,
     ): Aluno {
-        val aluno = buscarPorId(id)
+        val aluno = buscarPorId(id, usuarioId)
         if (idCurso != null) {
+            exigirCursoNoEscopo(usuarioId, idCurso)
             cursoRepository.findById(idCurso)
-                .orElseThrow { RecursoNaoEncontradoException("Curso não encontrado: $idCurso") }
+                .orElseThrow { RecursoNaoEncontradoException("Curso não encontrado.") }
         }
         val pessoal = emailPessoal?.takeIf { it.isNotBlank() }?.let { Email.of(it) }
         aluno.atualizar(nome, nomeSocial, pessoal, telefone, idCurso, situacao, ativo)
         return alunoRepository.save(aluno)
     }
 
-    fun excluir(id: UUID) {
-        buscarPorId(id)
+    fun excluir(id: UUID, usuarioId: UUID) {
+        buscarPorId(id, usuarioId)
         alunoRepository.deleteById(id)
+    }
+
+    private fun exigirCursoNoEscopo(usuarioId: UUID, idCurso: UUID) {
+        if (idCurso !in cursoEscopoPort.cursoIdsDoUsuario(usuarioId)) {
+            throw RecursoNaoEncontradoException("Aluno não encontrado.")
+        }
     }
 }

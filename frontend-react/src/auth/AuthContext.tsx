@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { authApi, type LoginResponse } from '../api/auth'
+import type { HateoasLinks } from '../models/academico'
 import { authSession } from './session'
 
 type Status = 'loading' | 'anonymous' | 'authenticated'
@@ -8,6 +9,7 @@ type AuthContextValue = {
   status: Status
   mustChangePassword: boolean
   authorities: string[]
+  links: HateoasLinks
   login: (identificador: string, senha: string) => Promise<LoginResponse>
   logout: () => Promise<void>
   completeFirstAccess: (novaSenha: string) => Promise<void>
@@ -19,6 +21,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<Status>('loading')
   const [mustChangePassword, setMustChangePassword] = useState(false)
   const [authorities, setAuthorities] = useState<string[]>([])
+  const [links, setLinks] = useState<HateoasLinks>({})
 
   const applySession = useCallback(async (accessToken: string, mustChange: boolean) => {
     authSession.setAccessToken(accessToken)
@@ -27,8 +30,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const me = await authApi.me()
       setMustChangePassword(me.mustChangePassword)
       setAuthorities(me.authorities)
+      setLinks(me._links ?? {})
     } catch {
       setAuthorities([])
+      setLinks({})
     }
     setStatus('authenticated')
   }, [])
@@ -70,6 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       authSession.setAccessToken(null)
       setAuthorities([])
+      setLinks({})
       setMustChangePassword(false)
       setStatus('anonymous')
     }
@@ -81,8 +87,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const value = useMemo(
-    () => ({ status, mustChangePassword, authorities, login, logout, completeFirstAccess }),
-    [status, mustChangePassword, authorities, login, logout, completeFirstAccess],
+    () => ({ status, mustChangePassword, authorities, links, login, logout, completeFirstAccess }),
+    [status, mustChangePassword, authorities, links, login, logout, completeFirstAccess],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

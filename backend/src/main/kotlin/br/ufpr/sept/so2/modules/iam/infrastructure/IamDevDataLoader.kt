@@ -69,7 +69,18 @@ class IamDevDataLoader(
             agora,
             authoritiesCaaf(),
         )
-        LOG.info("Usuários de desenvolvimento IAM prontos (aluno.dev / novo.dev / professor.dev / caaf.dev).")
+        criarSeAusente(
+            "secretaria.dev@ufpr.br",
+            "GRR20240005",
+            hash,
+            true,
+            agora,
+            agora,
+            authoritiesSecretaria(),
+        )
+        LOG.info(
+            "Usuários de desenvolvimento IAM prontos (aluno.dev / novo.dev / professor.dev / caaf.dev / secretaria.dev).",
+        )
     }
 
     private fun criarSeAusente(
@@ -136,6 +147,17 @@ class IamDevDataLoader(
             listOf(
                 "dashboard.view_own",
                 "formative.review",
+            )
+
+        private fun authoritiesSecretaria(): List<String> =
+            listOf(
+                "course.manage",
+                "subject.manage",
+                "user.manage_students",
+                "calendar.manage",
+                "request.view_curso",
+                "request.triage",
+                "request.deliberate",
             )
     }
 }

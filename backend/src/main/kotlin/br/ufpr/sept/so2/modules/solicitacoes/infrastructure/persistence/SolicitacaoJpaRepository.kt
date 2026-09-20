@@ -36,6 +36,7 @@ interface SolicitacaoJpaRepository : JpaRepository<SolicitacaoJpaEntity, UUID> {
             WHERE s.estado IN :estados
               AND (:tipoCodigo IS NULL OR s.tipoCodigo = :tipoCodigo)
               AND (:somenteAtraso = false OR s.prazoEm < :agora)
+              AND (:filtrarSolicitantes = false OR s.solicitanteId IN :solicitanteIds)
             """,
     )
     fun findParaDeliberar(
@@ -43,6 +44,8 @@ interface SolicitacaoJpaRepository : JpaRepository<SolicitacaoJpaEntity, UUID> {
         @Param("tipoCodigo") tipoCodigo: String?,
         @Param("somenteAtraso") somenteAtraso: Boolean,
         @Param("agora") agora: OffsetDateTime,
+        @Param("filtrarSolicitantes") filtrarSolicitantes: Boolean,
+        @Param("solicitanteIds") solicitanteIds: Collection<UUID>,
         pageable: Pageable,
     ): Page<SolicitacaoJpaEntity>
 }

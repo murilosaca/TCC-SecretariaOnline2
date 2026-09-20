@@ -4,7 +4,14 @@ import { academicoApi } from '../../api/academico'
 import { useActions } from '../../hooks/useActions'
 import type { Curso } from '../../models/academico'
 
-const vazio = { nome: '', sigla: '', codigo: '', horasFormativasMinimas: 120 }
+const vazio = { nome: '', sigla: '', codigo: '', horasFormativasMinimas: 120, secretariosIds: '' }
+
+function parseSecretarios(raw: string): string[] {
+  return raw
+    .split(/[,;\s]+/)
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0)
+}
 
 export function Cursos() {
   const queryClient = useQueryClient()
@@ -16,10 +23,20 @@ export function Cursos() {
     queryKey: ['cursos'],
     queryFn: () => academicoApi.listarCursos(),
   })
+  const colecao = useActions(lista.data?._links)
+  const mostrarForm = editandoId != null || colecao.can('criar')
 
   const salvar = useMutation({
-    mutationFn: () =>
-      editandoId ? academicoApi.atualizarCurso(editandoId, form) : academicoApi.criarCurso(form),
+    mutationFn: () => {
+      const body = {
+        nome: form.nome,
+        sigla: form.sigla,
+        codigo: form.codigo,
+        horasFormativasMinimas: form.horasFormativasMinimas,
+        secretariosIds: parseSecretarios(form.secretariosIds),
+      }
+      return editandoId ? academicoApi.atualizarCurso(editandoId, body) : academicoApi.criarCurso(body)
+    },
     onSuccess: () => {
       setForm(vazio)
       setEditandoId(null)
@@ -46,6 +63,7 @@ export function Cursos() {
       sigla: curso.sigla,
       codigo: curso.codigo,
       horasFormativasMinimas: curso.horasFormativasMinimas,
+      secretariosIds: (curso.secretariosIds ?? []).join(', '),
     })
   }
 
@@ -63,46 +81,56 @@ export function Cursos() {
           </button>
         </div>
       )}
-      <form className="panel" onSubmit={onSubmit}>
-        <h2>{editandoId ? 'Editar curso' : 'Novo curso'}</h2>
-        <div className="grid">
-          <label>
-            Nome
-            <input value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} required />
-          </label>
-          <label>
-            Sigla
-            <input value={form.sigla} onChange={(e) => setForm({ ...form, sigla: e.target.value })} required />
-          </label>
-          <label>
-            Código
-            <input value={form.codigo} onChange={(e) => setForm({ ...form, codigo: e.target.value })} required />
-          </label>
-          <label>
-            Horas formativas mínimas
-            <input
-              type="number"
-              value={form.horasFormativasMinimas}
-              onChange={(e) => setForm({ ...form, horasFormativasMinimas: Number(e.target.value) })}
-            />
-          </label>
-        </div>
-        <button type="submit" disabled={salvar.isPending}>
-          Salvar
-        </button>
-        {editandoId && (
-          <button
-            type="button"
-            className="ghost"
-            onClick={() => {
-              setEditandoId(null)
-              setForm(vazio)
-            }}
-          >
-            Cancelar
+      {mostrarForm && (
+        <form className="panel" onSubmit={onSubmit}>
+          <h2>{editandoId ? 'Editar curso' : 'Novo curso'}</h2>
+          <div className="grid">
+            <label>
+              Nome
+              <input value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} required />
+            </label>
+            <label>
+              Sigla
+              <input value={form.sigla} onChange={(e) => setForm({ ...form, sigla: e.target.value })} required />
+            </label>
+            <label>
+              Código
+              <input value={form.codigo} onChange={(e) => setForm({ ...form, codigo: e.target.value })} required />
+            </label>
+            <label>
+              Horas formativas mínimas
+              <input
+                type="number"
+                value={form.horasFormativasMinimas}
+                onChange={(e) => setForm({ ...form, horasFormativasMinimas: Number(e.target.value) })}
+              />
+            </label>
+            <label>
+              Secretários (UUIDs)
+              <input
+                value={form.secretariosIds}
+                onChange={(e) => setForm({ ...form, secretariosIds: e.target.value })}
+                placeholder="uuid, uuid"
+              />
+            </label>
+          </div>
+          <button type="submit" disabled={salvar.isPending}>
+            Salvar
           </button>
-        )}
-      </form>
+          {editandoId && (
+            <button
+              type="button"
+              className="ghost"
+              onClick={() => {
+                setEditandoId(null)
+                setForm(vazio)
+              }}
+            >
+              Cancelar
+            </button>
+          )}
+        </form>
+      )}
       {lista.isLoading && <p className="muted">Carregando cursos…</p>}
       {lista.data && lista.data.content.length === 0 && <p className="empty">Nenhum curso cadastrado.</p>}
       {lista.data && lista.data.content.length > 0 && (
@@ -113,6 +141,7 @@ export function Cursos() {
               <th>Nome</th>
               <th>Código</th>
               <th>Horas</th>
+              <th>Secretários</th>
               <th></th>
             </tr>
           </thead>
@@ -142,12 +171,14 @@ function CursoLinha({
   onExcluir: () => void
 }) {
   const actions = useActions(curso._links)
+  const secretarios = curso.secretariosIds?.length ?? 0
   return (
     <tr>
       <td>{curso.sigla}</td>
       <td>{curso.nome}</td>
       <td>{curso.codigo}</td>
       <td>{curso.horasFormativasMinimas}</td>
+      <td>{secretarios}</td>
       <td className="actions">
         {actions.can('atualizar') && (
           <button type="button" className="ghost" onClick={() => onEditar(curso)}>

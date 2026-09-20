@@ -1,3 +1,4 @@
+import type { HateoasLinks } from '../models/academico'
 import { api } from './client'
 
 export type LoginResponse = {
@@ -11,6 +12,7 @@ export type Sessao = {
   id: string
   mustChangePassword: boolean
   authorities: string[]
+  _links?: HateoasLinks
 }
 
 export const authApi = {

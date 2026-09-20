@@ -27,12 +27,14 @@ class DeliberarSolicitacaoUseCase(
     private val validarTokenDeliberacaoUseCase: ValidarTokenDeliberacaoUseCase,
     private val jtiBlacklistRepository: JtiBlacklistRepository,
     private val iamSettings: IamSettings,
+    private val solicitacaoCursoEscopo: SolicitacaoCursoEscopo,
 ) {
 
     @Transactional
     fun execute(
         solicitacaoId: UUID,
         atorId: UUID,
+        authorities: List<String>,
         acao: String?,
         parecer: String?,
         ip: String?,
@@ -41,6 +43,11 @@ class DeliberarSolicitacaoUseCase(
         val tokenClaims = validarTokenDeliberacaoUseCase.execute(deepLinkToken, solicitacaoId, atorId)
         val solicitacao = solicitacaoRepository.findById(solicitacaoId)
             .orElseThrow { RecursoNaoEncontradoException("Solicitação não encontrada.") }
+        if (authorities.contains(AUTHORITY_VIEW_CURSO) &&
+            !solicitacaoCursoEscopo.solicitanteNoEscopo(atorId, solicitacao.solicitanteId)
+        ) {
+            throw RecursoNaoEncontradoException("Solicitação não encontrada.")
+        }
         val workflow = workflowJsonParser.parse(solicitacao.workflowSnapshot)
         val acaoResolvida = workflow.resolverAcao(solicitacao.estado, acao)
         if (acaoResolvida !in WorkflowDefinicao.ACOES_DELIBERATIVAS) {
@@ -88,6 +95,7 @@ class DeliberarSolicitacaoUseCase(
     }
 
     companion object {
+        const val AUTHORITY_VIEW_CURSO = "request.view_curso"
         private const val PARECER_INDEFER_MIN = 20
 
         private fun validarParecer(acao: String, parecer: String) {

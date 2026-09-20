@@ -8,5 +8,7 @@ import java.util.UUID
 interface DisciplinaJpaRepository : JpaRepository<DisciplinaJpaEntity, UUID> {
     fun findByIdCurso(idCurso: UUID, pageable: Pageable): Page<DisciplinaJpaEntity>
 
+    fun findByIdCursoIn(cursoIds: Collection<UUID>, pageable: Pageable): Page<DisciplinaJpaEntity>
+
     fun existsByIdCursoAndCodigoIgnoreCase(idCurso: UUID, codigo: String): Boolean
 }

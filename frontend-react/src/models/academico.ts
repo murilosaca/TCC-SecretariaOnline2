@@ -19,6 +19,7 @@ export interface Curso {
   sigla: string
   codigo: string
   idCoordenador?: string | null
+  secretariosIds?: string[]
   horasFormativasMinimas: number
   ativo: boolean
   _links?: HateoasLinks
@@ -29,6 +30,8 @@ export interface CursoRequest {
   sigla: string
   codigo: string
   horasFormativasMinimas: number
+  secretariosIds?: string[]
+  idCoordenador?: string | null
   ativo?: boolean
 }
 

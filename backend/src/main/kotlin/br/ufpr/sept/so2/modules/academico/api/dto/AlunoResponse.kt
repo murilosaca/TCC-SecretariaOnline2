@@ -23,8 +23,13 @@ data class AlunoResponse(
     val links: Map<String, String>,
 ) {
     companion object {
-        fun from(aluno: Aluno): AlunoResponse {
+        fun from(aluno: Aluno, podeGerenciar: Boolean): AlunoResponse {
             val base = "/academico/alunos/${aluno.id}"
+            val links = linkedMapOf("self" to base)
+            if (podeGerenciar) {
+                links["atualizar"] = base
+                links["excluir"] = base
+            }
             return AlunoResponse(
                 id = aluno.id,
                 nome = aluno.nome,
@@ -38,7 +43,7 @@ data class AlunoResponse(
                 ativo = aluno.ativo,
                 createdAt = aluno.createdAt,
                 updatedAt = aluno.updatedAt,
-                links = mapOf("self" to base, "atualizar" to base, "excluir" to base),
+                links = links,
             )
         }
     }

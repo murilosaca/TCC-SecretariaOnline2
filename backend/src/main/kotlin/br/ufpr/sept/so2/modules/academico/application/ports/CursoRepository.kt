@@ -19,5 +19,9 @@ interface CursoRepository {
 
     fun findByCodigo(codigo: String): Optional<Curso>
 
+    fun findAllByIds(ids: Collection<UUID>, pageable: Pageable): Page<Curso>
+
+    fun findIdsByCoordenador(idCoordenador: UUID): Set<UUID>
+
     fun deleteById(id: UUID)
 }

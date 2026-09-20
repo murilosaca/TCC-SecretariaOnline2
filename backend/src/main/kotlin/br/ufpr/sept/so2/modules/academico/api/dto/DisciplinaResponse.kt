@@ -20,8 +20,13 @@ data class DisciplinaResponse(
     val links: Map<String, String>,
 ) {
     companion object {
-        fun from(disciplina: Disciplina): DisciplinaResponse {
+        fun from(disciplina: Disciplina, podeGerenciar: Boolean): DisciplinaResponse {
             val base = "/academico/disciplinas/${disciplina.id}"
+            val links = linkedMapOf("self" to base)
+            if (podeGerenciar) {
+                links["atualizar"] = base
+                links["excluir"] = base
+            }
             return DisciplinaResponse(
                 id = disciplina.id,
                 idCurso = disciplina.idCurso,
@@ -33,7 +38,7 @@ data class DisciplinaResponse(
                 ativa = disciplina.ativa,
                 createdAt = disciplina.createdAt,
                 updatedAt = disciplina.updatedAt,
-                links = mapOf("self" to base, "atualizar" to base, "excluir" to base),
+                links = links,
             )
         }
     }

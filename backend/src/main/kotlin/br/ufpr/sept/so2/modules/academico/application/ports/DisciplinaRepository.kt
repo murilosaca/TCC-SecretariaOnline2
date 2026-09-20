@@ -10,7 +10,7 @@ interface DisciplinaRepository {
 
     fun findById(id: UUID): Disciplina?
 
-    fun findAll(idCurso: UUID?, pageable: Pageable): Page<Disciplina>
+    fun findAll(idCurso: UUID?, cursoIds: Collection<UUID>?, pageable: Pageable): Page<Disciplina>
 
     fun existsByCursoAndCodigo(idCurso: UUID, codigo: String): Boolean
 

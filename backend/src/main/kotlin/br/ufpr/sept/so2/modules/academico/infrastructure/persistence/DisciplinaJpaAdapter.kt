@@ -20,12 +20,18 @@ class DisciplinaJpaAdapter(
     override fun findById(id: UUID): Disciplina? =
         jpaRepository.findById(id).map { it.toDomain() }.orElse(null)
 
-    override fun findAll(idCurso: UUID?, pageable: Pageable): Page<Disciplina> =
-        if (idCurso == null) {
-            jpaRepository.findAll(pageable).map { it.toDomain() }
-        } else {
-            jpaRepository.findByIdCurso(idCurso, pageable).map { it.toDomain() }
+    override fun findAll(idCurso: UUID?, cursoIds: Collection<UUID>?, pageable: Pageable): Page<Disciplina> {
+        if (cursoIds != null && cursoIds.isEmpty()) {
+            return Page.empty(pageable)
         }
+        if (idCurso != null) {
+            return jpaRepository.findByIdCurso(idCurso, pageable).map { it.toDomain() }
+        }
+        if (cursoIds != null) {
+            return jpaRepository.findByIdCursoIn(cursoIds, pageable).map { it.toDomain() }
+        }
+        return jpaRepository.findAll(pageable).map { it.toDomain() }
+    }
 
     override fun existsByCursoAndCodigo(idCurso: UUID, codigo: String): Boolean =
         jpaRepository.existsByIdCursoAndCodigoIgnoreCase(idCurso, codigo)

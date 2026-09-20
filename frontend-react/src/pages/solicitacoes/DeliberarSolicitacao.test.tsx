@@ -9,6 +9,7 @@ vi.mock('../../auth/AuthContext', () => ({
     status: 'anonymous',
     mustChangePassword: false,
     authorities: [],
+    links: {},
     login: vi.fn(),
     logout: vi.fn(),
     completeFirstAccess: vi.fn(),

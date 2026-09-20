@@ -1,4 +1,4 @@
-package br.ufpr.sept.so2.modules.academico.api
+package br.ufpr.sept.so2.modules.iam.api
 
 import br.ufpr.sept.so2.modules.iam.application.ports.PasswordHasher
 import br.ufpr.sept.so2.modules.iam.application.ports.UsuarioRepository
@@ -23,7 +23,7 @@ import java.time.OffsetDateTime
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-class PeriodoLetivoControllerIT {
+class AuthMeLinksIT {
     @Autowired
     private lateinit var mockMvc: MockMvc
 
@@ -38,77 +38,55 @@ class PeriodoLetivoControllerIT {
         val agora = OffsetDateTime.now()
         criarUsuario(
             EMAIL_SEC,
-            "GRR20247111",
-            listOf("calendar.manage"),
+            "GRR20247131",
+            listOf(
+                "course.manage",
+                "subject.manage",
+                "user.manage_students",
+                "calendar.manage",
+                "request.view_curso",
+                "request.triage",
+                "request.deliberate",
+            ),
             agora,
         )
         criarUsuario(
             EMAIL_ALUNO,
-            "GRR20247112",
-            listOf("dashboard.view_own", "request.view_own"),
+            "GRR20247132",
+            listOf(
+                "dashboard.view_own",
+                "request.view_own",
+                "request.open",
+                "attendance.view_open",
+                "formative.view_own",
+                "certificate.view_own",
+            ),
             agora,
         )
     }
 
     @Test
-    fun semBearerRetorna401() {
-        mockMvc.perform(get("/academico/periodos"))
-            .andExpect(status().isUnauthorized)
-            .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.containsString("authentication-required")))
-    }
-
-    @Test
-    fun alunoRecebe403() {
-        val token = login(EMAIL_ALUNO)
-        mockMvc.perform(get("/academico/periodos").header("Authorization", "Bearer $token"))
-            .andExpect(status().isForbidden)
-            .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.containsString("access-denied")))
-    }
-
-    @Test
-    fun criaListaERecusaSobreposicao() {
+    fun meSecretariaTemCursosENaoTemRevisaoCaaf() {
         val token = login(EMAIL_SEC)
-        mockMvc.perform(
-            post("/academico/periodos")
-                .header("Authorization", "Bearer $token")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(
-                    """
-                    {
-                      "ano": 2033,
-                      "semestre": 1,
-                      "inicio": "2033-02-01",
-                      "fim": "2033-07-15"
-                    }
-                    """.trimIndent(),
-                ),
-        )
-            .andExpect(status().isCreated)
-            .andExpect(jsonPath("$.semestre").value(1))
-            .andExpect(jsonPath("$._links.self").exists())
-            .andExpect(jsonPath("$._links.atualizar").exists())
-
-        mockMvc.perform(
-            post("/academico/periodos")
-                .header("Authorization", "Bearer $token")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(
-                    """
-                    {
-                      "ano": 2033,
-                      "semestre": 2,
-                      "inicio": "2033-07-01",
-                      "fim": "2033-12-20"
-                    }
-                    """.trimIndent(),
-                ),
-        )
-            .andExpect(status().isConflict)
-
-        mockMvc.perform(get("/academico/periodos").header("Authorization", "Bearer $token"))
+        mockMvc.perform(get("/auth/me").header("Authorization", "Bearer $token"))
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$._links.criar").value("/academico/periodos"))
-            .andExpect(jsonPath("$.content[*].ano").value(org.hamcrest.Matchers.hasItem(2033)))
+            .andExpect(jsonPath("$._links.inicio").value("/inicio"))
+            .andExpect(jsonPath("$._links.cursos").value("/secretaria/cursos"))
+            .andExpect(jsonPath("$._links.alunos").value("/secretaria/alunos"))
+            .andExpect(jsonPath("$._links.contato").value("/contato"))
+            .andExpect(jsonPath("$._links['revisao-caaf']").doesNotExist())
+            .andExpect(jsonPath("$._links.formativas").doesNotExist())
+    }
+
+    @Test
+    fun meAlunoTemFormativasENaoTemCursos() {
+        val token = login(EMAIL_ALUNO)
+        mockMvc.perform(get("/auth/me").header("Authorization", "Bearer $token"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$._links.formativas").value("/formativas"))
+            .andExpect(jsonPath("$._links.certificados").value("/certificados"))
+            .andExpect(jsonPath("$._links.cursos").doesNotExist())
+            .andExpect(jsonPath("$._links.deliberar").doesNotExist())
     }
 
     private fun criarUsuario(email: String, grr: String, authorities: List<String>, agora: OffsetDateTime) {
@@ -149,8 +127,8 @@ class PeriodoLetivoControllerIT {
 
     companion object {
         private const val SENHA = "TroqueEstaSenha1!"
-        private const val EMAIL_SEC = "it.fgac.cal@ufpr.br"
-        private const val EMAIL_ALUNO = "it.fgac.cal.aluno@ufpr.br"
+        private const val EMAIL_SEC = "it.fgac.me.sec@ufpr.br"
+        private const val EMAIL_ALUNO = "it.fgac.me.aluno@ufpr.br"
 
         private fun extract(json: String, startToken: String, endToken: String): String {
             val start = json.indexOf(startToken)

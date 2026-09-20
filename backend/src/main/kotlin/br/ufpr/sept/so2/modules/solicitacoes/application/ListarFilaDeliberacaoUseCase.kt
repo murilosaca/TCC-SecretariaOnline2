@@ -11,6 +11,7 @@ import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.OffsetDateTime
+import java.util.UUID
 
 @Service
 class ListarFilaDeliberacaoUseCase(
@@ -20,7 +21,12 @@ class ListarFilaDeliberacaoUseCase(
 ) {
 
     @Transactional(readOnly = true)
-    fun execute(tipoCodigo: String?, somenteAtraso: Boolean, pageable: Pageable): Page<Solicitacao> {
+    fun execute(
+        tipoCodigo: String?,
+        somenteAtraso: Boolean,
+        pageable: Pageable,
+        solicitanteIds: Collection<UUID>? = null,
+    ): Page<Solicitacao> {
         val estados = estadosDeliberaveis()
         if (estados.isEmpty()) {
             return Page.empty(limitar(pageable))
@@ -31,6 +37,7 @@ class ListarFilaDeliberacaoUseCase(
             somenteAtraso,
             OffsetDateTime.now(),
             limitar(pageable),
+            solicitanteIds,
         )
     }
 

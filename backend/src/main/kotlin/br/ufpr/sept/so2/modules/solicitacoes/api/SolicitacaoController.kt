@@ -9,6 +9,7 @@ import br.ufpr.sept.so2.modules.solicitacoes.application.DeliberarSolicitacaoUse
 import br.ufpr.sept.so2.modules.solicitacoes.application.ListarFilaDeliberacaoUseCase
 import br.ufpr.sept.so2.modules.solicitacoes.application.ListarMinhasSolicitacoesUseCase
 import br.ufpr.sept.so2.modules.solicitacoes.application.ObterSolicitacaoUseCase
+import br.ufpr.sept.so2.modules.solicitacoes.application.SolicitacaoCursoEscopo
 import br.ufpr.sept.so2.shared.api.PageResponse
 import br.ufpr.sept.so2.shared.domain.exception.AcessoNegadoException
 import io.swagger.v3.oas.annotations.Operation
@@ -40,11 +41,12 @@ class SolicitacaoController(
     private val criarSolicitacaoUseCase: CriarSolicitacaoUseCase,
     private val obterSolicitacaoUseCase: ObterSolicitacaoUseCase,
     private val deliberarSolicitacaoUseCase: DeliberarSolicitacaoUseCase,
+    private val solicitacaoCursoEscopo: SolicitacaoCursoEscopo,
     private val assembler: SolicitacaoAssembler,
 ) {
 
     @GetMapping
-    @PreAuthorize("hasAnyAuthority('request.view_own','request.deliberate')")
+    @PreAuthorize("hasAnyAuthority('request.view_own','request.deliberate','request.view_curso')")
     @Operation(summary = "Listar minhas solicitações ou a fila de deliberação")
     fun listar(
         @RequestParam(name = "canDeliberate", defaultValue = "false") canDeliberate: Boolean,
@@ -58,11 +60,18 @@ class SolicitacaoController(
     ): PageResponse<SolicitacaoResponse> {
         val principal = principal(authentication)
         if (canDeliberate) {
-            if (!principal.authorities.contains("request.deliberate")) {
+            val deliberante = principal.authorities.contains("request.deliberate")
+            val viewCurso = principal.authorities.contains("request.view_curso")
+            if (!deliberante && !viewCurso) {
                 throw AcessoNegadoException("Você não tem permissão para esta operação.")
             }
+            val filtroSolicitantes = if (viewCurso) {
+                solicitacaoCursoEscopo.solicitanteIdsNoEscopo(principal.userId)
+            } else {
+                null
+            }
             return PageResponse.ofWithLinks(
-                listarFilaDeliberacaoUseCase.execute(tipo, atraso == true, pageable),
+                listarFilaDeliberacaoUseCase.execute(tipo, atraso == true, pageable, filtroSolicitantes),
                 Function { item -> assembler.from(item, principal.authorities, false) },
             )
         }
@@ -106,7 +115,7 @@ class SolicitacaoController(
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('request.view_own','request.deliberate')")
+    @PreAuthorize("hasAnyAuthority('request.view_own','request.deliberate','request.view_curso')")
     @Operation(summary = "Detalhe com timeline (mais recente no topo)")
     fun buscar(
         @PathVariable("id") id: UUID,
@@ -136,6 +145,7 @@ class SolicitacaoController(
             deliberarSolicitacaoUseCase.execute(
                 id,
                 principal.userId,
+                principal.authorities,
                 request.action,
                 request.parecer,
                 clientIp(http),

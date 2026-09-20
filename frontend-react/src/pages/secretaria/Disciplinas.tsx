@@ -21,6 +21,8 @@ export function Disciplinas() {
 
   const cursos = useQuery({ queryKey: ['cursos'], queryFn: () => academicoApi.listarCursos(0, 100) })
   const lista = useQuery({ queryKey: ['disciplinas'], queryFn: () => academicoApi.listarDisciplinas() })
+  const colecao = useActions(lista.data?._links)
+  const mostrarForm = editandoId != null || colecao.can('criar')
 
   const salvar = useMutation({
     mutationFn: () =>
@@ -67,6 +69,7 @@ export function Disciplinas() {
           {erro ?? 'Não foi possível carregar as disciplinas.'}
         </div>
       )}
+      {mostrarForm && (
       <form className="panel" onSubmit={onSubmit}>
         <h2>{editandoId ? 'Editar disciplina' : 'Nova disciplina'}</h2>
         <div className="grid">
@@ -118,6 +121,7 @@ export function Disciplinas() {
           Salvar
         </button>
       </form>
+      )}
       {lista.isLoading && <p className="muted">Carregando disciplinas…</p>}
       {lista.data && lista.data.content.length === 0 && <p className="empty">Nenhuma disciplina cadastrada.</p>}
       {lista.data && lista.data.content.length > 0 && (

@@ -17,4 +17,6 @@ interface AlunoJpaRepository : JpaRepository<AlunoJpaEntity, UUID>, JpaSpecifica
     fun existsByEmailInstitucionalIgnoreCase(email: String): Boolean
 
     fun findByIdCurso(idCurso: UUID, pageable: Pageable): Page<AlunoJpaEntity>
+
+    fun findByIdCursoIn(cursoIds: Collection<UUID>): List<AlunoJpaEntity>
 }

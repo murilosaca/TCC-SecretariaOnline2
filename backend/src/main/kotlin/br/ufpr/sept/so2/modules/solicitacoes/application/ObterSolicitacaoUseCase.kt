@@ -11,6 +11,7 @@ import java.util.UUID
 class ObterSolicitacaoUseCase(
     private val solicitacaoRepository: SolicitacaoRepository,
     private val validarTokenDeliberacaoUseCase: ValidarTokenDeliberacaoUseCase,
+    private val solicitacaoCursoEscopo: SolicitacaoCursoEscopo,
 ) {
 
     @Transactional(readOnly = true)
@@ -24,16 +25,25 @@ class ObterSolicitacaoUseCase(
         val solicitacao = solicitacaoRepository.findById(id)
             .orElseThrow { RecursoNaoEncontradoException("Solicitação não encontrada.") }
         val dono = solicitacao.pertenceA(usuarioId)
-        val deliberante = authorities.contains(AUTHORITY_DELIBERATE)
         val titular = dono && authorities.contains(AUTHORITY_VIEW_OWN)
-        if (!titular && !deliberante) {
+        if (titular) {
+            return solicitacao
+        }
+        if (authorities.contains(AUTHORITY_VIEW_CURSO)) {
+            if (solicitacaoCursoEscopo.solicitanteNoEscopo(usuarioId, solicitacao.solicitanteId)) {
+                return solicitacao
+            }
             throw RecursoNaoEncontradoException("Solicitação não encontrada.")
         }
-        return solicitacao
+        if (authorities.contains(AUTHORITY_DELIBERATE)) {
+            return solicitacao
+        }
+        throw RecursoNaoEncontradoException("Solicitação não encontrada.")
     }
 
     companion object {
         const val AUTHORITY_VIEW_OWN = "request.view_own"
         const val AUTHORITY_DELIBERATE = "request.deliberate"
+        const val AUTHORITY_VIEW_CURSO = "request.view_curso"
     }
 }

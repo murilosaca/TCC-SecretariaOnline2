@@ -36,6 +36,12 @@ spring:
       pageable:
         default-page-size: 20
         max-page-size: 100
+  mail:
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:1025}
+    properties:
+      mail.smtp.auth: false
+      mail.smtp.starttls.enable: false
 
 server:
   port: ${SERVER_PORT:8080}
@@ -53,6 +59,8 @@ app:
     issuer: so2
     audience: so2-api
     reset-audience: password-reset
+    deliberation-audience: request-action
+    deliberation-ttl-seconds: 259200
     frontend-base-url: ${FRONTEND_BASE_URL:http://localhost:5173}
     jwt-private-key-pem: ${JWT_RSA_PRIVATE_KEY:}
     jwt-public-key-pem: ${JWT_RSA_PUBLIC_KEY:}
@@ -80,6 +88,12 @@ app:
     telefone: ${APP_CONTATO_TELEFONE:(41) 3360-4900}
     email: ${APP_CONTATO_EMAIL:secretaria.sept@ufpr.br}
     horario: ${APP_CONTATO_HORARIO:Segunda a sexta, 8h–17h}
+  comunicacao:
+    from: ${MAIL_FROM:so2@localhost}
+    dispatcher-enabled: ${OUTBOX_DISPATCHER_ENABLED:true}
+    lote: 20
+    max-tentativas: 5
+    stale-processing-seconds: 60
 
 management:
   endpoints:

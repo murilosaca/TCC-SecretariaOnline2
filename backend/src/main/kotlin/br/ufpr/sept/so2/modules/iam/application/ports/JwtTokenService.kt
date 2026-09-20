@@ -8,9 +8,13 @@ interface JwtTokenService {
 
     fun emitResetToken(usuario: Usuario): String
 
+    fun emitDeliberationToken(usuario: Usuario, solicitacaoId: UUID): String
+
     fun parseAccessToken(token: String): AccessTokenClaims
 
     fun parseResetToken(token: String): ResetTokenClaims
+
+    fun parseDeliberationToken(token: String): DeliberationTokenClaims
 
     data class AccessTokenClaims(
         val userId: UUID,
@@ -21,6 +25,12 @@ interface JwtTokenService {
 
     data class ResetTokenClaims(
         val userId: UUID,
+        val jti: String,
+    )
+
+    data class DeliberationTokenClaims(
+        val userId: UUID,
+        val solicitacaoId: UUID,
         val jti: String,
     )
 }

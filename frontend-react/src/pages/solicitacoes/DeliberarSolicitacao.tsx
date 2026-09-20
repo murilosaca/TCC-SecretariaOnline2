@@ -1,24 +1,31 @@
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ApiError } from '../../api/client'
 import { solicitacoesApi } from '../../api/solicitacoes'
+import { useAuth } from '../../auth/AuthContext'
 import { PainelDeliberacao } from '../../components/PainelDeliberacao'
 import { fieldsFromSchema } from '../../lib/formSchema'
 
 export function DeliberarSolicitacao() {
   const { id = '' } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
+  const [params] = useSearchParams()
+  const token = params.get('token')?.trim() || undefined
+  const { status } = useAuth()
   const queryClient = useQueryClient()
+  const returnUrl = `${location.pathname}${location.search}`
+  const precisaLogin = status === 'anonymous' && Boolean(token)
 
   const detalhe = useQuery({
-    queryKey: ['solicitacao', id],
-    queryFn: () => solicitacoesApi.obter(id),
-    enabled: Boolean(id),
+    queryKey: ['solicitacao', id, token ?? ''],
+    queryFn: () => solicitacoesApi.obter(id, token),
+    enabled: Boolean(id) && status === 'authenticated',
   })
 
   const transicionar = useMutation({
     mutationFn: ({ action, parecer }: { action: string; parecer: string }) =>
-      solicitacoesApi.transicionar(id, action, parecer),
+      solicitacoesApi.transicionar(id, action, parecer, token),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['solicitacoes'] })
       void queryClient.invalidateQueries({ queryKey: ['solicitacao', id] })
@@ -32,6 +39,30 @@ export function DeliberarSolicitacao() {
   const item = detalhe.data
   const campos = fieldsFromSchema(item?.formSchema)
   const forbidden = detalhe.isError && detalhe.error instanceof ApiError && detalhe.error.status === 403
+  const tokenInvalido = detalhe.isError && detalhe.error instanceof ApiError && detalhe.error.status === 401
+
+  if (status === 'loading') {
+    return (
+      <section className="page detalhe">
+        <p className="muted" aria-busy="true">
+          Verificando sessão…
+        </p>
+      </section>
+    )
+  }
+
+  if (precisaLogin) {
+    return (
+      <section className="page detalhe">
+        <div className="banner info" role="status">
+          Entre com sua conta institucional para deliberar esta solicitação.{' '}
+          <Link to="/login" state={{ from: returnUrl }}>
+            Fazer login
+          </Link>
+        </div>
+      </section>
+    )
+  }
 
   return (
     <section className="page detalhe">
@@ -51,7 +82,12 @@ export function DeliberarSolicitacao() {
           Deliberação indisponível para esta sessão.
         </p>
       )}
-      {detalhe.isError && !forbidden && (
+      {tokenInvalido && (
+        <div className="banner danger" role="alert">
+          Link inválido ou expirado.
+        </div>
+      )}
+      {detalhe.isError && !forbidden && !tokenInvalido && (
         <div className="banner danger" role="alert">
           Solicitação não encontrada ou indisponível.{' '}
           <button type="button" onClick={() => detalhe.refetch()}>

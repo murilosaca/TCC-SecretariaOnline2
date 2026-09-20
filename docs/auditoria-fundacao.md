@@ -63,7 +63,7 @@ A ordem das fatias **depois** do P0 (deliberação → CAAF individual → QR, c
 | QR / SECRET_DUAL / janela de saída | Presença v4.1 completa | Motor com os quatro modos (item 4) | Janelas pré-agendadas e lista ao vivo de inelegíveis continuam de fora |
 | FGAC em `/academico/**` | `@PreAuthorize` | `permitAll` | Depois da matriz F7 |
 | Nav HATEOAS | UI cega a perfil | Atalhos de dev (Eventos prof., CRUD secretaria) | Esconder quando houver `_links` de menu |
-| Dispatcher de e-mail | Outbox → SMTP | Eventos ficam `PENDING` | Módulo comunicação / Outbox |
+| Dispatcher de e-mail | Outbox → SMTP | Dispatcher at-least-once + Mailpit (item 6). Hub F1.6, F3.8, F7.5, push e FORWARD ficam dívida | Templates / push / hub |
 | HostPin em memória | PIN na host-session | Some no restart da API | Persistência ou reabertura de janela |
 | Secretários do curso | RF-F5-004-a | Só `idCoordenador` + horas | Tabela N:N |
 | Config F6.1 | calendário, banca, regimento | Fora do CRUD de secretaria | Módulo coordenação |

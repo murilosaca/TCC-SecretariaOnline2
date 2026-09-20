@@ -30,4 +30,7 @@ class UsuarioJpaAdapter(
 
     override fun findByEmail(email: String): Optional<Usuario> =
         jpaRepository.findByAnyEmail(email).map { it.toDomain() }
+
+    override fun findAtivosByAuthority(authority: String): List<Usuario> =
+        jpaRepository.findAtivosByAuthority(authority).map { it.toDomain() }
 }

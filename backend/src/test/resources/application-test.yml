@@ -20,3 +20,6 @@ app:
     seed:
       enabled: false
       password:
+  comunicacao:
+    dispatcher-enabled: false
+    from: so2@localhost

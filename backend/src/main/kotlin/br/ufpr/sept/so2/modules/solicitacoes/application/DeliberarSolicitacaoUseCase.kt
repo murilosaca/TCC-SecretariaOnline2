@@ -1,6 +1,8 @@
 package br.ufpr.sept.so2.modules.solicitacoes.application
 
+import br.ufpr.sept.so2.modules.iam.application.IamSettings
 import br.ufpr.sept.so2.modules.iam.application.ports.AuditLogPort
+import br.ufpr.sept.so2.modules.iam.application.ports.JtiBlacklistRepository
 import br.ufpr.sept.so2.modules.iam.application.ports.OutboxPort
 import br.ufpr.sept.so2.modules.solicitacoes.application.ports.SolicitacaoRepository
 import br.ufpr.sept.so2.modules.solicitacoes.domain.Solicitacao
@@ -22,6 +24,9 @@ class DeliberarSolicitacaoUseCase(
     private val outboxPort: OutboxPort,
     private val auditLogPort: AuditLogPort,
     private val objectMapper: ObjectMapper,
+    private val validarTokenDeliberacaoUseCase: ValidarTokenDeliberacaoUseCase,
+    private val jtiBlacklistRepository: JtiBlacklistRepository,
+    private val iamSettings: IamSettings,
 ) {
 
     @Transactional
@@ -31,7 +36,9 @@ class DeliberarSolicitacaoUseCase(
         acao: String?,
         parecer: String?,
         ip: String?,
+        deepLinkToken: String? = null,
     ): Solicitacao {
+        val tokenClaims = validarTokenDeliberacaoUseCase.execute(deepLinkToken, solicitacaoId, atorId)
         val solicitacao = solicitacaoRepository.findById(solicitacaoId)
             .orElseThrow { RecursoNaoEncontradoException("Solicitação não encontrada.") }
         val workflow = workflowJsonParser.parse(solicitacao.workflowSnapshot)
@@ -58,10 +65,17 @@ class DeliberarSolicitacaoUseCase(
                 "acao" to acaoResolvida,
                 "estado" to persistida.estado,
                 "atorId" to atorId.toString(),
+                "solicitanteId" to persistida.solicitanteId.toString(),
             ),
         )
         outboxPort.enqueue(tipoOutbox(acaoResolvida), evento)
         auditLogPort.append("solicitacao.deliberada", atorId, evento, ip)
+        if (tokenClaims != null) {
+            jtiBlacklistRepository.add(
+                tokenClaims.jti,
+                agora.plusSeconds(iamSettings.deliberationTtlSeconds),
+            )
+        }
         return persistida
     }
 

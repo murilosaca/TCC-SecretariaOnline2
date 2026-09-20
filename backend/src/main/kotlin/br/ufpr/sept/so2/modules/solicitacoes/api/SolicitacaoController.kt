@@ -108,10 +108,14 @@ class SolicitacaoController(
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('request.view_own','request.deliberate')")
     @Operation(summary = "Detalhe com timeline (mais recente no topo)")
-    fun buscar(@PathVariable("id") id: UUID, authentication: Authentication): SolicitacaoResponse {
+    fun buscar(
+        @PathVariable("id") id: UUID,
+        @RequestParam(name = "token", required = false) token: String?,
+        authentication: Authentication,
+    ): SolicitacaoResponse {
         val principal = principal(authentication)
         return assembler.from(
-            obterSolicitacaoUseCase.execute(id, principal.userId, principal.authorities),
+            obterSolicitacaoUseCase.execute(id, principal.userId, principal.authorities, token),
             principal.authorities,
             true,
         )
@@ -122,6 +126,7 @@ class SolicitacaoController(
     @Operation(summary = "Deliberar solicitação (DEFER / INDEFER / REQUEST_ADJUST)")
     fun transicionar(
         @PathVariable("id") id: UUID,
+        @RequestParam(name = "token", required = false) token: String?,
         @Valid @RequestBody request: TransicionarSolicitacaoRequest,
         authentication: Authentication,
         http: HttpServletRequest,
@@ -134,6 +139,7 @@ class SolicitacaoController(
                 request.action,
                 request.parecer,
                 clientIp(http),
+                token,
             ),
             principal.authorities,
             true,

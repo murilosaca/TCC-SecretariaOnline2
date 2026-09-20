@@ -17,4 +17,13 @@ interface UsuarioJpaRepository : JpaRepository<UsuarioJpaEntity, UUID> {
             """,
     )
     fun findByAnyEmail(@Param("email") email: String): Optional<UsuarioJpaEntity>
+
+    @Query(
+        """
+            select distinct u from UsuarioJpaEntity u
+            join u.authorities a
+            where a = :authority and u.ativo = true
+            """,
+    )
+    fun findAtivosByAuthority(@Param("authority") authority: String): List<UsuarioJpaEntity>
 }

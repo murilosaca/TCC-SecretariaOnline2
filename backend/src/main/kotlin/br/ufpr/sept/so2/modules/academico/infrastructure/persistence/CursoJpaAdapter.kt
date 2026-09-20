@@ -33,6 +33,16 @@ class CursoJpaAdapter(
     override fun findByCodigo(codigo: String): Optional<Curso> =
         jpaRepository.findByCodigoIgnoreCase(codigo).map { it.toDomain() }
 
+    override fun findAllByIds(ids: Collection<UUID>, pageable: Pageable): Page<Curso> {
+        if (ids.isEmpty()) {
+            return Page.empty(pageable)
+        }
+        return jpaRepository.findByIdIn(ids, pageable).map { it.toDomain() }
+    }
+
+    override fun findIdsByCoordenador(idCoordenador: UUID): Set<UUID> =
+        jpaRepository.findByIdCoordenador(idCoordenador).mapNotNull { it.id }.toSet()
+
     override fun deleteById(id: UUID) {
         jpaRepository.deleteById(id)
     }

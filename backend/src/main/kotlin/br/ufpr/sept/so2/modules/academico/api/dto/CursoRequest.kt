@@ -10,6 +10,7 @@ data class CursoRequest(
     @field:NotBlank @field:Size(max = 20) val sigla: String? = null,
     @field:NotBlank @field:Size(max = 30) val codigo: String? = null,
     val idCoordenador: UUID? = null,
+    val secretariosIds: List<UUID>? = null,
     @field:Min(0) val horasFormativasMinimas: Int? = null,
     val ativo: Boolean? = null,
 )

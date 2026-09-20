@@ -29,5 +29,6 @@ interface SolicitacaoRepository {
         somenteAtraso: Boolean,
         agora: OffsetDateTime,
         pageable: Pageable,
+        solicitanteIds: Collection<UUID>? = null,
     ): Page<Solicitacao>
 }

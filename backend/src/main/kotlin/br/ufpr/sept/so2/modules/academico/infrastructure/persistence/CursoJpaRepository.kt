@@ -10,4 +10,8 @@ interface CursoJpaRepository : JpaRepository<CursoJpaEntity, UUID> {
     fun existsByCodigoIgnoreCase(codigo: String): Boolean
 
     fun findByCodigoIgnoreCase(codigo: String): Optional<CursoJpaEntity>
+
+    fun findByIdIn(ids: Collection<UUID>, pageable: org.springframework.data.domain.Pageable): org.springframework.data.domain.Page<CursoJpaEntity>
+
+    fun findByIdCoordenador(idCoordenador: UUID): List<CursoJpaEntity>
 }

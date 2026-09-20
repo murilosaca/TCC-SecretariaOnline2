@@ -1,6 +1,8 @@
 package br.ufpr.sept.so2.modules.academico.application
 
+import br.ufpr.sept.so2.modules.academico.application.ports.CursoEscopoPort
 import br.ufpr.sept.so2.modules.academico.application.ports.CursoRepository
+import br.ufpr.sept.so2.modules.academico.application.ports.CursoSecretarioRepository
 import br.ufpr.sept.so2.modules.academico.domain.Curso
 import br.ufpr.sept.so2.shared.domain.exception.ConflitoEstadoException
 import br.ufpr.sept.so2.shared.domain.exception.RecursoNaoEncontradoException
@@ -16,14 +18,29 @@ import java.util.UUID
 @Transactional
 class CursoApplicationService(
     private val cursoRepository: CursoRepository,
+    private val cursoSecretarioRepository: CursoSecretarioRepository,
+    private val cursoEscopoPort: CursoEscopoPort,
 ) {
     @Transactional(readOnly = true)
-    fun listar(pageable: Pageable): Page<Curso> = cursoRepository.findAll(pageable)
+    fun listar(usuarioId: UUID, pageable: Pageable): Page<Curso> {
+        val cursoIds = cursoEscopoPort.cursoIdsDoUsuario(usuarioId)
+        return cursoRepository.findAllByIds(cursoIds, pageable)
+    }
 
     @Transactional(readOnly = true)
-    fun buscarPorId(id: UUID): Curso =
-        cursoRepository.findById(id)
-            .orElseThrow { RecursoNaoEncontradoException("Curso não encontrado: $id") }
+    fun buscarPorId(id: UUID, usuarioId: UUID): Curso {
+        exigirNoEscopo(usuarioId, id)
+        return cursoRepository.findById(id)
+            .orElseThrow { RecursoNaoEncontradoException("Curso não encontrado.") }
+    }
+
+    @Transactional(readOnly = true)
+    fun secretariosIds(cursoId: UUID): List<UUID> =
+        cursoSecretarioRepository.findUsuarioIdsByCursoId(cursoId)
+
+    @Transactional(readOnly = true)
+    fun secretariosPorCursos(cursoIds: Collection<UUID>): Map<UUID, List<UUID>> =
+        cursoSecretarioRepository.findUsuarioIdsByCursoIds(cursoIds)
 
     fun criar(
         nome: String,
@@ -31,6 +48,7 @@ class CursoApplicationService(
         codigo: String,
         idCoordenador: UUID?,
         horasFormativasMinimas: Int,
+        secretariosIds: List<UUID>?,
     ): Curso {
         if (cursoRepository.existsBySigla(sigla)) {
             throw ConflitoEstadoException("Já existe curso com a sigla $sigla")
@@ -50,25 +68,40 @@ class CursoApplicationService(
             createdAt = agora,
             updatedAt = agora,
         )
-        return cursoRepository.save(curso)
+        val persistido = cursoRepository.save(curso)
+        cursoSecretarioRepository.replaceAll(persistido.id, secretariosIds.orEmpty())
+        return persistido
     }
 
     fun atualizar(
         id: UUID,
+        usuarioId: UUID,
         nome: String?,
         sigla: String?,
         codigo: String?,
         idCoordenador: UUID?,
         horas: Int?,
         ativo: Boolean?,
+        secretariosIds: List<UUID>?,
     ): Curso {
-        val curso = buscarPorId(id)
+        val curso = buscarPorId(id, usuarioId)
         curso.atualizar(nome, sigla?.trim()?.uppercase(), codigo?.trim()?.uppercase(), idCoordenador, horas, ativo)
-        return cursoRepository.save(curso)
+        val persistido = cursoRepository.save(curso)
+        if (secretariosIds != null) {
+            cursoSecretarioRepository.replaceAll(persistido.id, secretariosIds)
+        }
+        return persistido
     }
 
-    fun excluir(id: UUID) {
-        buscarPorId(id)
+    fun excluir(id: UUID, usuarioId: UUID) {
+        buscarPorId(id, usuarioId)
+        cursoSecretarioRepository.deleteByCursoId(id)
         cursoRepository.deleteById(id)
+    }
+
+    private fun exigirNoEscopo(usuarioId: UUID, cursoId: UUID) {
+        if (cursoId !in cursoEscopoPort.cursoIdsDoUsuario(usuarioId)) {
+            throw RecursoNaoEncontradoException("Curso não encontrado.")
+        }
     }
 }

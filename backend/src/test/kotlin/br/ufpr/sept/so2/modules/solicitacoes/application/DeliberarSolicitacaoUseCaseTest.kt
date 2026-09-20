@@ -53,6 +53,7 @@ class DeliberarSolicitacaoUseCaseTest : StringSpec({
         audit: AuditLogPort = mockk(relaxed = true),
         validar: ValidarTokenDeliberacaoUseCase = mockk(relaxed = true),
         jtis: JtiBlacklistRepository = mockk(relaxed = true),
+        escopo: SolicitacaoCursoEscopo = mockk(relaxed = true),
     ) = DeliberarSolicitacaoUseCase(
         repo,
         parser,
@@ -62,6 +63,7 @@ class DeliberarSolicitacaoUseCaseTest : StringSpec({
         validar,
         jtis,
         IamFakes.Settings(),
+        escopo,
     )
 
     "defer publica outbox e muda estado" {
@@ -77,6 +79,7 @@ class DeliberarSolicitacaoUseCaseTest : StringSpec({
         val result = useCase(repo, outbox, audit).execute(
             solicitacaoId,
             atorId,
+            listOf("request.deliberate"),
             "DEFER",
             "Deferido para fins de estágio.",
             "127.0.0.1",
@@ -92,10 +95,10 @@ class DeliberarSolicitacaoUseCaseTest : StringSpec({
         every { repo.findById(solicitacaoId) } returns Optional.of(aberta())
 
         shouldThrow<DadoInvalidoException> {
-            useCase(repo).execute(solicitacaoId, atorId, "INDEFER", "curto", null)
+            useCase(repo).execute(solicitacaoId, atorId, listOf("request.deliberate"), "INDEFER", "curto", null)
         }
         shouldThrow<DadoInvalidoException> {
-            useCase(repo).execute(solicitacaoId, atorId, "CLOSE", "Parecer suficiente.", null)
+            useCase(repo).execute(solicitacaoId, atorId, listOf("request.deliberate"), "CLOSE", "Parecer suficiente.", null)
         }
         verify(exactly = 0) { repo.save(any()) }
     }
@@ -113,12 +116,12 @@ class DeliberarSolicitacaoUseCaseTest : StringSpec({
         )
         every { repo.findById(solicitacaoId) } returns Optional.of(jaDeliberada)
         shouldThrow<ConflitoEstadoException> {
-            useCase(repo).execute(solicitacaoId, atorId, "DEFER", "Segundo parecer.", null)
+            useCase(repo).execute(solicitacaoId, atorId, listOf("request.deliberate"), "DEFER", "Segundo parecer.", null)
         }
 
         every { repo.findById(solicitacaoId) } returns Optional.empty()
         shouldThrow<RecursoNaoEncontradoException> {
-            useCase(repo).execute(solicitacaoId, atorId, "DEFER", "Parecer.", null)
+            useCase(repo).execute(solicitacaoId, atorId, listOf("request.deliberate"), "DEFER", "Parecer.", null)
         }
     }
 
@@ -130,6 +133,7 @@ class DeliberarSolicitacaoUseCaseTest : StringSpec({
             useCase(repo, validar = validar).execute(
                 solicitacaoId,
                 atorId,
+                listOf("request.deliberate"),
                 "DEFER",
                 "Deferido para fins de estágio.",
                 null,
@@ -154,6 +158,7 @@ class DeliberarSolicitacaoUseCaseTest : StringSpec({
         useCase(repo, outbox, audit, validar, jtis).execute(
             solicitacaoId,
             atorId,
+            listOf("request.deliberate"),
             "DEFER",
             "Deferido para fins de estágio.",
             "127.0.0.1",

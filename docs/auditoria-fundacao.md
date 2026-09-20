@@ -25,15 +25,14 @@ ligadas. Access token só em memória.
 
 ## Plano — `@PreAuthorize` no CRUD acadêmico
 
-O CRUD `/academico/**` permanece `permitAll` (sem `@PreAuthorize`) para não quebrar a
-fundação: ITs, telas de secretaria e bootstrap ainda não têm matriz FGAC (F7) nem
-vínculo usuário↔curso. Quando F7 existir:
+**Feito no item 7** (capabilities corretas: `course.manage`, `subject.manage`,
+`user.manage_students`, `calendar.manage` — **não** `curso.manage` / `student.manage`).
 
-1. Fechar `anyRequest()` para `authenticated()` (exceto F0 público e `/auth/*` anônimos).
-2. Anotar comandos acadêmicos com capabilities (`curso.manage`, `student.manage`,
-   `calendar.manage`) — nunca `hasRole`.
-3. Continuar emitindo `_links` HATEOAS; a UI segue cega a perfil (`useActions`).
-4. Escopo por curso (coordenação/secretaria) entra com a tabela N:N de secretários.
+1. `anyRequest()` é `authenticated()` (exceto F0 público e `/auth/*` anônimos).
+2. Controllers acadêmicos anotados com `hasAuthority('dominio.acao')` — nunca `hasRole`.
+3. `_links` HATEOAS; UI cega (`useActions`). Menu em `GET /auth/me`._links.
+4. Escopo por curso: tabela `curso_secretario` (V011) + `CursoEscopoPort` no use case.
+   Claim JWT `cursoIds[]` **não** entrou. Períodos continuam globais.
 
 ## P0 demonstrável (fechamento)
 
@@ -61,11 +60,15 @@ A ordem das fatias **depois** do P0 (deliberação → CAAF individual → QR, c
 | F0.7 certificado público | Verificação de PDF/hash | `GET /publico/certificados/{hash}/verificacao` + JWKS + SubtleCrypto | Feito no item 5; CA-04 (upload) e `REVOGADO` ficam dívida |
 | F3.1 dashboard professor | BFF próprio | Ausente; `/inicio` 403 honesto | BFF professor |
 | QR / SECRET_DUAL / janela de saída | Presença v4.1 completa | Motor com os quatro modos (item 4) | Janelas pré-agendadas e lista ao vivo de inelegíveis continuam de fora |
-| FGAC em `/academico/**` | `@PreAuthorize` | `permitAll` | Depois da matriz F7 |
-| Nav HATEOAS | UI cega a perfil | Atalhos de dev (Eventos prof., CRUD secretaria) | Esconder quando houver `_links` de menu |
+| FGAC em `/academico/**` | `@PreAuthorize` | Fechado (item 7); capability da tela; 401/403 RFC 7807 | — |
+| Nav HATEOAS | UI cega a perfil | `GET /auth/me`._links + `useActions` (item 7) | — |
 | Dispatcher de e-mail | Outbox → SMTP | Dispatcher at-least-once + Mailpit (item 6). Hub F1.6, F3.8, F7.5, push e FORWARD ficam dívida | Templates / push / hub |
 | HostPin em memória | PIN na host-session | Some no restart da API | Persistência ou reabertura de janela |
-| Secretários do curso | RF-F5-004-a | Só `idCoordenador` + horas | Tabela N:N |
+| Secretários do curso | RF-F5-004-a | V011 `curso_secretario` + seed TADS (item 7) | Claim JWT `cursoIds` e admin global (`user.manage_all`) ficam de fora |
+| Fila CAAF por curso | F4.1 / comissão | Sem tabela `commission_member` | Filtro por comissão continua dívida |
+| Períodos por curso / F5.9 tipos | calendário semântico | `periodo_letivo` global; `calendar.manage` all-or-nothing | Schema por curso + tipos quando F6.1/F5.9 abrirem |
+| Portal admin F7.1–F7.9 | usuários, papéis, jobs, saúde | Fora desta fatia | Não misturar com o FGAC acadêmico |
+| Claim JWT `cursoIds` | spec JwtFilter | Escopo só no use case | Incluir no token sem confiar só no claim |
 | Config F6.1 | calendário, banca, regimento | Fora do CRUD de secretaria | Módulo coordenação |
 | Eventos de calendário | tipos semânticos em F5.9 | Só período letivo | Segunda aba quando o schema existir |
 | ArchUnit | regras de dependência | Não há teste | Adicionar no próximo módulo |
@@ -76,6 +79,6 @@ A ordem das fatias **depois** do P0 (deliberação → CAAF individual → QR, c
 
 Lombok: **conforme**. Zero ocorrências. Proibição registrada nas rules.
 Aluno sem `idade`: **conforme** (RF-F5-003).
-HATEOAS + `useActions`: **conforme** nas telas de dados (atalhos de nav de dev são dívida).
-IAM / JWT / Argon2id: **entregue** (CRUD acadêmico ainda sem FGAC).
+HATEOAS + `useActions`: **conforme** nas telas de dados **e** na nav (item 7).
+IAM / JWT / Argon2id: **entregue**. CRUD acadêmico com FGAC (item 7).
 Motor de solicitações: **entregue** (`0e882d2`) — não está mais inexistente.

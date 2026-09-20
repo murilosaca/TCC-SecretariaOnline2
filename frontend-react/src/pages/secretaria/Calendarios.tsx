@@ -27,6 +27,8 @@ export function Calendarios() {
     queryKey: ['periodos'],
     queryFn: () => academicoApi.listarPeriodos(),
   })
+  const colecao = useActions(lista.data?._links)
+  const mostrarForm = editandoId != null || colecao.can('criar')
 
   const salvar = useMutation({
     mutationFn: () =>
@@ -85,6 +87,7 @@ export function Calendarios() {
           {erro ?? 'Não foi possível carregar os períodos.'}
         </div>
       )}
+      {mostrarForm && (
       <form className="panel" onSubmit={onSubmit}>
         <h2>{editandoId ? 'Editar período' : 'Novo período'}</h2>
         <div className="grid">
@@ -125,6 +128,7 @@ export function Calendarios() {
           Salvar
         </button>
       </form>
+      )}
       {lista.isLoading && <p className="muted">Carregando períodos…</p>}
       {lista.data && lista.data.content.length === 0 && <p className="empty">Nenhum período cadastrado.</p>}
       {lista.data && lista.data.content.length > 0 && (

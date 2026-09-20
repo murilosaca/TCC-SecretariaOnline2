@@ -29,11 +29,17 @@ class AlunoJpaAdapter(
     override fun findByEmailInstitucional(email: String): Optional<Aluno> =
         jpaRepository.findByEmailInstitucionalIgnoreCase(email).map { it.toDomain() }
 
-    override fun findAll(idCurso: UUID?, termo: String?, pageable: Pageable): Page<Aluno> {
+    override fun findAll(idCurso: UUID?, termo: String?, cursoIds: Collection<UUID>?, pageable: Pageable): Page<Aluno> {
+        if (cursoIds != null && cursoIds.isEmpty()) {
+            return Page.empty(pageable)
+        }
         val spec = Specification<AlunoJpaEntity> { root, _, cb ->
             val predicates = buildList<Predicate> {
                 if (idCurso != null) {
                     add(cb.equal(root.get<UUID>("idCurso"), idCurso))
+                }
+                if (cursoIds != null) {
+                    add(root.get<UUID>("idCurso").`in`(cursoIds))
                 }
                 if (!termo.isNullOrBlank()) {
                     val like = "%${termo.trim().lowercase()}%"
@@ -49,6 +55,13 @@ class AlunoJpaAdapter(
             cb.and(*predicates.toTypedArray())
         }
         return jpaRepository.findAll(spec, pageable).map { it.toDomain() }
+    }
+
+    override fun findByIdCursoIn(cursoIds: Collection<UUID>): List<Aluno> {
+        if (cursoIds.isEmpty()) {
+            return emptyList()
+        }
+        return jpaRepository.findByIdCursoIn(cursoIds).map { it.toDomain() }
     }
 
     override fun existsByGrr(grr: String): Boolean = jpaRepository.existsByGrrIgnoreCase(grr)

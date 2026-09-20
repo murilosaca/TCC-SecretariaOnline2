@@ -28,6 +28,8 @@ export function Alunos() {
     queryKey: ['alunos', termo],
     queryFn: () => academicoApi.listarAlunos(undefined, termo || undefined),
   })
+  const colecao = useActions(lista.data?._links)
+  const mostrarForm = editandoId != null || colecao.can('criar')
 
   const salvar = useMutation({
     mutationFn: () =>
@@ -76,6 +78,7 @@ export function Alunos() {
           {erro ?? 'Não foi possível carregar os alunos.'}
         </div>
       )}
+      {mostrarForm && (
       <form className="panel" onSubmit={onSubmit}>
         <h2>{editandoId ? 'Editar aluno' : 'Novo aluno'}</h2>
         <div className="grid">
@@ -136,6 +139,7 @@ export function Alunos() {
           Salvar
         </button>
       </form>
+      )}
       <label className="filter">
         Busca
         <input value={termo} onChange={(e) => setTermo(e.target.value)} placeholder="Nome, GRR ou e-mail" />

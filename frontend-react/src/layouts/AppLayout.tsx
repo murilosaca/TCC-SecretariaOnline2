@@ -1,8 +1,26 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
+import { useActions } from '../hooks/useActions'
+
+const NAV_ITENS: { rel: string; label: string }[] = [
+  { rel: 'inicio', label: 'Início' },
+  { rel: 'solicitacoes', label: 'Solicitações' },
+  { rel: 'deliberar', label: 'Deliberar' },
+  { rel: 'eventos', label: 'Eventos' },
+  { rel: 'formativas', label: 'Formativas' },
+  { rel: 'certificados', label: 'Certificados' },
+  { rel: 'revisao-caaf', label: 'Revisão CAAF' },
+  { rel: 'eventos-professor', label: 'Eventos (prof.)' },
+  { rel: 'cursos', label: 'Cursos' },
+  { rel: 'disciplinas', label: 'Disciplinas' },
+  { rel: 'alunos', label: 'Alunos' },
+  { rel: 'calendarios', label: 'Calendários' },
+  { rel: 'contato', label: 'Contato' },
+]
 
 export function AppLayout() {
-  const { mustChangePassword, logout, status } = useAuth()
+  const { mustChangePassword, logout, status, links } = useAuth()
+  const actions = useActions(links)
 
   return (
     <div className="shell">
@@ -12,19 +30,11 @@ export function AppLayout() {
         </NavLink>
         {!mustChangePassword && (
           <nav>
-            <NavLink to="/inicio">Início</NavLink>
-            <NavLink to="/solicitacoes">Solicitações</NavLink>
-            <NavLink to="/solicitacoes?to=me">Deliberar</NavLink>
-            <NavLink to="/eventos">Eventos</NavLink>
-            <NavLink to="/formativas">Formativas</NavLink>
-            <NavLink to="/certificados">Certificados</NavLink>
-            <NavLink to="/formativas?to=me">Revisão CAAF</NavLink>
-            <NavLink to="/professor/eventos">Eventos (prof.)</NavLink>
-            <NavLink to="/secretaria/cursos">Cursos</NavLink>
-            <NavLink to="/secretaria/disciplinas">Disciplinas</NavLink>
-            <NavLink to="/secretaria/alunos">Alunos</NavLink>
-            <NavLink to="/secretaria/calendarios">Calendários</NavLink>
-            <NavLink to="/contato">Contato</NavLink>
+            {NAV_ITENS.filter((item) => actions.can(item.rel)).map((item) => (
+              <NavLink key={item.rel} to={actions.href(item.rel) ?? '/'}>
+                {item.label}
+              </NavLink>
+            ))}
           </nav>
         )}
         {status === 'authenticated' && (

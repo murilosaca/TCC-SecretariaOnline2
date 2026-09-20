@@ -27,7 +27,7 @@ data class CursoResponse(
                 links["atualizar"] = base
                 links["excluir"] = base
             }
-            links["disciplinas"] = "$base/disciplinas"
+            links["disciplinas"] = "/academico/disciplinas?idCurso=${curso.id}"
             return CursoResponse(
                 id = curso.id,
                 nome = curso.nome,

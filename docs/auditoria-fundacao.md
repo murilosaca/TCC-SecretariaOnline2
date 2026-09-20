@@ -13,6 +13,11 @@ Data: 2026-09-20. Fontes: `docs/tcc-docs.md`, `docs/telas-figma.md`, código e `
   intervalo e sobreposição, mais `GET /academico/periodos/vigente`.
 - Frontend React: `AuthLayout` / `AppLayout`, pastas por fluxo e rotas Figma
   (`/login`, `/secretaria/*`, `/inicio`). Rotas planas antigas redirecionam.
+- PUT `/academico/cursos/{id}`: o chamador só é forçado de volta em
+  `curso_secretario` se já for secretário. Coordenador com `course.manage`
+  (escopo por `id_coordenador`) não ganha linha N:N ao salvar. POST continua
+  incluindo o criador (F5.7-D01). `_links.disciplinas` aponta para
+  `GET /academico/disciplinas?idCurso={id}`.
 
 ## IAM (sprint P0)
 
@@ -66,6 +71,7 @@ A ordem das fatias **depois** do P0 (deliberação → CAAF individual → QR, c
 | Dispatcher de e-mail | Outbox → SMTP | Dispatcher at-least-once + Mailpit (item 6). Hub F1.6, F3.8, F7.5, push e FORWARD ficam dívida | Templates / push / hub |
 | HostPin em memória | PIN na host-session | Some no restart da API | Persistência ou reabertura de janela |
 | Secretários do curso | RF-F5-004-a | V011 `curso_secretario` + seed TADS (item 7) | Claim JWT `cursoIds` e admin global (`user.manage_all`) ficam de fora |
+| PUT de curso e secretários | F5.7-D01 (criador não some da lista) | POST sempre inclui o chamador. PUT consulta `findUsuarioIdsByCursoId` e só reinsere o chamador se ele já for secretário; coordenador (`id_coordenador`, sem linha N:N) não vira secretário permanente | Sem endpoint F7.1 de gestão de secretários nesta fatia |
 | Fila CAAF por curso | F4.1 / comissão | Sem tabela `commission_member` | Filtro por comissão continua dívida |
 | Períodos por curso / F5.9 tipos | calendário semântico | `periodo_letivo` global; `calendar.manage` all-or-nothing | Schema por curso + tipos quando F6.1/F5.9 abrirem |
 | Portal admin F7.1–F7.9 | usuários, papéis, jobs, saúde | Fora desta fatia | Não misturar com o FGAC acadêmico |

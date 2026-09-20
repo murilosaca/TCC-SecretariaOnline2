@@ -104,9 +104,13 @@ class CursoApplicationService(
         curso.atualizar(nome, novaSigla, novoCodigo, idCoordenador, horas, ativo)
         val persistido = cursoRepository.save(curso)
         if (secretariosIds != null) {
+            val atuais = cursoSecretarioRepository.findUsuarioIdsByCursoId(persistido.id)
             val secretarios = linkedSetOf<UUID>()
             secretarios.addAll(secretariosIds)
-            secretarios.add(usuarioId)
+            // Anti-lockout: secretário que se omite permanece. Coordenador (só id_coordenador) não vira secretário.
+            if (usuarioId in atuais) {
+                secretarios.add(usuarioId)
+            }
             cursoSecretarioRepository.replaceAll(persistido.id, secretarios)
         }
         return persistido

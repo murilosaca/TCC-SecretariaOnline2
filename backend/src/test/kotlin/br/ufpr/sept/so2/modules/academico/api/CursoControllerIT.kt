@@ -7,6 +7,8 @@ import br.ufpr.sept.so2.shared.domain.valueobject.Email
 import br.ufpr.sept.so2.shared.domain.valueobject.Grr
 import br.ufpr.sept.so2.shared.ItJson
 import br.ufpr.sept.so2.shared.infrastructure.Uuids
+import com.fasterxml.jackson.databind.ObjectMapper
+import org.hamcrest.Matchers.hasItem
 import org.hamcrest.Matchers.not
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -215,7 +217,98 @@ class CursoControllerIT {
 
         mockMvc.perform(get("/academico/cursos").header("Authorization", "Bearer $tokenCoord"))
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.content[*].id").value(org.hamcrest.Matchers.hasItem(id)))
+            .andExpect(jsonPath("$.content[*].id").value(hasItem(id)))
+    }
+
+    @Test
+    fun coordenadorPutNaoGanhaLinhaDeSecretario() {
+        val tokenCoord = login(EMAIL_COORD)
+        val tokenSec = login(EMAIL_SEC)
+        val coordenadorId = usuarioRepository.findByEmail(EMAIL_COORD).get().id
+        val (sigla, codigo) = codigoUnico("CP")
+        val created = mockMvc.perform(
+            post("/academico/cursos")
+                .header("Authorization", "Bearer $tokenSec")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {
+                      "nome": "Curso PUT coordenador",
+                      "sigla": "$sigla",
+                      "codigo": "$codigo",
+                      "idCoordenador": "$coordenadorId",
+                      "horasFormativasMinimas": 120,
+                      "secretariosIds": []
+                    }
+                    """.trimIndent(),
+                ),
+        )
+            .andExpect(status().isCreated)
+            .andReturn()
+        val id = ItJson.text(created.response.contentAsString, "id")
+
+        mockMvc.perform(
+            put("/academico/cursos/$id")
+                .header("Authorization", "Bearer $tokenCoord")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(payloadCurso("Curso PUT coordenador", sigla, codigo, emptyList())),
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.secretariosIds", not(hasItem(coordenadorId.toString()))))
+    }
+
+    @Test
+    fun secretarioPutSemOProprioIdNaoSofreLockout() {
+        val token = login(EMAIL_SEC)
+        val secretariaId = usuarioRepository.findByEmail(EMAIL_SEC).get().id
+        val (sigla, codigo) = codigoUnico("SL")
+        val created = mockMvc.perform(
+            post("/academico/cursos")
+                .header("Authorization", "Bearer $token")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(payloadCurso("Curso anti-lockout", sigla, codigo, emptyList())),
+        )
+            .andExpect(status().isCreated)
+            .andReturn()
+        val id = ItJson.text(created.response.contentAsString, "id")
+
+        mockMvc.perform(
+            put("/academico/cursos/$id")
+                .header("Authorization", "Bearer $token")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(payloadCurso("Curso anti-lockout", sigla, codigo, emptyList())),
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.secretariosIds", hasItem(secretariaId.toString())))
+
+        mockMvc.perform(get("/academico/cursos").header("Authorization", "Bearer $token"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.content[*].id", hasItem(id)))
+    }
+
+    @Test
+    fun getCursoSegueLinkDisciplinasCom200() {
+        val token = login(EMAIL_SEC)
+        val (sigla, codigo) = codigoUnico("LD")
+        val created = mockMvc.perform(
+            post("/academico/cursos")
+                .header("Authorization", "Bearer $token")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(payloadCurso("Curso link disciplinas", sigla, codigo, emptyList())),
+        )
+            .andExpect(status().isCreated)
+            .andReturn()
+        val id = ItJson.text(created.response.contentAsString, "id")
+
+        val detalhe = mockMvc.perform(get("/academico/cursos/$id").header("Authorization", "Bearer $token"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$._links.disciplinas").value("/academico/disciplinas?idCurso=$id"))
+            .andReturn()
+        val href = ObjectMapper().readTree(detalhe.response.contentAsString)
+            .path("_links").path("disciplinas").asText()
+
+        mockMvc.perform(get(href).header("Authorization", "Bearer $token"))
+            .andExpect(status().isOk)
     }
 
     @Test

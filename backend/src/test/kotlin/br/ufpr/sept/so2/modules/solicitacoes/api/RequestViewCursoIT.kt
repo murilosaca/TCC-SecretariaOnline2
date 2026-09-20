@@ -29,6 +29,8 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import org.springframework.transaction.PlatformTransactionManager
+import org.springframework.transaction.support.TransactionTemplate
 import java.time.OffsetDateTime
 import java.util.UUID
 
@@ -57,19 +59,28 @@ class RequestViewCursoIT {
     @Autowired
     private lateinit var alunoRepository: AlunoRepository
 
+    @Autowired
+    private lateinit var transactionManager: PlatformTransactionManager
+
     @BeforeEach
     fun seed() {
-        val agora = OffsetDateTime.now()
-        if (tipoSolicitacaoRepository.findByCodigo(DeclaracaoSimplesSeed.CODIGO).isEmpty) {
-            tipoSolicitacaoRepository.save(DeclaracaoSimplesSeed.tipo(agora))
+        TransactionTemplate(transactionManager).executeWithoutResult {
+            val agora = OffsetDateTime.now()
+            if (tipoSolicitacaoRepository.findByCodigo(DeclaracaoSimplesSeed.CODIGO).isEmpty) {
+                tipoSolicitacaoRepository.save(DeclaracaoSimplesSeed.tipo(agora))
+            }
+            val sec = criarUsuario(EMAIL_SEC, "GRR20247141", AUTHORITIES_SEC, agora)
+            criarUsuario(EMAIL_PROF, "GRR20247142", listOf("request.deliberate"), agora)
+            val alunoOutro = criarUsuario(EMAIL_ALUNO_OUTRO, "GRR20247143", AUTHORITIES_ALUNO, agora)
+            val alunoGrr = criarUsuario(EMAIL_ALUNO_GRR, "GRR20247144", AUTHORITIES_ALUNO, agora)
+            criarUsuario(EMAIL_ALUNO_EMAIL, null, AUTHORITIES_ALUNO, agora)
+            val cursoSec = curso("Curso Sec", "RVC1", "RVC-SEC", agora)
+            val cursoOutro = curso("Curso Outro", "RVC2", "RVC-OUT", agora)
+            cursoSecretarioRepository.replaceAll(cursoSec.id, listOf(sec.id))
+            alunoAcademico("Aluno outro curso", alunoOutro.grr!!.value, alunoOutro.emailInstitucional.value, cursoOutro.id, agora)
+            alunoAcademico("Aluno do curso sec por GRR", alunoGrr.grr!!.value, alunoGrr.emailInstitucional.value, cursoSec.id, agora)
+            alunoAcademico("Aluno do curso sec por e-mail", "GRR20247145", EMAIL_ALUNO_EMAIL, cursoSec.id, agora)
         }
-        val sec = criarUsuario(EMAIL_SEC, "GRR20247141", AUTHORITIES_SEC, agora)
-        criarUsuario(EMAIL_PROF, "GRR20247142", listOf("request.deliberate"), agora)
-        val alunoOutro = criarUsuario(EMAIL_ALUNO_OUTRO, "GRR20247143", AUTHORITIES_ALUNO, agora)
-        val cursoSec = curso("Curso Sec", "RVC1", "RVC-SEC", agora)
-        val cursoOutro = curso("Curso Outro", "RVC2", "RVC-OUT", agora)
-        cursoSecretarioRepository.replaceAll(cursoSec.id, listOf(sec.id))
-        alunoAcademico(alunoOutro.grr!!.value, alunoOutro.emailInstitucional.value, cursoOutro.id, agora)
     }
 
     @Test
@@ -107,6 +118,57 @@ class RequestViewCursoIT {
             .andExpect(jsonPath("$.content[*].id", hasItem(id)))
     }
 
+    @Test
+    fun secretariaVePedidoDoAlunoDoProprioCursoPorGrr() {
+        val id = abrirSolicitacao(EMAIL_ALUNO_GRR)
+        val tokenSec = login(EMAIL_SEC)
+        mockMvc.perform(
+            get("/requests")
+                .param("canDeliberate", "true")
+                .header("Authorization", "Bearer $tokenSec"),
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.content[*].id", hasItem(id)))
+        mockMvc.perform(get("/requests/$id").header("Authorization", "Bearer $tokenSec"))
+            .andExpect(status().isOk)
+    }
+
+    @Test
+    fun secretariaVePedidoDoAlunoDoProprioCursoPorEmailInstitucional() {
+        val id = abrirSolicitacao(EMAIL_ALUNO_EMAIL)
+        val tokenSec = login(EMAIL_SEC)
+        mockMvc.perform(
+            get("/requests")
+                .param("canDeliberate", "true")
+                .header("Authorization", "Bearer $tokenSec"),
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.content[*].id", hasItem(id)))
+        mockMvc.perform(get("/requests/$id").header("Authorization", "Bearer $tokenSec"))
+            .andExpect(status().isOk)
+    }
+
+    @Test
+    fun secretariaTransicionaPedidoDoProprioCursoEToma404NoDeFora() {
+        val idNoEscopo = abrirSolicitacao(EMAIL_ALUNO_GRR)
+        val idFora = abrirSolicitacao(EMAIL_ALUNO_OUTRO)
+        val tokenSec = login(EMAIL_SEC)
+        mockMvc.perform(
+            post("/requests/$idNoEscopo/transitions")
+                .header("Authorization", "Bearer $tokenSec")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"action":"DEFER","parecer":"Deferido no curso da secretária."}"""),
+        )
+            .andExpect(status().isOk)
+        mockMvc.perform(
+            post("/requests/$idFora/transitions")
+                .header("Authorization", "Bearer $tokenSec")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"action":"DEFER","parecer":"Não deveria alcançar outro curso."}"""),
+        )
+            .andExpect(status().isNotFound)
+    }
+
     private fun curso(nome: String, sigla: String, codigo: String, agora: OffsetDateTime): br.ufpr.sept.so2.modules.academico.domain.Curso {
         val existente = cursoRepository.findByCodigo(codigo)
         if (existente.isPresent) {
@@ -115,14 +177,14 @@ class RequestViewCursoIT {
         return cursoRepository.save(Curso(Uuids.v7(), nome, sigla, codigo, null, 120, true, agora, agora))
     }
 
-    private fun alunoAcademico(grr: String, email: String, idCurso: UUID, agora: OffsetDateTime) {
+    private fun alunoAcademico(nome: String, grr: String, email: String, idCurso: UUID, agora: OffsetDateTime) {
         if (alunoRepository.findByGrr(grr).isPresent) {
             return
         }
         alunoRepository.save(
             Aluno(
                 Uuids.v7(),
-                "Aluno outro curso",
+                nome,
                 null,
                 Grr.of(grr),
                 Email.of(email),
@@ -137,7 +199,7 @@ class RequestViewCursoIT {
         )
     }
 
-    private fun criarUsuario(email: String, grr: String, authorities: List<String>, agora: OffsetDateTime): Usuario {
+    private fun criarUsuario(email: String, grr: String?, authorities: List<String>, agora: OffsetDateTime): Usuario {
         val existente = usuarioRepository.findByEmail(email)
         if (existente.isPresent) {
             return existente.get()
@@ -147,7 +209,7 @@ class RequestViewCursoIT {
                 Uuids.v7(),
                 Email.of(email),
                 null,
-                Grr.of(grr),
+                grr?.let { Grr.of(it) },
                 passwordHasher.hash(SENHA),
                 true,
                 agora,
@@ -161,6 +223,19 @@ class RequestViewCursoIT {
                 agora,
             ),
         )
+    }
+
+    private fun abrirSolicitacao(email: String): String {
+        val tokenAluno = login(email)
+        val created = mockMvc.perform(
+            post("/requests")
+                .header("Authorization", "Bearer $tokenAluno")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(payloadNova()),
+        )
+            .andExpect(status().isCreated)
+            .andReturn()
+        return ItJson.text(created.response.contentAsString, "id")
     }
 
     private fun login(email: String): String {
@@ -179,6 +254,8 @@ class RequestViewCursoIT {
         private const val EMAIL_SEC = "it.fgac.rvc.sec@ufpr.br"
         private const val EMAIL_PROF = "it.fgac.rvc.prof@ufpr.br"
         private const val EMAIL_ALUNO_OUTRO = "it.fgac.rvc.aluno@ufpr.br"
+        private const val EMAIL_ALUNO_GRR = "it.fgac.rvc.aluno.grr@ufpr.br"
+        private const val EMAIL_ALUNO_EMAIL = "it.fgac.rvc.aluno.email@ufpr.br"
         private val AUTHORITIES_ALUNO = listOf("dashboard.view_own", "request.view_own", "request.open")
         private val AUTHORITIES_SEC = listOf(
             "course.manage",

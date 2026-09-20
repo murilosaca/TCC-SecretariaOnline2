@@ -12,6 +12,8 @@ enum class FormativaEstado {
 
     fun podeConfirmarOuCancelar(): Boolean = this == PENDENTE_CONFIRMACAO
 
+    fun podeRevisar(): Boolean = this == AGUARDANDO_CAAF
+
     companion object {
         fun from(raw: String?): FormativaEstado {
             if (raw.isNullOrBlank()) {

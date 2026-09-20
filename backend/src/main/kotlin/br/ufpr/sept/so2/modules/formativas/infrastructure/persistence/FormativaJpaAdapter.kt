@@ -28,6 +28,9 @@ class FormativaJpaAdapter(
     override fun findByAluno(alunoId: UUID, pageable: Pageable): Page<Formativa> =
         jpaRepository.findByIdAluno(alunoId, pageable).map { it.toDomain() }
 
+    override fun findByEstado(estado: FormativaEstado, pageable: Pageable): Page<Formativa> =
+        jpaRepository.findByEstado(estado.name, pageable).map { it.toDomain() }
+
     override fun somarCargaHoraria(alunoId: UUID, estado: FormativaEstado): Int =
         jpaRepository.somarCargaHoraria(alunoId, estado.name).toInt()
 

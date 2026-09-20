@@ -1,6 +1,7 @@
 package br.ufpr.sept.so2.modules.formativas.domain
 
 import br.ufpr.sept.so2.shared.domain.exception.ConflitoEstadoException
+import br.ufpr.sept.so2.shared.domain.exception.DadoInvalidoException
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -80,5 +81,35 @@ class FormativaTest : StringSpec({
 
     "origem comprovante não é aceita" {
         shouldThrow<ConflitoEstadoException> { Formativa.viaComprovante() }
+    }
+
+    "aprovar a partir de AGUARDANDO_CAAF guarda parecer e não muda cargaHoraria" {
+        val formativa = pendente()
+        formativa.confirmar(agora.plusMinutes(1))
+        val revisor = UUID.fromString("01800000-0000-7000-8000-0000000000c1")
+        formativa.aprovar("Horas confirmadas pela presença validada.", revisor, agora.plusMinutes(2))
+        formativa.estado shouldBe FormativaEstado.APROVADA
+        formativa.cargaHoraria shouldBe 4
+        formativa.parecer shouldBe "Horas confirmadas pela presença validada."
+        formativa.idRevisor shouldBe revisor
+        shouldThrow<ConflitoEstadoException> {
+            formativa.indeferir("Parecer suficiente para tentar de novo.", revisor, agora.plusMinutes(3))
+        }
+        formativa.estado shouldBe FormativaEstado.APROVADA
+    }
+
+    "indeferir exige parecer de 20 caracteres e rejeita transição ilegal" {
+        val formativa = pendente()
+        val revisor = UUID.fromString("01800000-0000-7000-8000-0000000000c1")
+        shouldThrow<ConflitoEstadoException> {
+            formativa.aprovar("Ainda pendente de confirmação do aluno.", revisor, agora)
+        }
+        formativa.confirmar(agora.plusMinutes(1))
+        shouldThrow<DadoInvalidoException> {
+            formativa.indeferir("curto", revisor, agora.plusMinutes(2))
+        }
+        formativa.estado shouldBe FormativaEstado.AGUARDANDO_CAAF
+        formativa.indeferir("Atividade não corresponde ao evento validado.", revisor, agora.plusMinutes(2))
+        formativa.estado shouldBe FormativaEstado.INDEFERIDA
     }
 })

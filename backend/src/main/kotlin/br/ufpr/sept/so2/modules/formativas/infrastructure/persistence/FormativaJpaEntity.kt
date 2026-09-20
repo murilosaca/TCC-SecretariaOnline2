@@ -8,6 +8,7 @@ import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
+import java.time.OffsetDateTime
 import java.util.UUID
 
 @Entity
@@ -37,6 +38,15 @@ class FormativaJpaEntity : BaseEntity() {
     @Column(nullable = false, length = 40)
     var estado: String? = null
 
+    @Column(length = 2000)
+    var parecer: String? = null
+
+    @Column(name = "id_revisor")
+    var idRevisor: UUID? = null
+
+    @Column(name = "reviewed_at")
+    var reviewedAt: OffsetDateTime? = null
+
     fun merge(formativa: Formativa) {
         idAluno = formativa.idAluno
         idEvento = formativa.idEvento
@@ -44,6 +54,9 @@ class FormativaJpaEntity : BaseEntity() {
         titulo = formativa.titulo
         cargaHoraria = formativa.cargaHoraria
         estado = formativa.estado.name
+        parecer = formativa.parecer
+        idRevisor = formativa.idRevisor
+        reviewedAt = formativa.reviewedAt
     }
 
     fun toDomain(): Formativa = Formativa(
@@ -56,6 +69,9 @@ class FormativaJpaEntity : BaseEntity() {
         FormativaEstado.from(estado),
         createdAt!!,
         updatedAt!!,
+        parecer,
+        idRevisor,
+        reviewedAt,
     )
 
     companion object {

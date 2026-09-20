@@ -60,7 +60,16 @@ class IamDevDataLoader(
             agora,
             authoritiesProfessor(),
         )
-        LOG.info("Usuários de desenvolvimento IAM prontos (aluno.dev / novo.dev / professor.dev).")
+        criarSeAusente(
+            "caaf.dev@ufpr.br",
+            "GRR20240004",
+            hash,
+            true,
+            agora,
+            agora,
+            authoritiesCaaf(),
+        )
+        LOG.info("Usuários de desenvolvimento IAM prontos (aluno.dev / novo.dev / professor.dev / caaf.dev).")
     }
 
     private fun criarSeAusente(
@@ -120,6 +129,12 @@ class IamDevDataLoader(
                 "event.manage",
                 "event.host",
                 "request.deliberate",
+            )
+
+        private fun authoritiesCaaf(): List<String> =
+            listOf(
+                "dashboard.view_own",
+                "formative.review",
             )
     }
 }

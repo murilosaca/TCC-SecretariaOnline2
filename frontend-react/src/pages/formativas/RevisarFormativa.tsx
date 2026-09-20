@@ -1,12 +1,13 @@
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ApiError } from '../../api/client'
 import { formativasApi } from '../../api/formativas'
-import { ConfirmacaoFormativaWidget } from '../../components/ConfirmacaoFormativaWidget'
+import { PainelRevisaoFormativa } from '../../components/PainelRevisaoFormativa'
 import { rotuloEstadoFormativa, rotuloOrigemFormativa } from '../../lib/formativa'
 
-export function FormativaDetalhe() {
+export function RevisarFormativa() {
   const { id = '' } = useParams()
+  const navigate = useNavigate()
   const queryClient = useQueryClient()
 
   const detalhe = useQuery({
@@ -15,33 +16,30 @@ export function FormativaDetalhe() {
     enabled: Boolean(id),
   })
 
-  const confirmar = useMutation({
-    mutationFn: () => formativasApi.confirmar(id),
+  const revisar = useMutation({
+    mutationFn: ({ action, parecer }: { action: 'APROVAR' | 'INDEFERIR'; parecer: string }) =>
+      action === 'APROVAR'
+        ? formativasApi.aprovar(id, parecer)
+        : formativasApi.indeferir(id, parecer),
     onSuccess: (atual) => {
       queryClient.setQueryData(['formativa', id], atual)
-      void queryClient.invalidateQueries({ queryKey: ['formativas', 'me'] })
+      void queryClient.invalidateQueries({ queryKey: ['formativas'] })
       void queryClient.invalidateQueries({ queryKey: ['bff', 'dashboard', 'aluno'] })
-    },
-  })
-
-  const cancelar = useMutation({
-    mutationFn: () => formativasApi.cancelar(id),
-    onSuccess: (atual) => {
-      queryClient.setQueryData(['formativa', id], atual)
-      void queryClient.invalidateQueries({ queryKey: ['formativas', 'me'] })
-      void queryClient.invalidateQueries({ queryKey: ['bff', 'dashboard', 'aluno'] })
+      navigate('/formativas?to=me', {
+        replace: true,
+        state: { confirmacao: atual.estado === 'APROVADA' ? 'Formativa aprovada.' : 'Formativa indeferida.' },
+      })
     },
   })
 
   const item = detalhe.data
-  const pending = confirmar.isPending || cancelar.isPending
-  const erroAcao = confirmar.error ?? cancelar.error
+  const forbidden = detalhe.isError && detalhe.error instanceof ApiError && detalhe.error.status === 403
 
   return (
     <section className="page detalhe">
       <p>
-        <Link to="/formativas" className="ghost-link">
-          ← Formativas
+        <Link to="/formativas?to=me" className="ghost-link">
+          ← Fila de revisão
         </Link>
       </p>
 
@@ -50,7 +48,12 @@ export function FormativaDetalhe() {
           Carregando formativa…
         </p>
       )}
-      {detalhe.isError && (
+      {forbidden && (
+        <p className="empty" role="status">
+          Revisão indisponível para esta sessão.
+        </p>
+      )}
+      {detalhe.isError && !forbidden && (
         <div className="banner danger" role="alert">
           Formativa não encontrada ou indisponível.{' '}
           <button type="button" onClick={() => detalhe.refetch()}>
@@ -65,6 +68,7 @@ export function FormativaDetalhe() {
             <div>
               <h1>{item.titulo}</h1>
               <p className="muted">
+                {item.alunoNome ? `${item.alunoNome} · ` : ''}
                 {rotuloOrigemFormativa(item.origem)} · {item.cargaHoraria}h
               </p>
             </div>
@@ -73,41 +77,50 @@ export function FormativaDetalhe() {
             </span>
           </header>
 
-          {erroAcao && (
+          {revisar.isError && (
             <div className="banner danger" role="alert">
-              {erroAcao instanceof ApiError ? erroAcao.message : 'Não foi possível concluir a ação.'}
+              {revisar.error instanceof ApiError
+                ? revisar.error.message
+                : 'Não foi possível registrar o parecer.'}
             </div>
           )}
-
-          <ConfirmacaoFormativaWidget
-            links={item._links}
-            pending={pending}
-            onConfirm={() => confirmar.mutate()}
-            onCancel={() => cancelar.mutate()}
-          />
 
           <article className="panel">
             <h2>Metadados</h2>
             <dl className="resumo">
               <div>
-                <dt>Estado</dt>
-                <dd>{rotuloEstadoFormativa(item.estado)}</dd>
+                <dt>Aluno</dt>
+                <dd>{item.alunoNome || '—'}</dd>
+              </div>
+              <div>
+                <dt>Horas</dt>
+                <dd>{item.cargaHoraria}h</dd>
+              </div>
+              <div>
+                <dt>Origem</dt>
+                <dd>{rotuloOrigemFormativa(item.origem)}</dd>
               </div>
               <div>
                 <dt>Registrada em</dt>
                 <dd>{new Date(item.createdAt).toLocaleString('pt-BR')}</dd>
               </div>
-              {item.parecer && (
-                <div>
-                  <dt>Parecer da CAAF</dt>
-                  <dd>{item.parecer}</dd>
-                </div>
-              )}
             </dl>
           </article>
+
+          {item.parecer && (
+            <article className="panel">
+              <h2>Parecer</h2>
+              <p>{item.parecer}</p>
+            </article>
+          )}
+
+          <PainelRevisaoFormativa
+            links={item._links}
+            pending={revisar.isPending}
+            onRevisar={(action, parecer) => revisar.mutate({ action, parecer })}
+          />
         </>
       )}
     </section>
   )
 }
-

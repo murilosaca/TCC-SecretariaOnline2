@@ -17,6 +17,7 @@ export function AppLayout() {
             <NavLink to="/solicitacoes?to=me">Deliberar</NavLink>
             <NavLink to="/eventos">Eventos</NavLink>
             <NavLink to="/formativas">Formativas</NavLink>
+            <NavLink to="/formativas?to=me">Revisão CAAF</NavLink>
             <NavLink to="/professor/eventos">Eventos (prof.)</NavLink>
             <NavLink to="/secretaria/cursos">Cursos</NavLink>
             <NavLink to="/secretaria/disciplinas">Disciplinas</NavLink>

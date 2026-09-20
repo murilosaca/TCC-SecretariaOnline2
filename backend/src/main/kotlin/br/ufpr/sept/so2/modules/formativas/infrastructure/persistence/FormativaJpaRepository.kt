@@ -12,6 +12,8 @@ interface FormativaJpaRepository : JpaRepository<FormativaJpaEntity, UUID> {
 
     fun findByIdAluno(idAluno: UUID, pageable: Pageable): Page<FormativaJpaEntity>
 
+    fun findByEstado(estado: String, pageable: Pageable): Page<FormativaJpaEntity>
+
     fun findTop3ByIdAlunoAndEstadoOrderByCreatedAtDesc(idAluno: UUID, estado: String): List<FormativaJpaEntity>
 
     @Query(

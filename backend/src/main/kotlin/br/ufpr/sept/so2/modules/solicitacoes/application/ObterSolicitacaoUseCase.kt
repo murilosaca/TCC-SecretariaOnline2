@@ -10,10 +10,17 @@ import java.util.UUID
 @Service
 class ObterSolicitacaoUseCase(
     private val solicitacaoRepository: SolicitacaoRepository,
+    private val validarTokenDeliberacaoUseCase: ValidarTokenDeliberacaoUseCase,
 ) {
 
     @Transactional(readOnly = true)
-    fun execute(id: UUID, usuarioId: UUID, authorities: List<String>): Solicitacao {
+    fun execute(
+        id: UUID,
+        usuarioId: UUID,
+        authorities: List<String>,
+        deepLinkToken: String? = null,
+    ): Solicitacao {
+        validarTokenDeliberacaoUseCase.execute(deepLinkToken, id, usuarioId)
         val solicitacao = solicitacaoRepository.findById(id)
             .orElseThrow { RecursoNaoEncontradoException("Solicitação não encontrada.") }
         val dono = solicitacao.pertenceA(usuarioId)

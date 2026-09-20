@@ -7,6 +7,7 @@ import br.ufpr.sept.so2.shared.domain.exception.CredenciaisInvalidasException
 import br.ufpr.sept.so2.shared.domain.exception.DadoInvalidoException
 import br.ufpr.sept.so2.shared.domain.exception.RateLimitExcedidoException
 import br.ufpr.sept.so2.shared.domain.exception.RecursoNaoEncontradoException
+import br.ufpr.sept.so2.shared.domain.exception.TokenAcaoInvalidoException
 import br.ufpr.sept.so2.shared.domain.exception.TokenResetInvalidoException
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
@@ -78,12 +79,12 @@ class GlobalExceptionHandler {
             "authentication-required",
         )
 
-    @ExceptionHandler(TokenResetInvalidoException::class)
-    fun handleResetToken(ex: TokenResetInvalidoException): ProblemDetail =
+    @ExceptionHandler(TokenResetInvalidoException::class, TokenAcaoInvalidoException::class)
+    fun handleTokenUsoUnico(ex: RuntimeException): ProblemDetail =
         problemDetail(
             HttpStatus.UNAUTHORIZED,
             "Não autenticado",
-            TokenResetInvalidoException.MENSAGEM,
+            ex.message ?: "Link inválido ou expirado.",
             "authentication-required",
         )
 

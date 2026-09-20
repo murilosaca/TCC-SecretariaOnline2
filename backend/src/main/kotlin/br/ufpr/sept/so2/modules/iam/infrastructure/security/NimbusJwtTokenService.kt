@@ -59,6 +59,20 @@ class NimbusJwtTokenService(
         return sign(claims)
     }
 
+    override fun emitDeliberationToken(usuario: Usuario, solicitacaoId: UUID): String {
+        val agora = Instant.now()
+        val claims = JWTClaimsSet.Builder()
+            .subject(usuario.id.toString())
+            .issuer(properties.issuer)
+            .audience(properties.deliberationAudience)
+            .jwtID(UUID.randomUUID().toString())
+            .issueTime(Date.from(agora))
+            .expirationTime(Date.from(agora.plusSeconds(properties.deliberationTtlSeconds)))
+            .claim("solicitacaoId", solicitacaoId.toString())
+            .build()
+        return sign(claims)
+    }
+
     override fun parseAccessToken(token: String): JwtTokenService.AccessTokenClaims {
         val claims = parse(token, properties.audience)
         val authorities = readAuthorities(claims)
@@ -74,6 +88,17 @@ class NimbusJwtTokenService(
     override fun parseResetToken(token: String): JwtTokenService.ResetTokenClaims {
         val claims = parse(token, properties.resetAudience)
         return JwtTokenService.ResetTokenClaims(UUID.fromString(claims.subject), claims.jwtid)
+    }
+
+    override fun parseDeliberationToken(token: String): JwtTokenService.DeliberationTokenClaims {
+        val claims = parse(token, properties.deliberationAudience)
+        val solicitacaoRaw = claims.getClaim("solicitacaoId")?.toString()
+            ?: throw IllegalArgumentException("claims")
+        return JwtTokenService.DeliberationTokenClaims(
+            UUID.fromString(claims.subject),
+            UUID.fromString(solicitacaoRaw),
+            claims.jwtid,
+        )
     }
 
     private fun sign(claims: JWTClaimsSet): String {

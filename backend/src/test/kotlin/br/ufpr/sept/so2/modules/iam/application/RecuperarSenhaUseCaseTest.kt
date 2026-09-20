@@ -43,6 +43,7 @@ class RecuperarSenhaUseCaseTest : StringSpec({
             outbox,
             audit,
             IamFakes.Settings(),
+            com.fasterxml.jackson.databind.ObjectMapper(),
         )
     }
 
@@ -50,7 +51,9 @@ class RecuperarSenhaUseCaseTest : StringSpec({
         useCase.execute("aluno.dev@ufpr.br", "127.0.0.1")
         outbox.tipos.size shouldBe 1
         outbox.tipos.first() shouldBe "PASSWORD_RESET"
+        outbox.payloads.first() shouldContain "usuarioId"
         outbox.payloads.first() shouldContain "/nova-senha?token="
+        outbox.payloads.first().contains("aluno.dev@ufpr.br") shouldBe false
         audit.tipos.contains("iam.password_reset_requested") shouldBe true
     }
 

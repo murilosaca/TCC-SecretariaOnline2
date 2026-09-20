@@ -13,7 +13,18 @@ export function RequireAuth() {
     )
   }
   if (status === 'anonymous') {
-    return <Navigate to="/login" replace state={{ from: location.pathname }} />
+    const token = new URLSearchParams(location.search).get('token')
+    const deliberarComToken =
+      Boolean(token) && /\/solicitacoes\/[^/]+\/deliberar$/.test(location.pathname)
+    if (!deliberarComToken) {
+      return (
+        <Navigate
+          to="/login"
+          replace
+          state={{ from: `${location.pathname}${location.search}` }}
+        />
+      )
+    }
   }
   if (mustChangePassword && location.pathname !== '/primeiro-acesso') {
     return <Navigate to="/primeiro-acesso" replace />

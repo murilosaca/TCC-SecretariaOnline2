@@ -14,6 +14,8 @@ class IamProperties : IamSettings {
     var issuer: String = "so2"
     var audience: String = "so2-api"
     var resetAudience: String = "password-reset"
+    var deliberationAudience: String = "request-action"
+    override var deliberationTtlSeconds: Long = 259200
     override var frontendBaseUrl: String = "http://localhost:5173"
     var jwtPrivateKeyPem: String = ""
     var jwtPublicKeyPem: String = ""

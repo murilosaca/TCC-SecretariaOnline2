@@ -7,6 +7,8 @@ interface IamSettings {
 
     val resetTtlSeconds: Long
 
+    val deliberationTtlSeconds: Long
+
     val maxFalhasConsecutivas: Int
 
     val minutosBloqueio: Int

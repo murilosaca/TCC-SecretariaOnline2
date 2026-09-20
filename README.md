@@ -4,11 +4,11 @@ Plataforma digital da secretaria acadêmica do **SEPT/UFPR**. Este é o reposit�
 
 O SO2 não substitui o juízo de docentes, comissões ou secretaria. Ele garante trilha de auditoria, integridade de dados e automação de trâmites repetitivos.
 
-**Estado atual:** P0 fechado e demonstrável em `main`. Itens 1–**5** também já estão entregues (formativas via presença, deliberação, CAAF individual, presença v4.1 e **certificados oficiais + F0.7**).
+**Estado atual:** P0 fechado e demonstrável em `main`. Itens 1–**6** também já estão entregues (formativas via presença, deliberação, CAAF individual, presença v4.1, certificados oficiais + F0.7 e **dispatcher do Outbox + SMTP + deep-link de deliberação**).
 
-Circuito demonstrável hoje: login → primeiro acesso/LGPD → dashboard do aluno → nova solicitação → presença **QR\|SECRET × SINGLE\|DUAL** → formativa `PENDENTE_CONFIRMACAO` quando a presença fica **COMPLETA** → aluno confirma → `AGUARDANDO_CAAF` → **CAAF aprova** → certificado oficial (PDF + hash + ED25519) na mesma TX → `/certificados` baixa o PDF → F0.7 verifica o hash do QR → `/inicio` mostra horas `N / 120` e o KPI de certificados deixa de ser “Indisponível”.
+Circuito demonstrável hoje: login → primeiro acesso/LGPD → dashboard do aluno → nova solicitação (**e-mail com deep-link ao professor**) → presença **QR\|SECRET × SINGLE\|DUAL** → formativa `PENDENTE_CONFIRMACAO` quando a presença fica **COMPLETA** → aluno confirma → `AGUARDANDO_CAAF` → **CAAF aprova** → certificado oficial (PDF + hash + ED25519) na mesma TX → `/certificados` baixa o PDF → F0.7 verifica o hash do QR → `/inicio` mostra horas `N / 120` e o KPI de certificados deixa de ser “Indisponível”. Recuperar senha (F0.2) enfileira `PASSWORD_RESET` e o dispatcher entrega o link no Mailpit.
 
-**Próxima fatia: dispatcher do Outbox + comunicação** (item 6). Não abrir lote CAAF, COE, FGAC nem Expo neste sprint.
+**Próxima fatia: FGAC (F7)** (item 7). Não abrir lote CAAF, COE nem Expo neste sprint.
 
 ---
 
@@ -27,7 +27,7 @@ O P0 do Figma cobre só o núcleo que prova o produto. Formativas **não** entra
 | `/professor/eventos` + operação | Professor | Entregue (os quatro modos; PIN/token só na host-session) |
 | `/publico/verificar-protocolo` | Anônimo | Entregue (metadados; sem PDF) |
 | `/formativas` + `/formativas/:id` | Aluno | Entregue (item 1; confirmação simplificada; parecer visível após CAAF) |
-| `/solicitacoes?to=me` + `/solicitacoes/:id/deliberar` | Professor (secretaria reutiliza a mesma tela) | Entregue (item 2; DEFER/INDEFER/REQUEST_ADJUST; sem lote nem deep-link) |
+| `/solicitacoes?to=me` + `/solicitacoes/:id/deliberar` | Professor (secretaria reutiliza a mesma tela) | Entregue (item 2 + deep-link JWT do item 6; DEFER/INDEFER/REQUEST_ADJUST; sem lote nem FORWARD) |
 | `/formativas?to=me` + `/formativas/:id/revisar` | CAAF (`formative.review`) | Entregue (item 3; um item por vez; sem lote) |
 | `/certificados` | Aluno (`certificate.view_own`) | Entregue (item 5; lista + download do PDF) |
 | `/publico/verificar-certificado/:hash` | Anônimo | Entregue (item 5 / F0.7; stub removido) |
@@ -79,14 +79,15 @@ Pacote raiz: `br.ufpr.sept.so2`. Cada módulo segue Clean Architecture (`domain`
 | Transversal | `shared/` | Exception handler RFC 7807, CORS, Security, `Grr`/`Email`/`Cpf`, `Uuids.v7()` |
 | Público | `modules/publico/` | `GET /publico/contato` |
 | Acadêmico | `modules/academico/` | CRUD curso, disciplina, aluno (GRR, sem `idade`), período letivo (sem sobreposição). Ainda `permitAll` — sem FGAC. Profile `dev`: `AcademicoDevDataLoader` semeia TADS (120 h) + `aluno.dev` / `novo.dev` |
-| IAM | `modules/iam/` | Login, refresh, logout, primeiro acesso + LGPD, recuperação via Outbox. JWT RS256 15 min; cookie `so2_refresh` (`httpOnly; SameSite=Lax; Path=/auth`; `Secure` na spec — local `IAM_COOKIE_SECURE=false` porque o Vite é HTTP). Senha só Argon2id |
+| IAM | `modules/iam/` | Login, refresh, logout, primeiro acesso + LGPD, recuperação via Outbox **despachada**. JWT RS256 15 min; cookie `so2_refresh` (`httpOnly; SameSite=Lax; Path=/auth`; `Secure` na spec — local `IAM_COOKIE_SECURE=false` porque o Vite é HTTP). Senha só Argon2id. JWT de deliberação (audience `request-action`, 72 h) |
 | Solicitações | `modules/solicitacoes/` | Motor `RequestType` + `form_schema` + `workflow_json`. Seed `DECLARACAO_SIMPLES`. Protocolo `PROT-AAAA-NNNNN`. `GET /publico/protocolos/{protocolo}`. Fila `GET /requests?canDeliberate=true`. `POST /requests/{id}/transitions` (parecer + Outbox na mesma TX). HATEOAS `deferir` / `indeferir` / `solicitar-ajustes` só se `request.deliberate` **e** o estado atual do `workflow_json` permitirem |
 | Presença | `modules/presenca/` | Evento + Proof of Stay **QR\|SECRET × SINGLE\|DUAL**. Aluno confirma PIN ou token QR (`{ pin \| token, deviceUuid, fase }`). Professor hospeda janela de entrada e, em DUAL, de saída. Segredo em claro só na host-session (`HostPinPort` / memória). Persistido só como Argon2id. QR renovável a cada 5 min (`_links.renovar-qr`). Sem geofence. |
 | BFF | `modules/bff/` | `GET /bff/dashboard/aluno` — agrega identidade, período, solicitações, eventos, formativas e **certificados**. Degrada por bloco (HTTP 200). 403 se faltar `dashboard.view_own` **ou** capability de aluno (`attendance.view_open` / `request.view_own`) |
 | Formativas | `modules/formativas/` | Tabela `formativa` (V007 + parecer/revisor em V008). Gatilho **na mesma TX** de `ConfirmarPresencaUseCase` quando a presença fica **COMPLETA**. Aluno confirma → `AGUARDANDO_CAAF`. CAAF aprova/indefere. Ao **APROVAR**, chama `CertificadoPorFormativaPort` na mesma TX. INDEFER não emite. Sem lote, sem comprovante. |
 | Certificados | `modules/certificados/` | Tabela `certificado` (V009). Emissão **só pelo sistema** na aprovação CAAF (UNIQUE `id_formativa`; reaprovar não duplica). PDF canônico no servidor (bytea; sem MinIO). Hash SHA-256 do PDF canônico **antes** de estampar o QR (dependência circular do hash no próprio arquivo). Assinatura ED25519 do hash; JWKS em `GET /.well-known/jwks.json`. `GET /certificates?beneficiario=me` + download do dono (404 se outro aluno). `GET /publico/certificados/{hash}/verificacao` anônimo, sem GRR/e-mail. Outbox `certificado.emitido` + `audit_log` na mesma TX. Sem `POST /certificates`, sem upload oficial. |
+| Comunicação | `modules/comunicacao/` | Dispatcher `@Scheduled(fixedDelay = 5000)` at-least-once (`SELECT … FOR UPDATE SKIP LOCKED` no Postgres; H2 dos ITs sem SKIP LOCKED). `MailPort` / `SmtpMailAdapter`. Sem `GET /communications`, sem hub F1.6. |
 
-Módulos **previstos e ainda sem código**: `estagio`, `tcc`, `comunicacao`, `auditoria` (módulo dedicado), `arquivos`.
+Módulos **previstos e ainda sem código**: `estagio`, `tcc`, `auditoria` (módulo dedicado), `arquivos`.
 
 ### Flyway (imutável)
 
@@ -103,8 +104,9 @@ Módulos **previstos e ainda sem código**: `estagio`, `tcc`, `comunicacao`, `au
 | V007 | Formativas (`formativa`, UNIQUE `id_evento+id_aluno`) |
 | V008 | Parecer CAAF em `formativa` (`parecer`, `id_revisor`, `reviewed_at`) |
 | V009 | Certificados (`certificado`; UNIQUE `id_formativa` e `hash_sha256`; PDF em `bytea`) |
+| V010 | Outbox dispatcher (`last_error`, `processed_at`; status PROCESSING/FAILED) |
 
-Próxima migration, quando um módulo novo precisar de tabela: **V010**.
+Próxima migration, quando um módulo novo precisar de tabela: **V011**.
 
 ### Frontend — onde cada tela mora
 
@@ -136,7 +138,7 @@ Rotas da UI (`/cursos` redireciona para `/secretaria/cursos`) em geral **não** 
 | Backend | Kotlin + Spring Boot 3 + JVM 21 + Maven + PostgreSQL 16 + Flyway. Testes: Kotest + MockK (domínio/aplicação); ITs JUnit 5 + MockMvc |
 | Web | React 18 + Vite + TypeScript + TanStack Query (`frontend-react/`). CSS próprio (`index.css`). Sem Tailwind |
 | Mobile | Spec: React Native + Expo, **mesmo backend**. Esqueleto em `frontend-react-native/` (Expo Router + NativeWind). **Não** levar Tailwind para `frontend-react/` |
-| Docker | Só Postgres 16 no `docker-compose.yml`. A spec pede também MinIO, Mailpit e observabilidade — não estão |
+| Docker | Postgres 16 no `docker-compose.yml` **e Mailpit** (SMTP 1025 / UI 8025). A spec pede também MinIO e observabilidade — não estão |
 | Arquivos (futuro) | API S3-compatível (MinIO no desenvolvimento) |
 | IDs | UUID v7. Proibido `Long`/`IDENTITY` em entidade de negócio |
 | Senha | Só Argon2id. Proibido MD5, SHA-1, SHA-256 e bcrypt para senha |
@@ -183,7 +185,7 @@ QR voltou para o item 4 de propósito. COE saiu do item da CAAF e foi para o ite
 
 ### Regras que valem em todas as fatias
 
-Kotlin + React (`frontend-react/`). Sem Lombok, sem Angular, sem Java-fonte, sem Tailwind. Capabilities `dominio.acao` + `_links` HATEOAS; nunca `hasRole`. Flyway imutável (próxima tabela: **V010**). Sem e-mail/push síncrono. Sem geofence, trust score ou aula SIGA. `/academico/**` continua `permitAll` até o item 7. Menu com atalhos de dev (Formativas, Certificados, Eventos prof., CRUD da secretaria) só some no FGAC.
+Kotlin + React (`frontend-react/`). Sem Lombok, sem Angular, sem Java-fonte, sem Tailwind. Capabilities `dominio.acao` + `_links` HATEOAS; nunca `hasRole`. Flyway imutável (próxima tabela: **V011**). Sem e-mail/push síncrono. Sem geofence, trust score ou aula SIGA. `/academico/**` continua `permitAll` até o item 7. Menu com atalhos de dev (Formativas, Certificados, Eventos prof., CRUD da secretaria) só some no FGAC.
 
 ### Ordem
 
@@ -194,8 +196,8 @@ Kotlin + React (`frontend-react/`). Sem Lombok, sem Angular, sem Java-fonte, sem
 | 3 | CAAF individual (parecer; horas saem de 0) | **Feito** |
 | 4 | Presença v4.1 restante (QR / `SECRET_DUAL`) | **Feito** |
 | 5 | Certificados oficiais + F0.7 | **Feito** |
-| 6 | Dispatcher do Outbox + comunicação | **Próxima** — depois de haver eventos que valham e-mail |
-| 7 | FGAC (F7) | Fecha `/academico/**` e a nav |
+| 6 | Dispatcher do Outbox + comunicação | **Feito** |
+| 7 | FGAC (F7) | **Próxima** — fecha `/academico/**` e a nav |
 | 8 | Cliente Expo (React Native) | Mesma API; web já provou os contratos |
 | 9 | Estágio + COE, TCC, egresso, F6.1 | Módulos novos |
 
@@ -209,13 +211,15 @@ BFF: `kpis.horasFormativas` soma `APROVADA` (regra inalterada). Com cadastro aca
 
 O P0 só **abria** solicitação. `DECLARACAO_SIMPLES` já tinha `workflow_json` (`EM_ANALISE` → `DEFER`/`INDEFER`/`REQUEST_ADJUST`). `Solicitacao.transicionar` existia.
 
-**Entregue:** seed `request.deliberate` no professor; `POST /requests/{id}/transitions` com ação + parecer fundamentado (INDEFER exige ≥ 20 caracteres); fila `GET /requests?canDeliberate=true` (inbox, não tela por tipo); HATEOAS `deliberar` / `deferir` / `indeferir` / `solicitar-ajustes` só se a capability **e** o `workflow_json` permitirem a ação a partir do estado atual; UI `/solicitacoes?to=me` e `/solicitacoes/:id/deliberar` cega a `_links`. Secretaria reutiliza a mesma tela — não duplicar. Outbox `solicitacao.deliberada` / `solicitacao.ajuste_solicitado` na mesma TX (dispatcher continua no item 6).
+**Entregue:** seed `request.deliberate` no professor; `POST /requests/{id}/transitions` com ação + parecer fundamentado (INDEFER exige ≥ 20 caracteres); fila `GET /requests?canDeliberate=true` (inbox, não tela por tipo); HATEOAS `deliberar` / `deferir` / `indeferir` / `solicitar-ajustes` só se a capability **e** o `workflow_json` permitirem a ação a partir do estado atual; UI `/solicitacoes?to=me` e `/solicitacoes/:id/deliberar` cega a `_links`. Secretaria reutiliza a mesma tela — não duplicar. Outbox `solicitacao.deliberada` / `solicitacao.ajuste_solicitado` na mesma TX.
 
-**Não entrou:** deep-link JWT de 72 h por e-mail (bloqueado até o item 6); deliberação em lote (o seed não configura lote); BFF completo do professor (F3.1); novo `RequestType`.
+**Deep-link (item 6):** o JWT de 72 h nasce no **dispatch** de `solicitacao.criada` (não no use case síncrono). Secretaria (`request.triage`) não recebe o e-mail.
+
+**Não entrou:** deliberação em lote (o seed não configura lote); BFF completo do professor (F3.1); novo `RequestType`; FORWARD (F3.4-D04).
 
 #### 3. CAAF individual — feito
 
-**Entregue:** transição `AGUARDANDO_CAAF` → `APROVADA` / `INDEFERIDA` com parecer; seed `formative.review` em `caaf.dev@ufpr.br` (GRR novo; `professor.dev` continua sem a capability e toma 403 em `GET /formativas?canReview=true`); fila `GET /formativas?canReview=true` (inbox, não `/formative-entries`); `POST /formativas/{id}/aprovar` e `/indeferir` (`{ parecer }`; INDEFER ≥ 20 caracteres no cliente e no use case, 422); HATEOAS `revisar` / `aprovar` / `indeferir` só se `formative.review` **e** `AGUARDANDO_CAAF`; UI `/formativas?to=me` e `/formativas/:id/revisar` cega a `_links` (mesmo espírito de FilaDeliberacao + PainelDeliberacao). Secretaria/CAAF não ganhou tela duplicada. Ao aprovar, as horas são as já gravadas em `formativa.cargaHoraria` — o BFF só soma `APROVADA`. Outbox `formativa.aprovada` / `formativa.indeferida` + `audit_log` na mesma TX (dispatcher continua no item 6).
+**Entregue:** transição `AGUARDANDO_CAAF` → `APROVADA` / `INDEFERIDA` com parecer; seed `formative.review` em `caaf.dev@ufpr.br` (GRR novo; `professor.dev` continua sem a capability e toma 403 em `GET /formativas?canReview=true`); fila `GET /formativas?canReview=true` (inbox, não `/formative-entries`); `POST /formativas/{id}/aprovar` e `/indeferir` (`{ parecer }`; INDEFER ≥ 20 caracteres no cliente e no use case, 422); HATEOAS `revisar` / `aprovar` / `indeferir` só se `formative.review` **e** `AGUARDANDO_CAAF`; UI `/formativas?to=me` e `/formativas/:id/revisar` cega a `_links` (mesmo espírito de FilaDeliberacao + PainelDeliberacao). Secretaria/CAAF não ganhou tela duplicada. Ao aprovar, as horas são as já gravadas em `formativa.cargaHoraria` — o BFF só soma `APROVADA`. Outbox `formativa.aprovada` / `formativa.indeferida` + `audit_log` na mesma TX (despacho no-op no item 6).
 
 **Não entrou (honesto):** lote CAAF / F4.1 / checkboxes; filtro de fila por curso da comissão (item 7); COE (item 9); comprovante (`viaComprovante()` continua 409); BFF do professor (F3.1). Certificado na aprovação **já entra** (item 5).
 
@@ -233,11 +237,24 @@ Completa presença v4.1 no **mesmo** motor (`QR`/`SECRET` × `SINGLE`/`DUAL` + j
 
 **Entregue:** módulo `modules/certificados` + V009. Gatilho na mesma TX de `RevisarFormativaUseCase` quando a ação é `APROVAR` (`CertificadoPorFormativaPort`; UNIQUE por formativa; INDEFER não emite). PDF canônico no servidor (nome, atividade, CH = `formativa.cargaHoraria`, data, QR para `/publico/verificar-certificado/:hash`). Hash SHA-256 do PDF canônico (antes do QR) + assinatura ED25519 (chave do servidor, par separado do RSA do JWT). Chave pública em `GET /.well-known/jwks.json`. F0.7 verifica no browser via SubtleCrypto — o PDF não volta ao servidor. `GET /certificates?beneficiario=me` com `_links.download`; download e detalhe só do dono (outro aluno → 404). Verificação pública sem GRR/e-mail; hash inexistente → 404 sem beneficiário. Sem `certificate.view_own` → 403 na lista. BFF: `kpis.certificados` deixa de ser `null` hardcoded (porta no módulo; falha → `null`; cadastro e zero → `0`). Seed: `aluno.dev` ganha `certificate.view_own`. Oficinas já `APROVADA` **não** ganham backfill — só o próximo `APROVAR`.
 
-**Não entrou (honesto):** MinIO / presigned URL (PDF em `bytea` até o compose ter MinIO); upload de PDF na F0.7 para conferir arquivo (CA-04); revogação (`REVOGADO`); reemissão de egresso (F2); certificado de TCC/estágio; **encerrar evento ainda não emite** — só formativa `APROVADA`; lote CAAF / COE; dispatcher SMTP (o PDF nasce síncrono na TX da aprovação; o Outbox só registra `certificado.emitido`).
+**Não entrou (honesto):** MinIO / presigned URL (PDF em `bytea` até o compose ter MinIO); upload de PDF na F0.7 para conferir arquivo (CA-04); revogação (`REVOGADO`); reemissão de egresso (F2); certificado de TCC/estágio; **encerrar evento ainda não emite** — só formativa `APROVADA`; lote CAAF / COE; e-mail de `certificado.emitido` (no-op no dispatcher).
 
-#### 6. Dispatcher do Outbox
+#### 6. Dispatcher do Outbox + SMTP + deep-link — feito
 
-Hoje `presenca.confirmada`, `evento.janela_aberta`, `evento.qr_renovado`, `evento.encerrado`, `formativa.criada` / `formativa.confirmada` / `formativa.aprovada` / `formativa.indeferida`, `certificado.emitido`, `solicitacao.deliberada` / `solicitacao.ajuste_solicitado` e recuperação de senha nascem `PENDING` e ficam. Sem SMTP síncrono nunca. Este item liga o dispatcher (at-least-once) e, com isso, o deep-link de deliberação por e-mail que o item 2 deixou de fora.
+Hoje o use case da mutação só faz enqueue + audit na mesma TX (RNF-CON-01). O dispatcher `@Scheduled(fixedDelay = 5000)` (RNF-DES-05) reclama `PENDING` (e `PROCESSING` envelhecido) com `FOR UPDATE SKIP LOCKED` no Postgres, marca `PROCESSING`, envia SMTP e `SENT`. Crash depois do SMTP e antes do `SENT` = reenvio (at-least-once). Teto de 5 tentativas → `FAILED` + `audit_log`; a mutação de negócio não dá rollback. Sem RabbitMQ. Sem e-mail síncrono.
+
+**Entregue:**
+- Módulo `modules/comunicacao` (dispatcher + `MailPort` / `SmtpMailAdapter`). Sem `GET /communications`, sem tela `/comunicacao`.
+- Mailpit no `docker-compose.yml` (1025 SMTP / 8025 UI). Não mexe no Postgres 5432 do compose nem no aviso do `:5433`.
+- F0.2 de verdade: `POST /auth/recuperar-senha` 202 idêntico (anti-enumeração). Payload do outbox carrega `usuarioId` + `resetUrl` (não o e-mail em claro). Destinatário resolvido no dispatch. E-mail inexistente: zero JWT, zero outbox, zero SMTP.
+- Deep-link de deliberação (RF-F3-003-b / RNF-SEC-05): no dispatch de `solicitacao.criada`, mint JWT RS256 72 h, audience `request-action`, `sub=professorId`, claim `solicitacaoId`. URL `{FRONTEND_BASE_URL}/solicitacoes/{id}/deliberar?token=`. Secretaria (`request.triage`) não recebe. GET `/requests/{id}?token=` valida e **não** blacklista o JTI. POST `/requests/{id}/transitions?token=` valida de novo; na TX da deliberação bem-sucedida, JTI na `jti_blacklist`. Reuso → 401. Transição sem token continua pela fila + `request.deliberate`.
+- UI F3.4: `?token=` sem sessão mostra banner + login com `returnUrl` (query preservada). Token inválido/gasto: 401 honesto, sem enumerar o pedido.
+- `solicitacao.deliberada` / `solicitacao.ajuste_solicitado` → e-mail ao aluno (sem deep-link).
+- V010: `last_error`, `processed_at`. Status `PENDING | PROCESSING | SENT | FAILED`.
+
+**No-op documentado (SENT sem e-mail):** `iam.first_access_completed`, `formativa.*`, `certificado.emitido`, `presenca.confirmada`, `evento.janela_aberta` / `qr_renovado` / `encerrado`. Tipos desconhecidos também fecham SENT (não ficam em retry eterno).
+
+**Não entrou (honesto):** hub F1.6 `/comunicacao`; publicar Markdown F3.8; templates F7.5; FCM/push; DND/digest/`notif_prefs`; FORWARD (F3.4-D04); e-mail de `certificado.emitido`; lote CAAF; COE; MinIO; certificado em encerrar evento; backfill de PENDING mortos além do que o dispatcher já consome da fila.
 
 #### 7. FGAC (F7)
 
@@ -251,7 +268,7 @@ React Native + Expo em `frontend-react-native/`, **mesmo** `/auth`, `/bff`, `/ev
 
 Módulos novos, um por vez quando o requisito entrar. Parecer COE **sempre** individual (nunca lote). Egresso é read-only e não acessa rotas de aluno. F6.1 é da coordenação, não da secretaria.
 
-Dívida consciente (não é P0): tabela em [`docs/auditoria-fundacao.md`](docs/auditoria-fundacao.md). Destaques: BFF professor (F3.1) ausente; MinIO/S3 ainda não (PDF em `bytea`); encerrar evento sem PDF; CA-04 (upload na verificação) de fora; `/academico/**` aberto; PIN/token da host-session some se a API reiniciar; sem ArchUnit; rate limit em memória (sem Redis). Horas e certificados no `/inicio` saem de “Indisponível” depois que a CAAF aprova (itens 3 e 5).
+Dívida consciente (não é P0): tabela em [`docs/auditoria-fundacao.md`](docs/auditoria-fundacao.md). Destaques: BFF professor (F3.1) ausente; MinIO/S3 ainda não (PDF em `bytea`); encerrar evento sem PDF; CA-04 (upload na verificação) de fora; `/academico/**` aberto; PIN/token da host-session some se a API reiniciar; sem ArchUnit; rate limit em memória (sem Redis). Horas e certificados no `/inicio` saem de “Indisponível” depois que a CAAF aprova (itens 3 e 5). Dispatcher SMTP e F0.2/F3.4 deep-link estão no item 6.
 
 ---
 
@@ -259,16 +276,20 @@ Dívida consciente (não é P0): tabela em [`docs/auditoria-fundacao.md`](docs/a
 
 Neste ambiente o Postgres do SO2 é o container **`so2_postgres_iam` na porta 5433**, banco `secretaria_dev` / usuário `secretaria`.
 
-O `docker compose` do repositório sobe **outro** Postgres em **5432**, com outro histórico Flyway. **Não aponte a API do P0 para 5432.**
+O `docker compose` do repositório sobe **outro** Postgres em **5432**, com outro histórico Flyway. **Não aponte a API do P0 para 5432.** O mesmo compose sobe o **Mailpit** (SMTP `:1025`, UI `:8025`) — este sim é o do SO2.
 
 ```bash
 # 1. Banco (já no ar se so2_postgres_iam existir)
 #    5433 → secretaria_dev
+#    Mailpit (compose deste repo): docker compose up -d mailpit
 
 # 2. API — http://localhost:8080
 cd backend
 # PowerShell:
 $env:SPRING_DATASOURCE_URL="jdbc:postgresql://localhost:5433/secretaria_dev"
+$env:MAIL_HOST="localhost"
+$env:MAIL_PORT="1025"
+$env:MAIL_FROM="so2@localhost"
 mvn spring-boot:run
 
 # 3. Web — http://localhost:5174 (porta fixa no vite.config.ts; 5173 não é o default deste repo)
@@ -323,7 +344,8 @@ A oficina seed `"Oficina Proof of Stay (dev)"` pode já estar `COMPLETA` para `a
 5. **Aluno** em `GET /events?mine=true` e `host-session` → 403.
 6. **`/academico/**`** continua 200 (ainda sem FGAC).
 7. **Formativas** — professor cria um modo SINGLE (ou completa DUAL com saída) e abre a janela. Aluno confirma → formativa `PENDENTE_CONFIRMACAO` em `/formativas` e CTA no `/inicio` → `_links.confirmar` → `AGUARDANDO_CAAF` (botões somem; CTA some no refetch). Em DUAL, a formativa **não** nasce na entrada. F5 em `/formativas` recarrega a SPA, não a API.
-8. **Deliberação** — aluno abre `DECLARACAO_SIMPLES` em `/solicitacoes/nova`. Professor em `/solicitacoes?to=me` vê o protocolo → `/solicitacoes/:id/deliberar` → `_links.deferir` → parecer → estado `DELIBERADA`. Aluno em `/solicitacoes/:id` vê a timeline. Sem `request.deliberate`, `POST /requests/{id}/transitions` é 403. Deep-link por e-mail ainda não existe.
-9. **CAAF** — `caaf.dev@ufpr.br` em `/formativas?to=me` vê o item em `AGUARDANDO_CAAF` (`_links.aprovar` presente). Aprova com parecer → `APROVADA`; some da fila; botões somem; **emite o certificado** na mesma TX. Aluno em `/inicio`: horas `N / 120` e KPI de certificados ≥ 1 (não “Indisponível”). `/certificados` baixa o PDF. F0.7 em `/publico/verificar-certificado/{hash}` (hash do QR / da lista) deixa de ser stub: válido + SubtleCrypto, ou inválido sem dados do beneficiário se o hash não existe. `GET /formativas?canReview=true` sem `formative.review` → 403. `GET /certificates` sem `certificate.view_own` → 403. Outro aluno no detalhe do certificado → 404. `caaf.dev` não baixa certificado de aluno.
+8. **Deliberação** — aluno abre `DECLARACAO_SIMPLES` em `/solicitacoes/nova`. Em ~5 s o Mailpit (`:8025`) mostra e-mail ao `professor.dev` com `/solicitacoes/{id}/deliberar?token=`. Sem sessão, a tela mostra banner + login (query preservada). Com sessão, GET valida o token (`_links` presentes). Deferir consome o JTI; reabrir o mesmo link → 401. Alternativa: professor em `/solicitacoes?to=me` (fila, sem token) → Deliberar → parecer → Deferir. Secretaria não recebe deep-link. Sem `request.deliberate`, `POST /requests/{id}/transitions` é 403.
+9. **Recuperar senha** — `/recuperar-senha` com `aluno.dev@ufpr.br` ou e-mail inexistente: mesmo banner 202. Só o cadastrado chega no Mailpit com `/nova-senha?token=` (24 h). Redefinir consome o JTI.
+10. **CAAF** — `caaf.dev@ufpr.br` em `/formativas?to=me` vê o item em `AGUARDANDO_CAAF` (`_links.aprovar` presente). Aprova com parecer → `APROVADA`; some da fila; botões somem; **emite o certificado** na mesma TX. Aluno em `/inicio`: horas `N / 120` e KPI de certificados ≥ 1 (não “Indisponível”). `/certificados` baixa o PDF. F0.7 em `/publico/verificar-certificado/{hash}` (hash do QR / da lista) deixa de ser stub: válido + SubtleCrypto, ou inválido sem dados do beneficiário se o hash não existe. `GET /formativas?canReview=true` sem `formative.review` → 403. `GET /certificates` sem `certificate.view_own` → 403. Outro aluno no detalhe do certificado → 404. `caaf.dev` não baixa certificado de aluno.
 
 F0.7 não aceita upload de PDF para conferir arquivo (CA-04). Encerrar evento continua sem PDF. Egresso não acessa `/formativas` nem `/certificados`.

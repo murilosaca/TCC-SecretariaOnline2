@@ -13,4 +13,6 @@ interface UsuarioRepository {
     fun findByIdentificador(identificador: IdentificadorLogin): Optional<Usuario>
 
     fun findByEmail(email: String): Optional<Usuario>
+
+    fun findAtivosByAuthority(authority: String): List<Usuario>
 }

@@ -17,6 +17,7 @@ function renderLogin(from?: string) {
         <Route path="/inicio" element={<p>destino-inicio</p>} />
         <Route path="/primeiro-acesso" element={<p>destino-primeiro</p>} />
         <Route path="/eventos/:id/presenca" element={<p>destino-presenca</p>} />
+        <Route path="/solicitacoes/:id/deliberar" element={<p>destino-deliberar</p>} />
       </Routes>
     </MemoryRouter>,
   )
@@ -35,6 +36,17 @@ describe('Login', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Entrar' }))
     await waitFor(() => {
       expect(screen.getByText('destino-presenca')).toBeTruthy()
+    })
+  })
+
+  it('preserva returnUrl do deep-link de deliberação', async () => {
+    login.mockResolvedValue({ mustChangePassword: false, accessToken: 'x', expiresIn: 900, tokenType: 'Bearer' })
+    renderLogin('/solicitacoes/abc/deliberar?token=jwt')
+    fireEvent.change(screen.getByLabelText('E-mail ou GRR'), { target: { value: 'professor.dev@ufpr.br' } })
+    fireEvent.change(screen.getByLabelText('Senha'), { target: { value: 'TroqueEstaSenha1!' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Entrar' }))
+    await waitFor(() => {
+      expect(screen.getByText('destino-deliberar')).toBeTruthy()
     })
   })
 

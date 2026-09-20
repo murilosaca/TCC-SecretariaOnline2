@@ -4,6 +4,7 @@ import br.ufpr.sept.so2.modules.iam.application.ports.AuditLogPort
 import br.ufpr.sept.so2.modules.iam.application.ports.JtiBlacklistRepository
 import br.ufpr.sept.so2.modules.iam.application.ports.JwtTokenService
 import br.ufpr.sept.so2.modules.iam.application.ports.OpaqueTokenHasher
+import br.ufpr.sept.so2.modules.iam.application.ports.OutboxClaim
 import br.ufpr.sept.so2.modules.iam.application.ports.OutboxPort
 import br.ufpr.sept.so2.modules.iam.application.ports.PasswordHasher
 import br.ufpr.sept.so2.modules.iam.application.ports.RefreshTokenRepository
@@ -21,6 +22,7 @@ object IamFakes {
         override val accessTtlSeconds: Long = 900
         override val refreshTtlSeconds: Long = 604800
         override val resetTtlSeconds: Long = 86400
+        override val deliberationTtlSeconds: Long = 259200
         override val maxFalhasConsecutivas: Int = 10
         override val minutosBloqueio: Int = 15
         override val frontendBaseUrl: String = "http://localhost:5173"
@@ -53,6 +55,9 @@ object IamFakes {
             return lastReset
         }
 
+        override fun emitDeliberationToken(usuario: Usuario, solicitacaoId: UUID): String =
+            "delib:${usuario.id}:$solicitacaoId"
+
         override fun parseAccessToken(token: String): JwtTokenService.AccessTokenClaims =
             throw UnsupportedOperationException()
 
@@ -63,6 +68,18 @@ object IamFakes {
             return JwtTokenService.ResetTokenClaims(
                 UUID.fromString(token.substring("reset:".length)),
                 "jti-1",
+            )
+        }
+
+        override fun parseDeliberationToken(token: String): JwtTokenService.DeliberationTokenClaims {
+            val partes = token.split(":")
+            if (partes.size != 3 || partes[0] != "delib") {
+                throw IllegalArgumentException("jwt")
+            }
+            return JwtTokenService.DeliberationTokenClaims(
+                UUID.fromString(partes[1]),
+                UUID.fromString(partes[2]),
+                "jti-delib-1",
             )
         }
     }
@@ -87,6 +104,9 @@ object IamFakes {
                         (usuario.emailPessoal != null && email == usuario.emailPessoal!!.value)
                 },
             )
+
+        override fun findAtivosByAuthority(authority: String): List<Usuario> =
+            byId.values.filter { it.ativo && authority in it.authorities }
 
         private fun corresponde(usuario: Usuario, identificador: IdentificadorLogin): Boolean {
             if (identificador.tipo == IdentificadorLogin.Tipo.GRR) {
@@ -142,10 +162,31 @@ object IamFakes {
     class Outbox : OutboxPort {
         val tipos: MutableList<String> = ArrayList()
         val payloads: MutableList<String> = ArrayList()
+        val claims: MutableList<OutboxClaim> = ArrayList()
+        val sent: MutableList<UUID> = ArrayList()
+        val failed: MutableList<UUID> = ArrayList()
+        val retried: MutableList<UUID> = ArrayList()
 
         override fun enqueue(tipo: String, payload: String) {
             tipos.add(tipo)
             payloads.add(payload)
+        }
+
+        override fun claimPending(limit: Int, staleBefore: OffsetDateTime): List<OutboxClaim> =
+            claims.take(limit)
+
+        override fun markSent(id: UUID) {
+            sent.add(id)
+            claims.removeIf { it.id == id }
+        }
+
+        override fun markFailed(id: UUID, tentativas: Int, lastError: String?) {
+            failed.add(id)
+            claims.removeIf { it.id == id }
+        }
+
+        override fun markPendingRetry(id: UUID, tentativas: Int, lastError: String?) {
+            retried.add(id)
         }
     }
 

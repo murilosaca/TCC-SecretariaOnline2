@@ -1,6 +1,9 @@
 package br.ufpr.sept.so2.modules.solicitacoes.application
 
+import br.ufpr.sept.so2.modules.iam.application.IamFakes
 import br.ufpr.sept.so2.modules.iam.application.ports.AuditLogPort
+import br.ufpr.sept.so2.modules.iam.application.ports.JtiBlacklistRepository
+import br.ufpr.sept.so2.modules.iam.application.ports.JwtTokenService
 import br.ufpr.sept.so2.modules.iam.application.ports.OutboxPort
 import br.ufpr.sept.so2.modules.solicitacoes.application.ports.SolicitacaoRepository
 import br.ufpr.sept.so2.modules.solicitacoes.domain.Protocolo
@@ -9,6 +12,7 @@ import br.ufpr.sept.so2.modules.solicitacoes.infrastructure.DeclaracaoSimplesSee
 import br.ufpr.sept.so2.shared.domain.exception.ConflitoEstadoException
 import br.ufpr.sept.so2.shared.domain.exception.DadoInvalidoException
 import br.ufpr.sept.so2.shared.domain.exception.RecursoNaoEncontradoException
+import br.ufpr.sept.so2.shared.domain.exception.TokenAcaoInvalidoException
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
@@ -47,7 +51,18 @@ class DeliberarSolicitacaoUseCaseTest : StringSpec({
         repo: SolicitacaoRepository,
         outbox: OutboxPort = mockk(relaxed = true),
         audit: AuditLogPort = mockk(relaxed = true),
-    ) = DeliberarSolicitacaoUseCase(repo, parser, outbox, audit, objectMapper)
+        validar: ValidarTokenDeliberacaoUseCase = mockk(relaxed = true),
+        jtis: JtiBlacklistRepository = mockk(relaxed = true),
+    ) = DeliberarSolicitacaoUseCase(
+        repo,
+        parser,
+        outbox,
+        audit,
+        objectMapper,
+        validar,
+        jtis,
+        IamFakes.Settings(),
+    )
 
     "defer publica outbox e muda estado" {
         val repo = mockk<SolicitacaoRepository>()
@@ -105,5 +120,46 @@ class DeliberarSolicitacaoUseCaseTest : StringSpec({
         shouldThrow<RecursoNaoEncontradoException> {
             useCase(repo).execute(solicitacaoId, atorId, "DEFER", "Parecer.", null)
         }
+    }
+
+    "token de deep-link inválido não persiste" {
+        val repo = mockk<SolicitacaoRepository>()
+        val validar = mockk<ValidarTokenDeliberacaoUseCase>()
+        every { validar.execute(any(), any(), any()) } throws TokenAcaoInvalidoException()
+        shouldThrow<TokenAcaoInvalidoException> {
+            useCase(repo, validar = validar).execute(
+                solicitacaoId,
+                atorId,
+                "DEFER",
+                "Deferido para fins de estágio.",
+                null,
+                "token-ruim",
+            )
+        }
+        verify(exactly = 0) { repo.save(any()) }
+    }
+
+    "token válido entra na blacklist só após deferir" {
+        val repo = mockk<SolicitacaoRepository>()
+        val outbox = mockk<OutboxPort>(relaxed = true)
+        val audit = mockk<AuditLogPort>(relaxed = true)
+        val validar = mockk<ValidarTokenDeliberacaoUseCase>()
+        val jtis = mockk<JtiBlacklistRepository>(relaxed = true)
+        val solicitacao = aberta()
+        every { repo.findById(solicitacaoId) } returns Optional.of(solicitacao)
+        every { repo.save(any()) } answers { firstArg() }
+        every { validar.execute(eq("tok"), eq(solicitacaoId), eq(atorId)) } returns
+            JwtTokenService.DeliberationTokenClaims(atorId, solicitacaoId, "jti-x")
+
+        useCase(repo, outbox, audit, validar, jtis).execute(
+            solicitacaoId,
+            atorId,
+            "DEFER",
+            "Deferido para fins de estágio.",
+            "127.0.0.1",
+            "tok",
+        )
+
+        verify { jtis.add(eq("jti-x"), any()) }
     }
 })

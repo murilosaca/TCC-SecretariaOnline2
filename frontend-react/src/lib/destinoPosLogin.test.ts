@@ -8,6 +8,9 @@ describe('destinoPosLogin', () => {
 
   it('volta para rota interna segura após login', () => {
     expect(destinoPosLogin(false, '/eventos/abc/presenca')).toBe('/eventos/abc/presenca')
+    expect(destinoPosLogin(false, '/solicitacoes/abc/deliberar?token=jwt')).toBe(
+      '/solicitacoes/abc/deliberar?token=jwt',
+    )
   })
 
   it('recusa from inseguro e cai em /inicio', () => {

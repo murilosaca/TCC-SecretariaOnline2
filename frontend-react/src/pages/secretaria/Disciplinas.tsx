@@ -20,7 +20,7 @@ export function Disciplinas() {
   const [editandoId, setEditandoId] = useState<string | null>(null)
   const [erro, setErro] = useState<string | null>(null)
 
-  const cursos = useQuery({ queryKey: ['cursos'], queryFn: () => academicoApi.listarCursos(0, 100) })
+  const cursos = useQuery({ queryKey: ['cursos-combo'], queryFn: () => academicoApi.listarCursos(0, 100) })
   const lista = useQuery({ queryKey: ['disciplinas'], queryFn: () => academicoApi.listarDisciplinas() })
   const colecao = useActions(lista.data?._links)
   const mostrarForm = editandoId != null || colecao.can('criar')
@@ -90,7 +90,13 @@ export function Disciplinas() {
         <div className="grid">
           <label>
             Curso
-            <select value={form.idCurso} onChange={(e) => setForm({ ...form, idCurso: e.target.value })} required>
+            <select
+              value={form.idCurso}
+              onChange={(e) => setForm({ ...form, idCurso: e.target.value })}
+              required
+              disabled={editandoId != null}
+              aria-describedby={editandoId ? 'hint-disciplina-curso' : undefined}
+            >
               <option value="">Selecione</option>
               {cursos.data?.content.map((curso) => (
                 <option key={curso.id} value={curso.id}>
@@ -98,6 +104,11 @@ export function Disciplinas() {
                 </option>
               ))}
             </select>
+            {editandoId && (
+              <span id="hint-disciplina-curso" className="muted">
+                Não editável nesta fatia.
+              </span>
+            )}
           </label>
           <label>
             Código

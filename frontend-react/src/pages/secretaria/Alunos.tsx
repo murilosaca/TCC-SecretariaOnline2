@@ -24,7 +24,7 @@ export function Alunos() {
   const [termo, setTermo] = useState('')
   const [erro, setErro] = useState<string | null>(null)
 
-  const cursos = useQuery({ queryKey: ['cursos'], queryFn: () => academicoApi.listarCursos(0, 100) })
+  const cursos = useQuery({ queryKey: ['cursos-combo'], queryFn: () => academicoApi.listarCursos(0, 100) })
   const lista = useQuery({
     queryKey: ['alunos', termo],
     queryFn: () => academicoApi.listarAlunos(undefined, termo || undefined),
@@ -107,7 +107,19 @@ export function Alunos() {
           </label>
           <label>
             GRR
-            <input value={form.grr} onChange={(e) => setForm({ ...form, grr: e.target.value })} placeholder="GRR20241234" required />
+            <input
+              value={form.grr}
+              onChange={(e) => setForm({ ...form, grr: e.target.value })}
+              placeholder="GRR20241234"
+              required
+              disabled={editandoId != null}
+              aria-describedby={editandoId ? 'hint-aluno-grr' : undefined}
+            />
+            {editandoId && (
+              <span id="hint-aluno-grr" className="muted">
+                Não editável nesta fatia.
+              </span>
+            )}
           </label>
           <label>
             E-mail institucional
@@ -115,7 +127,14 @@ export function Alunos() {
               value={form.emailInstitucional}
               onChange={(e) => setForm({ ...form, emailInstitucional: e.target.value })}
               required
+              disabled={editandoId != null}
+              aria-describedby={editandoId ? 'hint-aluno-email' : undefined}
             />
+            {editandoId && (
+              <span id="hint-aluno-email" className="muted">
+                Não editável nesta fatia.
+              </span>
+            )}
           </label>
           <label>
             E-mail pessoal

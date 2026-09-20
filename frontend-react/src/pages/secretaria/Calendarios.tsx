@@ -33,7 +33,9 @@ export function Calendarios() {
   const forbidden = lista.isError && lista.error instanceof ApiError && lista.error.status === 403
   const vigenteAusente =
     vigente.isError && vigente.error instanceof ApiError && vigente.error.status === 404
-  const vigenteTecnico = vigente.isError && !vigenteAusente
+  const vigenteForbidden =
+    vigente.isError && vigente.error instanceof ApiError && vigente.error.status === 403
+  const vigenteTecnico = vigente.isError && !vigenteAusente && !vigenteForbidden
 
   const salvar = useMutation({
     mutationFn: () =>

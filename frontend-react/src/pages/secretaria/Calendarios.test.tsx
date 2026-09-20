@@ -51,4 +51,13 @@ describe('Calendarios', () => {
     expect(await screen.findByText('Não foi possível carregar o período letivo vigente.')).toBeTruthy()
     expect(screen.queryByText(/Não há período letivo vigente hoje/)).toBeNull()
   })
+
+  it('403 do vigente mostra só a mensagem de permissão', async () => {
+    periodoVigente.mockRejectedValue(new ApiError(403, 'Acesso negado'))
+    listarPeriodos.mockRejectedValue(new ApiError(403, 'Acesso negado'))
+    renderPage()
+    expect(await screen.findByText('Você não tem permissão para gerenciar o calendário.')).toBeTruthy()
+    expect(screen.queryByText('Não foi possível carregar o período letivo vigente.')).toBeNull()
+    expect(screen.queryByText(/Não há período letivo vigente hoje/)).toBeNull()
+  })
 })

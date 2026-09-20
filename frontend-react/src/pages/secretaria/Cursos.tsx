@@ -21,8 +21,8 @@ export function Cursos() {
   const [erro, setErro] = useState<string | null>(null)
 
   const lista = useQuery({
-    queryKey: ['cursos'],
-    queryFn: () => academicoApi.listarCursos(),
+    queryKey: ['cursos', 0, 20],
+    queryFn: () => academicoApi.listarCursos(0, 20),
   })
   const colecao = useActions(lista.data?._links)
   const mostrarForm = editandoId != null || colecao.can('criar')
@@ -43,13 +43,17 @@ export function Cursos() {
       setForm(vazio)
       setEditandoId(null)
       queryClient.invalidateQueries({ queryKey: ['cursos'] })
+      queryClient.invalidateQueries({ queryKey: ['cursos-combo'] })
     },
     onError: () => setErro('Falha ao salvar o curso.'),
   })
 
   const excluir = useMutation({
     mutationFn: (id: string) => academicoApi.excluirCurso(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['cursos'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cursos'] })
+      queryClient.invalidateQueries({ queryKey: ['cursos-combo'] })
+    },
     onError: () => setErro('Falha ao excluir o curso.'),
   })
 

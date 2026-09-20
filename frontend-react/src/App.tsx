@@ -73,6 +73,7 @@ export default function App() {
       <Route path="cursos" element={<Navigate to="/secretaria/cursos" replace />} />
       <Route path="disciplinas" element={<Navigate to="/secretaria/disciplinas" replace />} />
       <Route path="alunos" element={<Navigate to="/secretaria/alunos" replace />} />
+      <Route path="calendarios" element={<Navigate to="/secretaria/calendarios" replace />} />
       <Route path="*" element={<Navigate to="/erro/404" replace />} />
     </Routes>
   )

@@ -1,6 +1,7 @@
 import { FormEvent, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { academicoApi } from '../../api/academico'
+import { ApiError } from '../../api/client'
 import { useActions } from '../../hooks/useActions'
 import type { Disciplina } from '../../models/academico'
 
@@ -23,6 +24,8 @@ export function Disciplinas() {
   const lista = useQuery({ queryKey: ['disciplinas'], queryFn: () => academicoApi.listarDisciplinas() })
   const colecao = useActions(lista.data?._links)
   const mostrarForm = editandoId != null || colecao.can('criar')
+  const forbidden = lista.isError && lista.error instanceof ApiError && lista.error.status === 403
+  const cursosIndisponiveis = cursos.isError
 
   const salvar = useMutation({
     mutationFn: () =>
@@ -64,13 +67,25 @@ export function Disciplinas() {
         <h1>Disciplinas</h1>
         <p>Código único por curso (RF-F5-004-b).</p>
       </header>
-      {(erro || lista.isError) && (
+      {forbidden && (
+        <p className="empty" role="status">
+          Você não tem permissão para gerenciar disciplinas.
+        </p>
+      )}
+      {cursosIndisponiveis && (
+        <div className="banner danger" role="alert">
+          Não foi possível carregar os cursos. Sem eles o cadastro de disciplinas fica indisponível
+          (nesta fatia as capabilities de cadastro acadêmico andam juntas).
+        </div>
+      )}
+      {(erro || (lista.isError && !forbidden)) && (
         <div className="banner danger" role="alert">
           {erro ?? 'Não foi possível carregar as disciplinas.'}
         </div>
       )}
       {mostrarForm && (
       <form className="panel" onSubmit={onSubmit}>
+        <fieldset disabled={cursosIndisponiveis}>
         <h2>{editandoId ? 'Editar disciplina' : 'Nova disciplina'}</h2>
         <div className="grid">
           <label>
@@ -117,9 +132,10 @@ export function Disciplinas() {
             />
           </label>
         </div>
-        <button type="submit" disabled={salvar.isPending}>
+        <button type="submit" disabled={salvar.isPending || cursosIndisponiveis}>
           Salvar
         </button>
+        </fieldset>
       </form>
       )}
       {lista.isLoading && <p className="muted">Carregando disciplinas…</p>}

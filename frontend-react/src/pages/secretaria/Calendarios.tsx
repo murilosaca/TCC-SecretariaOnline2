@@ -1,6 +1,7 @@
 import { FormEvent, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { academicoApi } from '../../api/academico'
+import { ApiError } from '../../api/client'
 import { useActions } from '../../hooks/useActions'
 import type { PeriodoLetivo } from '../../models/academico'
 
@@ -29,6 +30,10 @@ export function Calendarios() {
   })
   const colecao = useActions(lista.data?._links)
   const mostrarForm = editandoId != null || colecao.can('criar')
+  const forbidden = lista.isError && lista.error instanceof ApiError && lista.error.status === 403
+  const vigenteAusente =
+    vigente.isError && vigente.error instanceof ApiError && vigente.error.status === 404
+  const vigenteTecnico = vigente.isError && !vigenteAusente
 
   const salvar = useMutation({
     mutationFn: () =>
@@ -72,9 +77,14 @@ export function Calendarios() {
         <h1>Calendário acadêmico</h1>
         <p>Períodos letivos sem sobreposição (RF-F5-004-c / F5.9). Eventos semânticos ainda não entram nesta fundação.</p>
       </header>
-      {vigente.isError && (
+      {vigenteAusente && (
         <div className="banner danger" role="status">
           Não há período letivo vigente hoje. Cadastre o intervalo atual antes de seguir com trâmites que dependem do calendário.
+        </div>
+      )}
+      {vigenteTecnico && (
+        <div className="banner danger" role="alert">
+          Não foi possível carregar o período letivo vigente.
         </div>
       )}
       {vigente.data && (
@@ -82,7 +92,12 @@ export function Calendarios() {
           Vigente: {vigente.data.ano}/{vigente.data.semestre} ({vigente.data.inicio} a {vigente.data.fim})
         </p>
       )}
-      {(erro || lista.isError) && (
+      {forbidden && (
+        <p className="empty" role="status">
+          Você não tem permissão para gerenciar o calendário.
+        </p>
+      )}
+      {(erro || (lista.isError && !forbidden)) && (
         <div className="banner danger" role="alert">
           {erro ?? 'Não foi possível carregar os períodos.'}
         </div>

@@ -5,6 +5,7 @@ import br.ufpr.sept.so2.modules.iam.application.ports.UsuarioRepository
 import br.ufpr.sept.so2.modules.iam.domain.Usuario
 import br.ufpr.sept.so2.shared.domain.valueobject.Email
 import br.ufpr.sept.so2.shared.domain.valueobject.Grr
+import br.ufpr.sept.so2.shared.ItJson
 import br.ufpr.sept.so2.shared.infrastructure.Uuids
 import org.hamcrest.Matchers.not
 import org.junit.jupiter.api.BeforeEach
@@ -15,8 +16,11 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.time.OffsetDateTime
@@ -40,6 +44,7 @@ class CursoControllerIT {
         criarUsuario(EMAIL_ALUNO, "GRR20247101", AUTHORITIES_ALUNO, agora)
         criarUsuario(EMAIL_SEC, "GRR20247102", AUTHORITIES_SEC, agora)
         criarUsuario(EMAIL_SEC_B, "GRR20247103", AUTHORITIES_SEC, agora)
+        criarUsuario(EMAIL_COORD, "GRR20247104", listOf("course.manage"), agora)
     }
 
     @Test
@@ -80,7 +85,7 @@ class CursoControllerIT {
             .andExpect(jsonPath("$._links.atualizar").exists())
             .andExpect(jsonPath("$._links.criar").doesNotExist())
             .andReturn()
-        val id = extract(created.response.contentAsString, "\"id\":\"", "\"")
+        val id = ItJson.text(created.response.contentAsString, "id")
 
         mockMvc.perform(get("/academico/cursos").header("Authorization", "Bearer $token"))
             .andExpect(status().isOk)
@@ -106,7 +111,7 @@ class CursoControllerIT {
         )
             .andExpect(status().isCreated)
             .andReturn()
-        val idFora = extract(createdB.response.contentAsString, "\"id\":\"", "\"")
+        val idFora = ItJson.text(createdB.response.contentAsString, "id")
 
         mockMvc.perform(get("/academico/cursos/$idFora").header("Authorization", "Bearer $tokenA"))
             .andExpect(status().isNotFound)
@@ -121,6 +126,153 @@ class CursoControllerIT {
                 .content(payloadCurso("Curso A", "CURSA", "CURSA-FGAC-1", listOf(idA.toString()))),
         )
             .andExpect(status().isCreated)
+    }
+
+    @Test
+    fun criaSemSecretariosIncluiOCriadorEExpoeLinksDeEscopo() {
+        val token = login(EMAIL_SEC)
+        val secretariaId = usuarioRepository.findByEmail(EMAIL_SEC).get().id
+        val (sigla, codigo) = codigoUnico("VZ")
+        val created = mockMvc.perform(
+            post("/academico/cursos")
+                .header("Authorization", "Bearer $token")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(payloadCurso("Curso sem lista", sigla, codigo, emptyList())),
+        )
+            .andExpect(status().isCreated)
+            .andExpect(jsonPath("$.secretariosIds[0]").value(secretariaId.toString()))
+            .andExpect(jsonPath("$._links.atualizar").exists())
+            .andReturn()
+        val id = ItJson.text(created.response.contentAsString, "id")
+
+        mockMvc.perform(get("/academico/cursos/$id").header("Authorization", "Bearer $token"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$._links.atualizar").exists())
+        mockMvc.perform(get("/academico/cursos").header("Authorization", "Bearer $token"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.content[*].id").value(org.hamcrest.Matchers.hasItem(id)))
+            .andExpect(jsonPath("$.content[?(@.id=='$id')]._links.atualizar").exists())
+    }
+
+    @Test
+    fun putComSiglaDeOutroCursoDoEscopoRetorna409() {
+        val token = login(EMAIL_SEC)
+        val secretariaId = usuarioRepository.findByEmail(EMAIL_SEC).get().id.toString()
+        val (siglaA, codigoA) = codigoUnico("DA")
+        val (siglaB, codigoB) = codigoUnico("DB")
+        val primeiro = mockMvc.perform(
+            post("/academico/cursos")
+                .header("Authorization", "Bearer $token")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(payloadCurso("Curso Dup A", siglaA, codigoA, listOf(secretariaId))),
+        )
+            .andExpect(status().isCreated)
+            .andReturn()
+        mockMvc.perform(
+            post("/academico/cursos")
+                .header("Authorization", "Bearer $token")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(payloadCurso("Curso Dup B", siglaB, codigoB, listOf(secretariaId))),
+        )
+            .andExpect(status().isCreated)
+        val idA = ItJson.text(primeiro.response.contentAsString, "id")
+
+        mockMvc.perform(
+            put("/academico/cursos/$idA")
+                .header("Authorization", "Bearer $token")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(payloadCurso("Curso Dup A", siglaB, codigoA, listOf(secretariaId))),
+        )
+            .andExpect(status().isConflict)
+            .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.containsString("conflict")))
+    }
+
+    @Test
+    fun coordenadorSemLinhaDeSecretarioVeOCurso() {
+        val tokenCoord = login(EMAIL_COORD)
+        val tokenSec = login(EMAIL_SEC)
+        val coordenadorId = usuarioRepository.findByEmail(EMAIL_COORD).get().id
+        val (sigla, codigo) = codigoUnico("CO")
+        val created = mockMvc.perform(
+            post("/academico/cursos")
+                .header("Authorization", "Bearer $tokenSec")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {
+                      "nome": "Curso do coordenador",
+                      "sigla": "$sigla",
+                      "codigo": "$codigo",
+                      "idCoordenador": "$coordenadorId",
+                      "horasFormativasMinimas": 120,
+                      "secretariosIds": []
+                    }
+                    """.trimIndent(),
+                ),
+        )
+            .andExpect(status().isCreated)
+            .andReturn()
+        val id = ItJson.text(created.response.contentAsString, "id")
+
+        mockMvc.perform(get("/academico/cursos").header("Authorization", "Bearer $tokenCoord"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.content[*].id").value(org.hamcrest.Matchers.hasItem(id)))
+    }
+
+    @Test
+    fun excluirCursoComAlunoRetorna409ELiberaAposDesvincular() {
+        val token = login(EMAIL_SEC)
+        val (sigla, codigo) = codigoUnico("EX")
+        val created = mockMvc.perform(
+            post("/academico/cursos")
+                .header("Authorization", "Bearer $token")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(payloadCurso("Curso com dependente", sigla, codigo, emptyList())),
+        )
+            .andExpect(status().isCreated)
+            .andReturn()
+        val id = ItJson.text(created.response.contentAsString, "id")
+        val grr = "GRR20248" + (System.nanoTime() % 1000).toString().padStart(3, '0')
+        val email = "it.fgac.dep.${codigo.lowercase()}@ufpr.br"
+        val aluno = mockMvc.perform(
+            post("/academico/alunos")
+                .header("Authorization", "Bearer $token")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {
+                      "nome": "Aluno dependente",
+                      "grr": "$grr",
+                      "emailInstitucional": "$email",
+                      "idCurso": "$id",
+                      "situacao": "MATRICULADO"
+                    }
+                    """.trimIndent(),
+                ),
+        )
+            .andExpect(status().isCreated)
+            .andReturn()
+        val alunoId = ItJson.text(aluno.response.contentAsString, "id")
+
+        mockMvc.perform(delete("/academico/cursos/$id").header("Authorization", "Bearer $token"))
+            .andExpect(status().isConflict)
+            .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.containsString("conflict")))
+            .andExpect(jsonPath("$.detail").value(org.hamcrest.Matchers.containsString("alunos ou disciplinas")))
+
+        mockMvc.perform(delete("/academico/alunos/$alunoId").header("Authorization", "Bearer $token"))
+            .andExpect(status().isNoContent)
+        mockMvc.perform(delete("/academico/cursos/$id").header("Authorization", "Bearer $token"))
+            .andExpect(status().isNoContent)
+    }
+
+    @Test
+    fun preflightOptionsNaoRetorna401() {
+        mockMvc.perform(
+            options("/academico/cursos")
+                .header("Origin", "http://localhost:5174")
+                .header("Access-Control-Request-Method", "GET"),
+        )
+            .andExpect(status().isOk)
     }
 
     private fun criarUsuario(email: String, grr: String, authorities: List<String>, agora: OffsetDateTime) {
@@ -156,7 +308,7 @@ class CursoControllerIT {
         )
             .andExpect(status().isOk)
             .andReturn()
-        return extract(result.response.contentAsString, "\"accessToken\":\"", "\"")
+        return ItJson.text(result.response.contentAsString, "accessToken")
     }
 
     companion object {
@@ -164,6 +316,7 @@ class CursoControllerIT {
         private const val EMAIL_ALUNO = "it.fgac.aluno@ufpr.br"
         private const val EMAIL_SEC = "it.fgac.sec@ufpr.br"
         private const val EMAIL_SEC_B = "it.fgac.secb@ufpr.br"
+        private const val EMAIL_COORD = "it.fgac.coord@ufpr.br"
         private val AUTHORITIES_ALUNO = listOf("dashboard.view_own", "request.view_own", "request.open")
         private val AUTHORITIES_SEC = listOf(
             "course.manage",
@@ -174,6 +327,11 @@ class CursoControllerIT {
             "request.triage",
             "request.deliberate",
         )
+
+        private fun codigoUnico(prefixo: String): Pair<String, String> {
+            val sufixo = Uuids.v7().toString().replace("-", "").take(6).uppercase()
+            return prefixo + sufixo.take(2) to "$prefixo-$sufixo"
+        }
 
         private fun payloadCurso(nome: String, sigla: String, codigo: String, secretarios: List<String>): String {
             val ids = secretarios.joinToString(",") { "\"$it\"" }
@@ -186,13 +344,6 @@ class CursoControllerIT {
                   "secretariosIds": [$ids]
                 }
             """.trimIndent()
-        }
-
-        private fun extract(json: String, startToken: String, endToken: String): String {
-            val start = json.indexOf(startToken)
-            val from = start + startToken.length
-            val end = json.indexOf(endToken, from)
-            return json.substring(from, end)
         }
     }
 }

@@ -1,6 +1,6 @@
 # Auditoria de fundação — SO2
 
-Data: 2026-09-06. Fontes: `docs/tcc-docs.md`, `docs/telas-figma.md`, código e `.cursorrules`.
+Data: 2026-09-20. Fontes: `docs/tcc-docs.md`, `docs/telas-figma.md`, código e `.cursorrules`.
 
 ## Correções aplicadas nesta auditoria
 
@@ -18,8 +18,9 @@ Data: 2026-09-06. Fontes: `docs/tcc-docs.md`, `docs/telas-figma.md`, código e `
 
 Módulo `modules.iam` implementado: `usuario` + `usuario_authority` (`dominio.acao`),
 refresh opaco, histórico de senha, JTI blacklist, `outbox_event` mínimo e `audit_log`
-append-only. Login JWT RS256 15 min; cookie `so2_refresh` (`httpOnly; Secure; SameSite=Lax;
-Path=/auth`); Argon2id; primeiro acesso (RF-F1-002); recuperação via Outbox (sem e-mail
+append-only. Login JWT RS256 15 min; cookie `so2_refresh` (`httpOnly; SameSite=Lax;
+Path=/auth`; `Secure` na spec — local `IAM_COOKIE_SECURE=false` porque o Vite é HTTP);
+Argon2id; primeiro acesso (RF-F1-002); recuperação via Outbox (sem e-mail
 síncrono). Telas React `/login`, `/recuperar-senha`, `/nova-senha`, `/primeiro-acesso`
 ligadas. Access token só em memória.
 
@@ -68,6 +69,10 @@ A ordem das fatias **depois** do P0 (deliberação → CAAF individual → QR, c
 | Fila CAAF por curso | F4.1 / comissão | Sem tabela `commission_member` | Filtro por comissão continua dívida |
 | Períodos por curso / F5.9 tipos | calendário semântico | `periodo_letivo` global; `calendar.manage` all-or-nothing | Schema por curso + tipos quando F6.1/F5.9 abrirem |
 | Portal admin F7.1–F7.9 | usuários, papéis, jobs, saúde | Fora desta fatia | Não misturar com o FGAC acadêmico |
+| Seletor de usuários em F5.7 | Nome, Sigla, Coordenador, Horas, Secretários | Form web pede UUID cru de secretário e não envia `idCoordenador` (coordenador do TADS vem do seed) | Picker de usuário depende de F7.1; não implementar nesta fatia |
+| `request.triage` | nome `dominio.acao` | Não aparece em `docs/`. É decisão de implementação derivada de RF-F5-002 (triagem da secretaria) para o dispatcher **não** mandar deep-link a quem só faz fila | Não alterar o item 6 (dispatcher/deep-link fechados) |
+| `SolicitacaoCursoEscopo` | join aluno ↔ IAM | Duas queries por aluno (`findByIdentificador` + `findByEmail`); importa `IdentificadorLogin` (VO do IAM). Acoplamento por PORT (`CursoEscopoPort`, `UsuarioRepository`) é o padrão aceito do repo | Escala é limite consciente; não duplicar dados entre módulos |
+| Fila F5.2 da secretaria | `/solicitacoes` com `request.view_curso` | Menu não emite mais o rel `solicitacoes` sem `request.view_own`; secretaria usa `deliberar` (`/solicitacoes?to=me`) | F5.2 é fatia futura — não implementar a fila central nesta correção |
 | Claim JWT `cursoIds` | spec JwtFilter | Escopo só no use case | Incluir no token sem confiar só no claim |
 | Config F6.1 | calendário, banca, regimento | Fora do CRUD de secretaria | Módulo coordenação |
 | Eventos de calendário | tipos semânticos em F5.9 | Só período letivo | Segunda aba quando o schema existir |

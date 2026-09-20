@@ -36,6 +36,22 @@ class UsuarioTest : StringSpec({
             usuario.completarPrimeiroAcesso("outro", agora, "127.0.0.1", "Mozilla")
         }
     }
+
+    "substituir authorities remove extras que o seed não lista" {
+        val usuario = usuario(true)
+        val agora = OffsetDateTime.parse("2026-03-01T12:00:00Z")
+        usuario.concederAuthorities(listOf("formative.review", "event.manage"), agora)
+        usuario.authorities.contains("formative.review") shouldBe true
+        val mudou = usuario.substituirAuthorities(
+            listOf("course.manage", "request.view_curso", "request.deliberate"),
+            agora,
+        )
+        mudou shouldBe true
+        usuario.authorities shouldBe listOf("course.manage", "request.view_curso", "request.deliberate")
+        usuario.authorities.contains("formative.review") shouldBe false
+        usuario.authorities.contains("event.manage") shouldBe false
+        usuario.authorities.contains("dashboard.view_own") shouldBe false
+    }
 })
 
 private fun usuario(senhaAlterada: Boolean): Usuario {

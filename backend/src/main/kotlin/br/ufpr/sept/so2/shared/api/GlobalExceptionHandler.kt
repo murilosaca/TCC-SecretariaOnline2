@@ -10,6 +10,7 @@ import br.ufpr.sept.so2.shared.domain.exception.RecursoNaoEncontradoException
 import br.ufpr.sept.so2.shared.domain.exception.TokenAcaoInvalidoException
 import br.ufpr.sept.so2.shared.domain.exception.TokenResetInvalidoException
 import org.slf4j.LoggerFactory
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.http.HttpStatus
 import org.springframework.http.ProblemDetail
 import org.springframework.http.converter.HttpMessageNotReadableException
@@ -108,6 +109,20 @@ class GlobalExceptionHandler {
     fun handleConflict(ex: ConflitoEstadoException): ProblemDetail =
         problemDetail(HttpStatus.CONFLICT, "Conflito de estado", ex.message, "conflict")
 
+    @ExceptionHandler(DataIntegrityViolationException::class)
+    fun handleDataIntegrity(ex: DataIntegrityViolationException): ProblemDetail {
+        LOG.warn("Violação de integridade: {}", resumoViolacaoIntegridade(ex))
+        if (LOG.isDebugEnabled) {
+            LOG.debug("Violação de integridade (detalhe): {}", ex.mostSpecificCause.message)
+        }
+        return problemDetail(
+            HttpStatus.CONFLICT,
+            "Conflito de estado",
+            "O recurso conflita com um registro já existente.",
+            "conflict",
+        )
+    }
+
     @ExceptionHandler(IllegalArgumentException::class)
     fun handleIllegalArgument(ex: IllegalArgumentException): ProblemDetail =
         problemDetail(HttpStatus.BAD_REQUEST, "Dados inválidos", ex.message, "bad-request")
@@ -158,5 +173,22 @@ class GlobalExceptionHandler {
     companion object {
         private val LOG = LoggerFactory.getLogger(GlobalExceptionHandler::class.java)
         private const val ERROR_BASE = "https://secretariaonline.ufpr.br/errors/"
+        private val CONSTRAINT = Regex(
+            """constraint\s+["'`]?([A-Za-z0-9_]+)["'`]?""",
+            RegexOption.IGNORE_CASE,
+        )
+
+        fun resumoViolacaoIntegridade(ex: DataIntegrityViolationException): String {
+            val cause = ex.mostSpecificCause
+            val sqlConstraint = (cause as? java.sql.SQLException)?.let { sql ->
+                sql.message?.let { CONSTRAINT.find(it)?.groupValues?.get(1) }
+            }
+            val constraint = sqlConstraint ?: CONSTRAINT.find(cause.message.orEmpty())?.groupValues?.get(1)
+            return if (constraint != null) {
+                "${cause.javaClass.simpleName} constraint=$constraint"
+            } else {
+                cause.javaClass.simpleName
+            }
+        }
     }
 }

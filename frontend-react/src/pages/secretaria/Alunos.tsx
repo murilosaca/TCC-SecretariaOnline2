@@ -1,6 +1,7 @@
 import { FormEvent, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { academicoApi } from '../../api/academico'
+import { ApiError } from '../../api/client'
 import { useActions } from '../../hooks/useActions'
 import type { Aluno, AlunoSituacao } from '../../models/academico'
 
@@ -30,6 +31,8 @@ export function Alunos() {
   })
   const colecao = useActions(lista.data?._links)
   const mostrarForm = editandoId != null || colecao.can('criar')
+  const forbidden = lista.isError && lista.error instanceof ApiError && lista.error.status === 403
+  const cursosIndisponiveis = cursos.isError
 
   const salvar = useMutation({
     mutationFn: () =>
@@ -73,13 +76,25 @@ export function Alunos() {
         <h1>Alunos</h1>
         <p>Cadastro acadêmico com GRR. O campo idade do legado foi descartado (RF-F5-003).</p>
       </header>
-      {(erro || lista.isError) && (
+      {forbidden && (
+        <p className="empty" role="status">
+          Você não tem permissão para gerenciar alunos.
+        </p>
+      )}
+      {cursosIndisponiveis && (
+        <div className="banner danger" role="alert">
+          Não foi possível carregar os cursos. Sem eles o cadastro de alunos fica indisponível
+          (nesta fatia as capabilities de cadastro acadêmico andam juntas).
+        </div>
+      )}
+      {(erro || (lista.isError && !forbidden)) && (
         <div className="banner danger" role="alert">
           {erro ?? 'Não foi possível carregar os alunos.'}
         </div>
       )}
       {mostrarForm && (
       <form className="panel" onSubmit={onSubmit}>
+        <fieldset disabled={cursosIndisponiveis}>
         <h2>{editandoId ? 'Editar aluno' : 'Novo aluno'}</h2>
         <div className="grid">
           <label>
@@ -135,9 +150,10 @@ export function Alunos() {
             </select>
           </label>
         </div>
-        <button type="submit" disabled={salvar.isPending}>
+        <button type="submit" disabled={salvar.isPending || cursosIndisponiveis}>
           Salvar
         </button>
+        </fieldset>
       </form>
       )}
       <label className="filter">

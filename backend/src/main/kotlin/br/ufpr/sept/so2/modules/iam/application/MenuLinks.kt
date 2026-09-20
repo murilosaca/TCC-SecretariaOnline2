@@ -9,10 +9,10 @@ object MenuLinks {
         val caps = authorities.toSet()
         val links = linkedMapOf<String, String>()
         links["inicio"] = "/inicio"
-        if (caps.containsAny("request.view_own", "request.deliberate", "request.view_curso")) {
+        if (caps.contains("request.view_own")) {
             links["solicitacoes"] = "/solicitacoes"
         }
-        if (caps.contains("request.deliberate")) {
+        if (caps.containsAny("request.deliberate", "request.view_curso")) {
             links["deliberar"] = "/solicitacoes?to=me"
         }
         if (caps.contains("attendance.view_open")) {

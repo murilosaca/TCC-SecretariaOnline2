@@ -10,6 +10,7 @@ import br.ufpr.sept.so2.shared.domain.exception.RecursoNaoEncontradoException
 import br.ufpr.sept.so2.shared.domain.exception.TokenAcaoInvalidoException
 import br.ufpr.sept.so2.shared.domain.exception.TokenResetInvalidoException
 import org.slf4j.LoggerFactory
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.http.HttpStatus
 import org.springframework.http.ProblemDetail
 import org.springframework.http.converter.HttpMessageNotReadableException
@@ -107,6 +108,17 @@ class GlobalExceptionHandler {
     @ExceptionHandler(ConflitoEstadoException::class)
     fun handleConflict(ex: ConflitoEstadoException): ProblemDetail =
         problemDetail(HttpStatus.CONFLICT, "Conflito de estado", ex.message, "conflict")
+
+    @ExceptionHandler(DataIntegrityViolationException::class)
+    fun handleDataIntegrity(ex: DataIntegrityViolationException): ProblemDetail {
+        LOG.warn("Violação de integridade: {}", ex.mostSpecificCause.message)
+        return problemDetail(
+            HttpStatus.CONFLICT,
+            "Conflito de estado",
+            "O recurso conflita com um registro já existente.",
+            "conflict",
+        )
+    }
 
     @ExceptionHandler(IllegalArgumentException::class)
     fun handleIllegalArgument(ex: IllegalArgumentException): ProblemDetail =

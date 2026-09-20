@@ -27,6 +27,7 @@ class MenuLinksTest : StringSpec({
         links.shouldContainKey("cursos")
         links.shouldContainKey("alunos")
         links.shouldContainKey("deliberar")
+        links.shouldNotContainKey("solicitacoes")
         links.shouldNotContainKey("revisao-caaf")
         links.shouldNotContainKey("eventos-professor")
     }
@@ -42,6 +43,7 @@ class MenuLinksTest : StringSpec({
         )
         links.shouldContainKey("formativas")
         links.shouldContainKey("certificados")
+        links.shouldContainKey("solicitacoes")
         links.shouldNotContainKey("cursos")
         links.shouldNotContainKey("deliberar")
     }

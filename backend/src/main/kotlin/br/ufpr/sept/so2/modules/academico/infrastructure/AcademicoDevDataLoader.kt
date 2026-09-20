@@ -7,6 +7,7 @@ import br.ufpr.sept.so2.modules.academico.domain.Aluno
 import br.ufpr.sept.so2.modules.academico.domain.AlunoSituacao
 import br.ufpr.sept.so2.modules.academico.domain.Curso
 import br.ufpr.sept.so2.modules.iam.application.ports.UsuarioRepository
+import br.ufpr.sept.so2.modules.iam.infrastructure.IamProperties
 import br.ufpr.sept.so2.shared.domain.valueobject.Email
 import br.ufpr.sept.so2.shared.domain.valueobject.Grr
 import br.ufpr.sept.so2.shared.infrastructure.Uuids
@@ -23,6 +24,7 @@ import java.util.UUID
 @Profile("dev")
 @Order(15)
 class AcademicoDevDataLoader(
+    private val properties: IamProperties,
     private val cursoRepository: CursoRepository,
     private val alunoRepository: AlunoRepository,
     private val cursoSecretarioRepository: CursoSecretarioRepository,
@@ -30,6 +32,9 @@ class AcademicoDevDataLoader(
 ) : ApplicationRunner {
 
     override fun run(args: ApplicationArguments) {
+        if (!properties.seed.enabled) {
+            return
+        }
         val agora = OffsetDateTime.now()
         val professorId = usuarioRepository.findByEmail("professor.dev@ufpr.br").orElse(null)?.id
         var curso = cursoRepository.findByCodigo(CODIGO_TADS).orElseGet {
@@ -52,7 +57,7 @@ class AcademicoDevDataLoader(
             curso = cursoRepository.save(curso)
         }
         usuarioRepository.findByEmail("secretaria.dev@ufpr.br").ifPresent { secretaria ->
-            cursoSecretarioRepository.replaceAll(curso.id, listOf(secretaria.id))
+            cursoSecretarioRepository.adicionarSeAusente(curso.id, secretaria.id)
         }
         criarAlunoSeAusente("Aluno Dev", "GRR20240001", "aluno.dev@ufpr.br", curso.id, agora)
         criarAlunoSeAusente("Novo Dev", "GRR20240002", "novo.dev@ufpr.br", curso.id, agora)

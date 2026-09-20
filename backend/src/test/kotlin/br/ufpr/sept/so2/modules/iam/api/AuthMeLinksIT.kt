@@ -5,6 +5,7 @@ import br.ufpr.sept.so2.modules.iam.application.ports.UsuarioRepository
 import br.ufpr.sept.so2.modules.iam.domain.Usuario
 import br.ufpr.sept.so2.shared.domain.valueobject.Email
 import br.ufpr.sept.so2.shared.domain.valueobject.Grr
+import br.ufpr.sept.so2.shared.ItJson
 import br.ufpr.sept.so2.shared.infrastructure.Uuids
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -73,6 +74,8 @@ class AuthMeLinksIT {
             .andExpect(jsonPath("$._links.inicio").value("/inicio"))
             .andExpect(jsonPath("$._links.cursos").value("/secretaria/cursos"))
             .andExpect(jsonPath("$._links.alunos").value("/secretaria/alunos"))
+            .andExpect(jsonPath("$._links.deliberar").value("/solicitacoes?to=me"))
+            .andExpect(jsonPath("$._links.solicitacoes").doesNotExist())
             .andExpect(jsonPath("$._links.contato").value("/contato"))
             .andExpect(jsonPath("$._links['revisao-caaf']").doesNotExist())
             .andExpect(jsonPath("$._links.formativas").doesNotExist())
@@ -122,19 +125,12 @@ class AuthMeLinksIT {
         )
             .andExpect(status().isOk)
             .andReturn()
-        return extract(result.response.contentAsString, "\"accessToken\":\"", "\"")
+        return ItJson.text(result.response.contentAsString, "accessToken")
     }
 
     companion object {
         private const val SENHA = "TroqueEstaSenha1!"
         private const val EMAIL_SEC = "it.fgac.me.sec@ufpr.br"
         private const val EMAIL_ALUNO = "it.fgac.me.aluno@ufpr.br"
-
-        private fun extract(json: String, startToken: String, endToken: String): String {
-            val start = json.indexOf(startToken)
-            val from = start + startToken.length
-            val end = json.indexOf(endToken, from)
-            return json.substring(from, end)
-        }
     }
 }

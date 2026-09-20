@@ -13,6 +13,7 @@ import br.ufpr.sept.so2.modules.solicitacoes.application.ports.TipoSolicitacaoRe
 import br.ufpr.sept.so2.modules.solicitacoes.infrastructure.DeclaracaoSimplesSeed
 import br.ufpr.sept.so2.shared.domain.valueobject.Email
 import br.ufpr.sept.so2.shared.domain.valueobject.Grr
+import br.ufpr.sept.so2.shared.ItJson
 import br.ufpr.sept.so2.shared.infrastructure.Uuids
 import org.hamcrest.Matchers.hasItem
 import org.hamcrest.Matchers.not
@@ -82,7 +83,7 @@ class RequestViewCursoIT {
         )
             .andExpect(status().isCreated)
             .andReturn()
-        val id = extract(created.response.contentAsString, "\"id\":\"", "\"")
+        val id = ItJson.text(created.response.contentAsString, "id")
 
         val tokenSec = login(EMAIL_SEC)
         mockMvc.perform(
@@ -170,7 +171,7 @@ class RequestViewCursoIT {
         )
             .andExpect(status().isOk)
             .andReturn()
-        return extract(result.response.contentAsString, "\"accessToken\":\"", "\"")
+        return ItJson.text(result.response.contentAsString, "accessToken")
     }
 
     companion object {
@@ -196,12 +197,5 @@ class RequestViewCursoIT {
               }
             }
             """.trimIndent()
-
-        private fun extract(json: String, startToken: String, endToken: String): String {
-            val start = json.indexOf(startToken)
-            val from = start + startToken.length
-            val end = json.indexOf(endToken, from)
-            return json.substring(from, end)
-        }
     }
 }

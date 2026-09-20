@@ -27,6 +27,19 @@ class CursoSecretarioJpaAdapter(
         )
     }
 
+    override fun adicionarSeAusente(cursoId: UUID, usuarioId: UUID) {
+        val atuais = jpaRepository.findByIdCurso(cursoId).mapNotNull { it.idUsuario }
+        if (usuarioId in atuais) {
+            return
+        }
+        jpaRepository.save(
+            CursoSecretarioJpaEntity().apply {
+                idCurso = cursoId
+                idUsuario = usuarioId
+            },
+        )
+    }
+
     override fun findUsuarioIdsByCursoId(cursoId: UUID): List<UUID> =
         jpaRepository.findByIdCurso(cursoId).mapNotNull { it.idUsuario }
 

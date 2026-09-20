@@ -5,6 +5,8 @@ import java.util.UUID
 interface CursoSecretarioRepository {
     fun replaceAll(cursoId: UUID, usuarioIds: Collection<UUID>)
 
+    fun adicionarSeAusente(cursoId: UUID, usuarioId: UUID)
+
     fun findUsuarioIdsByCursoId(cursoId: UUID): List<UUID>
 
     fun findUsuarioIdsByCursoIds(cursoIds: Collection<UUID>): Map<UUID, List<UUID>>

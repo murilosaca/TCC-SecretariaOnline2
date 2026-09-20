@@ -13,6 +13,7 @@ import br.ufpr.sept.so2.modules.iam.application.ports.UsuarioRepository
 import br.ufpr.sept.so2.modules.iam.domain.Usuario
 import br.ufpr.sept.so2.shared.domain.valueobject.Email
 import br.ufpr.sept.so2.shared.domain.valueobject.Grr
+import br.ufpr.sept.so2.shared.ItJson
 import br.ufpr.sept.so2.shared.infrastructure.Uuids
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -91,6 +92,21 @@ class FgacEscopoIT {
         )
             .andExpect(status().isNotFound)
             .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.containsString("not-found")))
+    }
+
+    @Test
+    fun adicionarSeAusentePreservaSecretarioManual() {
+        val sec = usuarioRepository.findByEmail(EMAIL_SEC).get()
+        val outro = usuarioRepository.findByEmail(EMAIL_OUTRO).get()
+        val curso = cursoRepository.findByCodigo("ESCA-FGAC").get()
+        cursoSecretarioRepository.replaceAll(curso.id, listOf(outro.id))
+        cursoSecretarioRepository.adicionarSeAusente(curso.id, sec.id)
+        val ids = cursoSecretarioRepository.findUsuarioIdsByCursoId(curso.id)
+        org.junit.jupiter.api.Assertions.assertTrue(ids.contains(outro.id))
+        org.junit.jupiter.api.Assertions.assertTrue(ids.contains(sec.id))
+        cursoSecretarioRepository.adicionarSeAusente(curso.id, sec.id)
+        org.junit.jupiter.api.Assertions.assertEquals(2, cursoSecretarioRepository.findUsuarioIdsByCursoId(curso.id).size)
+        cursoSecretarioRepository.replaceAll(curso.id, listOf(sec.id))
     }
 
     @Test
@@ -192,7 +208,7 @@ class FgacEscopoIT {
         )
             .andExpect(status().isOk)
             .andReturn()
-        return extract(result.response.contentAsString, "\"accessToken\":\"", "\"")
+        return ItJson.text(result.response.contentAsString, "accessToken")
     }
 
     companion object {
@@ -208,12 +224,5 @@ class FgacEscopoIT {
             "request.triage",
             "request.deliberate",
         )
-
-        private fun extract(json: String, startToken: String, endToken: String): String {
-            val start = json.indexOf(startToken)
-            val from = start + startToken.length
-            val end = json.indexOf(endToken, from)
-            return json.substring(from, end)
-        }
     }
 }

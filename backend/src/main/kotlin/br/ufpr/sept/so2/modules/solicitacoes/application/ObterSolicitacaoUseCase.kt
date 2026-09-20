@@ -29,6 +29,8 @@ class ObterSolicitacaoUseCase(
         if (titular) {
             return solicitacao
         }
+        // Precedência deliberada: view_curso (404 fora do escopo) antes de deliberate.
+        // Quem tem as duas não cai no braço amplo do professor — não inverter.
         if (authorities.contains(AUTHORITY_VIEW_CURSO)) {
             if (solicitacaoCursoEscopo.solicitanteNoEscopo(usuarioId, solicitacao.solicitanteId)) {
                 return solicitacao

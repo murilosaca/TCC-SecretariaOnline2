@@ -3,6 +3,7 @@ package br.ufpr.sept.so2.modules.academico.application
 import br.ufpr.sept.so2.modules.academico.application.ports.PeriodoLetivoRepository
 import br.ufpr.sept.so2.modules.academico.domain.PeriodoLetivo
 import br.ufpr.sept.so2.shared.domain.exception.ConflitoEstadoException
+import br.ufpr.sept.so2.shared.domain.exception.DadoInvalidoException
 import br.ufpr.sept.so2.shared.domain.exception.RecursoNaoEncontradoException
 import br.ufpr.sept.so2.shared.infrastructure.Uuids
 import org.springframework.data.domain.Page
@@ -68,11 +69,11 @@ class PeriodoLetivoApplicationService(
     }
 
     private fun garantirSemSobreposicao(candidato: PeriodoLetivo) {
-        val sobrepoe = periodoLetivoRepository.findAll()
+        val conflito = periodoLetivoRepository.findAll()
             .filter { it.id != candidato.id }
-            .any { candidato.sobrepoe(it) }
-        if (sobrepoe) {
-            throw ConflitoEstadoException("O intervalo informado sobrepõe outro período letivo.")
+            .firstOrNull { candidato.sobrepoe(it) }
+        if (conflito != null) {
+            throw DadoInvalidoException("Período sobrepõe ${conflito.ano}/${conflito.semestre}")
         }
     }
 }

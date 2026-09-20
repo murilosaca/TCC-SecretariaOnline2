@@ -42,7 +42,12 @@ class CursoApplicationService(
     fun secretariosPorCursos(cursoIds: Collection<UUID>): Map<UUID, List<UUID>> =
         cursoSecretarioRepository.findUsuarioIdsByCursoIds(cursoIds)
 
+    @Transactional(readOnly = true)
+    fun estaNoEscopo(usuarioId: UUID, cursoId: UUID): Boolean =
+        cursoId in cursoEscopoPort.cursoIdsDoUsuario(usuarioId)
+
     fun criar(
+        usuarioId: UUID,
         nome: String,
         sigla: String,
         codigo: String,
@@ -69,7 +74,10 @@ class CursoApplicationService(
             updatedAt = agora,
         )
         val persistido = cursoRepository.save(curso)
-        cursoSecretarioRepository.replaceAll(persistido.id, secretariosIds.orEmpty())
+        val secretarios = linkedSetOf<UUID>()
+        secretarios.addAll(secretariosIds.orEmpty())
+        secretarios.add(usuarioId)
+        cursoSecretarioRepository.replaceAll(persistido.id, secretarios)
         return persistido
     }
 
@@ -85,10 +93,21 @@ class CursoApplicationService(
         secretariosIds: List<UUID>?,
     ): Curso {
         val curso = buscarPorId(id, usuarioId)
-        curso.atualizar(nome, sigla?.trim()?.uppercase(), codigo?.trim()?.uppercase(), idCoordenador, horas, ativo)
+        val novaSigla = sigla?.trim()?.uppercase()
+        val novoCodigo = codigo?.trim()?.uppercase()
+        if (novaSigla != null && novaSigla != curso.sigla && cursoRepository.existsBySigla(novaSigla)) {
+            throw ConflitoEstadoException("Já existe curso com a sigla $novaSigla")
+        }
+        if (novoCodigo != null && novoCodigo != curso.codigo && cursoRepository.existsByCodigo(novoCodigo)) {
+            throw ConflitoEstadoException("Já existe curso com o código $novoCodigo")
+        }
+        curso.atualizar(nome, novaSigla, novoCodigo, idCoordenador, horas, ativo)
         val persistido = cursoRepository.save(curso)
         if (secretariosIds != null) {
-            cursoSecretarioRepository.replaceAll(persistido.id, secretariosIds)
+            val secretarios = linkedSetOf<UUID>()
+            secretarios.addAll(secretariosIds)
+            secretarios.add(usuarioId)
+            cursoSecretarioRepository.replaceAll(persistido.id, secretarios)
         }
         return persistido
     }

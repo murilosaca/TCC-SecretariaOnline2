@@ -96,6 +96,17 @@ class Usuario(
         return mudou
     }
 
+    fun substituirAuthorities(desejadas: List<String>, agora: OffsetDateTime): Boolean {
+        val alvo = desejadas.filter { !it.isNullOrBlank() }.distinct()
+        if (_authorities == alvo) {
+            return false
+        }
+        _authorities.clear()
+        _authorities.addAll(alvo)
+        updatedAt = agora
+        return true
+    }
+
     companion object {
         private fun truncar(valor: String?, max: Int): String? {
             if (valor == null) {

@@ -43,7 +43,13 @@ class CursoController(
         val secretarios = cursoApplicationService.secretariosPorCursos(pagina.content.map { it.id })
         return PageResponse.ofWithLinks(
             pagina,
-            Function { curso -> CursoResponse.from(curso, secretarios[curso.id].orEmpty(), true) },
+            Function { curso ->
+                CursoResponse.from(
+                    curso,
+                    secretarios[curso.id].orEmpty(),
+                    cursoApplicationService.estaNoEscopo(usuarioId, curso.id),
+                )
+            },
             mapOf("criar" to "/academico/cursos"),
         )
     }
@@ -52,17 +58,24 @@ class CursoController(
     @PreAuthorize("hasAuthority('course.manage')")
     @Operation(summary = "Buscar curso por id")
     fun buscar(@PathVariable id: UUID, authentication: Authentication): CursoResponse {
-        val curso = cursoApplicationService.buscarPorId(id, principal(authentication).userId)
-        return CursoResponse.from(curso, cursoApplicationService.secretariosIds(curso.id), true)
+        val usuarioId = principal(authentication).userId
+        val curso = cursoApplicationService.buscarPorId(id, usuarioId)
+        return CursoResponse.from(
+            curso,
+            cursoApplicationService.secretariosIds(curso.id),
+            cursoApplicationService.estaNoEscopo(usuarioId, curso.id),
+        )
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasAuthority('course.manage')")
     @Operation(summary = "Criar curso")
-    fun criar(@Valid @RequestBody request: CursoRequest): CursoResponse {
+    fun criar(@Valid @RequestBody request: CursoRequest, authentication: Authentication): CursoResponse {
+        val usuarioId = principal(authentication).userId
         val horas = request.horasFormativasMinimas ?: 120
         val curso = cursoApplicationService.criar(
+            usuarioId,
             request.nome!!,
             request.sigla!!,
             request.codigo!!,
@@ -70,7 +83,11 @@ class CursoController(
             horas,
             request.secretariosIds,
         )
-        return CursoResponse.from(curso, cursoApplicationService.secretariosIds(curso.id), true)
+        return CursoResponse.from(
+            curso,
+            cursoApplicationService.secretariosIds(curso.id),
+            cursoApplicationService.estaNoEscopo(usuarioId, curso.id),
+        )
     }
 
     @PutMapping("/{id}")
@@ -81,9 +98,10 @@ class CursoController(
         @Valid @RequestBody request: CursoRequest,
         authentication: Authentication,
     ): CursoResponse {
+        val usuarioId = principal(authentication).userId
         val curso = cursoApplicationService.atualizar(
             id,
-            principal(authentication).userId,
+            usuarioId,
             request.nome,
             request.sigla,
             request.codigo,
@@ -92,7 +110,11 @@ class CursoController(
             request.ativo,
             request.secretariosIds,
         )
-        return CursoResponse.from(curso, cursoApplicationService.secretariosIds(curso.id), true)
+        return CursoResponse.from(
+            curso,
+            cursoApplicationService.secretariosIds(curso.id),
+            cursoApplicationService.estaNoEscopo(usuarioId, curso.id),
+        )
     }
 
     @DeleteMapping("/{id}")

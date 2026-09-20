@@ -95,8 +95,18 @@ class IamDevDataLoader(
         val existente = usuarioRepository.findByEmail(email)
         if (existente.isPresent) {
             val usuario = existente.get()
-            if (usuario.concederAuthorities(authorities, agora)) {
+            val extras = usuario.authorities.filter { it !in authorities }
+            if (usuario.substituirAuthorities(authorities, agora)) {
                 usuarioRepository.save(usuario)
+                if (extras.isNotEmpty()) {
+                    LOG.info(
+                        "Seed IAM (profile=dev) revogou authorities extras de {}: {}",
+                        email,
+                        extras.joinToString(", "),
+                    )
+                } else {
+                    LOG.info("Seed IAM (profile=dev) alinhou authorities de {}.", email)
+                }
             }
             return
         }

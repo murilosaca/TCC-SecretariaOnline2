@@ -1,11 +1,14 @@
 package br.ufpr.sept.so2.modules.academico.api
 
+import br.ufpr.sept.so2.modules.academico.application.ports.PeriodoLetivoRepository
 import br.ufpr.sept.so2.modules.iam.application.ports.PasswordHasher
 import br.ufpr.sept.so2.modules.iam.application.ports.UsuarioRepository
 import br.ufpr.sept.so2.modules.iam.domain.Usuario
+import br.ufpr.sept.so2.shared.ItJson
 import br.ufpr.sept.so2.shared.domain.valueobject.Email
 import br.ufpr.sept.so2.shared.domain.valueobject.Grr
 import br.ufpr.sept.so2.shared.infrastructure.Uuids
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -33,8 +36,12 @@ class PeriodoLetivoControllerIT {
     @Autowired
     private lateinit var passwordHasher: PasswordHasher
 
+    @Autowired
+    private lateinit var periodoLetivoRepository: PeriodoLetivoRepository
+
     @BeforeEach
     fun seed() {
+        limparPeriodosDaClasse()
         val agora = OffsetDateTime.now()
         criarUsuario(
             EMAIL_SEC,
@@ -48,6 +55,11 @@ class PeriodoLetivoControllerIT {
             listOf("dashboard.view_own", "request.view_own"),
             agora,
         )
+    }
+
+    @AfterEach
+    fun limpar() {
+        limparPeriodosDaClasse()
     }
 
     @Test
@@ -72,16 +84,7 @@ class PeriodoLetivoControllerIT {
             post("/academico/periodos")
                 .header("Authorization", "Bearer $token")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(
-                    """
-                    {
-                      "ano": 2033,
-                      "semestre": 1,
-                      "inicio": "2033-02-01",
-                      "fim": "2033-07-15"
-                    }
-                    """.trimIndent(),
-                ),
+                .content(payloadPeriodo(ANO_ISOLADO, 1, "$ANO_ISOLADO-02-01", "$ANO_ISOLADO-07-15")),
         )
             .andExpect(status().isCreated)
             .andExpect(jsonPath("$.semestre").value(1))
@@ -92,23 +95,22 @@ class PeriodoLetivoControllerIT {
             post("/academico/periodos")
                 .header("Authorization", "Bearer $token")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(
-                    """
-                    {
-                      "ano": 2033,
-                      "semestre": 2,
-                      "inicio": "2033-07-01",
-                      "fim": "2033-12-20"
-                    }
-                    """.trimIndent(),
-                ),
+                .content(payloadPeriodo(ANO_ISOLADO, 2, "$ANO_ISOLADO-07-01", "$ANO_ISOLADO-12-20")),
         )
-            .andExpect(status().isConflict)
+            .andExpect(status().isUnprocessableEntity)
+            .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.containsString("validation-error")))
+            .andExpect(jsonPath("$.detail").value("Período sobrepõe $ANO_ISOLADO/1"))
 
         mockMvc.perform(get("/academico/periodos").header("Authorization", "Bearer $token"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$._links.criar").value("/academico/periodos"))
-            .andExpect(jsonPath("$.content[*].ano").value(org.hamcrest.Matchers.hasItem(2033)))
+            .andExpect(jsonPath("$.content[*].ano").value(org.hamcrest.Matchers.hasItem(ANO_ISOLADO)))
+    }
+
+    private fun limparPeriodosDaClasse() {
+        periodoLetivoRepository.findAll()
+            .filter { it.ano == ANO_ISOLADO }
+            .forEach { periodoLetivoRepository.deleteById(it.id) }
     }
 
     private fun criarUsuario(email: String, grr: String, authorities: List<String>, agora: OffsetDateTime) {
@@ -144,19 +146,23 @@ class PeriodoLetivoControllerIT {
         )
             .andExpect(status().isOk)
             .andReturn()
-        return extract(result.response.contentAsString, "\"accessToken\":\"", "\"")
+        return ItJson.text(result.response.contentAsString, "accessToken")
     }
 
     companion object {
         private const val SENHA = "TroqueEstaSenha1!"
         private const val EMAIL_SEC = "it.fgac.cal@ufpr.br"
         private const val EMAIL_ALUNO = "it.fgac.cal.aluno@ufpr.br"
+        private const val ANO_ISOLADO = 2088
 
-        private fun extract(json: String, startToken: String, endToken: String): String {
-            val start = json.indexOf(startToken)
-            val from = start + startToken.length
-            val end = json.indexOf(endToken, from)
-            return json.substring(from, end)
-        }
+        private fun payloadPeriodo(ano: Int, semestre: Int, inicio: String, fim: String): String =
+            """
+            {
+              "ano": $ano,
+              "semestre": $semestre,
+              "inicio": "$inicio",
+              "fim": "$fim"
+            }
+            """.trimIndent()
     }
 }

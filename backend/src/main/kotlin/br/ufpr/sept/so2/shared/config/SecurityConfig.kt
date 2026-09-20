@@ -135,6 +135,7 @@ class SecurityConfig(
                         "/auth/recuperar-senha",
                         "/auth/redefinir-senha",
                     ).permitAll()
+                    .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                     .requestMatchers("/auth/primeiro-acesso", "/auth/me", "/auth/logout").authenticated()
                     .requestMatchers("/request-types", "/request-types/**", "/requests", "/requests/**").authenticated()
                     .requestMatchers("/bff/**").authenticated()
@@ -143,7 +144,7 @@ class SecurityConfig(
                     .requestMatchers("/certificates", "/certificates/**").authenticated()
                     .requestMatchers("/academico", "/academico/**").authenticated()
                     .requestMatchers("/.well-known/**").permitAll()
-                    .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                    // Matchers .authenticated() acima documentam a superfície; o default já é authenticated().
                     .anyRequest().authenticated()
             }
             .addFilterBefore(authRateLimitFilter, UsernamePasswordAuthenticationFilter::class.java)

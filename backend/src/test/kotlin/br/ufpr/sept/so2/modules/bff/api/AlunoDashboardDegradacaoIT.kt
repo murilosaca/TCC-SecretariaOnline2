@@ -108,6 +108,7 @@ class AlunoDashboardDegradacaoIT {
             .andExpect(jsonPath("$.kpis.horasFormativas").value(nullValue()))
             .andExpect(jsonPath("$.kpis.solicitacoesAbertas").value(nullValue()))
             .andExpect(jsonPath("$.kpis.eventosHoje").value(nullValue()))
+            .andExpect(jsonPath("$.kpis.certificados").value(nullValue()))
             .andExpect(jsonPath("$.pendencias").value(nullValue()))
             .andExpect(jsonPath("$.pendenciasFormativas").value(nullValue()))
             .andExpect(jsonPath("$.ultimasSolicitacoes").value(nullValue()))

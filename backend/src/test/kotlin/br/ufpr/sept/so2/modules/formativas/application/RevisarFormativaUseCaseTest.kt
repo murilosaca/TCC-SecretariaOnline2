@@ -1,5 +1,6 @@
 package br.ufpr.sept.so2.modules.formativas.application
 
+import br.ufpr.sept.so2.modules.certificados.application.ports.CertificadoPorFormativaPort
 import br.ufpr.sept.so2.modules.formativas.application.ports.FormativaRepository
 import br.ufpr.sept.so2.modules.formativas.domain.Formativa
 import br.ufpr.sept.so2.modules.formativas.domain.FormativaEstado
@@ -41,18 +42,20 @@ class RevisarFormativaUseCaseTest : StringSpec({
         repo: FormativaRepository,
         outbox: OutboxPort = mockk(relaxed = true),
         audit: AuditLogPort = mockk(relaxed = true),
-    ) = RevisarFormativaUseCase(repo, outbox, audit, objectMapper)
+        certificado: CertificadoPorFormativaPort = mockk(relaxed = true),
+    ) = RevisarFormativaUseCase(repo, outbox, audit, objectMapper, certificado)
 
-    "aprovar publica outbox e auditoria na mesma execução" {
+    "aprovar publica outbox, auditoria e emite certificado na mesma execução" {
         val repo = mockk<FormativaRepository>()
         val outbox = mockk<OutboxPort>()
         val audit = mockk<AuditLogPort>()
+        val certificado = mockk<CertificadoPorFormativaPort>(relaxed = true)
         every { repo.findById(formativaId) } returns aguardando()
         every { repo.save(any()) } answers { firstArg() }
         every { outbox.enqueue(eq("formativa.aprovada"), any()) } just runs
         every { audit.append(eq("formativa.aprovada"), eq(revisorId), any(), eq("127.0.0.1")) } just runs
 
-        val result = useCase(repo, outbox, audit).execute(
+        val result = useCase(repo, outbox, audit, certificado).execute(
             formativaId,
             revisorId,
             "APROVAR",
@@ -64,6 +67,35 @@ class RevisarFormativaUseCaseTest : StringSpec({
         result.cargaHoraria shouldBe 4
         verify { outbox.enqueue("formativa.aprovada", any()) }
         verify { audit.append("formativa.aprovada", revisorId, any(), "127.0.0.1") }
+        verify {
+            certificado.emitirSeAusente(
+                formativaId,
+                result.idAluno,
+                result.idEvento,
+                "Oficina",
+                4,
+                revisorId,
+                "127.0.0.1",
+            )
+        }
+    }
+
+    "indeferir não emite certificado" {
+        val repo = mockk<FormativaRepository>()
+        val certificado = mockk<CertificadoPorFormativaPort>(relaxed = true)
+        every { repo.findById(formativaId) } returns aguardando()
+        every { repo.save(any()) } answers { firstArg() }
+
+        val result = useCase(repo, certificado = certificado).execute(
+            formativaId,
+            revisorId,
+            "INDEFERIR",
+            "Indeferimento fundamentado com mais de vinte caracteres.",
+            null,
+        )
+
+        result.estado shouldBe FormativaEstado.INDEFERIDA
+        verify(exactly = 0) { certificado.emitirSeAusente(any(), any(), any(), any(), any(), any(), any()) }
     }
 
     "indefer curto não persiste" {

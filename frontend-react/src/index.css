@@ -644,6 +644,39 @@ textarea:focus {
   color: #1b6b34;
 }
 
+.badge.estado-indeferida {
+  background: #fde8e8;
+  color: var(--danger);
+}
+
+.verification-seal {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0 0 1rem;
+}
+
+.verification-seal-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  font-size: 1.8rem;
+  font-weight: 700;
+}
+
+.verification-seal.success .verification-seal-icon {
+  background: #e5f6ea;
+  color: #1b6b34;
+}
+
+.verification-seal.danger .verification-seal-icon {
+  background: #fde8e8;
+  color: var(--danger);
+}
+
 .badge.estado-em_analise {
   background: #fff4d6;
   color: #8a5a00;

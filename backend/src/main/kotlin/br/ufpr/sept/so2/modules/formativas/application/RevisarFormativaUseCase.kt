@@ -1,5 +1,6 @@
 package br.ufpr.sept.so2.modules.formativas.application
 
+import br.ufpr.sept.so2.modules.certificados.application.ports.CertificadoPorFormativaPort
 import br.ufpr.sept.so2.modules.formativas.application.ports.FormativaRepository
 import br.ufpr.sept.so2.modules.formativas.domain.Formativa
 import br.ufpr.sept.so2.modules.iam.application.ports.AuditLogPort
@@ -19,6 +20,7 @@ class RevisarFormativaUseCase(
     private val outboxPort: OutboxPort,
     private val auditLogPort: AuditLogPort,
     private val objectMapper: ObjectMapper,
+    private val certificadoPorFormativaPort: CertificadoPorFormativaPort,
 ) {
 
     @Transactional
@@ -40,6 +42,17 @@ class RevisarFormativaUseCase(
             formativa.indeferir(parecerLimpo, revisorId, agora)
         }
         val persistida = formativaRepository.save(formativa)
+        if (acaoResolvida == ACAO_APROVAR) {
+            certificadoPorFormativaPort.emitirSeAusente(
+                persistida.id,
+                persistida.idAluno,
+                persistida.idEvento,
+                persistida.titulo,
+                persistida.cargaHoraria,
+                revisorId,
+                ip,
+            )
+        }
         val evento = toJson(
             mapOf(
                 "formativaId" to persistida.id.toString(),

@@ -56,11 +56,11 @@ A ordem das fatias **depois** do P0 (deliberação → CAAF individual → QR, c
 
 | Item | Spec | Situação | Ação |
 |---|---|---|---|
-| Horas formativas no `/inicio` | KPI F1.1 | Query do módulo `formativas` (soma `APROVADA`); com cadastro acadêmico, `N / requeridas` após parecer CAAF. Falha do módulo **ou JWT sem `aluno`** → `null`, HTTP 200 (não inventa `0/0`) | Feito no item 3; certificado na aprovação continua no item 5 |
-| Certificados no `/inicio` | KPI F1.1 | `null` (módulo inexistente) | Não fingir número; módulo certificados |
-| F0.7 certificado público | Verificação de PDF/hash | `TelaPendente` | Módulo certificados |
+| Horas formativas no `/inicio` | KPI F1.1 | Query do módulo `formativas` (soma `APROVADA`); com cadastro acadêmico, `N / requeridas` após parecer CAAF. Falha do módulo **ou JWT sem `aluno`** → `null`, HTTP 200 (não inventa `0/0`) | Feito no item 3 |
+| Certificados no `/inicio` | KPI F1.1 | Porta no módulo `certificados`; cadastro e zero → `0`; falha/sem cadastro → `null` | Feito no item 5 |
+| F0.7 certificado público | Verificação de PDF/hash | `GET /publico/certificados/{hash}/verificacao` + JWKS + SubtleCrypto | Feito no item 5; CA-04 (upload) e `REVOGADO` ficam dívida |
 | F3.1 dashboard professor | BFF próprio | Ausente; `/inicio` 403 honesto | BFF professor |
-| QR / SECRET_DUAL / janela de saída | Presença v4.1 completa | Só SECRET_SINGLE | Item 4 do plano (depois de deliberação e CAAF individual) |
+| QR / SECRET_DUAL / janela de saída | Presença v4.1 completa | Motor com os quatro modos (item 4) | Janelas pré-agendadas e lista ao vivo de inelegíveis continuam de fora |
 | FGAC em `/academico/**` | `@PreAuthorize` | `permitAll` | Depois da matriz F7 |
 | Nav HATEOAS | UI cega a perfil | Atalhos de dev (Eventos prof., CRUD secretaria) | Esconder quando houver `_links` de menu |
 | Dispatcher de e-mail | Outbox → SMTP | Eventos ficam `PENDING` | Módulo comunicação / Outbox |

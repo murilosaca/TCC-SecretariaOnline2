@@ -13,7 +13,6 @@ import br.ufpr.sept.so2.modules.solicitacoes.infrastructure.DeclaracaoSimplesSee
 import br.ufpr.sept.so2.shared.domain.valueobject.Email
 import br.ufpr.sept.so2.shared.domain.valueobject.Grr
 import br.ufpr.sept.so2.shared.infrastructure.Uuids
-import org.hamcrest.Matchers.nullValue
 import org.hamcrest.Matchers.startsWith
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -134,7 +133,7 @@ class AlunoDashboardControllerIT {
             .andExpect(jsonPath("$.kpis.horasFormativas.validadas").value(0))
             .andExpect(jsonPath("$.kpis.horasFormativas.requeridas").value(120))
             .andExpect(jsonPath("$.kpis.eventosHoje").isNumber)
-            .andExpect(jsonPath("$.kpis.certificados").value(nullValue()))
+            .andExpect(jsonPath("$.kpis.certificados").value(0))
             .andExpect(jsonPath("$.kpis.solicitacoesAbertas").isNumber)
             .andExpect(jsonPath("$.proximosEventos").isArray)
             .andExpect(jsonPath("$.pendenciasFormativas").isArray)

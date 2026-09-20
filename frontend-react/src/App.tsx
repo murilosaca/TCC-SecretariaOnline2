@@ -3,6 +3,7 @@ import { RedirectIfAuthenticated, RequireAuth } from './auth/guards'
 import { AppLayout } from './layouts/AppLayout'
 import { AuthLayout } from './layouts/AuthLayout'
 import { Eventos } from './pages/aluno/Eventos'
+import { Certificados } from './pages/aluno/Certificados'
 import { FormativaDetalhe } from './pages/aluno/FormativaDetalhe'
 import { FormativasRota } from './pages/formativas/FormativasRota'
 import { RevisarFormativa } from './pages/formativas/RevisarFormativa'
@@ -57,6 +58,7 @@ export default function App() {
           <Route path="formativas/:id/revisar" element={<RevisarFormativa />} />
           <Route path="formativas/:id" element={<FormativaDetalhe />} />
           <Route path="formativas" element={<FormativasRota />} />
+          <Route path="certificados" element={<Certificados />} />
           <Route path="professor/eventos/nova" element={<ProfessorEventoNova />} />
           <Route path="professor/eventos/:id/operacao" element={<ProfessorEventoOperacao />} />
           <Route path="professor/eventos/:id" element={<ProfessorEventoDetalhe />} />

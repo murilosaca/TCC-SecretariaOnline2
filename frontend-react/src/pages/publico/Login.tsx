@@ -149,7 +149,7 @@ export function Login() {
         <button type="submit">Consultar protocolo</button>
         <p className="muted">
           Em desenvolvimento, abra uma declaração simples em /solicitacoes/nova para obter um número
-          PROT-AAAA-NNNNN. Certificado digital (F0.7) ainda não está disponível.
+          PROT-AAAA-NNNNN. Certificado digital: use o hash do PDF em /publico/verificar-certificado/:hash.
         </p>
       </form>
       <p className="muted auth-links">

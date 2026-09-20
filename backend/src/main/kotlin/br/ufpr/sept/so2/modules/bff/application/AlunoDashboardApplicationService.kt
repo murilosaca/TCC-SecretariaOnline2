@@ -9,6 +9,7 @@ import br.ufpr.sept.so2.modules.bff.api.dto.AlunoDashboardResponse.SaudacaoRespo
 import br.ufpr.sept.so2.modules.bff.api.dto.AlunoDashboardResponse.UltimaSolicitacaoResponse
 import br.ufpr.sept.so2.modules.bff.application.ports.AlunoIdentidadeQueryPort
 import br.ufpr.sept.so2.modules.bff.application.ports.AlunoIdentidadeQueryPort.AlunoIdentidade
+import br.ufpr.sept.so2.modules.bff.application.ports.CertificadosDashboardQueryPort
 import br.ufpr.sept.so2.modules.bff.application.ports.EventosDashboardQueryPort
 import br.ufpr.sept.so2.modules.bff.application.ports.EventosDashboardQueryPort.EventoResumo
 import br.ufpr.sept.so2.modules.bff.application.ports.EventosDashboardQueryPort.EventosDashboard
@@ -35,6 +36,7 @@ class AlunoDashboardApplicationService(
     private val solicitacoesDashboardQueryPort: SolicitacoesDashboardQueryPort,
     private val eventosDashboardQueryPort: EventosDashboardQueryPort,
     private val formativasDashboardQueryPort: FormativasDashboardQueryPort,
+    private val certificadosDashboardQueryPort: CertificadosDashboardQueryPort,
     private val executor: Executor,
 ) {
 
@@ -45,12 +47,14 @@ class AlunoDashboardApplicationService(
         solicitacoesDashboardQueryPort: SolicitacoesDashboardQueryPort,
         eventosDashboardQueryPort: EventosDashboardQueryPort,
         formativasDashboardQueryPort: FormativasDashboardQueryPort,
+        certificadosDashboardQueryPort: CertificadosDashboardQueryPort,
     ) : this(
         identidadeQueryPort,
         periodoVigenteQueryPort,
         solicitacoesDashboardQueryPort,
         eventosDashboardQueryPort,
         formativasDashboardQueryPort,
+        certificadosDashboardQueryPort,
         ForkJoinPool.commonPool(),
     )
 
@@ -60,11 +64,13 @@ class AlunoDashboardApplicationService(
         val solicitacoesF = isoladoAsync("solicitacoes") { solicitacoesDashboardQueryPort.consultar(usuarioId) }
         val eventosF = isoladoAsync("eventos") { eventosDashboardQueryPort.consultar(OffsetDateTime.now()) }
         val formativasF = isoladoAsync("formativas") { formativasDashboardQueryPort.consultar(usuarioId) }
+        val certificadosF = isoladoAsync("certificados") { certificadosDashboardQueryPort.contarDoAluno(usuarioId) }
         val identidade = identidadeF.join()
         val periodo = periodoF.join()
         val solicitacoes = solicitacoesF.join()
         val eventos = eventosF.join()
         val formativas = formativasF.join()
+        val certificados = certificadosF.join()
 
         val saudacao = if (identidade == null) {
             SaudacaoResponse("Aluno", null)
@@ -80,7 +86,7 @@ class AlunoDashboardApplicationService(
             horas,
             solicitacoes?.abertas,
             eventos?.hoje,
-            null,
+            certificados,
         )
         val pendencias = solicitacoes?.pendencias?.map { item ->
             PendenciaResponse(item.id, item.titulo, item.estado, item.href)

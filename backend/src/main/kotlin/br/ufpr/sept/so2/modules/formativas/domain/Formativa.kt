@@ -15,11 +15,23 @@ class Formativa(
     estado: FormativaEstado,
     val createdAt: OffsetDateTime,
     updatedAt: OffsetDateTime,
+    parecer: String? = null,
+    idRevisor: UUID? = null,
+    reviewedAt: OffsetDateTime? = null,
 ) {
     var estado: FormativaEstado = estado
         private set
 
     var updatedAt: OffsetDateTime = updatedAt
+        private set
+
+    var parecer: String? = parecer
+        private set
+
+    var idRevisor: UUID? = idRevisor
+        private set
+
+    var reviewedAt: OffsetDateTime? = reviewedAt
         private set
 
     init {
@@ -47,9 +59,33 @@ class Formativa(
         updatedAt = agora
     }
 
+    fun aprovar(parecer: String, revisorId: UUID, agora: OffsetDateTime) {
+        garantirAguardandoCaaf()
+        this.parecer = validarParecer(parecer, exigirMinimoIndefer = false)
+        this.idRevisor = revisorId
+        this.reviewedAt = agora
+        estado = FormativaEstado.APROVADA
+        updatedAt = agora
+    }
+
+    fun indeferir(parecer: String, revisorId: UUID, agora: OffsetDateTime) {
+        garantirAguardandoCaaf()
+        this.parecer = validarParecer(parecer, exigirMinimoIndefer = true)
+        this.idRevisor = revisorId
+        this.reviewedAt = agora
+        estado = FormativaEstado.INDEFERIDA
+        updatedAt = agora
+    }
+
     private fun garantirPendente() {
         if (!estado.podeConfirmarOuCancelar()) {
             throw ConflitoEstadoException("A formativa não está pendente de confirmação.")
+        }
+    }
+
+    private fun garantirAguardandoCaaf() {
+        if (!estado.podeRevisar()) {
+            throw ConflitoEstadoException("A formativa não está aguardando revisão da CAAF.")
         }
     }
 
@@ -93,6 +129,21 @@ class Formativa(
 
         fun viaComprovante(): Formativa {
             throw ConflitoEstadoException("Submissão por comprovante não está disponível.")
+        }
+
+        const val PARECER_INDEFER_MIN = 20
+
+        fun validarParecer(parecer: String?, exigirMinimoIndefer: Boolean): String {
+            val limpo = parecer?.trim().orEmpty()
+            if (exigirMinimoIndefer && limpo.length < PARECER_INDEFER_MIN) {
+                throw DadoInvalidoException(
+                    "Informe o parecer para indeferimento (mín. $PARECER_INDEFER_MIN caracteres).",
+                )
+            }
+            if (limpo.isEmpty()) {
+                throw DadoInvalidoException("Informe o parecer.")
+            }
+            return limpo
         }
 
         private fun validar(

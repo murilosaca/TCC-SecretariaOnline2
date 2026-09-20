@@ -14,11 +14,18 @@ class ObterFormativaUseCase(
     private val formativaRepository: FormativaRepository,
 ) {
     @Transactional(readOnly = true)
-    fun execute(id: UUID, usuarioId: UUID): Formativa {
-        val aluno = FormativaAcesso.exigirAlunoAtivo(alunoPorUsuarioPort, usuarioId)
+    fun execute(id: UUID, usuarioId: UUID, authorities: List<String>): Formativa {
         val formativa = formativaRepository.findById(id)
             ?: throw RecursoNaoEncontradoException("Formativa não encontrada.")
+        if (authorities.contains(AUTHORITY_REVIEW)) {
+            return formativa
+        }
+        val aluno = FormativaAcesso.exigirAlunoAtivo(alunoPorUsuarioPort, usuarioId)
         FormativaAcesso.exigirDono(formativa, aluno.id)
         return formativa
+    }
+
+    companion object {
+        const val AUTHORITY_REVIEW = "formative.review"
     }
 }

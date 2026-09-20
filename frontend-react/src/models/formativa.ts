@@ -12,11 +12,15 @@ export type FormativaOrigem = 'PRESENCA_VALIDADA' | 'COMPROVANTE'
 export type Formativa = {
   id: string
   idAluno: string
+  alunoNome?: string | null
   idEvento?: string | null
   origem: FormativaOrigem
   titulo: string
   cargaHoraria: number
   estado: FormativaEstado
+  parecer?: string | null
+  idRevisor?: string | null
+  reviewedAt?: string | null
   createdAt: string
   updatedAt: string
   _links?: HateoasLinks

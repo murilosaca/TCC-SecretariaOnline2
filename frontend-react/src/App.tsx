@@ -4,7 +4,8 @@ import { AppLayout } from './layouts/AppLayout'
 import { AuthLayout } from './layouts/AuthLayout'
 import { Eventos } from './pages/aluno/Eventos'
 import { FormativaDetalhe } from './pages/aluno/FormativaDetalhe'
-import { Formativas } from './pages/aluno/Formativas'
+import { FormativasRota } from './pages/formativas/FormativasRota'
+import { RevisarFormativa } from './pages/formativas/RevisarFormativa'
 import { ProfessorEventoDetalhe } from './pages/professor/ProfessorEventoDetalhe'
 import { ProfessorEventoNova } from './pages/professor/ProfessorEventoNova'
 import { ProfessorEventoOperacao } from './pages/professor/ProfessorEventoOperacao'
@@ -53,8 +54,9 @@ export default function App() {
           <Route path="solicitacoes" element={<SolicitacoesRota />} />
           <Route path="eventos/:id/presenca" element={<PresencaEvento />} />
           <Route path="eventos" element={<Eventos />} />
+          <Route path="formativas/:id/revisar" element={<RevisarFormativa />} />
           <Route path="formativas/:id" element={<FormativaDetalhe />} />
-          <Route path="formativas" element={<Formativas />} />
+          <Route path="formativas" element={<FormativasRota />} />
           <Route path="professor/eventos/nova" element={<ProfessorEventoNova />} />
           <Route path="professor/eventos/:id/operacao" element={<ProfessorEventoOperacao />} />
           <Route path="professor/eventos/:id" element={<ProfessorEventoDetalhe />} />

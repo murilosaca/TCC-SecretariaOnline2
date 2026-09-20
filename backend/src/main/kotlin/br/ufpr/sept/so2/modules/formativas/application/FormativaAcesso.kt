@@ -4,6 +4,7 @@ import br.ufpr.sept.so2.modules.formativas.application.ports.AlunoPorUsuarioPort
 import br.ufpr.sept.so2.modules.formativas.application.ports.AlunoPorUsuarioPort.AlunoRef
 import br.ufpr.sept.so2.modules.formativas.domain.Formativa
 import br.ufpr.sept.so2.shared.domain.exception.AcessoNegadoException
+import br.ufpr.sept.so2.shared.domain.exception.RecursoNaoEncontradoException
 import java.util.UUID
 
 internal object FormativaAcesso {
@@ -18,7 +19,7 @@ internal object FormativaAcesso {
 
     fun exigirDono(formativa: Formativa, alunoId: UUID) {
         if (formativa.idAluno != alunoId) {
-            throw AcessoNegadoException("Você não pode acessar esta formativa.")
+            throw RecursoNaoEncontradoException("Formativa não encontrada.")
         }
     }
 }

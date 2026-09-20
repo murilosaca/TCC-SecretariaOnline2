@@ -1,28 +1,48 @@
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
+import { ApiError } from '../../api/client'
 import { formativasApi } from '../../api/formativas'
 import { useActions } from '../../hooks/useActions'
-import { rotuloEstadoFormativa, rotuloOrigemFormativa } from '../../lib/formativa'
+import { rotuloEstadoFormativa } from '../../lib/formativa'
 import type { Formativa } from '../../models/formativa'
 
-export function Formativas() {
+export function FilaRevisao() {
+  const location = useLocation()
+  const confirmacao = (location.state as { confirmacao?: string } | null)?.confirmacao
+
   const lista = useQuery({
-    queryKey: ['formativas', 'me'],
-    queryFn: () => formativasApi.listarMinhas(),
+    queryKey: ['formativas', 'revisao'],
+    queryFn: () => formativasApi.listarParaRevisao(),
   })
+
+  const forbidden = lista.isError && lista.error instanceof ApiError && lista.error.status === 403
 
   return (
     <section className="page">
       <header className="page-head">
         <div>
-          <h1>Atividades formativas</h1>
-          <p className="muted">Confirme horas geradas a partir de presença validada (RF-F1-006).</p>
+          <h1>Revisão de formativas</h1>
+          <p className="muted">
+            Fila da CAAF: um item por vez, com parecer. Os botões só aparecem quando a ação é
+            permitida no estado atual.
+          </p>
         </div>
       </header>
 
-      {lista.isError && (
+      {confirmacao && (
+        <div className="banner success" role="status">
+          {confirmacao}
+        </div>
+      )}
+
+      {forbidden && (
+        <p className="empty" role="status">
+          Fila de revisão indisponível para esta sessão.
+        </p>
+      )}
+      {lista.isError && !forbidden && (
         <div className="banner danger" role="alert">
-          Não foi possível carregar as formativas.{' '}
+          Não foi possível carregar a fila.{' '}
           <button type="button" onClick={() => lista.refetch()}>
             Tentar de novo
           </button>
@@ -31,24 +51,22 @@ export function Formativas() {
 
       {lista.isLoading && (
         <p className="muted" aria-busy="true">
-          Carregando formativas…
+          Carregando fila…
         </p>
       )}
       {lista.data && lista.data.content.length === 0 && (
         <p className="empty" role="status">
-          Nenhuma atividade formativa no momento. Confirme presença em um evento para gerar uma
-          pendência.
+          Nenhuma formativa aguardando revisão da CAAF.
         </p>
       )}
       {lista.data && lista.data.content.length > 0 && (
         <table>
           <thead>
             <tr>
+              <th scope="col">Aluno</th>
               <th scope="col">Atividade</th>
               <th scope="col">Horas</th>
-              <th scope="col">Origem</th>
               <th scope="col">Estado</th>
-              <th scope="col">Data</th>
               <th scope="col">Ações</th>
             </tr>
           </thead>
@@ -65,19 +83,22 @@ export function Formativas() {
 
 function Linha({ item }: { item: Formativa }) {
   const actions = useActions(item._links)
-  const data = new Date(item.createdAt).toLocaleDateString('pt-BR')
   return (
     <tr>
+      <td>{item.alunoNome || '—'}</td>
       <td>{item.titulo}</td>
       <td>{item.cargaHoraria}h</td>
-      <td>{rotuloOrigemFormativa(item.origem)}</td>
       <td>
         <span className={`badge estado-${item.estado.toLowerCase()}`}>{rotuloEstadoFormativa(item.estado)}</span>
       </td>
-      <td>{data}</td>
       <td className="actions">
-        {actions.can('self') && (
-          <Link to={`/formativas/${item.id}`} className="ghost-link">
+        {actions.can('revisar') && (
+          <Link to={`/formativas/${item.id}/revisar`} className="ghost-link">
+            Revisar
+          </Link>
+        )}
+        {!actions.can('revisar') && actions.can('self') && (
+          <Link to={`/formativas/${item.id}/revisar`} className="ghost-link">
             Abrir
           </Link>
         )}
@@ -85,4 +106,3 @@ function Linha({ item }: { item: Formativa }) {
     </tr>
   )
 }
-

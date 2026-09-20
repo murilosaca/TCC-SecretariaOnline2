@@ -15,6 +15,8 @@ interface FormativaRepository {
 
     fun findByAluno(alunoId: UUID, pageable: Pageable): Page<Formativa>
 
+    fun findByEstado(estado: FormativaEstado, pageable: Pageable): Page<Formativa>
+
     fun somarCargaHoraria(alunoId: UUID, estado: FormativaEstado): Int
 
     fun findPendentesConfirmacao(alunoId: UUID, limite: Int): List<Formativa>

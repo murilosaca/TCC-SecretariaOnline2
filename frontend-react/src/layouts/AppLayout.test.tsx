@@ -45,10 +45,9 @@ describe('AppLayout', () => {
     expect(screen.queryByText('Revisão CAAF')).toBeNull()
   })
 
-  it('nav da secretaria mostra Cursos/Alunos e não mostra Revisão CAAF nem Eventos prof.', () => {
+  it('nav da secretaria mostra Cursos/Alunos e não mostra Solicitações do aluno', () => {
     renderNav({
       inicio: '/inicio',
-      solicitacoes: '/solicitacoes',
       deliberar: '/solicitacoes?to=me',
       cursos: '/secretaria/cursos',
       disciplinas: '/secretaria/disciplinas',
@@ -58,6 +57,8 @@ describe('AppLayout', () => {
     })
     expect(screen.getByText('Cursos')).toBeTruthy()
     expect(screen.getByText('Alunos')).toBeTruthy()
+    expect(screen.getByText('Deliberar')).toBeTruthy()
+    expect(screen.queryByText('Solicitações')).toBeNull()
     expect(screen.queryByText('Revisão CAAF')).toBeNull()
     expect(screen.queryByText('Eventos (prof.)')).toBeNull()
   })

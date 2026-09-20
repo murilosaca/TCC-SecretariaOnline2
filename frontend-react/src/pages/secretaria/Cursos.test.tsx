@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
+import { ApiError } from '../../api/client'
 import { Cursos } from './Cursos'
 
 const listarCursos = vi.fn()
@@ -75,5 +76,12 @@ describe('Cursos', () => {
     expect(screen.getByText('Editar')).toBeTruthy()
     expect(screen.getByText('Excluir')).toBeTruthy()
     expect(screen.getByText('1')).toBeTruthy()
+  })
+
+  it('mostra 403 honesto quando a lista é recusada', async () => {
+    listarCursos.mockRejectedValue(new ApiError(403, 'Acesso negado'))
+    renderPage()
+    expect(await screen.findByText('Você não tem permissão para gerenciar cursos.')).toBeTruthy()
+    expect(screen.queryByText('Não foi possível carregar os cursos.')).toBeNull()
   })
 })

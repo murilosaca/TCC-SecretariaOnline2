@@ -1,6 +1,7 @@
 import { FormEvent, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { academicoApi } from '../../api/academico'
+import { ApiError } from '../../api/client'
 import { useActions } from '../../hooks/useActions'
 import type { Curso } from '../../models/academico'
 
@@ -25,6 +26,7 @@ export function Cursos() {
   })
   const colecao = useActions(lista.data?._links)
   const mostrarForm = editandoId != null || colecao.can('criar')
+  const forbidden = lista.isError && lista.error instanceof ApiError && lista.error.status === 403
 
   const salvar = useMutation({
     mutationFn: () => {
@@ -73,7 +75,12 @@ export function Cursos() {
         <h1>Cursos</h1>
         <p>CRUD alinhado a RF-F5-004-a. Ações somente via `_links` (useActions).</p>
       </header>
-      {(erro || lista.isError) && (
+      {forbidden && (
+        <p className="empty" role="status">
+          Você não tem permissão para gerenciar cursos.
+        </p>
+      )}
+      {(erro || (lista.isError && !forbidden)) && (
         <div className="banner danger" role="alert">
           {erro ?? 'Não foi possível carregar os cursos.'}{' '}
           <button type="button" onClick={() => lista.refetch()}>

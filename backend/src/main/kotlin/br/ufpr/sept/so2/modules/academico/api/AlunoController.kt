@@ -42,9 +42,9 @@ class AlunoController(
         authentication: Authentication,
     ): PageResponse<AlunoResponse> {
         val usuarioId = principal(authentication).userId
-        val cursoIds = alunoApplicationService.cursoIdsDoUsuario(usuarioId)
+        val (pagina, cursoIds) = alunoApplicationService.listar(usuarioId, idCurso, termo, pageable)
         return PageResponse.ofWithLinks(
-            alunoApplicationService.listar(usuarioId, idCurso, termo, pageable),
+            pagina,
             Function { aluno -> AlunoResponse.from(aluno, aluno.idCurso in cursoIds) },
             mapOf("criar" to "/academico/alunos"),
         )

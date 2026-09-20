@@ -25,14 +25,14 @@ class AlunoApplicationService(
     private val cursoEscopoPort: CursoEscopoPort,
 ) {
     @Transactional(readOnly = true)
-    fun listar(usuarioId: UUID, idCurso: UUID?, termo: String?, pageable: Pageable): Page<Aluno> {
+    fun listar(usuarioId: UUID, idCurso: UUID?, termo: String?, pageable: Pageable): Pair<Page<Aluno>, Set<UUID>> {
         val cursoIds = cursoEscopoPort.cursoIdsDoUsuario(usuarioId)
         val filtroCurso = when {
             idCurso == null -> cursoIds
             idCurso in cursoIds -> setOf(idCurso)
             else -> emptySet()
         }
-        return alunoRepository.findAll(idCurso?.takeIf { it in cursoIds }, termo, filtroCurso, pageable)
+        return alunoRepository.findAll(idCurso?.takeIf { it in cursoIds }, termo, filtroCurso, pageable) to cursoIds
     }
 
     @Transactional(readOnly = true)

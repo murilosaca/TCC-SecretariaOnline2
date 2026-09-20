@@ -128,6 +128,7 @@ class SecurityConfig(
                         "/actuator/health/liveness",
                         "/actuator/health/readiness",
                         "/publico/**",
+                        "/.well-known/**",
                     ).permitAll()
                     .requestMatchers(
                         "/auth/login",
@@ -143,7 +144,6 @@ class SecurityConfig(
                     .requestMatchers("/formativas", "/formativas/**").authenticated()
                     .requestMatchers("/certificates", "/certificates/**").authenticated()
                     .requestMatchers("/academico", "/academico/**").authenticated()
-                    .requestMatchers("/.well-known/**").permitAll()
                     // Matchers .authenticated() acima documentam a superfície; o default já é authenticated().
                     .anyRequest().authenticated()
             }

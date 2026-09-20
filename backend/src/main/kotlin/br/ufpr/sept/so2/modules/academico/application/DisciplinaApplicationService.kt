@@ -22,7 +22,7 @@ class DisciplinaApplicationService(
     private val cursoEscopoPort: CursoEscopoPort,
 ) {
     @Transactional(readOnly = true)
-    fun listar(usuarioId: UUID, idCurso: UUID?, pageable: Pageable): Page<Disciplina> {
+    fun listar(usuarioId: UUID, idCurso: UUID?, pageable: Pageable): Pair<Page<Disciplina>, Set<UUID>> {
         val cursoIds = cursoEscopoPort.cursoIdsDoUsuario(usuarioId)
         val filtro = when {
             idCurso == null -> cursoIds
@@ -30,7 +30,7 @@ class DisciplinaApplicationService(
             else -> emptySet()
         }
         val idCursoEfetivo = idCurso?.takeIf { it in cursoIds }
-        return disciplinaRepository.findAll(idCursoEfetivo, filtro, pageable)
+        return disciplinaRepository.findAll(idCursoEfetivo, filtro, pageable) to cursoIds
     }
 
     @Transactional(readOnly = true)

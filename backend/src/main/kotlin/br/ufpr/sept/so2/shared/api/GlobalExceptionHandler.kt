@@ -112,9 +112,6 @@ class GlobalExceptionHandler {
     @ExceptionHandler(DataIntegrityViolationException::class)
     fun handleDataIntegrity(ex: DataIntegrityViolationException): ProblemDetail {
         LOG.warn("Violação de integridade: {}", resumoViolacaoIntegridade(ex))
-        if (LOG.isDebugEnabled) {
-            LOG.debug("Violação de integridade (detalhe): {}", ex.mostSpecificCause.message)
-        }
         return problemDetail(
             HttpStatus.CONFLICT,
             "Conflito de estado",

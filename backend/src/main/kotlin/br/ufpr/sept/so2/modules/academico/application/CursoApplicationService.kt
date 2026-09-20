@@ -27,9 +27,9 @@ class CursoApplicationService(
     private val disciplinaRepository: DisciplinaRepository,
 ) {
     @Transactional(readOnly = true)
-    fun listar(usuarioId: UUID, pageable: Pageable): Page<Curso> {
+    fun listar(usuarioId: UUID, pageable: Pageable): Pair<Page<Curso>, Set<UUID>> {
         val cursoIds = cursoEscopoPort.cursoIdsDoUsuario(usuarioId)
-        return cursoRepository.findAllByIds(cursoIds, pageable)
+        return cursoRepository.findAllByIds(cursoIds, pageable) to cursoIds
     }
 
     @Transactional(readOnly = true)

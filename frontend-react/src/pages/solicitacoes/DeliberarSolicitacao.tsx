@@ -1,31 +1,57 @@
-import { Link, useParams } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { ApiError } from '../../api/client'
 import { solicitacoesApi } from '../../api/solicitacoes'
-import { useActions } from '../../hooks/useActions'
+import { PainelDeliberacao } from '../../components/PainelDeliberacao'
 import { fieldsFromSchema } from '../../lib/formSchema'
 
-export function SolicitacaoDetalhe() {
-  const { id } = useParams<{ id: string }>()
+export function DeliberarSolicitacao() {
+  const { id = '' } = useParams()
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
+
   const detalhe = useQuery({
     queryKey: ['solicitacao', id],
-    queryFn: () => solicitacoesApi.obter(id as string),
+    queryFn: () => solicitacoesApi.obter(id),
     enabled: Boolean(id),
   })
 
-  const actions = useActions(detalhe.data?._links)
+  const transicionar = useMutation({
+    mutationFn: ({ action, parecer }: { action: string; parecer: string }) =>
+      solicitacoesApi.transicionar(id, action, parecer),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['solicitacoes'] })
+      void queryClient.invalidateQueries({ queryKey: ['solicitacao', id] })
+      navigate('/solicitacoes?to=me', {
+        replace: true,
+        state: { confirmacao: 'Deliberação registrada.' },
+      })
+    },
+  })
+
   const item = detalhe.data
   const campos = fieldsFromSchema(item?.formSchema)
+  const forbidden = detalhe.isError && detalhe.error instanceof ApiError && detalhe.error.status === 403
 
   return (
     <section className="page detalhe">
       <p>
-        <Link to="/solicitacoes" className="ghost-link">
-          ← Solicitações
+        <Link to="/solicitacoes?to=me" className="ghost-link">
+          ← Fila de deliberação
         </Link>
       </p>
 
-      {detalhe.isLoading && <p className="muted">Carregando solicitação…</p>}
-      {detalhe.isError && (
+      {detalhe.isLoading && (
+        <p className="muted" aria-busy="true">
+          Carregando solicitação…
+        </p>
+      )}
+      {forbidden && (
+        <p className="empty" role="status">
+          Deliberação indisponível para esta sessão.
+        </p>
+      )}
+      {detalhe.isError && !forbidden && (
         <div className="banner danger" role="alert">
           Solicitação não encontrada ou indisponível.{' '}
           <button type="button" onClick={() => detalhe.refetch()}>
@@ -39,36 +65,30 @@ export function SolicitacaoDetalhe() {
           <header className="page-head">
             <div>
               <h1>{item.protocolo}</h1>
-              <p className="muted">{item.tipoNome}</p>
+              <p className="muted">
+                {item.tipoNome}
+                {item.solicitanteNome ? ` · ${item.solicitanteNome}` : ''}
+              </p>
             </div>
-            <div className="action-bar">
-              <span className={`badge estado-${item.estado.toLowerCase()}`}>{item.estado}</span>
-              {actions.can('editar') && (
-                <Link to="/solicitacoes/nova" className="button-link">
-                  Editar
-                </Link>
-              )}
-              {actions.can('gerar-protocolo') && (
-                <button type="button" disabled>
-                  Gerar protocolo
-                </button>
-              )}
-              {actions.can('deliberar') && (
-                <Link to={`/solicitacoes/${item.id}/deliberar`} className="button-link">
-                  Deliberar
-                </Link>
-              )}
-            </div>
+            <span className={`badge estado-${item.estado.toLowerCase()}`}>{item.estado}</span>
           </header>
+
+          {transicionar.isError && (
+            <div className="banner danger" role="alert">
+              {transicionar.error instanceof ApiError
+                ? transicionar.error.message
+                : 'Não foi possível registrar a deliberação.'}
+            </div>
+          )}
 
           <div className="detalhe-grid">
             <article className="panel">
               <h2>Dados</h2>
               <dl className="resumo">
-                {(campos.length > 0 ? campos : Object.keys(item.payload).map((name) => ({
-                  name,
-                  title: name,
-                }))).map((campo) => (
+                {(campos.length > 0
+                  ? campos
+                  : Object.keys(item.payload).map((name) => ({ name, title: name }))
+                ).map((campo) => (
                   <div key={campo.name}>
                     <dt>{campo.title}</dt>
                     <dd>
@@ -117,6 +137,12 @@ export function SolicitacaoDetalhe() {
               </ol>
             )}
           </section>
+
+          <PainelDeliberacao
+            links={item._links}
+            pending={transicionar.isPending}
+            onDeliberar={(action, parecer) => transicionar.mutate({ action, parecer })}
+          />
         </>
       )}
     </section>

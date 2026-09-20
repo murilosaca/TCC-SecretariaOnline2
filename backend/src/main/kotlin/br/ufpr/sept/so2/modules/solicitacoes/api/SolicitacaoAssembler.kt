@@ -3,6 +3,8 @@ package br.ufpr.sept.so2.modules.solicitacoes.api
 import br.ufpr.sept.so2.modules.solicitacoes.api.dto.RequestTypeResponse
 import br.ufpr.sept.so2.modules.solicitacoes.api.dto.SolicitacaoEventoResponse
 import br.ufpr.sept.so2.modules.solicitacoes.api.dto.SolicitacaoResponse
+import br.ufpr.sept.so2.modules.solicitacoes.application.WorkflowJsonParser
+import br.ufpr.sept.so2.modules.solicitacoes.application.ports.SolicitanteResumoPort
 import br.ufpr.sept.so2.modules.solicitacoes.domain.Solicitacao
 import br.ufpr.sept.so2.modules.solicitacoes.domain.TipoSolicitacao
 import com.fasterxml.jackson.core.type.TypeReference
@@ -14,16 +16,30 @@ import java.util.LinkedHashMap
 @Component
 class SolicitacaoAssembler(
     private val objectMapper: ObjectMapper,
+    private val workflowJsonParser: WorkflowJsonParser,
+    private val solicitanteResumoPort: SolicitanteResumoPort,
 ) {
 
     fun from(solicitacao: Solicitacao, authorities: List<String>, detalhe: Boolean): SolicitacaoResponse {
         val agora = OffsetDateTime.now()
         val vencido = solicitacao.prazoVencido(agora)
-        val links = LinkedHashMap<String, String>()
         val self = "/requests/" + solicitacao.id
+        val links = LinkedHashMap<String, String>()
         links["self"] = self
-        if (authorities.contains("request.deliberate")) {
-            links["deliberar"] = "$self/transitions"
+        if (authorities.contains(AUTHORITY_DELIBERATE)) {
+            val acoes = acoesDoEstado(solicitacao)
+            if (acoes.isNotEmpty()) {
+                links["deliberar"] = self
+            }
+            if ("DEFER" in acoes) {
+                links["deferir"] = "$self/transitions"
+            }
+            if ("INDEFER" in acoes) {
+                links["indeferir"] = "$self/transitions"
+            }
+            if ("REQUEST_ADJUST" in acoes || "REQUEST_ADJUSTMENT" in acoes) {
+                links["solicitar-ajustes"] = "$self/transitions"
+            }
         }
         val eventos = if (detalhe) {
             solicitacao.eventos.map(SolicitacaoEventoResponse::from)
@@ -39,6 +55,7 @@ class SolicitacaoAssembler(
             solicitacao.estado,
             readMap(solicitacao.payloadJson),
             if (detalhe) readMap(solicitacao.formSchemaSnapshot) else null,
+            solicitanteResumoPort.nomeDe(solicitacao.solicitanteId),
             solicitacao.prazoEm,
             vencido,
             if (vencido) "ATRASADO" else "NO_PRAZO",
@@ -63,6 +80,14 @@ class SolicitacaoAssembler(
             mapOf("self" to "/request-types/" + tipo.codigo),
         )
 
+    private fun acoesDoEstado(solicitacao: Solicitacao): Set<String> =
+        try {
+            workflowJsonParser.parse(solicitacao.workflowSnapshot)
+                .acoesDeliberativasDe(solicitacao.estado)
+        } catch (_: Exception) {
+            emptySet()
+        }
+
     private fun readMap(json: String?): Map<String, Any?> {
         if (json.isNullOrBlank()) {
             return emptyMap()
@@ -75,6 +100,7 @@ class SolicitacaoAssembler(
     }
 
     companion object {
+        const val AUTHORITY_DELIBERATE = "request.deliberate"
         private val MAPA: TypeReference<Map<String, Any?>> = object : TypeReference<Map<String, Any?>>() {}
     }
 }

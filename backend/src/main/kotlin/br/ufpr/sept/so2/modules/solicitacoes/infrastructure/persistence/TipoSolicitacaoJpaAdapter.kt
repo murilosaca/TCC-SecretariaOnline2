@@ -29,4 +29,7 @@ class TipoSolicitacaoJpaAdapter(
     override fun findPublished(pageable: Pageable): Page<TipoSolicitacao> =
         jpaRepository.findByStatus(TipoSolicitacao.PUBLISHED, pageable)
             .map(TipoSolicitacaoJpaEntity::toDomain)
+
+    override fun findPublishedAll(): List<TipoSolicitacao> =
+        jpaRepository.findByStatus(TipoSolicitacao.PUBLISHED).map(TipoSolicitacaoJpaEntity::toDomain)
 }

@@ -13,6 +13,7 @@ data class SolicitacaoResponse(
     val estado: String,
     val payload: Map<String, Any?>,
     val formSchema: Map<String, Any?>?,
+    val solicitanteNome: String?,
     val prazoEm: OffsetDateTime?,
     val prazoVencido: Boolean,
     val sla: String,

@@ -119,6 +119,7 @@ class IamDevDataLoader(
                 "dashboard.view_own",
                 "event.manage",
                 "event.host",
+                "request.deliberate",
             )
     }
 }

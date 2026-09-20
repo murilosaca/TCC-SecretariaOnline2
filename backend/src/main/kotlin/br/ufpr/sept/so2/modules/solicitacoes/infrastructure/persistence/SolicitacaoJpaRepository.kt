@@ -5,6 +5,7 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
+import java.time.OffsetDateTime
 import java.util.Optional
 import java.util.UUID
 
@@ -26,6 +27,22 @@ interface SolicitacaoJpaRepository : JpaRepository<SolicitacaoJpaEntity, UUID> {
         @Param("estado") estado: String?,
         @Param("tipoCodigo") tipoCodigo: String?,
         @Param("anoPrefixo") anoPrefixo: String?,
+        pageable: Pageable,
+    ): Page<SolicitacaoJpaEntity>
+
+    @Query(
+        """
+            SELECT s FROM SolicitacaoJpaEntity s
+            WHERE s.estado IN :estados
+              AND (:tipoCodigo IS NULL OR s.tipoCodigo = :tipoCodigo)
+              AND (:somenteAtraso = false OR s.prazoEm < :agora)
+            """,
+    )
+    fun findParaDeliberar(
+        @Param("estados") estados: Collection<String>,
+        @Param("tipoCodigo") tipoCodigo: String?,
+        @Param("somenteAtraso") somenteAtraso: Boolean,
+        @Param("agora") agora: OffsetDateTime,
         pageable: Pageable,
     ): Page<SolicitacaoJpaEntity>
 }

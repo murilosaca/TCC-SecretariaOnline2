@@ -11,4 +11,6 @@ interface TipoSolicitacaoJpaRepository : JpaRepository<TipoSolicitacaoJpaEntity,
     fun findByCodigoIgnoreCase(codigo: String): Optional<TipoSolicitacaoJpaEntity>
 
     fun findByStatus(status: String, pageable: Pageable): Page<TipoSolicitacaoJpaEntity>
+
+    fun findByStatus(status: String): List<TipoSolicitacaoJpaEntity>
 }

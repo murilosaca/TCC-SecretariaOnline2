@@ -52,6 +52,7 @@ export type Solicitacao = {
   estado: string
   payload: Record<string, unknown>
   formSchema?: JsonSchema
+  solicitanteNome?: string | null
   prazoEm: string
   prazoVencido: boolean
   sla: 'NO_PRAZO' | 'ATRASADO'

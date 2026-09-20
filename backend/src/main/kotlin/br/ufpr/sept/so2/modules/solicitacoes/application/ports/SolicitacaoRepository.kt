@@ -3,6 +3,7 @@ package br.ufpr.sept.so2.modules.solicitacoes.application.ports
 import br.ufpr.sept.so2.modules.solicitacoes.domain.Solicitacao
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
+import java.time.OffsetDateTime
 import java.util.Optional
 import java.util.UUID
 
@@ -19,6 +20,14 @@ interface SolicitacaoRepository {
         estado: String?,
         tipoCodigo: String?,
         ano: Int?,
+        pageable: Pageable,
+    ): Page<Solicitacao>
+
+    fun findParaDeliberar(
+        estados: Collection<String>,
+        tipoCodigo: String?,
+        somenteAtraso: Boolean,
+        agora: OffsetDateTime,
         pageable: Pageable,
     ): Page<Solicitacao>
 }

@@ -3,7 +3,10 @@ package br.ufpr.sept.so2.modules.solicitacoes.api
 import br.ufpr.sept.so2.modules.iam.infrastructure.security.IamPrincipal
 import br.ufpr.sept.so2.modules.solicitacoes.api.dto.CriarSolicitacaoRequest
 import br.ufpr.sept.so2.modules.solicitacoes.api.dto.SolicitacaoResponse
+import br.ufpr.sept.so2.modules.solicitacoes.api.dto.TransicionarSolicitacaoRequest
 import br.ufpr.sept.so2.modules.solicitacoes.application.CriarSolicitacaoUseCase
+import br.ufpr.sept.so2.modules.solicitacoes.application.DeliberarSolicitacaoUseCase
+import br.ufpr.sept.so2.modules.solicitacoes.application.ListarFilaDeliberacaoUseCase
 import br.ufpr.sept.so2.modules.solicitacoes.application.ListarMinhasSolicitacoesUseCase
 import br.ufpr.sept.so2.modules.solicitacoes.application.ObterSolicitacaoUseCase
 import br.ufpr.sept.so2.shared.api.PageResponse
@@ -30,29 +33,45 @@ import java.util.function.Function
 
 @RestController
 @RequestMapping("/requests")
-@Tag(name = "Solicitações", description = "Motor genérico de requerimentos (RF-F1-005 / RF-TR-001)")
+@Tag(name = "Solicitações", description = "Motor genérico de requerimentos (RF-F1-005 / RF-F3-003)")
 class SolicitacaoController(
     private val listarMinhasSolicitacoesUseCase: ListarMinhasSolicitacoesUseCase,
+    private val listarFilaDeliberacaoUseCase: ListarFilaDeliberacaoUseCase,
     private val criarSolicitacaoUseCase: CriarSolicitacaoUseCase,
     private val obterSolicitacaoUseCase: ObterSolicitacaoUseCase,
+    private val deliberarSolicitacaoUseCase: DeliberarSolicitacaoUseCase,
     private val assembler: SolicitacaoAssembler,
 ) {
 
     @GetMapping
-    @PreAuthorize("hasAuthority('request.view_own')")
-    @Operation(summary = "Listar minhas solicitações")
+    @PreAuthorize("hasAnyAuthority('request.view_own','request.deliberate')")
+    @Operation(summary = "Listar minhas solicitações ou a fila de deliberação")
     fun listar(
+        @RequestParam(name = "canDeliberate", defaultValue = "false") canDeliberate: Boolean,
         @RequestParam(name = "solicitante", defaultValue = "me") solicitante: String,
         @RequestParam(name = "estado", required = false) estado: String?,
         @RequestParam(name = "tipo", required = false) tipo: String?,
         @RequestParam(name = "ano", required = false) ano: Int?,
+        @RequestParam(name = "atraso", required = false) atraso: Boolean?,
         @PageableDefault(size = 20) pageable: Pageable,
         authentication: Authentication,
     ): PageResponse<SolicitacaoResponse> {
+        val principal = principal(authentication)
+        if (canDeliberate) {
+            if (!principal.authorities.contains("request.deliberate")) {
+                throw AcessoNegadoException("Você não tem permissão para esta operação.")
+            }
+            return PageResponse.ofWithLinks(
+                listarFilaDeliberacaoUseCase.execute(tipo, atraso == true, pageable),
+                Function { item -> assembler.from(item, principal.authorities, false) },
+            )
+        }
+        if (!principal.authorities.contains("request.view_own")) {
+            throw AcessoNegadoException("Você não tem permissão para esta operação.")
+        }
         if (!"me".equals(solicitante, ignoreCase = true)) {
             throw AcessoNegadoException("Neste momento só é possível listar as próprias solicitações.")
         }
-        val principal = principal(authentication)
         return PageResponse.ofWithLinks(
             listarMinhasSolicitacoesUseCase.execute(principal.userId, estado, tipo, ano, pageable),
             Function { item -> assembler.from(item, principal.authorities, false) },
@@ -87,12 +106,35 @@ class SolicitacaoController(
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('request.view_own')")
+    @PreAuthorize("hasAnyAuthority('request.view_own','request.deliberate')")
     @Operation(summary = "Detalhe com timeline (mais recente no topo)")
     fun buscar(@PathVariable("id") id: UUID, authentication: Authentication): SolicitacaoResponse {
         val principal = principal(authentication)
         return assembler.from(
-            obterSolicitacaoUseCase.execute(id, principal.userId),
+            obterSolicitacaoUseCase.execute(id, principal.userId, principal.authorities),
+            principal.authorities,
+            true,
+        )
+    }
+
+    @PostMapping("/{id}/transitions")
+    @PreAuthorize("hasAuthority('request.deliberate')")
+    @Operation(summary = "Deliberar solicitação (DEFER / INDEFER / REQUEST_ADJUST)")
+    fun transicionar(
+        @PathVariable("id") id: UUID,
+        @Valid @RequestBody request: TransicionarSolicitacaoRequest,
+        authentication: Authentication,
+        http: HttpServletRequest,
+    ): SolicitacaoResponse {
+        val principal = principal(authentication)
+        return assembler.from(
+            deliberarSolicitacaoUseCase.execute(
+                id,
+                principal.userId,
+                request.action,
+                request.parecer,
+                clientIp(http),
+            ),
             principal.authorities,
             true,
         )

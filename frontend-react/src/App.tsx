@@ -13,7 +13,8 @@ import { NovaSolicitacao } from './pages/aluno/NovaSolicitacao'
 import { PresencaEvento } from './pages/aluno/PresencaEvento'
 import { PrimeiroAcesso } from './pages/aluno/PrimeiroAcesso'
 import { SolicitacaoDetalhe } from './pages/aluno/SolicitacaoDetalhe'
-import { Solicitacoes } from './pages/aluno/Solicitacoes'
+import { DeliberarSolicitacao } from './pages/solicitacoes/DeliberarSolicitacao'
+import { SolicitacoesRota } from './pages/solicitacoes/SolicitacoesRota'
 import { Inicio } from './pages/inicio/Inicio'
 import { Contato } from './pages/publico/Contato'
 import { Erro } from './pages/publico/Erro'
@@ -47,8 +48,9 @@ export default function App() {
           <Route path="inicio" element={<Inicio />} />
           <Route path="primeiro-acesso" element={<PrimeiroAcesso />} />
           <Route path="solicitacoes/nova" element={<NovaSolicitacao />} />
+          <Route path="solicitacoes/:id/deliberar" element={<DeliberarSolicitacao />} />
           <Route path="solicitacoes/:id" element={<SolicitacaoDetalhe />} />
-          <Route path="solicitacoes" element={<Solicitacoes />} />
+          <Route path="solicitacoes" element={<SolicitacoesRota />} />
           <Route path="eventos/:id/presenca" element={<PresencaEvento />} />
           <Route path="eventos" element={<Eventos />} />
           <Route path="formativas/:id" element={<FormativaDetalhe />} />

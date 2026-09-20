@@ -124,7 +124,7 @@ function Linha({ item }: { item: Solicitacao }) {
           </Link>
         )}
         {actions.can('deliberar') && (
-          <Link to={`/solicitacoes/${item.id}`} className="ghost-link">
+          <Link to={`/solicitacoes/${item.id}/deliberar`} className="ghost-link">
             Deliberar
           </Link>
         )}

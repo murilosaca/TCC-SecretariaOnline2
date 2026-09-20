@@ -13,12 +13,20 @@ class ObterSolicitacaoUseCase(
 ) {
 
     @Transactional(readOnly = true)
-    fun execute(id: UUID, solicitanteId: UUID): Solicitacao {
+    fun execute(id: UUID, usuarioId: UUID, authorities: List<String>): Solicitacao {
         val solicitacao = solicitacaoRepository.findById(id)
             .orElseThrow { RecursoNaoEncontradoException("Solicitação não encontrada.") }
-        if (!solicitacao.pertenceA(solicitanteId)) {
+        val dono = solicitacao.pertenceA(usuarioId)
+        val deliberante = authorities.contains(AUTHORITY_DELIBERATE)
+        val titular = dono && authorities.contains(AUTHORITY_VIEW_OWN)
+        if (!titular && !deliberante) {
             throw RecursoNaoEncontradoException("Solicitação não encontrada.")
         }
         return solicitacao
+    }
+
+    companion object {
+        const val AUTHORITY_VIEW_OWN = "request.view_own"
+        const val AUTHORITY_DELIBERATE = "request.deliberate"
     }
 }

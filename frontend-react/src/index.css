@@ -176,6 +176,14 @@ button.danger {
   background: var(--danger);
 }
 
+button.success {
+  background: #1b6b34;
+}
+
+button.warning {
+  background: #c98400;
+}
+
 button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
@@ -604,14 +612,42 @@ textarea:focus {
   color: #1b6b34;
 }
 
-.badge.estado-cancelada,
-.badge.estado-indeferida {
+.badge.estado-em_analise {
+  background: #fff4d6;
+  color: #8a5a00;
+}
+
+.badge.estado-deliberada {
+  background: #e5f6ea;
+  color: #1b6b34;
+}
+
+.badge.estado-concluida {
   background: #eef1f4;
   color: #44515c;
 }
 
 .formativa-widget {
   margin-bottom: 1rem;
+}
+
+.painel-decisao {
+  position: sticky;
+  bottom: 0;
+  margin-top: 1rem;
+  padding: 1rem;
+  box-shadow: 0 -8px 24px rgb(20 32 43 / 8%);
+}
+
+.painel-decisao label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.painel-decisao textarea {
+  width: 100%;
+  min-height: 6rem;
 }
 
 @media (max-width: 700px) {

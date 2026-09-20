@@ -17,4 +17,16 @@ export const solicitacoesApi = {
   criar: (tipoCodigo: string, payload: Record<string, unknown>) =>
     api.post<Solicitacao>('/requests', { tipoCodigo, payload }),
   obter: (id: string) => api.get<Solicitacao>(`/requests/${id}`),
+  listarParaDeliberar: (
+    filtros: { tipo?: string; atraso?: boolean; page?: number; size?: number } = {},
+  ) =>
+    api.get<SolicitacaoPage>('/requests', {
+      canDeliberate: 'true',
+      tipo: filtros.tipo,
+      atraso: filtros.atraso ? 'true' : undefined,
+      page: filtros.page ?? 0,
+      size: filtros.size ?? 20,
+    }),
+  transicionar: (id: string, action: string, parecer: string) =>
+    api.post<Solicitacao>(`/requests/${id}/transitions`, { action, parecer }),
 }

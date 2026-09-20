@@ -5,6 +5,7 @@ import br.ufpr.sept.so2.modules.solicitacoes.domain.Solicitacao
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Component
+import java.time.OffsetDateTime
 import java.util.Optional
 import java.util.UUID
 
@@ -42,6 +43,20 @@ class SolicitacaoJpaAdapter(
     ): Page<Solicitacao> {
         val anoPrefixo = if (ano == null) null else "PROT-$ano-%"
         return jpaRepository.findMinhas(solicitanteId, estado, tipoCodigo, anoPrefixo, pageable)
+            .map(SolicitacaoJpaEntity::toDomainSemEventos)
+    }
+
+    override fun findParaDeliberar(
+        estados: Collection<String>,
+        tipoCodigo: String?,
+        somenteAtraso: Boolean,
+        agora: OffsetDateTime,
+        pageable: Pageable,
+    ): Page<Solicitacao> {
+        if (estados.isEmpty()) {
+            return Page.empty(pageable)
+        }
+        return jpaRepository.findParaDeliberar(estados.toList(), tipoCodigo, somenteAtraso, agora, pageable)
             .map(SolicitacaoJpaEntity::toDomainSemEventos)
     }
 

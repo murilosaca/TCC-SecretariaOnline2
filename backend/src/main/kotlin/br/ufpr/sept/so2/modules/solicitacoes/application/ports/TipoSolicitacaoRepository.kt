@@ -15,4 +15,6 @@ interface TipoSolicitacaoRepository {
     fun findByCodigo(codigo: String): Optional<TipoSolicitacao>
 
     fun findPublished(pageable: Pageable): Page<TipoSolicitacao>
+
+    fun findPublishedAll(): List<TipoSolicitacao>
 }

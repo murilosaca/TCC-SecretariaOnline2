@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
+import { academicoApi } from '../../api/academico'
 import { ApiError } from '../../api/client'
 import { Cursos } from './Cursos'
 
@@ -83,5 +84,34 @@ describe('Cursos', () => {
     renderPage()
     expect(await screen.findByText('Você não tem permissão para gerenciar cursos.')).toBeTruthy()
     expect(screen.queryByText('Não foi possível carregar os cursos.')).toBeNull()
+  })
+
+  it('mostra o detail do problem+json ao falhar a exclusão', async () => {
+    listarCursos.mockResolvedValue({
+      content: [
+        {
+          id: 'c1',
+          nome: 'TADS',
+          sigla: 'TADS',
+          codigo: 'TADS-SEPT',
+          horasFormativasMinimas: 120,
+          secretariosIds: [],
+          ativo: true,
+          _links: {
+            self: '/academico/cursos/c1',
+            excluir: '/academico/cursos/c1',
+          },
+        },
+      ],
+      page: { number: 0, size: 20, totalElements: 1, totalPages: 1 },
+    })
+    vi.mocked(academicoApi.excluirCurso).mockRejectedValue(
+      new ApiError(409, 'Curso possui alunos ou disciplinas vinculados; desvincule antes de excluir.'),
+    )
+    renderPage()
+    fireEvent.click(await screen.findByText('Excluir'))
+    expect(
+      await screen.findByText('Curso possui alunos ou disciplinas vinculados; desvincule antes de excluir.'),
+    ).toBeTruthy()
   })
 })

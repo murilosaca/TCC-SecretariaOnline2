@@ -54,7 +54,8 @@ export function Cursos() {
       queryClient.invalidateQueries({ queryKey: ['cursos'] })
       queryClient.invalidateQueries({ queryKey: ['cursos-combo'] })
     },
-    onError: () => setErro('Falha ao excluir o curso.'),
+    onError: (err) =>
+      setErro(err instanceof ApiError ? err.message : 'Falha ao excluir o curso.'),
   })
 
   function onSubmit(event: FormEvent) {

@@ -26,5 +26,20 @@ describe('AttendanceWidget', () => {
       />,
     )
     expect(screen.getByRole('button', { name: 'Confirmar' })).toBeTruthy()
+    expect(screen.getByLabelText('PIN de presença')).toBeTruthy()
+  })
+
+  it('mostra token QR quando o modo é QR_SINGLE e existe confirmar-saida', () => {
+    render(
+      <AttendanceWidget
+        links={{ 'confirmar-saida': '/events/1/attendance/confirm' }}
+        attendanceMode="QR_DUAL"
+        janelaExpira={new Date(Date.now() + 30 * 60_000).toISOString()}
+        faseDisponivel="SAIDA"
+        onConfirm={() => undefined}
+      />,
+    )
+    expect(screen.getByLabelText('Token QR de presença')).toBeTruthy()
+    expect(screen.queryByLabelText('PIN de presença')).toBeNull()
   })
 })

@@ -1,18 +1,21 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react'
 import { useActions } from '../hooks/useActions'
+import { isQrMode } from '../models/evento'
 import type { HateoasLinks } from '../models/academico'
 
 type Props = {
   links?: HateoasLinks
+  attendanceMode?: string | null
   janelaExpira?: string | null
   faseDisponivel?: string | null
   pending?: boolean
   error?: string | null
-  onConfirm: (pin: string, fase: string) => void
+  onConfirm: (segredo: string, fase: string) => void
 }
 
 export function AttendanceWidget({
   links,
+  attendanceMode,
   janelaExpira,
   faseDisponivel,
   pending,
@@ -20,8 +23,9 @@ export function AttendanceWidget({
   onConfirm,
 }: Props) {
   const actions = useActions(links)
-  const [pin, setPin] = useState('')
+  const [segredo, setSegredo] = useState('')
   const [restante, setRestante] = useState(() => msRestantes(janelaExpira))
+  const qr = isQrMode(attendanceMode)
 
   useEffect(() => {
     setRestante(msRestantes(janelaExpira))
@@ -47,7 +51,7 @@ export function AttendanceWidget({
 
   function enviar(event: FormEvent) {
     event.preventDefault()
-    onConfirm(pin.trim(), fase)
+    onConfirm(segredo.trim(), fase)
   }
 
   return (
@@ -58,13 +62,13 @@ export function AttendanceWidget({
         </p>
       )}
       <label>
-        PIN de presença
+        {qr ? 'Token QR de presença' : 'PIN de presença'}
         <input
           type="text"
-          inputMode="numeric"
+          inputMode={qr ? 'text' : 'numeric'}
           autoComplete="off"
-          value={pin}
-          onChange={(event) => setPin(event.target.value)}
+          value={segredo}
+          onChange={(event) => setSegredo(event.target.value)}
           disabled={pending}
           required
         />
@@ -74,7 +78,7 @@ export function AttendanceWidget({
           {error}
         </p>
       )}
-      <button type="submit" disabled={pending || !pin.trim()}>
+      <button type="submit" disabled={pending || !segredo.trim()}>
         {pending ? 'Confirmando…' : 'Confirmar'}
       </button>
     </form>

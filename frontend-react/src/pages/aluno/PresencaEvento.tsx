@@ -6,6 +6,7 @@ import { eventosApi } from '../../api/eventos'
 import { AttendanceWidget } from '../../components/AttendanceWidget'
 import { useActions } from '../../hooks/useActions'
 import { obterDeviceUuid } from '../../lib/deviceUuid'
+import { isQrMode } from '../../models/evento'
 import type { SessaoPresenca } from '../../models/evento'
 
 export function PresencaEvento() {
@@ -20,8 +21,14 @@ export function PresencaEvento() {
   })
 
   const confirmar = useMutation({
-    mutationFn: ({ pin, fase }: { pin: string; fase: string }) =>
-      eventosApi.confirmar(id, { pin, deviceUuid: obterDeviceUuid(), fase }),
+    mutationFn: ({ segredo, fase }: { segredo: string; fase: string }) => {
+      const qr = isQrMode(sessao.data?.attendanceMode)
+      return eventosApi.confirmar(id, {
+        ...(qr ? { token: segredo } : { pin: segredo }),
+        deviceUuid: obterDeviceUuid(),
+        fase,
+      })
+    },
     onSuccess: (atualizada) => {
       setErroConfirmacao(null)
       queryClient.setQueryData(['eventos', id, 'sessao'], atualizada)
@@ -63,7 +70,14 @@ export function PresencaEvento() {
         </p>
       )}
 
-      {sessao.data && <ConteudoSessao sessao={sessao.data} erro={erroConfirmacao} pending={confirmar.isPending} onConfirm={(pin, fase) => confirmar.mutate({ pin, fase })} />}
+      {sessao.data && (
+        <ConteudoSessao
+          sessao={sessao.data}
+          erro={erroConfirmacao}
+          pending={confirmar.isPending}
+          onConfirm={(segredo, fase) => confirmar.mutate({ segredo, fase })}
+        />
+      )}
     </section>
   )
 }
@@ -77,10 +91,11 @@ function ConteudoSessao({
   sessao: SessaoPresenca
   erro: string | null
   pending: boolean
-  onConfirm: (pin: string, fase: string) => void
+  onConfirm: (segredo: string, fase: string) => void
 }) {
   const actions = useActions(sessao._links)
   const podeConfirmar = actions.can('confirmar-entrada') || actions.can('confirmar-saida')
+  const qr = isQrMode(sessao.attendanceMode)
 
   if (sessao.situacaoPresenca === 'COMPLETA') {
     return (
@@ -92,27 +107,42 @@ function ConteudoSessao({
     )
   }
 
-  if (!sessao.janelaAtiva || !podeConfirmar) {
+  if (podeConfirmar && sessao.janelaAtiva) {
     return (
       <div className="attendance-card card">
-        <p className="empty" role="status">
-          A janela de validação encerrou.
+        <p className="muted">
+          {qr
+            ? 'Informe o token do QR divulgado no evento. O botão só aparece com janela ativa.'
+            : 'Informe o PIN divulgado no evento. O botão só aparece com janela ativa.'}
         </p>
+        <AttendanceWidget
+          links={sessao._links}
+          attendanceMode={sessao.attendanceMode}
+          janelaExpira={sessao.janelaExpira}
+          faseDisponivel={sessao.faseDisponivel}
+          pending={pending}
+          error={erro}
+          onConfirm={onConfirm}
+        />
+      </div>
+    )
+  }
+
+  if (sessao.situacaoPresenca === 'PARCIAL') {
+    return (
+      <div className="attendance-card card">
+        <div className="banner success" role="status">
+          Entrada registrada. Confirme a saída quando solicitado.
+        </div>
       </div>
     )
   }
 
   return (
     <div className="attendance-card card">
-      <p className="muted">Informe o PIN divulgado no evento. O botão só aparece com janela ativa.</p>
-      <AttendanceWidget
-        links={sessao._links}
-        janelaExpira={sessao.janelaExpira}
-        faseDisponivel={sessao.faseDisponivel}
-        pending={pending}
-        error={erro}
-        onConfirm={onConfirm}
-      />
+      <p className="empty" role="status">
+        A janela de validação encerrou.
+      </p>
     </div>
   )
 }

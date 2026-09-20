@@ -18,6 +18,8 @@ export const eventosApi = {
   sessao: (id: string) => api.get<SessaoPresenca>(`/events/${id}/attendance/session`),
   sessaoHost: (id: string) => api.get<HostSessao>(`/events/${id}/attendance/host-session`),
   abrirJanelaEntrada: (id: string) => api.post<HostSessao>(`/events/${id}/attendance/windows/entry`),
+  abrirJanelaSaida: (id: string) => api.post<HostSessao>(`/events/${id}/attendance/windows/exit`),
+  renovarQr: (id: string) => api.post<HostSessao>(`/events/${id}/attendance/qr/renew`),
   encerrar: (id: string) => api.post<HostSessao>(`/events/${id}/encerrar`),
   confirmar: (id: string, body: ConfirmarPresencaRequest) =>
     api.post<SessaoPresenca>(`/events/${id}/attendance/confirm`, body),

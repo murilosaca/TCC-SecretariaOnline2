@@ -580,6 +580,38 @@ textarea:focus {
   margin: 0.4rem 0 1rem;
 }
 
+.qr-display {
+  margin: 0.4rem 0 1rem;
+  width: 280px;
+  max-width: 100%;
+}
+
+.qr-display img {
+  display: block;
+  width: 280px;
+  height: 280px;
+  max-width: 100%;
+  background: #fff;
+}
+
+.token-fallback {
+  font-size: 0.95rem;
+  letter-spacing: 0.04em;
+  word-break: break-all;
+  width: 280px;
+  max-width: 100%;
+  min-height: 280px;
+  display: flex;
+  align-items: center;
+}
+
+.attendance-card select {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  margin-top: 0.4rem;
+}
+
 .countdown {
   font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
   font-size: 2rem;

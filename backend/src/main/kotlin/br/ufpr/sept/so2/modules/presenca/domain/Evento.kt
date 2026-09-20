@@ -58,40 +58,42 @@ class Evento(
 
     fun pinCompativel(matches: Boolean): Boolean = !pinHash.isNullOrBlank() && matches
 
-    fun garantirConfirmacao(
-        modoInformado: AttendanceMode,
-        fase: FasePresenca,
-        agora: OffsetDateTime,
-        pinValido: Boolean,
-    ) {
-        if (attendanceMode != AttendanceMode.SECRET_SINGLE || modoInformado != AttendanceMode.SECRET_SINGLE) {
+    fun garantirConfirmacao(fase: FasePresenca, agora: OffsetDateTime, segredoValido: Boolean) {
+        if (fase == FasePresenca.SAIDA && !attendanceMode.isDual()) {
             throw ConflitoEstadoException("Confirmação indisponível para este modo de presença.")
         }
-        if (fase != FasePresenca.ENTRADA) {
-            throw ConflitoEstadoException("Confirmação indisponível para este modo de presença.")
-        }
-        if (!janelaAtiva(fase, agora) || !pinCompativel(pinValido)) {
+        if (!janelaAtiva(fase, agora) || !pinCompativel(segredoValido)) {
             throw AcessoNegadoException(CONFIRMACAO_NEGADA)
         }
     }
 
-    fun abrirJanelaEntrada(novoPinHash: String?, agora: OffsetDateTime, minutos: Int) {
+    fun abrirJanela(fase: FasePresenca, novoHash: String?, agora: OffsetDateTime, minutos: Int) {
+        garantirAbertura(fase, novoHash, minutos)
+        pinHash = novoHash
+        estado = EventoEstado.EM_ANDAMENTO
+        if (fase == FasePresenca.SAIDA) {
+            fecharJanelaSeAberta(FasePresenca.ENTRADA, agora)
+        } else if (attendanceMode.isDual()) {
+            fecharJanelaSeAberta(FasePresenca.SAIDA, agora)
+        }
+        aplicarJanela(fase, agora, minutos)
+        updatedAt = agora
+    }
+
+    fun renovarSegredo(novoHash: String?, agora: OffsetDateTime) {
         if (estado == EventoEstado.CONCLUIDO) {
             throw ConflitoEstadoException("Evento já encerrado.")
         }
-        if (attendanceMode != AttendanceMode.SECRET_SINGLE) {
-            throw ConflitoEstadoException("Abertura de janela indisponível para este modo de presença.")
+        if (!attendanceMode.isQr()) {
+            throw ConflitoEstadoException("Renovação de QR indisponível para este modo de presença.")
         }
-        if (novoPinHash.isNullOrBlank()) {
-            throw DadoInvalidoException("PIN do evento é obrigatório.")
+        if (faseDaJanelaAtiva(agora) == null) {
+            throw ConflitoEstadoException("Renovação de QR exige janela ativa.")
         }
-        if (minutos <= 0) {
-            throw DadoInvalidoException("Duração da janela deve ser positiva.")
+        if (novoHash.isNullOrBlank()) {
+            throw DadoInvalidoException("Segredo da janela é obrigatório.")
         }
-        pinHash = novoPinHash
-        estado = EventoEstado.EM_ANDAMENTO
-        janelaEntradaInicio = agora
-        janelaEntradaFim = agora.plusMinutes(minutos.toLong())
+        pinHash = novoHash
         updatedAt = agora
     }
 
@@ -100,14 +102,8 @@ class Evento(
             throw ConflitoEstadoException("Evento já encerrado.")
         }
         estado = EventoEstado.CONCLUIDO
-        val fechada = agora.minusSeconds(1)
-        if (janelaEntradaInicio == null || janelaEntradaInicio!!.isAfter(fechada)) {
-            janelaEntradaInicio = fechada
-        }
-        janelaEntradaFim = fechada
-        if (janelaSaidaInicio != null) {
-            janelaSaidaFim = fechada
-        }
+        fecharJanelaSeAberta(FasePresenca.ENTRADA, agora)
+        fecharJanelaSeAberta(FasePresenca.SAIDA, agora)
         updatedAt = agora
     }
 
@@ -132,9 +128,60 @@ class Evento(
         updatedAt = agora
     }
 
+    private fun garantirAbertura(fase: FasePresenca, novoHash: String?, minutos: Int) {
+        if (estado == EventoEstado.CONCLUIDO) {
+            throw ConflitoEstadoException("Evento já encerrado.")
+        }
+        if (fase == FasePresenca.SAIDA && !attendanceMode.isDual()) {
+            throw ConflitoEstadoException("Abertura de janela indisponível para este modo de presença.")
+        }
+        if (fase == FasePresenca.SAIDA && janelaEntradaInicio == null) {
+            throw ConflitoEstadoException("Abertura de janela de saída exige janela de entrada.")
+        }
+        if (novoHash.isNullOrBlank()) {
+            throw DadoInvalidoException("Segredo da janela é obrigatório.")
+        }
+        if (minutos <= 0) {
+            throw DadoInvalidoException("Duração da janela deve ser positiva.")
+        }
+    }
+
+    private fun aplicarJanela(fase: FasePresenca, agora: OffsetDateTime, minutos: Int) {
+        val fim = agora.plusMinutes(minutos.toLong())
+        if (fase == FasePresenca.SAIDA) {
+            janelaSaidaInicio = agora
+            janelaSaidaFim = fim
+        } else {
+            janelaEntradaInicio = agora
+            janelaEntradaFim = fim
+        }
+    }
+
+    private fun fecharJanelaSeAberta(fase: FasePresenca, agora: OffsetDateTime) {
+        val fechada = agora.minusSeconds(1)
+        if (fase == FasePresenca.SAIDA) {
+            if (janelaSaidaInicio == null) {
+                return
+            }
+            if (janelaSaidaInicio!!.isAfter(fechada)) {
+                janelaSaidaInicio = fechada
+            }
+            janelaSaidaFim = fechada
+            return
+        }
+        if (janelaEntradaInicio == null) {
+            return
+        }
+        if (janelaEntradaInicio!!.isAfter(fechada)) {
+            janelaEntradaInicio = fechada
+        }
+        janelaEntradaFim = fechada
+    }
+
     companion object {
         const val CONFIRMACAO_NEGADA = "Não foi possível confirmar a presença."
-        const val JANELA_ENTRADA_MINUTOS_PADRAO = 15
+        const val JANELA_MINUTOS_PADRAO = 15
+        const val QR_TTL_MINUTOS = 5L
 
         fun criar(
             id: UUID,
@@ -143,7 +190,7 @@ class Evento(
             inicioEm: OffsetDateTime,
             fimEm: OffsetDateTime,
             cargaHoraria: Int,
-            pinHash: String,
+            attendanceMode: AttendanceMode,
             agora: OffsetDateTime,
         ): Evento {
             if (idAnfitriao == null) {
@@ -156,9 +203,9 @@ class Evento(
                 inicioEm,
                 fimEm,
                 cargaHoraria,
-                AttendanceMode.SECRET_SINGLE,
+                attendanceMode,
                 EventoEstado.AGENDADO,
-                pinHash,
+                null,
                 null,
                 null,
                 null,

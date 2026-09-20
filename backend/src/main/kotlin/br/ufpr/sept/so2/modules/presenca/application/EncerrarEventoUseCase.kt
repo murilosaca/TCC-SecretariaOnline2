@@ -1,5 +1,6 @@
 package br.ufpr.sept.so2.modules.presenca.application
 
+import br.ufpr.sept.so2.modules.iam.application.ports.AuditLogPort
 import br.ufpr.sept.so2.modules.iam.application.ports.OutboxPort
 import br.ufpr.sept.so2.modules.presenca.application.ports.EventoRepository
 import br.ufpr.sept.so2.modules.presenca.application.ports.HostPinPort
@@ -18,18 +19,21 @@ class EncerrarEventoUseCase(
     private val presencaRepository: PresencaRepository,
     private val hostPinPort: HostPinPort,
     private val outboxPort: OutboxPort,
+    private val auditLogPort: AuditLogPort,
     private val objectMapper: ObjectMapper,
 ) {
     @Transactional
-    fun execute(eventoId: UUID, anfitriaoId: UUID): AbrirJanelaEntradaUseCase.SessaoHost {
+    fun execute(eventoId: UUID, anfitriaoId: UUID, ip: String?): AbrirJanelaUseCase.SessaoHost {
         val evento = eventoRepository.findById(eventoId)
             .orElseThrow { RecursoNaoEncontradoException("Evento não encontrado.") }
         evento.garantirHospedeiro(anfitriaoId)
         evento.encerrar(OffsetDateTime.now())
         eventoRepository.save(evento)
         hostPinPort.limpar(eventoId)
-        outboxPort.enqueue("evento.encerrado", payload(eventoId, anfitriaoId))
-        return AbrirJanelaEntradaUseCase.SessaoHost(evento, null, presencaRepository.countByEvento(eventoId))
+        val payload = payload(eventoId, anfitriaoId)
+        outboxPort.enqueue("evento.encerrado", payload)
+        auditLogPort.append("evento.encerrado", anfitriaoId, payload, ip)
+        return AbrirJanelaUseCase.SessaoHost(evento, null, presencaRepository.countByEvento(eventoId), null)
     }
 
     private fun payload(eventoId: UUID, anfitriaoId: UUID): String =

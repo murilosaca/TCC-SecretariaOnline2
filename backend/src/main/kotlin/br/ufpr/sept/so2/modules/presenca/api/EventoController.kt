@@ -6,7 +6,7 @@ import br.ufpr.sept.so2.modules.presenca.api.dto.CriarEventoRequest
 import br.ufpr.sept.so2.modules.presenca.api.dto.EventoResponse
 import br.ufpr.sept.so2.modules.presenca.api.dto.HostSessaoResponse
 import br.ufpr.sept.so2.modules.presenca.api.dto.SessaoPresencaResponse
-import br.ufpr.sept.so2.modules.presenca.application.AbrirJanelaEntradaUseCase
+import br.ufpr.sept.so2.modules.presenca.application.AbrirJanelaUseCase
 import br.ufpr.sept.so2.modules.presenca.application.ConfirmarPresencaUseCase
 import br.ufpr.sept.so2.modules.presenca.application.CriarEventoUseCase
 import br.ufpr.sept.so2.modules.presenca.application.EncerrarEventoUseCase
@@ -20,9 +20,9 @@ import br.ufpr.sept.so2.modules.presenca.domain.Evento
 import br.ufpr.sept.so2.modules.presenca.domain.FasePresenca
 import br.ufpr.sept.so2.shared.api.PageResponse
 import br.ufpr.sept.so2.shared.domain.exception.AcessoNegadoException
-import br.ufpr.sept.so2.shared.domain.exception.ConflitoEstadoException
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.servlet.http.HttpServletRequest
 import jakarta.validation.Valid
 import org.springframework.data.domain.Pageable
 import org.springframework.data.web.PageableDefault
@@ -51,7 +51,7 @@ class EventoController(
     private val obterEventoUseCase: ObterEventoUseCase,
     private val obterSessaoPresencaUseCase: ObterSessaoPresencaUseCase,
     private val obterSessaoHostUseCase: ObterSessaoHostUseCase,
-    private val abrirJanelaEntradaUseCase: AbrirJanelaEntradaUseCase,
+    private val abrirJanelaUseCase: AbrirJanelaUseCase,
     private val encerrarEventoUseCase: EncerrarEventoUseCase,
     private val confirmarPresencaUseCase: ConfirmarPresencaUseCase,
     private val presencaRepository: PresencaRepository,
@@ -103,7 +103,7 @@ class EventoController(
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasAuthority('event.manage')")
-    @Operation(summary = "Criar evento SECRET_SINGLE")
+    @Operation(summary = "Criar evento (QR|SECRET × SINGLE|DUAL)")
     fun criar(@Valid @RequestBody request: CriarEventoRequest, authentication: Authentication): EventoResponse {
         val principal = principal(authentication)
         val criado = criarEventoUseCase.execute(
@@ -112,6 +112,7 @@ class EventoController(
             request.inicioEm,
             request.fimEm,
             request.cargaHoraria,
+            request.attendanceMode,
         )
         return assembler.fromEvento(criado, emptyList(), principal.authorities, principal.userId, OffsetDateTime.now())
     }
@@ -146,7 +147,7 @@ class EventoController(
 
     @GetMapping("/{id}/attendance/host-session")
     @PreAuthorize("hasAuthority('event.host')")
-    @Operation(summary = "Sessão de operação do anfitrião (PIN em claro)")
+    @Operation(summary = "Sessão de operação do anfitrião (PIN/token em claro)")
     fun sessaoHost(@PathVariable id: UUID, authentication: Authentication): HostSessaoResponse {
         val principal = principal(authentication)
         return assembler.fromHost(
@@ -159,11 +160,15 @@ class EventoController(
 
     @PostMapping("/{id}/attendance/windows/entry")
     @PreAuthorize("hasAuthority('event.host')")
-    @Operation(summary = "Abrir/renovar janela de entrada SECRET_SINGLE")
-    fun abrirJanelaEntrada(@PathVariable id: UUID, authentication: Authentication): HostSessaoResponse {
+    @Operation(summary = "Abrir/renovar janela de entrada")
+    fun abrirJanelaEntrada(
+        @PathVariable id: UUID,
+        authentication: Authentication,
+        http: HttpServletRequest,
+    ): HostSessaoResponse {
         val principal = principal(authentication)
         return assembler.fromHost(
-            abrirJanelaEntradaUseCase.execute(id, principal.userId),
+            abrirJanelaUseCase.execute(id, principal.userId, FasePresenca.ENTRADA, clientIp(http)),
             principal.authorities,
             principal.userId,
             OffsetDateTime.now(),
@@ -172,18 +177,49 @@ class EventoController(
 
     @PostMapping("/{id}/attendance/windows/exit")
     @PreAuthorize("hasAuthority('event.host')")
-    @Operation(summary = "Saída não exercitada neste sprint")
-    fun abrirJanelaSaida(@PathVariable id: UUID): HostSessaoResponse {
-        throw ConflitoEstadoException("Abertura de janela indisponível para este modo de presença.")
+    @Operation(summary = "Abrir janela de saída (modos DUAL)")
+    fun abrirJanelaSaida(
+        @PathVariable id: UUID,
+        authentication: Authentication,
+        http: HttpServletRequest,
+    ): HostSessaoResponse {
+        val principal = principal(authentication)
+        return assembler.fromHost(
+            abrirJanelaUseCase.execute(id, principal.userId, FasePresenca.SAIDA, clientIp(http)),
+            principal.authorities,
+            principal.userId,
+            OffsetDateTime.now(),
+        )
+    }
+
+    @PostMapping("/{id}/attendance/qr/renew")
+    @PreAuthorize("hasAuthority('event.host')")
+    @Operation(summary = "Renovar token QR da janela ativa")
+    fun renovarQr(
+        @PathVariable id: UUID,
+        authentication: Authentication,
+        http: HttpServletRequest,
+    ): HostSessaoResponse {
+        val principal = principal(authentication)
+        return assembler.fromHost(
+            abrirJanelaUseCase.renovarQr(id, principal.userId, clientIp(http)),
+            principal.authorities,
+            principal.userId,
+            OffsetDateTime.now(),
+        )
     }
 
     @PostMapping("/{id}/encerrar")
     @PreAuthorize("hasAuthority('event.host')")
     @Operation(summary = "Encerrar evento")
-    fun encerrar(@PathVariable id: UUID, authentication: Authentication): HostSessaoResponse {
+    fun encerrar(
+        @PathVariable id: UUID,
+        authentication: Authentication,
+        http: HttpServletRequest,
+    ): HostSessaoResponse {
         val principal = principal(authentication)
         return assembler.fromHost(
-            encerrarEventoUseCase.execute(id, principal.userId),
+            encerrarEventoUseCase.execute(id, principal.userId, clientIp(http)),
             principal.authorities,
             principal.userId,
             OffsetDateTime.now(),
@@ -192,11 +228,12 @@ class EventoController(
 
     @PostMapping("/{id}/attendance/confirm")
     @PreAuthorize("hasAuthority('attendance.check_in')")
-    @Operation(summary = "Confirmar presença (SECRET_SINGLE neste sprint)")
+    @Operation(summary = "Confirmar presença (pin ou token conforme o modo)")
     fun confirmar(
         @PathVariable id: UUID,
         @Valid @RequestBody request: ConfirmarPresencaRequest,
         authentication: Authentication,
+        http: HttpServletRequest,
     ): SessaoPresencaResponse {
         val principal = principal(authentication)
         return assembler.fromSessao(
@@ -204,8 +241,10 @@ class EventoController(
                 id,
                 principal.userId,
                 request.pin,
+                request.token,
                 request.deviceUuid,
                 request.fase,
+                clientIp(http),
             ),
             principal.authorities,
             OffsetDateTime.now(),
@@ -228,5 +267,13 @@ class EventoController(
     companion object {
         private fun principal(authentication: Authentication): IamPrincipal =
             authentication.principal as IamPrincipal
+
+        private fun clientIp(request: HttpServletRequest): String {
+            val forwarded = request.getHeader("X-Forwarded-For")
+            if (!forwarded.isNullOrBlank()) {
+                return forwarded.split(",")[0].trim()
+            }
+            return request.remoteAddr
+        }
     }
 }

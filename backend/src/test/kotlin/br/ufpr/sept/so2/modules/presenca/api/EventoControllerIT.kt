@@ -163,23 +163,62 @@ class EventoControllerIT {
     }
 
     @Test
-    fun outroModoRecebe409() {
+    fun qrComPinEmVezDeTokenRecebeOMesmo403() {
         val qr = salvarEvento(
             AttendanceMode.QR_SINGLE,
             OffsetDateTime.now().minusMinutes(1),
             OffsetDateTime.now().plusMinutes(30),
+            TOKEN,
         )
         val token = login("it.presenca@ufpr.br")
-        mockMvc.perform(
+        val soPin = mockMvc.perform(
             post("/events/${qr.id}/attendance/confirm")
                 .header("Authorization", "Bearer $token")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(confirmBody(PIN, DEVICE, "ENTRADA")),
         )
-            .andExpect(status().isConflict)
+            .andExpect(status().isForbidden)
+            .andReturn()
+            .response
+            .contentAsString
+        assertTrue(soPin.contains(Evento.CONFIRMACAO_NEGADA))
     }
 
-    private fun salvarEvento(modo: AttendanceMode, janelaInicio: OffsetDateTime, janelaFim: OffsetDateTime): Evento {
+    @Test
+    fun confirmaQrSingleComToken() {
+        val aberto = salvarEvento(
+            AttendanceMode.QR_SINGLE,
+            OffsetDateTime.now().minusMinutes(1),
+            OffsetDateTime.now().plusMinutes(30),
+            TOKEN,
+        )
+        val access = login("it.presenca@ufpr.br")
+        mockMvc.perform(
+            get("/events/${aberto.id}/attendance/session")
+                .header("Authorization", "Bearer $access"),
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.attendanceMode").value("QR_SINGLE"))
+            .andExpect(jsonPath("$._links['confirmar-entrada']").exists())
+            .andExpect(jsonPath("$._links['confirmar-saida']").doesNotExist())
+
+        mockMvc.perform(
+            post("/events/${aberto.id}/attendance/confirm")
+                .header("Authorization", "Bearer $access")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(confirmTokenBody(TOKEN, DEVICE, "ENTRADA")),
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.situacaoPresenca").value("COMPLETA"))
+            .andExpect(jsonPath("$._links['confirmar-entrada']").doesNotExist())
+    }
+
+    private fun salvarEvento(
+        modo: AttendanceMode,
+        janelaInicio: OffsetDateTime,
+        janelaFim: OffsetDateTime,
+        segredo: String = PIN,
+    ): Evento {
         val agora = OffsetDateTime.now()
         return eventoRepository.save(
             Evento(
@@ -191,7 +230,7 @@ class EventoControllerIT {
                 4,
                 modo,
                 EventoEstado.EM_ANDAMENTO,
-                passwordHasher.hash(PIN),
+                passwordHasher.hash(segredo),
                 janelaInicio,
                 janelaFim,
                 null,
@@ -234,24 +273,30 @@ class EventoControllerIT {
         )
     }
 
-    private fun login(email: String): String {
-        val result = mockMvc.perform(
-            post("/auth/login")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"identificador\":\"$email\",\"senha\":\"$SENHA\"}"),
-        )
-            .andExpect(status().isOk)
-            .andReturn()
-        return extract(result.response.contentAsString, "\"accessToken\":\"", "\"")
-    }
+    private fun login(email: String): String =
+        TOKENS.getOrPut(email) {
+            val result = mockMvc.perform(
+                post("/auth/login")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"identificador\":\"$email\",\"senha\":\"$SENHA\"}"),
+            )
+                .andExpect(status().isOk)
+                .andReturn()
+            extract(result.response.contentAsString, "\"accessToken\":\"", "\"")
+        }
 
     companion object {
         private const val SENHA = "TroqueEstaSenha1!"
         private const val PIN = "123456"
+        private const val TOKEN = "it-qr-token-single-01"
         private const val DEVICE = "11111111-1111-4111-8111-111111111111"
+        private val TOKENS = java.util.concurrent.ConcurrentHashMap<String, String>()
 
         private fun confirmBody(pin: String, deviceUuid: String, fase: String): String =
             "{\"pin\":\"$pin\",\"deviceUuid\":\"$deviceUuid\",\"fase\":\"$fase\"}"
+
+        private fun confirmTokenBody(token: String, deviceUuid: String, fase: String): String =
+            "{\"token\":\"$token\",\"deviceUuid\":\"$deviceUuid\",\"fase\":\"$fase\"}"
 
         private fun extract(json: String, startToken: String, endToken: String): String {
             val start = json.indexOf(startToken)

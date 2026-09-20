@@ -258,6 +258,11 @@ mvn spring-boot:run
 cd frontend-react
 npm install
 npm run dev
+
+# 4. Mobile (Opcional) — Expo Router / NativeWind
+cd frontend-react-native
+npm install
+npx expo start
 ```
 
 Copie `.env.example` para o shell se for usar variáveis. Ele já aponta JDBC `:5433` e `FRONTEND_BASE_URL=http://localhost:5174`. A URL JDBC **default** do `application.yml` ainda é `:5432` e o `frontend-base-url` default ainda é `:5173` — **sobrescreva** (o `.env.example` faz isso).

@@ -31,7 +31,7 @@ O P0 do Figma cobre só o núcleo que prova o produto. Formativas **não** entra
 
 O resto do mapa F0–F8 (parecer CAAF, estágio, TCC, certificados, FGAC de menu, dashboard professor/secretaria) **ainda não foi aberto**. Está especificado; não está implementado. Formativas a partir de presença validada (RF-F1-006, confirmação simplificada) **já estão entregues** — o aluno confirma; a CAAF ainda não delibera, por isso as horas validadas continuam 0. A deliberação do motor (RF-F3-003) **já está entregue** para o seed `DECLARACAO_SIMPLES`.
 
-A spec do TCC é **Kotlin + Spring Boot** no back e **React 18 + Vite** na web (mobile: React Native + Expo, ainda não aberto). **Neste repositório o backend já é Kotlin + JVM 21 e o portal é React 18.** Os dois clientes (web agora, Expo depois) reutilizam a mesma API — não as telas. Preserve domínio, RNFs e contratos. Não reintroduza Lombok, Angular, Java-fonte nem o CRUD didático do legado (`idade` em Aluno, `ddl-auto=update`).
+A spec do TCC é **Kotlin + Spring Boot** no back e **React 18 + Vite** na web (mobile: React Native + Expo). **Neste repositório o backend já é Kotlin + JVM 21 e o portal é React 18.** Há um esqueleto em `frontend-react-native/` (Expo Router); ainda não está no circuito P0. Os dois clientes reutilizam a mesma API — não as telas. Preserve domínio, RNFs e contratos. Não reintroduza Lombok, Angular, Java-fonte nem o CRUD didático do legado (`idade` em Aluno, `ddl-auto=update`).
 
 ---
 
@@ -58,6 +58,7 @@ TCC-SecretariaOnline2/
 │       ├── shared/          Transversal: RFC 7807, Security, CORS, UUID v7, VOs
 │       └── modules/         Um bounded context por pasta
 ├── frontend-react/          Portal oficial (React 18 + Vite + TypeScript)
+├── frontend-react-native/   Esqueleto Expo (ainda fora do circuito P0)
 ├── docs/                    Requisitos e telas (não é código)
 ├── docker-compose.yml       Postgres 16 em :5432 — outro histórico; ver aviso abaixo
 ├── .env.example
@@ -127,7 +128,7 @@ Rotas da UI (`/cursos` redireciona para `/secretaria/cursos`) em geral **não** 
 |---|---|
 | Backend | Kotlin + Spring Boot 3 + JVM 21 + Maven + PostgreSQL 16 + Flyway. Testes: Kotest + MockK (domínio/aplicação); ITs JUnit 5 + MockMvc |
 | Web | React 18 + Vite + TypeScript + TanStack Query (`frontend-react/`). CSS próprio (`index.css`). Sem Tailwind |
-| Mobile | Spec: React Native + Expo, **mesmo backend**. Ainda não há pasta no repo. NativeWind só faria sentido se a web adotasse Tailwind |
+| Mobile | Spec: React Native + Expo, **mesmo backend**. Esqueleto em `frontend-react-native/` (Expo Router + NativeWind). **Não** levar Tailwind para `frontend-react/` |
 | Docker | Só Postgres 16 no `docker-compose.yml`. A spec pede também MinIO, Mailpit e observabilidade — não estão |
 | Arquivos (futuro) | API S3-compatível (MinIO no desenvolvimento) |
 | IDs | UUID v7. Proibido `Long`/`IDENTITY` em entidade de negócio |
@@ -228,7 +229,7 @@ Fechar `/academico/**` com `@PreAuthorize`; nav só por `_links` de menu (somem 
 
 #### 8. Expo
 
-React Native + Expo, **mesmo** `/auth`, `/bff`, `/events`, `/formativas`, `/requests`. Token em Keychain/Keystore. Não reescrever o back. NativeWind só se a web adotar Tailwind (não é o plano).
+React Native + Expo em `frontend-react-native/`, **mesmo** `/auth`, `/bff`, `/events`, `/formativas`, `/requests`. Token em Keychain/Keystore. Não reescrever o back. NativeWind no mobile **não** autoriza Tailwind na web. Esta fatia (item 8) liga o cliente aos contratos já provados — o esqueleto sozinho não fecha o P0.
 
 #### 9. Estágio + COE, TCC, egresso, F6.1
 

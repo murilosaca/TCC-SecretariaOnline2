@@ -121,6 +121,7 @@ class IamDevDataLoader(
                 "attendance.check_in",
                 "formative.view_own",
                 "formative.confirm_own",
+                "certificate.view_own",
             )
 
         private fun authoritiesProfessor(): List<String> =

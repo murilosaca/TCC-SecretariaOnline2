@@ -1,6 +1,7 @@
 package br.ufpr.sept.so2.modules.bff.application
 
 import br.ufpr.sept.so2.modules.bff.application.ports.AlunoIdentidadeQueryPort
+import br.ufpr.sept.so2.modules.bff.application.ports.CertificadosDashboardQueryPort
 import br.ufpr.sept.so2.modules.bff.application.ports.EventosDashboardQueryPort
 import br.ufpr.sept.so2.modules.bff.application.ports.FormativasDashboardQueryPort
 import br.ufpr.sept.so2.modules.bff.application.ports.PeriodoVigenteQueryPort
@@ -34,6 +35,7 @@ class AlunoDashboardApplicationServiceTest : StringSpec({
             SolicitacoesDashboardQueryPort { error("solicitações indisponível") },
             EventosDashboardQueryPort { error("presença indisponível") },
             FormativasDashboardQueryPort { error("formativas indisponível") },
+            CertificadosDashboardQueryPort { error("certificados indisponível") },
             sync,
         )
 
@@ -80,12 +82,14 @@ class AlunoDashboardApplicationServiceTest : StringSpec({
             FormativasDashboardQueryPort {
                 FormativasDashboardQueryPort.FormativasDashboard(0, 120, emptyList())
             },
+            CertificadosDashboardQueryPort { 0 },
             sync,
         )
 
         val response = service.execute(alunoId, listOf("dashboard.view_own"))
 
         response.periodoVigente.shouldBeNull()
+        response.kpis.certificados shouldBe 0
         response.alertaPeriodoAusente shouldBe true
         response.kpis.solicitacoesAbertas shouldBe 1
         response.kpis.eventosHoje shouldBe 0
@@ -124,6 +128,7 @@ class AlunoDashboardApplicationServiceTest : StringSpec({
             FormativasDashboardQueryPort {
                 FormativasDashboardQueryPort.FormativasDashboard(0, 120, emptyList())
             },
+            CertificadosDashboardQueryPort { 0 },
             sync,
         )
 
@@ -135,7 +140,7 @@ class AlunoDashboardApplicationServiceTest : StringSpec({
         response.proximosEventos!!.first().href shouldBe "/eventos/$eventoId/presenca"
         response.proximosEventos!!.first().janelaAtiva shouldBe true
         response.kpis.horasFormativas?.validadas shouldBe 0
-        response.kpis.certificados.shouldBeNull()
+        response.kpis.certificados shouldBe 0
         response.links["novaFormativa"].shouldBeNull()
     }
 
@@ -148,6 +153,7 @@ class AlunoDashboardApplicationServiceTest : StringSpec({
             },
             EventosDashboardQueryPort { EventosDashboardQueryPort.EventosDashboard(0, emptyList()) },
             FormativasDashboardQueryPort { null },
+            CertificadosDashboardQueryPort { null },
             sync,
         )
 
@@ -155,6 +161,7 @@ class AlunoDashboardApplicationServiceTest : StringSpec({
 
         response.kpis.horasFormativas.shouldBeNull()
         response.pendenciasFormativas.shouldBeNull()
+        response.kpis.certificados.shouldBeNull()
         response.kpis.solicitacoesAbertas shouldBe 0
     }
 })

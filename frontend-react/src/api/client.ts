@@ -133,6 +133,28 @@ async function refreshAccessToken(): Promise<boolean> {
   return refreshInFlight
 }
 
+async function requestBlob(path: string, retried = false): Promise<Blob> {
+  const token = authSession.getAccessToken()
+  const response = await fetch(path, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/pdf',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  })
+  if (response.status === 401 && !retried && shouldRefresh(path)) {
+    const ok = await refreshAccessToken()
+    if (ok) {
+      return requestBlob(path, true)
+    }
+  }
+  if (!response.ok) {
+    throw new ApiError(response.status, `Falha HTTP ${response.status}`)
+  }
+  return response.blob()
+}
+
 export const api = {
   get<T>(path: string, params: Record<string, string | number | undefined> = {}): Promise<T> {
     return request<T>(`${path}${query(params)}`, { method: 'GET' })
@@ -148,5 +170,8 @@ export const api = {
   },
   delete(path: string): Promise<void> {
     return request<void>(path, { method: 'DELETE' })
+  },
+  getBlob(path: string): Promise<Blob> {
+    return requestBlob(path)
   },
 }

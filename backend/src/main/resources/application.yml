@@ -69,6 +69,9 @@ app:
     seed:
       enabled: ${IAM_DEV_SEED:true}
       password: ${IAM_DEV_SEED_PASSWORD:}
+  certificados:
+    ed25519-private-key-pem: ${CERT_ED25519_PRIVATE_KEY:}
+    ed25519-public-key-pem: ${CERT_ED25519_PUBLIC_KEY:}
   eventos:
     dev-pin: ${EVENT_DEV_PIN:123456}
   contato:

@@ -50,7 +50,8 @@ export function Cursos() {
   const excluir = useMutation({
     mutationFn: (id: string) => academicoApi.excluirCurso(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['cursos'] }),
-    onError: () => setErro('Falha ao excluir o curso.'),
+    onError: (err) =>
+      setErro(err instanceof ApiError ? err.message : 'Falha ao excluir o curso.'),
   })
 
   function onSubmit(event: FormEvent) {

@@ -1,5 +1,6 @@
 package br.ufpr.sept.so2.modules.iam.infrastructure
 
+import br.ufpr.sept.so2.modules.comunicacao.application.EmailMascarado
 import br.ufpr.sept.so2.modules.iam.application.ports.PasswordHasher
 import br.ufpr.sept.so2.modules.iam.application.ports.UsuarioRepository
 import br.ufpr.sept.so2.modules.iam.domain.Usuario
@@ -101,11 +102,11 @@ class IamDevDataLoader(
                 if (extras.isNotEmpty()) {
                     LOG.info(
                         "Seed IAM (profile=dev) revogou authorities extras de {}: {}",
-                        email,
+                        EmailMascarado.de(email),
                         extras.joinToString(", "),
                     )
                 } else {
-                    LOG.info("Seed IAM (profile=dev) alinhou authorities de {}.", email)
+                    LOG.info("Seed IAM (profile=dev) alinhou authorities de {}.", EmailMascarado.de(email))
                 }
             }
             return

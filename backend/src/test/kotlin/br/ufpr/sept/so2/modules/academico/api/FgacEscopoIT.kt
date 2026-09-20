@@ -23,9 +23,13 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.web.servlet.MockMvc
+import org.springframework.data.domain.PageRequest
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import org.springframework.transaction.PlatformTransactionManager
+import org.springframework.transaction.support.TransactionTemplate
 import java.time.OffsetDateTime
 import java.util.UUID
 
@@ -54,21 +58,26 @@ class FgacEscopoIT {
     @Autowired
     private lateinit var disciplinaRepository: DisciplinaRepository
 
+    @Autowired
+    private lateinit var transactionManager: PlatformTransactionManager
+
     private lateinit var tokenSec: String
     private lateinit var alunoForaId: UUID
     private lateinit var disciplinaForaId: UUID
 
     @BeforeEach
     fun seed() {
-        val agora = OffsetDateTime.now()
-        val sec = criarUsuario(EMAIL_SEC, "GRR20247121", AUTHORITIES_SEC, agora)
-        val outro = criarUsuario(EMAIL_OUTRO, "GRR20247122", AUTHORITIES_SEC, agora)
-        val cursoA = curso("Curso A Escopo", "ESCA", "ESCA-FGAC", agora)
-        val cursoB = curso("Curso B Escopo", "ESCB", "ESCB-FGAC", agora)
-        cursoSecretarioRepository.replaceAll(cursoA.id, listOf(sec.id))
-        cursoSecretarioRepository.replaceAll(cursoB.id, listOf(outro.id))
-        alunoForaId = aluno("Aluno Fora", "GRR20247129", "it.fgac.aluno.fora@ufpr.br", cursoB.id, agora).id
-        disciplinaForaId = disciplina(cursoB.id, "DISC-FORA", agora).id
+        TransactionTemplate(transactionManager).executeWithoutResult {
+            val agora = OffsetDateTime.now()
+            val sec = criarUsuario(EMAIL_SEC, "GRR20247121", AUTHORITIES_SEC, agora)
+            val outro = criarUsuario(EMAIL_OUTRO, "GRR20247122", AUTHORITIES_SEC, agora)
+            val cursoA = curso("Curso A Escopo", "ESCA", "ESCA-FGAC", agora)
+            val cursoB = curso("Curso B Escopo", "ESCB", "ESCB-FGAC", agora)
+            cursoSecretarioRepository.replaceAll(cursoA.id, listOf(sec.id))
+            cursoSecretarioRepository.replaceAll(cursoB.id, listOf(outro.id))
+            alunoForaId = aluno("Aluno Fora", "GRR20247129", "it.fgac.aluno.fora@ufpr.br", cursoB.id, agora).id
+            disciplinaForaId = disciplina(cursoB.id, "DISC-FORA", agora).id
+        }
         tokenSec = login(EMAIL_SEC)
     }
 
@@ -96,17 +105,19 @@ class FgacEscopoIT {
 
     @Test
     fun adicionarSeAusentePreservaSecretarioManual() {
-        val sec = usuarioRepository.findByEmail(EMAIL_SEC).get()
-        val outro = usuarioRepository.findByEmail(EMAIL_OUTRO).get()
-        val curso = cursoRepository.findByCodigo("ESCA-FGAC").get()
-        cursoSecretarioRepository.replaceAll(curso.id, listOf(outro.id))
-        cursoSecretarioRepository.adicionarSeAusente(curso.id, sec.id)
-        val ids = cursoSecretarioRepository.findUsuarioIdsByCursoId(curso.id)
-        org.junit.jupiter.api.Assertions.assertTrue(ids.contains(outro.id))
-        org.junit.jupiter.api.Assertions.assertTrue(ids.contains(sec.id))
-        cursoSecretarioRepository.adicionarSeAusente(curso.id, sec.id)
-        org.junit.jupiter.api.Assertions.assertEquals(2, cursoSecretarioRepository.findUsuarioIdsByCursoId(curso.id).size)
-        cursoSecretarioRepository.replaceAll(curso.id, listOf(sec.id))
+        TransactionTemplate(transactionManager).executeWithoutResult {
+            val sec = usuarioRepository.findByEmail(EMAIL_SEC).get()
+            val outro = usuarioRepository.findByEmail(EMAIL_OUTRO).get()
+            val curso = cursoRepository.findByCodigo("ESCA-FGAC").get()
+            cursoSecretarioRepository.replaceAll(curso.id, listOf(outro.id))
+            cursoSecretarioRepository.adicionarSeAusente(curso.id, sec.id)
+            val ids = cursoSecretarioRepository.findUsuarioIdsByCursoId(curso.id)
+            org.junit.jupiter.api.Assertions.assertTrue(ids.contains(outro.id))
+            org.junit.jupiter.api.Assertions.assertTrue(ids.contains(sec.id))
+            cursoSecretarioRepository.adicionarSeAusente(curso.id, sec.id)
+            org.junit.jupiter.api.Assertions.assertEquals(2, cursoSecretarioRepository.findUsuarioIdsByCursoId(curso.id).size)
+            cursoSecretarioRepository.replaceAll(curso.id, listOf(sec.id))
+        }
     }
 
     @Test
@@ -130,6 +141,26 @@ class FgacEscopoIT {
         )
             .andExpect(status().isNotFound)
             .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.containsString("not-found")))
+    }
+
+    @Test
+    fun listarDisciplinasDeCursoAlheioRetornaVazio() {
+        val cursoB = cursoRepository.findByCodigo("ESCB-FGAC").get()
+        mockMvc.perform(
+            get("/academico/disciplinas")
+                .param("idCurso", cursoB.id.toString())
+                .header("Authorization", "Bearer $tokenSec"),
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.content").isEmpty)
+    }
+
+    @Test
+    fun adapterNaoIgnoraCursoIdsQuandoIdCursoVemPreenchido() {
+        val cursoA = cursoRepository.findByCodigo("ESCA-FGAC").get()
+        val cursoB = cursoRepository.findByCodigo("ESCB-FGAC").get()
+        val page = disciplinaRepository.findAll(cursoB.id, setOf(cursoA.id), PageRequest.of(0, 20))
+        org.junit.jupiter.api.Assertions.assertTrue(page.isEmpty)
     }
 
     private fun curso(nome: String, sigla: String, codigo: String, agora: OffsetDateTime): Curso {

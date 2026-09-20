@@ -13,7 +13,9 @@ data class HostSessaoResponse(
     val estado: String,
     val janelaAtiva: Boolean,
     val janelaExpira: OffsetDateTime?,
-    val pin: String?,
+    val pin: String? = null,
+    val token: String? = null,
+    val tokenExpira: OffsetDateTime? = null,
     val presentes: Long,
     @get:JsonProperty("_links")
     val links: Map<String, String>,

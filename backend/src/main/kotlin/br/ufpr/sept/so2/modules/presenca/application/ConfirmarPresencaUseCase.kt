@@ -1,11 +1,12 @@
 package br.ufpr.sept.so2.modules.presenca.application
 
 import br.ufpr.sept.so2.modules.formativas.application.ports.FormativaPorPresencaPort
+import br.ufpr.sept.so2.modules.iam.application.ports.AuditLogPort
 import br.ufpr.sept.so2.modules.iam.application.ports.OutboxPort
 import br.ufpr.sept.so2.modules.iam.application.ports.PasswordHasher
 import br.ufpr.sept.so2.modules.presenca.application.ports.EventoRepository
 import br.ufpr.sept.so2.modules.presenca.application.ports.PresencaRepository
-import br.ufpr.sept.so2.modules.presenca.domain.AttendanceMode
+import br.ufpr.sept.so2.modules.presenca.domain.Evento
 import br.ufpr.sept.so2.modules.presenca.domain.FasePresenca
 import br.ufpr.sept.so2.modules.presenca.domain.Presenca
 import br.ufpr.sept.so2.shared.domain.exception.ConflitoEstadoException
@@ -24,6 +25,7 @@ class ConfirmarPresencaUseCase(
     private val presencaRepository: PresencaRepository,
     private val passwordHasher: PasswordHasher,
     private val outboxPort: OutboxPort,
+    private val auditLogPort: AuditLogPort,
     private val objectMapper: ObjectMapper,
     private val formativaPorPresencaPort: FormativaPorPresencaPort,
 ) {
@@ -31,9 +33,11 @@ class ConfirmarPresencaUseCase(
     fun execute(
         eventoId: UUID,
         usuarioId: UUID,
-        pin: String,
+        pin: String?,
+        token: String?,
         deviceUuid: String,
         faseRaw: String,
+        ip: String?,
     ): ObterSessaoPresencaUseCase.SessaoPresenca {
         val evento = eventoRepository.findById(eventoId)
             .orElseThrow { RecursoNaoEncontradoException("Evento não encontrado.") }
@@ -44,22 +48,31 @@ class ConfirmarPresencaUseCase(
         if (presencaRepository.existsByEventoAndDeviceDeOutroUsuario(eventoId, deviceUuid, usuarioId)) {
             throw ConflitoEstadoException("Este dispositivo já foi usado neste evento.")
         }
-        val pinValido = passwordHasher.matches(pin, evento.pinHash)
-        if (!pinValido) {
+        if (fase == FasePresenca.SAIDA &&
+            !presencaRepository.existsByEventoUsuarioFase(eventoId, usuarioId, FasePresenca.ENTRADA)
+        ) {
+            throw ConflitoEstadoException("Confirmação de saída exige entrada registrada.")
+        }
+        val informado = if (evento.attendanceMode.isSecret()) pin else token
+        val segredoValido = passwordHasher.matches(informado, evento.pinHash)
+        if (!segredoValido) {
             passwordHasher.matchesDummy()
         }
-        evento.garantirConfirmacao(AttendanceMode.SECRET_SINGLE, fase, OffsetDateTime.now(), pinValido)
+        val agora = OffsetDateTime.now()
+        evento.garantirConfirmacao(fase, agora, segredoValido)
         val presenca = Presenca.registrar(
             Uuids.v7(),
             eventoId,
             usuarioId,
             fase,
             deviceUuid,
-            OffsetDateTime.now(),
+            agora,
         )
         presencaRepository.save(presenca)
-        outboxPort.enqueue("presenca.confirmada", payload(eventoId, usuarioId, fase, presenca.id))
-        if (fase == FasePresenca.ENTRADA && evento.attendanceMode == AttendanceMode.SECRET_SINGLE) {
+        val payload = payload(eventoId, usuarioId, fase, presenca.id)
+        outboxPort.enqueue("presenca.confirmada", payload)
+        auditLogPort.append("presenca.confirmada", usuarioId, payload, ip)
+        if (presencaCompleta(evento, fase)) {
             formativaPorPresencaPort.criarPendenteSeAusente(
                 eventoId,
                 usuarioId,
@@ -84,4 +97,13 @@ class ConfirmarPresencaUseCase(
         } catch (_: JsonProcessingException) {
             "{\"eventoId\":\"$eventoId\"}"
         }
+
+    companion object {
+        fun presencaCompleta(evento: Evento, fase: FasePresenca): Boolean =
+            if (evento.attendanceMode.isDual()) {
+                fase == FasePresenca.SAIDA
+            } else {
+                fase == FasePresenca.ENTRADA
+            }
+    }
 }

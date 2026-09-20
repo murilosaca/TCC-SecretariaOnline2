@@ -13,6 +13,7 @@ spring:
 app:
   iam:
     cookie-secure: false
+    login-por-minuto: 100
     argon2:
       memory-kb: 8192
       iterations: 1

@@ -1,5 +1,15 @@
 import type { HateoasLinks, PageResponse } from './academico'
 
+export type AttendanceMode = 'SECRET_SINGLE' | 'SECRET_DUAL' | 'QR_SINGLE' | 'QR_DUAL'
+
+export function isQrMode(mode?: string | null): boolean {
+  return mode === 'QR_SINGLE' || mode === 'QR_DUAL'
+}
+
+export function isDualMode(mode?: string | null): boolean {
+  return mode === 'SECRET_DUAL' || mode === 'QR_DUAL'
+}
+
 export interface Evento {
   id: string
   idAnfitriao?: string | null
@@ -19,6 +29,7 @@ export interface CriarEventoRequest {
   inicioEm: string
   fimEm: string
   cargaHoraria: number
+  attendanceMode: AttendanceMode
 }
 
 export interface HostSessao {
@@ -29,6 +40,8 @@ export interface HostSessao {
   janelaAtiva: boolean
   janelaExpira: string | null
   pin?: string | null
+  token?: string | null
+  tokenExpira?: string | null
   presentes: number
   _links?: HateoasLinks
 }
@@ -46,7 +59,8 @@ export interface SessaoPresenca {
 }
 
 export interface ConfirmarPresencaRequest {
-  pin: string
+  pin?: string
+  token?: string
   deviceUuid: string
   fase: string
 }

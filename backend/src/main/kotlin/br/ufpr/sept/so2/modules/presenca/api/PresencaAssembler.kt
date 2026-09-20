@@ -3,7 +3,7 @@ package br.ufpr.sept.so2.modules.presenca.api
 import br.ufpr.sept.so2.modules.presenca.api.dto.EventoResponse
 import br.ufpr.sept.so2.modules.presenca.api.dto.HostSessaoResponse
 import br.ufpr.sept.so2.modules.presenca.api.dto.SessaoPresencaResponse
-import br.ufpr.sept.so2.modules.presenca.application.AbrirJanelaEntradaUseCase.SessaoHost
+import br.ufpr.sept.so2.modules.presenca.application.AbrirJanelaUseCase.SessaoHost
 import br.ufpr.sept.so2.modules.presenca.application.ObterSessaoPresencaUseCase.SessaoPresenca
 import br.ufpr.sept.so2.modules.presenca.domain.Evento
 import br.ufpr.sept.so2.modules.presenca.domain.EventoEstado
@@ -11,6 +11,7 @@ import br.ufpr.sept.so2.modules.presenca.domain.FasePresenca
 import br.ufpr.sept.so2.modules.presenca.domain.SituacaoPresenca
 import org.springframework.stereotype.Component
 import java.time.OffsetDateTime
+import java.time.ZoneOffset
 import java.util.UUID
 
 @Component
@@ -81,6 +82,10 @@ class PresencaAssembler {
         links["self"] = "/events/${evento.id}/attendance/host-session"
         links["evento"] = "/events/${evento.id}"
         acrescentarLinksHospedeiro(links, evento, authorities, usuarioId, agora)
+        val secret = if (faseAtiva == null) null else sessao.segredo
+        val pin = if (evento.attendanceMode.isSecret()) secret else null
+        val token = if (evento.attendanceMode.isQr()) secret else null
+        val tokenExpira = tokenExpira(evento, sessao, token)
         return HostSessaoResponse(
             evento.id,
             evento.titulo,
@@ -88,7 +93,9 @@ class PresencaAssembler {
             evento.estado.name,
             faseAtiva != null,
             if (faseAtiva == null) null else evento.fimJanela(faseAtiva),
-            sessao.pin,
+            pin,
+            token,
+            tokenExpira,
             sessao.presentes,
             links,
         )
@@ -111,8 +118,14 @@ class PresencaAssembler {
                 return
             }
             links["host-session"] = "/events/${evento.id}/attendance/host-session"
-            if (evento.attendanceMode.exercitadoNesteSprint() && evento.estado != EventoEstado.CONCLUIDO) {
+            if (evento.estado != EventoEstado.CONCLUIDO) {
                 links["abrir-janela-entrada"] = "/events/${evento.id}/attendance/windows/entry"
+                if (evento.attendanceMode.isDual() && evento.janelaEntradaInicio != null) {
+                    links["abrir-janela-saida"] = "/events/${evento.id}/attendance/windows/exit"
+                }
+                if (evento.attendanceMode.isQr() && evento.faseDaJanelaAtiva(agora) != null) {
+                    links["renovar-qr"] = "/events/${evento.id}/attendance/qr/renew"
+                }
             }
             if (evento.estado == EventoEstado.EM_ANDAMENTO) {
                 links["encerrar-evento"] = "/events/${evento.id}/encerrar"
@@ -125,7 +138,6 @@ class PresencaAssembler {
             authorities: List<String>,
             agora: OffsetDateTime,
         ): Boolean = AUTHORITY_CHECK_IN in authorities &&
-            evento.attendanceMode.exercitadoNesteSprint() &&
             evento.janelaAtiva(FasePresenca.ENTRADA, agora) &&
             FasePresenca.ENTRADA !in fases
 
@@ -145,6 +157,16 @@ class PresencaAssembler {
                 SituacaoPresenca.COMPLETA
             FasePresenca.ENTRADA in fases -> SituacaoPresenca.PARCIAL
             else -> SituacaoPresenca.PENDENTE
+        }
+
+        private fun tokenExpira(evento: Evento, sessao: SessaoHost, token: String?): OffsetDateTime? {
+            if (!evento.attendanceMode.isQr() || token.isNullOrBlank() || sessao.segredoEmitidoEm == null) {
+                return null
+            }
+            return OffsetDateTime.ofInstant(
+                sessao.segredoEmitidoEm.plusSeconds(Evento.QR_TTL_MINUTOS * 60),
+                ZoneOffset.UTC,
+            )
         }
     }
 }

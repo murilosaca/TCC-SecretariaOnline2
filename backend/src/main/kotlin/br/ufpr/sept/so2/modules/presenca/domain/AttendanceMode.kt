@@ -13,7 +13,7 @@ enum class AttendanceMode {
 
     fun isSecret(): Boolean = this == SECRET_SINGLE || this == SECRET_DUAL
 
-    fun exercitadoNesteSprint(): Boolean = this == SECRET_SINGLE
+    fun isQr(): Boolean = this == QR_SINGLE || this == QR_DUAL
 
     companion object {
         fun from(raw: String?): AttendanceMode {

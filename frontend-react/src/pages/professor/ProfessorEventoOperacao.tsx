@@ -1,9 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ApiError } from '../../api/client'
 import { eventosApi } from '../../api/eventos'
 import { HostActionBar } from '../../components/HostActionBar'
+import { QrDisplay } from '../../components/QrDisplay'
+import { isQrMode } from '../../models/evento'
 import type { HostSessao } from '../../models/evento'
 
 export function ProfessorEventoOperacao() {
@@ -18,30 +20,58 @@ export function ProfessorEventoOperacao() {
     refetchInterval: 5000,
   })
 
+  function aoAtualizar(atual: HostSessao) {
+    setErro(null)
+    queryClient.setQueryData(['eventos', id, 'host-session'], atual)
+  }
+
   const abrir = useMutation({
     mutationFn: () => eventosApi.abrirJanelaEntrada(id),
-    onSuccess: (atual) => {
-      setErro(null)
-      queryClient.setQueryData(['eventos', id, 'host-session'], atual)
-    },
+    onSuccess: aoAtualizar,
     onError: (falha) => setErro(falha instanceof ApiError ? falha.message : 'Não foi possível abrir a janela.'),
+  })
+
+  const abrirSaida = useMutation({
+    mutationFn: () => eventosApi.abrirJanelaSaida(id),
+    onSuccess: aoAtualizar,
+    onError: (falha) => setErro(falha instanceof ApiError ? falha.message : 'Não foi possível abrir a janela de saída.'),
+  })
+
+  const renovar = useMutation({
+    mutationFn: () => eventosApi.renovarQr(id),
+    onSuccess: aoAtualizar,
+    onError: (falha) => setErro(falha instanceof ApiError ? falha.message : 'Não foi possível renovar o QR.'),
   })
 
   const encerrar = useMutation({
     mutationFn: () => eventosApi.encerrar(id),
-    onSuccess: (atual) => {
-      setErro(null)
-      queryClient.setQueryData(['eventos', id, 'host-session'], atual)
-    },
+    onSuccess: aoAtualizar,
     onError: (falha) => setErro(falha instanceof ApiError ? falha.message : 'Não foi possível encerrar o evento.'),
   })
+
+  useEffect(() => {
+    const expira = sessao.data?.tokenExpira
+    const podeRenovar = Boolean(sessao.data?._links?.['renovar-qr'])
+    if (!id || !expira || !podeRenovar) {
+      return
+    }
+    const restante = new Date(expira).getTime() - Date.now()
+    const timer = window.setTimeout(() => {
+      void eventosApi.renovarQr(id).then(aoAtualizar).catch((falha) => {
+        setErro(falha instanceof ApiError ? falha.message : 'Não foi possível renovar o QR.')
+      })
+    }, Math.max(500, restante))
+    return () => window.clearTimeout(timer)
+  }, [id, sessao.data?.tokenExpira, sessao.data?._links?.['renovar-qr']])
+
+  const pending = abrir.isPending || abrirSaida.isPending || renovar.isPending || encerrar.isPending
 
   return (
     <section className="page">
       <header className="page-head">
         <div>
           <h1>{sessao.data?.titulo ?? 'Operação do evento'}</h1>
-          <p className="muted">Painel ao vivo · SECRET_SINGLE (RF-F3-002-b).</p>
+          <p className="muted">Painel ao vivo · {sessao.data?.attendanceMode ?? 'Proof of Stay'} (RF-F3-002-b).</p>
         </div>
         <Link to={`/professor/eventos/${id}`} className="ghost-link">
           Voltar ao evento
@@ -67,8 +97,10 @@ export function ProfessorEventoOperacao() {
         <Painel
           sessao={sessao.data}
           erro={erro}
-          pending={abrir.isPending || encerrar.isPending}
+          pending={pending}
           onAbrir={() => abrir.mutate()}
+          onAbrirSaida={() => abrirSaida.mutate()}
+          onRenovar={() => renovar.mutate()}
           onEncerrar={() => encerrar.mutate()}
         />
       )}
@@ -81,23 +113,31 @@ function Painel({
   erro,
   pending,
   onAbrir,
+  onAbrirSaida,
+  onRenovar,
   onEncerrar,
 }: {
   sessao: HostSessao
   erro: string | null
   pending: boolean
   onAbrir: () => void
+  onAbrirSaida: () => void
+  onRenovar: () => void
   onEncerrar: () => void
 }) {
+  const qr = isQrMode(sessao.attendanceMode)
   return (
     <div className="attendance-card card">
       <p className={`badge estado-${sessao.estado.toLowerCase()}`}>{sessao.estado}</p>
+      <p className="muted">{sessao.attendanceMode}</p>
       {sessao.janelaAtiva && sessao.janelaExpira && (
         <p className="countdown" aria-live="polite">
           {formatarCountdown(sessao.janelaExpira)}
         </p>
       )}
-      {sessao.pin ? (
+      {qr && sessao.token ? (
+        <QrDisplay token={sessao.token} />
+      ) : sessao.pin ? (
         <p className="pin-display" aria-label="PIN de presença">
           {sessao.pin}
         </p>
@@ -105,7 +145,9 @@ function Painel({
         <p className="empty" role="status">
           {sessao.estado === 'CONCLUIDO'
             ? 'Evento encerrado. A janela de validação foi fechada.'
-            : 'Abra a janela de entrada para exibir o PIN.'}
+            : qr
+              ? 'Abra a janela para exibir o QR.'
+              : 'Abra a janela de entrada para exibir o PIN.'}
         </p>
       )}
       <p className="muted">Presentes: {sessao.presentes}</p>
@@ -118,6 +160,8 @@ function Painel({
         links={sessao._links}
         pending={pending}
         onAbrirJanela={onAbrir}
+        onAbrirJanelaSaida={onAbrirSaida}
+        onRenovarQr={onRenovar}
         onEncerrar={onEncerrar}
       />
     </div>

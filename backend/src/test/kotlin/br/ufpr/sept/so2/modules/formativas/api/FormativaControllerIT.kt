@@ -12,6 +12,7 @@ import br.ufpr.sept.so2.modules.presenca.application.ports.EventoRepository
 import br.ufpr.sept.so2.modules.presenca.domain.AttendanceMode
 import br.ufpr.sept.so2.modules.presenca.domain.Evento
 import br.ufpr.sept.so2.modules.presenca.domain.EventoEstado
+import br.ufpr.sept.so2.modules.presenca.domain.FasePresenca
 import br.ufpr.sept.so2.shared.domain.valueobject.Email
 import br.ufpr.sept.so2.shared.domain.valueobject.Grr
 import br.ufpr.sept.so2.shared.infrastructure.Uuids
@@ -139,6 +140,51 @@ class FormativaControllerIT {
             .andExpect(status().isForbidden)
     }
 
+    @Test
+    fun dualSoGeraFormativaAposSaida() {
+        val aberto = salvarEvento(AttendanceMode.SECRET_DUAL)
+        val tokenAluno = login(EMAIL_ALUNO)
+
+        mockMvc.perform(
+            post("/events/${aberto.id}/attendance/confirm")
+                .header("Authorization", "Bearer $tokenAluno")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(confirmBody(DEVICE_DUAL, "ENTRADA")),
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.situacaoPresenca").value("PARCIAL"))
+
+        mockMvc.perform(
+            get("/formativas")
+                .param("audience", "me")
+                .header("Authorization", "Bearer $tokenAluno"),
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.content[?(@.titulo=='${aberto.titulo}')]").doesNotExist())
+
+        val persistido = eventoRepository.findById(aberto.id).orElseThrow()
+        persistido.abrirJanela(FasePresenca.SAIDA, passwordHasher.hash(PIN), OffsetDateTime.now(), 15)
+        eventoRepository.save(persistido)
+
+        mockMvc.perform(
+            post("/events/${aberto.id}/attendance/confirm")
+                .header("Authorization", "Bearer $tokenAluno")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(confirmBody(DEVICE_DUAL, "SAIDA")),
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.situacaoPresenca").value("COMPLETA"))
+
+        mockMvc.perform(
+            get("/formativas")
+                .param("audience", "me")
+                .header("Authorization", "Bearer $tokenAluno"),
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.content[?(@.titulo=='${aberto.titulo}')].origem").value("PRESENCA_VALIDADA"))
+            .andExpect(jsonPath("$.content[?(@.titulo=='${aberto.titulo}')].estado").value("PENDENTE_CONFIRMACAO"))
+    }
+
     private fun garantirCurso(agora: OffsetDateTime): UUID {
         val existente = cursoRepository.findByCodigo(CODIGO)
         if (existente.isPresent) {
@@ -177,7 +223,7 @@ class FormativaControllerIT {
         )
     }
 
-    private fun salvarEvento(): Evento {
+    private fun salvarEvento(modo: AttendanceMode = AttendanceMode.SECRET_SINGLE): Evento {
         val agora = OffsetDateTime.now()
         val janelaInicio = agora.minusMinutes(1)
         val janelaFim = agora.plusMinutes(30)
@@ -189,7 +235,7 @@ class FormativaControllerIT {
                 janelaInicio.minusMinutes(10),
                 janelaFim.plusHours(1),
                 4,
-                AttendanceMode.SECRET_SINGLE,
+                modo,
                 EventoEstado.EM_ANDAMENTO,
                 passwordHasher.hash(PIN),
                 janelaInicio,
@@ -252,6 +298,7 @@ class FormativaControllerIT {
         private const val EMAIL_PROFESSOR = "it.formativa.prof@ufpr.br"
         private const val CODIGO = "TADS-FORM-IT"
         private const val DEVICE = "44444444-4444-4444-8444-444444444444"
+        private const val DEVICE_DUAL = "88888888-8888-4888-8888-888888888888"
         private val AUTHORITIES_ALUNO = listOf(
             "dashboard.view_own",
             "attendance.view_open",
@@ -260,8 +307,8 @@ class FormativaControllerIT {
             "formative.confirm_own",
         )
 
-        private fun confirmBody(): String =
-            "{\"pin\":\"$PIN\",\"deviceUuid\":\"$DEVICE\",\"fase\":\"ENTRADA\"}"
+        private fun confirmBody(deviceUuid: String = DEVICE, fase: String = "ENTRADA"): String =
+            "{\"pin\":\"$PIN\",\"deviceUuid\":\"$deviceUuid\",\"fase\":\"$fase\"}"
 
         private fun extract(json: String, startToken: String, endToken: String): String {
             val start = json.indexOf(startToken)

@@ -10,4 +10,5 @@ data class CriarEventoRequest(
     @field:NotNull val inicioEm: OffsetDateTime,
     @field:NotNull val fimEm: OffsetDateTime,
     @field:Positive val cargaHoraria: Int,
+    val attendanceMode: String? = null,
 )

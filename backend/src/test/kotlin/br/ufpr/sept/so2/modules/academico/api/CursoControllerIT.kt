@@ -148,6 +148,8 @@ class CursoControllerIT {
         mockMvc.perform(get("/academico/cursos/$id").header("Authorization", "Bearer $token"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$._links.atualizar").exists())
+            .andExpect(jsonPath("$._links.disciplinas").value(org.hamcrest.Matchers.containsString("/academico/disciplinas?idCurso=")))
+            .andExpect(jsonPath("$._links.disciplinas").value(org.hamcrest.Matchers.containsString(id)))
         mockMvc.perform(get("/academico/cursos").header("Authorization", "Bearer $token"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.content[*].id").value(org.hamcrest.Matchers.hasItem(id)))

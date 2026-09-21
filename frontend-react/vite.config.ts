@@ -27,6 +27,15 @@ export default defineConfig({
           }
         },
       },
+      '/estagios': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        bypass(req) {
+          if (req.headers.accept?.includes('text/html')) {
+            return '/index.html'
+          }
+        },
+      },
       '/certificates': { target: 'http://localhost:8080', changeOrigin: true },
       '/.well-known': { target: 'http://localhost:8080', changeOrigin: true },
       '/v3': { target: 'http://localhost:8080', changeOrigin: true },

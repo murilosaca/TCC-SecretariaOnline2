@@ -24,6 +24,12 @@ object MenuLinks {
         if (caps.contains("certificate.view_own")) {
             links["certificados"] = "/certificados"
         }
+        if (caps.contains("internship.view_own")) {
+            links["estagios"] = "/estagios"
+        }
+        if (caps.contains("internship.review")) {
+            links["estagios-revisao"] = "/estagios?to=me"
+        }
         if (caps.contains("formative.review")) {
             links["revisao-caaf"] = "/formativas?to=me"
         }

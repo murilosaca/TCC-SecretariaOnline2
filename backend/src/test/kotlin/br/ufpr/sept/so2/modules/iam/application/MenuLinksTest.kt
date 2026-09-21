@@ -46,6 +46,29 @@ class MenuLinksTest : StringSpec({
         links.shouldContainKey("solicitacoes")
         links.shouldNotContainKey("cursos")
         links.shouldNotContainKey("deliberar")
+        links.shouldNotContainKey("estagios")
+        links.shouldNotContainKey("estagios-revisao")
+    }
+
+    "aluno com internship.view_own ganha estagios e nao a fila" {
+        val links = MenuLinks.from(listOf("internship.view_own"))
+        links["estagios"] shouldBe "/estagios"
+        links.shouldNotContainKey("estagios-revisao")
+    }
+
+    "orientador com internship.review ganha a fila e nao o cadastro do aluno" {
+        val links = MenuLinks.from(listOf("internship.review"))
+        links["estagios-revisao"] shouldBe "/estagios?to=me"
+        links.shouldNotContainKey("estagios")
+        links.shouldNotContainKey("cursos")
+    }
+
+    "secretaria nao ganha menu de estagio" {
+        val links = MenuLinks.from(
+            listOf("course.manage", "subject.manage", "user.manage_students", "calendar.manage"),
+        )
+        links.shouldNotContainKey("estagios")
+        links.shouldNotContainKey("estagios-revisao")
     }
 
     "professor ganha deliberar e eventos-professor" {

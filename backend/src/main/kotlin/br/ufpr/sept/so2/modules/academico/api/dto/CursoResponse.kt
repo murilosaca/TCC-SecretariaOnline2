@@ -20,14 +20,21 @@ data class CursoResponse(
     val links: Map<String, String>,
 ) {
     companion object {
-        fun from(curso: Curso, secretariosIds: List<UUID>, podeGerenciar: Boolean): CursoResponse {
+        fun from(
+            curso: Curso,
+            secretariosIds: List<UUID>,
+            podeGerenciar: Boolean,
+            podeVerDisciplinas: Boolean,
+        ): CursoResponse {
             val base = "/academico/cursos/${curso.id}"
             val links = linkedMapOf("self" to base)
             if (podeGerenciar) {
                 links["atualizar"] = base
                 links["excluir"] = base
             }
-            links["disciplinas"] = "/academico/disciplinas?idCurso=${curso.id}"
+            if (podeVerDisciplinas) {
+                links["disciplinas"] = "/academico/disciplinas?idCurso=${curso.id}"
+            }
             return CursoResponse(
                 id = curso.id,
                 nome = curso.nome,

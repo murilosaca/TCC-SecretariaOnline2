@@ -221,6 +221,46 @@ class CursoControllerIT {
     }
 
     @Test
+    fun coordenadorSoComCourseManageNaoRecebeRelDisciplinas() {
+        val tokenCoord = usuariosIt.login(EMAIL_COORD)
+        val tokenSec = usuariosIt.login(EMAIL_SEC)
+        val coordenadorId = usuarioRepository.findByEmail(EMAIL_COORD).get().id
+        val (sigla, codigo) = codigoUnico("LD")
+        val created = mockMvc.perform(
+            post("/academico/cursos")
+                .header("Authorization", "Bearer $tokenSec")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {
+                      "nome": "Curso sem subject.manage",
+                      "sigla": "$sigla",
+                      "codigo": "$codigo",
+                      "idCoordenador": "$coordenadorId",
+                      "horasFormativasMinimas": 120,
+                      "secretariosIds": []
+                    }
+                    """.trimIndent(),
+                ),
+        )
+            .andExpect(status().isCreated)
+            .andReturn()
+        val id = ItJson.text(created.response.contentAsString, "id")
+
+        mockMvc.perform(get("/academico/cursos/$id").header("Authorization", "Bearer $tokenCoord"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$._links.self").exists())
+            .andExpect(jsonPath("$._links.atualizar").exists())
+            .andExpect(jsonPath("$._links.excluir").exists())
+            .andExpect(jsonPath("$._links.disciplinas").doesNotExist())
+
+        mockMvc.perform(get("/academico/cursos").header("Authorization", "Bearer $tokenCoord"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.content[*].id").value(org.hamcrest.Matchers.hasItem(id)))
+            .andExpect(jsonPath("$.content[?(@.id=='$id')]._links.disciplinas").doesNotExist())
+    }
+
+    @Test
     fun excluirCursoComAlunoRetorna409ELiberaAposDesvincular() {
         val token = usuariosIt.login(EMAIL_SEC)
         val (sigla, codigo) = codigoUnico("EX")

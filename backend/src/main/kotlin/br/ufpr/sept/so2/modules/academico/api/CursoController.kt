@@ -48,6 +48,7 @@ class CursoController(
                     curso,
                     secretarios[curso.id].orEmpty(),
                     curso.id in cursoIds,
+                    podeVerDisciplinas(authentication),
                 )
             },
             mapOf("criar" to "/academico/cursos"),
@@ -64,6 +65,7 @@ class CursoController(
             curso,
             cursoApplicationService.secretariosIds(curso.id),
             cursoApplicationService.estaNoEscopo(usuarioId, curso.id),
+            podeVerDisciplinas(authentication),
         )
     }
 
@@ -87,6 +89,7 @@ class CursoController(
             curso,
             cursoApplicationService.secretariosIds(curso.id),
             cursoApplicationService.estaNoEscopo(usuarioId, curso.id),
+            podeVerDisciplinas(authentication),
         )
     }
 
@@ -114,6 +117,7 @@ class CursoController(
             curso,
             cursoApplicationService.secretariosIds(curso.id),
             cursoApplicationService.estaNoEscopo(usuarioId, curso.id),
+            podeVerDisciplinas(authentication),
         )
     }
 
@@ -128,5 +132,8 @@ class CursoController(
     companion object {
         private fun principal(authentication: Authentication): IamPrincipal =
             authentication.principal as IamPrincipal
+
+        private fun podeVerDisciplinas(authentication: Authentication): Boolean =
+            "subject.manage" in principal(authentication).authorities
     }
 }

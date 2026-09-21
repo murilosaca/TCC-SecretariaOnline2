@@ -65,6 +65,7 @@ Quem ler a tabela de dívida **abaixo** não deve achar que `/academico/**` aind
 | KPIs horas / certificados no `/inicio` | Itens 3 e 5: soma `APROVADA` e contagem do módulo; deixam de ser “Indisponível” após a CAAF. Falha/sem cadastro → `null` (HTTP 200). |
 | Presença QR \| SECRET × SINGLE \| DUAL | Item 4: motor v4.1 com os quatro modos. Janelas pré-agendadas e lista ao vivo de inelegíveis continuam dívida. |
 | V011 `curso_secretario` | Item 7: N:N + seed TADS + `CursoEscopoPort`. Claim JWT `cursoIds` **não** entrou (dívida abaixo). |
+| P0 Expo aluno | Item 8: login / primeiro acesso / BFF `/inicio` / nova solicitação / presença SECRET+QR. Refresh **(A)** body + Keychain. Web cookie intacto. |
 
 ## Ainda aberto (dívida consciente — não é P0)
 
@@ -96,13 +97,17 @@ Só o que **ainda** está aberto. Não reabrir FGAC, nav, dispatcher, F0.7, KPIs
 | Períodos por curso / F5.9 tipos | calendário semântico | `periodo_letivo` global; `calendar.manage` all-or-nothing | Schema por curso + tipos quando F6.1/F5.9 abrirem |
 | Janelas pré-agendadas / inelegíveis | CA-02 / CA-06 | Motor v4.1 já tem os quatro modos; janelas desta fatia são ao vivo (15 min) | Pré-agendar e lista ao vivo quando a tela de criação pedir |
 | CA-04 / `REVOGADO` | upload na F0.7; revogação | F0.7 verifica hash; sem upload de PDF; sem estado `REVOGADO` | Fora desta fatia |
-| Hub / templates / push / FORWARD | F1.6, F3.8, F7.5, F3.4-D04 | Dispatcher SMTP já entrega F0.2 e deep-link | Não reabrir o item 6 |
+| Hub / templates / push / FORWARD | F1.6, F3.8, F7.5, F3.4-D04 | Dispatcher SMTP já entrega F0.2 e deep-link | Não reabrir o item 6. FCM/push no Expo continua fora |
+| Expo web | RNF-POR-01 | Item 8 cobre Expo Go / emulador / aparelho. Sem origem CORS extra, sem `X-SO2-Client` no `allowedHeaders` | Só se o Expo web for fatia; não usar `*` |
+| Cookie nativo (B) | RN-F0.1-03 | Item 8 foi **(A)**: RN não persiste `so2_refresh` httpOnly de forma confiável. Body `{ refreshToken }` + SecureStore. Cookie da web permanece | Não reabrir o cookie da web; (B) só se alguém provar jar nativo ponta a ponta |
+| Deliberação / CAAF / F5 no app | F3.4 / F4.1 / F5 | Menu nativo só rels P0 do aluno (`inicio`, `solicitacoes`, `eventos`, `contato`). Professor/secretaria: 403 honesto / item ausente | Fatia mobile-2; não misturar com o item 9 de módulos novos |
+| Formativas / certificados no Expo | F1.10 / F1.19 | BFF mostra KPIs e pendências com href web; o app não implementa as telas | mobile-2 |
 | Desvincular coordenador | F5.7 / F6.1 | `Curso.atualizar` trata `idCoordenador == null` como "manter". Não há operação que zere o coordenador | F6.1 vai precisar; picker de F5.7 continua dependente de F7.1 |
 | Eventos de calendário | tipos semânticos em F5.9 | Só período letivo | Segunda aba quando o schema existir |
 | Angular em `frontend/` | React oficial | Não é stack deste repo | Não recriar nem commitar |
 
 Lombok: **conforme**. Zero ocorrências. Proibição registrada nas rules.
 Aluno sem `idade`: **conforme** (RF-F5-003).
-HATEOAS + `useActions`: **conforme** nas telas de dados **e** na nav (item 7).
+HATEOAS + `useActions`: **conforme** nas telas de dados **e** na nav (item 7, web e Expo).
 IAM / JWT / Argon2id: **entregue**. CRUD acadêmico com FGAC (item 7).
 Motor de solicitações: **entregue** (`0e882d2`) — não está mais inexistente.

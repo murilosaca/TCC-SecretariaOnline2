@@ -4,7 +4,7 @@ Plataforma digital da secretaria acadêmica do **SEPT/UFPR**. Este é o reposit�
 
 O SO2 não substitui o juízo de docentes, comissões ou secretaria. Ele garante trilha de auditoria, integridade de dados e automação de trâmites repetitivos.
 
-**Onde estamos:** P0 fechado e demonstrável. Itens 1–**7** entregues. **Próxima fatia = 8 Expo.** Esta fatia **não** é o portal admin F7 (sem F7.1–F7.9). Não abrir lote CAAF, COE, F6.1 nem MinIO neste passo.
+**Onde estamos:** P0 fechado na web e no Expo (itens 1–**8**). **Próxima fatia = 9** (estágio/COE/TCC/egresso/F6.1). Esta fatia **não** é o portal admin F7 (sem F7.1–F7.9). Não abrir lote CAAF, COE, F6.1 nem MinIO neste passo.
 
 Circuito demonstrável: login → primeiro acesso (senha + LGPD) → `/inicio` do aluno → solicitação + deep-link ao professor → presença **QR\|SECRET × SINGLE\|DUAL** → formativa (`PENDENTE_CONFIRMACAO` → aluno confirma → `AGUARDANDO_CAAF`) → CAAF aprova → certificado oficial (PDF + hash + ED25519) → `/certificados` + F0.7. Secretaria (`secretaria.dev`) opera o CRUD de TADS; aluno/professor/CAAF não veem Cursos.
 
@@ -19,7 +19,7 @@ Nesta ordem. Se divergirem, não invente regra de negócio.
 | [`docs/tcc-docs.md`](docs/tcc-docs.md) | Requisitos (RFs/RNFs), atores, regras de negócio. |
 | [`docs/telas-figma.md`](docs/telas-figma.md) + [`docs/telas/`](docs/telas/) | Mapa de rotas F0–F8 e detalhe de cada tela. |
 | Este README | Estado do **repo**: o que está no ar, como subir, o que não abrir. |
-| [`docs/auditoria-fundacao.md`](docs/auditoria-fundacao.md) | Detalhe da fundação/P0/itens 1–7 e dívida consciente. |
+| [`docs/auditoria-fundacao.md`](docs/auditoria-fundacao.md) | Detalhe da fundação/P0/itens 1–8 e dívida consciente. |
 | [`.cursorrules`](.cursorrules) e [`.cursor/rules/`](.cursor/rules/) | Convenções (nomenclatura, Clean Architecture, proibições). |
 | [`.env.example`](.env.example) | Variáveis. Não commite `.env` nem chaves JWT. |
 
@@ -36,7 +36,7 @@ TCC-SecretariaOnline2/
 │       ├── shared/          RFC 7807, Security, CORS, UUID v7, VOs
 │       └── modules/         Um bounded context por pasta
 ├── frontend-react/          Portal oficial (React 18 + Vite + TypeScript)
-├── frontend-react-native/   Esqueleto Expo (fora do circuito P0)
+├── frontend-react-native/   Expo P0 aluno (login, início, solicitação, presença)
 ├── docs/
 ├── docker-compose.yml       Outro Postgres em :5432 — ver “Como subir”
 ├── .env.example
@@ -145,7 +145,7 @@ O mapa F0–F8 do Figma descreve o produto; **não é cronograma**. A ordem priv
 | 5 | Certificados oficiais + F0.7 | **Feito** |
 | 6 | Dispatcher do Outbox + SMTP + deep-link | **Feito** |
 | 7 | FGAC acadêmico + nav | **Feito** — fecha `/academico/**` e a nav; **não** é o portal admin F7 |
-| 8 | Cliente Expo (React Native) | **Próxima** — mesma API; web já provou os contratos |
+| 8 | Cliente Expo (React Native) | **Feito** — P0 aluno na mesma API; web intacta |
 | 9 | Estágio + COE, TCC, egresso, F6.1 | Módulos novos |
 
 **1. Formativas** — V007; gatilho na TX de `ConfirmarPresencaUseCase` quando a presença fica **COMPLETA**. Aluno confirma ou cancela. Sem `POST /formativas`. BFF soma `APROVADA` (`null` sem cadastro). Não: CAAF/certificado (3 e 5), lote.
@@ -172,11 +172,19 @@ Fecha `/academico/**` e o menu. **Não** é F7. Detalhe (anti-lockout do PUT, jo
 - Menu: `MenuLinks` é o único ponto que olha caps; UI `useActions(links)`.
 - Seed `secretaria.dev` / `GRR20240005` (four manage + triage/deliberate/`view_curso`). As quatro `*.manage` andam juntas no seed — combo Alunos/Disciplinas reusa `GET /academico/cursos` (`course.manage`). Form F5.7 pede UUID cru (picker = F7.1).
 
-**Não entrou:** F7, F6.1, `cursoIds` no JWT, fila F5.2, Expo.
+**Não entrou no item 7:** F7, F6.1, `cursoIds` no JWT, fila F5.2, Expo.
 
-**8. Expo** — próxima
+**8. Expo** — feito
 
-Mesma API (`/auth`, `/bff`, `/events`, `/formativas`, `/requests`). Token em Keychain/Keystore. NativeWind ≠ Tailwind na web. O esqueleto em `frontend-react-native/` **sozinho não fecha o P0**. Menu (web e Expo futuro) só por `_links` de `GET /auth/me`, nunca `authorities.includes`.
+Cliente `frontend-react-native/` (Expo Router 57 + NativeWind + TanStack Query) no **aluno**. NativeWind **neste** pacote não autoriza Tailwind em `frontend-react/`.
+
+- Login `{ identificador, senha }` (o esqueleto mentia `{ login, senha }` e CPF). Primeiro acesso bloqueia o resto. `/inicio` = `GET /bff/dashboard/aluno` (horas `N / 120` ou `null`, sem mock). Nova solicitação = motor `GET /request-types` + `form_schema` (sem tela `DECLARACAO_SIMPLES`). Presença SECRET (PIN) e QR (`expo-camera`, fallback colar token).
+- Menu só com `_links` de `GET /auth/me` + `useActions`. Aluno não vê Cursos / Eventos prof. / Revisão CAAF. Sem `authorities.includes` na nav.
+- Refresh **(A)**: cookie `so2_refresh` da web intacto. Nativo não persiste httpOnly; manda `X-SO2-Client: native` no login (JSON com `refreshToken`) e `POST /auth/refresh` / `/logout` com `{ refreshToken }` no body. Valor no Keychain/Keystore (`expo-secure-store`), nunca AsyncStorage. Access token em memória. `deviceUuid` estável no SecureStore.
+- Recuperar senha no app (202); o Mailpit continua abrindo a **web** `/nova-senha?token=`. Sem deep-link de deliberação no app.
+- Base URL: `EXPO_PUBLIC_API_URL`. Default emulador Android `10.0.2.2:8080`, iOS `localhost:8080`. Aparelho: IP LAN. Detalhe: [`frontend-react-native/README.md`](frontend-react-native/README.md).
+
+**Fora do item 8:** F7, F6.1, COE, lote CAAF, MinIO, BFF professor, FCM, Expo web, CRUD F5 no app, formativas/certificados no Expo.
 
 **9. Estágio + COE, TCC, egresso, F6.1**
 
@@ -205,17 +213,19 @@ mvn spring-boot:run
 # 3. Web :5174 (vite.config.ts; 5173 não é o default deste repo)
 cd frontend-react && npm install && npm run dev
 
-# 4. Mobile (opcional)
+# 4. Mobile P0 (Expo Go / emulador)
 cd frontend-react-native && npm install && npx expo start
+# Aparelho físico: EXPO_PUBLIC_API_URL=http://<IP-LAN>:8080
 ```
 
 Copie `.env.example` para o shell. Ele já aponta JDBC `:5433` e `FRONTEND_BASE_URL=http://localhost:5174`. O `application.yml` default ainda é JDBC `:5432` e `frontend-base-url` `:5173` — **sobrescreva**.
 
-Proxies Vite → `http://localhost:8080`: `/auth`, `/academico`, `/publico`, `/requests`, `/request-types`, `/bff`, `/events`, `/formativas` (HTML → `index.html`), `/certificates`, `/.well-known`, `/v3`, `/swagger-ui`, `/actuator`. CORS: `http://localhost:5173` e `http://localhost:5174`.
+Proxies Vite → `http://localhost:8080`: `/auth`, `/academico`, `/publico`, `/requests`, `/request-types`, `/bff`, `/events`, `/formativas` (HTML → `index.html`), `/certificates`, `/.well-known`, `/v3`, `/swagger-ui`, `/actuator`. CORS: `http://localhost:5173` e `http://localhost:5174`. Nativo não passa por CORS. Expo web **não** entrou nesta fatia (sem origem extra e sem `*`).
 
 ```bash
 cd backend && mvn -q test
 cd frontend-react && npm test
+cd frontend-react-native && npm test
 ```
 
 Não é obrigatório rodar a suíte se 5433 + `:8080` + `:5174` já estiverem no ar. Reinicie a API depois de mudar o backend.

@@ -36,7 +36,10 @@ class OpenApiConfig {
                         .type(SecurityScheme.Type.HTTP)
                         .scheme("bearer")
                         .bearerFormat("JWT")
-                        .description("Access token RS256 em memória. Refresh via cookie httpOnly so2_refresh."),
+                        .description(
+                            "Access token RS256 em memória. Refresh: cookie httpOnly so2_refresh (web) " +
+                                "ou body { refreshToken } (cliente nativo com X-SO2-Client: native).",
+                        ),
                 ),
             )
 }

@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "frontend-react-native",
-    "slug": "frontend-react-native",
+    "name": "SO2",
+    "slug": "so2",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -25,6 +25,14 @@
     },
     "plugins": [
       "expo-router",
+      "expo-secure-store",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "O SO2 usa a câmera para ler o QR de presença no evento.",
+          "recordAudioAndroid": false
+        }
+      ],
       [
         "expo-splash-screen",
         {

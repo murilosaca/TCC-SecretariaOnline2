@@ -5,6 +5,7 @@ import br.ufpr.sept.so2.modules.iam.api.dto.LoginResponse
 import br.ufpr.sept.so2.modules.iam.api.dto.PrimeiroAcessoRequest
 import br.ufpr.sept.so2.modules.iam.api.dto.RecuperarSenhaRequest
 import br.ufpr.sept.so2.modules.iam.api.dto.RedefinirSenhaRequest
+import br.ufpr.sept.so2.modules.iam.api.dto.RefreshTokenRequest
 import br.ufpr.sept.so2.modules.iam.api.dto.SessaoResponse
 import br.ufpr.sept.so2.modules.iam.application.ConsultarSessaoUseCase
 import br.ufpr.sept.so2.modules.iam.application.LoginResult
@@ -53,26 +54,30 @@ class AuthController(
         http: HttpServletRequest,
     ): ResponseEntity<LoginResponse> {
         val result = loginUseCase.execute(request.identificador, request.senha, clientIp(http))
-        return withRefreshCookie(result)
+        return withRefreshCookie(result, NativeClient.requested(http))
     }
 
     @PostMapping("/refresh")
     @Operation(summary = "Rotacionar refresh token (RNF-SEC-03)")
     fun refresh(
-        @CookieValue(name = "\${app.iam.cookie-name:so2_refresh}", required = false) refreshToken: String?,
+        @CookieValue(name = "\${app.iam.cookie-name:so2_refresh}", required = false) refreshCookie: String?,
+        @RequestBody(required = false) body: RefreshTokenRequest?,
         http: HttpServletRequest,
     ): ResponseEntity<LoginResponse> {
-        val result = refreshTokenUseCase.execute(refreshToken, clientIp(http))
-        return withRefreshCookie(result)
+        val raw = NativeClient.resolveRefreshToken(refreshCookie, body?.refreshToken)
+        val result = refreshTokenUseCase.execute(raw, clientIp(http))
+        val includeRefresh = NativeClient.requested(http) || !body?.refreshToken.isNullOrBlank()
+        return withRefreshCookie(result, includeRefresh)
     }
 
     @PostMapping("/logout")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary = "Encerrar a sessão corrente")
     fun logout(
-        @CookieValue(name = "\${app.iam.cookie-name:so2_refresh}", required = false) refreshToken: String?,
+        @CookieValue(name = "\${app.iam.cookie-name:so2_refresh}", required = false) refreshCookie: String?,
+        @RequestBody(required = false) body: RefreshTokenRequest?,
     ): ResponseEntity<Void> {
-        logoutUseCase.execute(refreshToken)
+        logoutUseCase.execute(NativeClient.resolveRefreshToken(refreshCookie, body?.refreshToken))
         return ResponseEntity.noContent()
             .header(HttpHeaders.SET_COOKIE, refreshCookieFactory.clear().toString())
             .build()
@@ -130,10 +135,10 @@ class AuthController(
         return SessaoResponse.from(consultarSessaoUseCase.execute(principal.userId))
     }
 
-    private fun withRefreshCookie(result: LoginResult): ResponseEntity<LoginResponse> =
+    private fun withRefreshCookie(result: LoginResult, includeRefreshToken: Boolean): ResponseEntity<LoginResponse> =
         ResponseEntity.ok()
             .header(HttpHeaders.SET_COOKIE, refreshCookieFactory.create(result.refreshToken).toString())
-            .body(LoginResponse.from(result))
+            .body(LoginResponse.from(result, includeRefreshToken))
 
     companion object {
         private fun clientIp(request: HttpServletRequest): String {

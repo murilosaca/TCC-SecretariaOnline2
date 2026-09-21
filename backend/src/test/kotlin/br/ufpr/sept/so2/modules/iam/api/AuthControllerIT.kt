@@ -6,7 +6,9 @@ import br.ufpr.sept.so2.modules.iam.domain.Usuario
 import br.ufpr.sept.so2.shared.domain.valueobject.Email
 import br.ufpr.sept.so2.shared.domain.valueobject.Grr
 import br.ufpr.sept.so2.shared.infrastructure.Uuids
+import com.jayway.jsonpath.JsonPath
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -76,6 +78,7 @@ class AuthControllerIT {
             .andExpect(jsonPath("$.accessToken").isNotEmpty)
             .andExpect(jsonPath("$.mustChangePassword").value(false))
             .andExpect(jsonPath("$.expiresIn").value(900))
+            .andExpect(jsonPath("$.refreshToken").doesNotExist())
             .andExpect(cookie().exists("so2_refresh"))
             .andExpect(cookie().httpOnly("so2_refresh", true))
 
@@ -132,6 +135,115 @@ class AuthControllerIT {
             .contentAsString
 
         assertEquals(extractDetail(inexistente), extractDetail(senhaErrada))
+    }
+
+    @Test
+    fun loginNativoDevolveRefreshNoJsonSemOmitirCookie() {
+        mockMvc.perform(
+            post("/auth/login")
+                .header(NativeClient.HEADER, NativeClient.VALUE)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"identificador":"it.login@ufpr.br","senha":"TroqueEstaSenha1!"}
+                    """.trimIndent(),
+                ),
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.accessToken").isNotEmpty)
+            .andExpect(jsonPath("$.refreshToken").isNotEmpty)
+            .andExpect(cookie().exists("so2_refresh"))
+    }
+
+    @Test
+    fun refreshPorCookieWebNaoExpoeRefreshNoJson() {
+        val login = mockMvc.perform(
+            post("/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"identificador":"it.login@ufpr.br","senha":"TroqueEstaSenha1!"}
+                    """.trimIndent(),
+                ),
+        )
+            .andExpect(status().isOk)
+            .andReturn()
+        val cookie = login.response.getCookie("so2_refresh")
+        assertNotNull(cookie)
+
+        mockMvc.perform(post("/auth/refresh").cookie(cookie))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.accessToken").isNotEmpty)
+            .andExpect(jsonPath("$.refreshToken").doesNotExist())
+            .andExpect(cookie().exists("so2_refresh"))
+    }
+
+    @Test
+    fun refreshPorBodyNativoRotacionaERejeitaOAntigo() {
+        val login = mockMvc.perform(
+            post("/auth/login")
+                .header(NativeClient.HEADER, NativeClient.VALUE)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"identificador":"it.login@ufpr.br","senha":"TroqueEstaSenha1!"}
+                    """.trimIndent(),
+                ),
+        )
+            .andExpect(status().isOk)
+            .andReturn()
+        val refreshToken = JsonPath.read<String>(login.response.contentAsString, "$.refreshToken")
+
+        mockMvc.perform(
+            post("/auth/refresh")
+                .header(NativeClient.HEADER, NativeClient.VALUE)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"refreshToken":"$refreshToken"}"""),
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.accessToken").isNotEmpty)
+            .andExpect(jsonPath("$.refreshToken").isNotEmpty)
+
+        mockMvc.perform(
+            post("/auth/refresh")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"refreshToken":"$refreshToken"}"""),
+        )
+            .andExpect(status().isUnauthorized)
+    }
+
+    @Test
+    fun logoutPorBodyRevogaRefreshNativo() {
+        val login = mockMvc.perform(
+            post("/auth/login")
+                .header(NativeClient.HEADER, NativeClient.VALUE)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"identificador":"it.login@ufpr.br","senha":"TroqueEstaSenha1!"}
+                    """.trimIndent(),
+                ),
+        )
+            .andExpect(status().isOk)
+            .andReturn()
+        val json = login.response.contentAsString
+        val accessToken = JsonPath.read<String>(json, "$.accessToken")
+        val refreshToken = JsonPath.read<String>(json, "$.refreshToken")
+
+        mockMvc.perform(
+            post("/auth/logout")
+                .header("Authorization", "Bearer $accessToken")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"refreshToken":"$refreshToken"}"""),
+        )
+            .andExpect(status().isNoContent)
+
+        mockMvc.perform(
+            post("/auth/refresh")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"refreshToken":"$refreshToken"}"""),
+        )
+            .andExpect(status().isUnauthorized)
     }
 
     @Test

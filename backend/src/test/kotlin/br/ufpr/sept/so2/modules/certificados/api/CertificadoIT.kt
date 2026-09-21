@@ -7,11 +7,11 @@ import br.ufpr.sept.so2.modules.academico.domain.AlunoSituacao
 import br.ufpr.sept.so2.modules.academico.domain.Curso
 import br.ufpr.sept.so2.modules.iam.application.ports.PasswordHasher
 import br.ufpr.sept.so2.modules.iam.application.ports.UsuarioRepository
-import br.ufpr.sept.so2.modules.iam.domain.Usuario
 import br.ufpr.sept.so2.modules.presenca.application.ports.EventoRepository
 import br.ufpr.sept.so2.modules.presenca.domain.AttendanceMode
 import br.ufpr.sept.so2.modules.presenca.domain.Evento
 import br.ufpr.sept.so2.modules.presenca.domain.EventoEstado
+import br.ufpr.sept.so2.shared.ItUsuarioFixture
 import br.ufpr.sept.so2.shared.domain.valueobject.Email
 import br.ufpr.sept.so2.shared.domain.valueobject.Grr
 import br.ufpr.sept.so2.shared.infrastructure.Uuids
@@ -58,23 +58,26 @@ class CertificadoIT {
     @Autowired
     private lateinit var alunoRepository: AlunoRepository
 
+    private val usuariosIt
+        get() = ItUsuarioFixture(usuarioRepository, passwordHasher, mockMvc)
+
     @BeforeEach
     fun seed() {
         val agora = OffsetDateTime.now()
         val cursoId = garantirCurso(agora)
-        criarUsuarioSeAusente(EMAIL_ALUNO, "GRR20249901", agora, AUTHORITIES_ALUNO)
+        usuariosIt.criarUsuario(EMAIL_ALUNO, "GRR20249901", AUTHORITIES_ALUNO)
         criarAlunoSeAusente("Aluno Certificado IT", "GRR20249901", EMAIL_ALUNO, cursoId, agora)
-        criarUsuarioSeAusente(EMAIL_OUTRO, "GRR20249902", agora, AUTHORITIES_ALUNO)
+        usuariosIt.criarUsuario(EMAIL_OUTRO, "GRR20249902", AUTHORITIES_ALUNO)
         criarAlunoSeAusente("Outro Aluno Cert IT", "GRR20249902", EMAIL_OUTRO, cursoId, agora)
-        criarUsuarioSeAusente(EMAIL_SEM_CAP, "GRR20249903", agora, AUTHORITIES_SEM_CERT)
+        usuariosIt.criarUsuario(EMAIL_SEM_CAP, "GRR20249903", AUTHORITIES_SEM_CERT)
         criarAlunoSeAusente("Aluno Sem Cert Cap", "GRR20249903", EMAIL_SEM_CAP, cursoId, agora)
-        criarUsuarioSeAusente(EMAIL_CAAF, "GRR20249904", agora, listOf("dashboard.view_own", "formative.review"))
+        usuariosIt.criarUsuario(EMAIL_CAAF, "GRR20249904", listOf("dashboard.view_own", "formative.review"))
     }
 
     @Test
     fun caafAprovaEmiteCertificadoDownloadEVerificacaoPublica() {
         val aberto = salvarEvento()
-        val tokenAluno = login(EMAIL_ALUNO)
+        val tokenAluno = usuariosIt.login(EMAIL_ALUNO)
 
         mockMvc.perform(
             post("/events/${aberto.id}/attendance/confirm")
@@ -101,7 +104,7 @@ class CertificadoIT {
         )
             .andExpect(status().isOk)
 
-        val tokenCaaf = login(EMAIL_CAAF)
+        val tokenCaaf = usuariosIt.login(EMAIL_CAAF)
         mockMvc.perform(
             post("/formativas/$formativaId/aprovar")
                 .header("Authorization", "Bearer $tokenCaaf")
@@ -171,7 +174,7 @@ class CertificadoIT {
             .andExpect(jsonPath("$.beneficiarioNome").doesNotExist())
             .andExpect(jsonPath("$.title").exists())
 
-        val tokenSemCap = login(EMAIL_SEM_CAP)
+        val tokenSemCap = usuariosIt.login(EMAIL_SEM_CAP)
         mockMvc.perform(
             get("/certificates")
                 .param("beneficiario", "me")
@@ -179,7 +182,7 @@ class CertificadoIT {
         )
             .andExpect(status().isForbidden)
 
-        val tokenOutro = login(EMAIL_OUTRO)
+        val tokenOutro = usuariosIt.login(EMAIL_OUTRO)
         mockMvc.perform(
             get("/certificates/$certificadoId")
                 .header("Authorization", "Bearer $tokenOutro"),
@@ -264,49 +267,7 @@ class CertificadoIT {
         )
     }
 
-    private fun criarUsuarioSeAusente(
-        email: String,
-        grr: String,
-        agora: OffsetDateTime,
-        authorities: List<String>,
-    ) {
-        if (usuarioRepository.findByEmail(email).isPresent) {
-            return
-        }
-        usuarioRepository.save(
-            Usuario(
-                Uuids.v7(),
-                Email.of(email),
-                null,
-                Grr.of(grr),
-                passwordHasher.hash(SENHA),
-                true,
-                agora,
-                "127.0.0.1",
-                "it",
-                true,
-                0,
-                null,
-                authorities,
-                agora,
-                agora,
-            ),
-        )
-    }
-
-    private fun login(email: String): String {
-        val result = mockMvc.perform(
-            post("/auth/login")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"identificador\":\"$email\",\"senha\":\"$SENHA\"}"),
-        )
-            .andExpect(status().isOk)
-            .andReturn()
-        return extract(result.response.contentAsString, "\"accessToken\":\"", "\"")
-    }
-
     companion object {
-        private const val SENHA = "TroqueEstaSenha1!"
         private const val PIN = "123456"
         private const val EMAIL_ALUNO = "it.cert.aluno@ufpr.br"
         private const val EMAIL_OUTRO = "it.cert.outro@ufpr.br"

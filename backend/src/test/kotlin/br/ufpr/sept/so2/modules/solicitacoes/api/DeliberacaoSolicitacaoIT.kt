@@ -2,12 +2,9 @@ package br.ufpr.sept.so2.modules.solicitacoes.api
 
 import br.ufpr.sept.so2.modules.iam.application.ports.PasswordHasher
 import br.ufpr.sept.so2.modules.iam.application.ports.UsuarioRepository
-import br.ufpr.sept.so2.modules.iam.domain.Usuario
 import br.ufpr.sept.so2.modules.solicitacoes.application.ports.TipoSolicitacaoRepository
 import br.ufpr.sept.so2.modules.solicitacoes.infrastructure.DeclaracaoSimplesSeed
-import br.ufpr.sept.so2.shared.domain.valueobject.Email
-import br.ufpr.sept.so2.shared.domain.valueobject.Grr
-import br.ufpr.sept.so2.shared.infrastructure.Uuids
+import br.ufpr.sept.so2.shared.ItUsuarioFixture
 import org.hamcrest.Matchers.hasItem
 import org.hamcrest.Matchers.not
 import org.hamcrest.Matchers.startsWith
@@ -42,35 +39,35 @@ class DeliberacaoSolicitacaoIT {
     @Autowired
     private lateinit var tipoSolicitacaoRepository: TipoSolicitacaoRepository
 
+    private val usuariosIt
+        get() = ItUsuarioFixture(usuarioRepository, passwordHasher, mockMvc)
+
     @BeforeEach
     fun seed() {
         val agora = OffsetDateTime.now()
         if (tipoSolicitacaoRepository.findByCodigo(DeclaracaoSimplesSeed.CODIGO).isEmpty) {
             tipoSolicitacaoRepository.save(DeclaracaoSimplesSeed.tipo(agora))
         }
-        criarUsuario(
+        usuariosIt.criarUsuario(
             EMAIL_ALUNO,
             "GRR20248811",
             listOf("dashboard.view_own", "request.view_own", "request.open"),
-            agora,
         )
-        criarUsuario(
+        usuariosIt.criarUsuario(
             EMAIL_PROFESSOR,
             "GRR20248812",
             listOf("dashboard.view_own", "event.manage", "event.host", "request.deliberate"),
-            agora,
         )
-        criarUsuario(
+        usuariosIt.criarUsuario(
             EMAIL_OUTRO,
             "GRR20248813",
             listOf("dashboard.view_own", "request.view_own", "request.open"),
-            agora,
         )
     }
 
     @Test
     fun professorDeferePontaAPontaEAlunoNaoDelibera() {
-        val tokenAluno = login(EMAIL_ALUNO)
+        val tokenAluno = usuariosIt.login(EMAIL_ALUNO)
         val created = mockMvc.perform(
             post("/requests")
                 .header("Authorization", "Bearer $tokenAluno")
@@ -92,7 +89,7 @@ class DeliberacaoSolicitacaoIT {
         )
             .andExpect(status().isForbidden)
 
-        val tokenProfessor = login(EMAIL_PROFESSOR)
+        val tokenProfessor = usuariosIt.login(EMAIL_PROFESSOR)
         mockMvc.perform(get("/requests").header("Authorization", "Bearer $tokenProfessor"))
             .andExpect(status().isForbidden)
 
@@ -158,7 +155,7 @@ class DeliberacaoSolicitacaoIT {
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.estado").value("DELIBERADA"))
 
-        val tokenOutro = login(EMAIL_OUTRO)
+        val tokenOutro = usuariosIt.login(EMAIL_OUTRO)
         mockMvc.perform(
             get("/requests/$id")
                 .header("Authorization", "Bearer $tokenOutro"),
@@ -166,44 +163,7 @@ class DeliberacaoSolicitacaoIT {
             .andExpect(status().isNotFound)
     }
 
-    private fun criarUsuario(email: String, grr: String, authorities: List<String>, agora: OffsetDateTime) {
-        if (usuarioRepository.findByEmail(email).isPresent) {
-            return
-        }
-        usuarioRepository.save(
-            Usuario(
-                Uuids.v7(),
-                Email.of(email),
-                null,
-                Grr.of(grr),
-                passwordHasher.hash(SENHA),
-                true,
-                agora,
-                "127.0.0.1",
-                "it",
-                true,
-                0,
-                null,
-                authorities,
-                agora,
-                agora,
-            ),
-        )
-    }
-
-    private fun login(email: String): String {
-        val result = mockMvc.perform(
-            post("/auth/login")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"identificador\":\"$email\",\"senha\":\"$SENHA\"}"),
-        )
-            .andExpect(status().isOk)
-            .andReturn()
-        return extract(result.response.contentAsString, "\"accessToken\":\"", "\"")
-    }
-
     companion object {
-        private const val SENHA = "TroqueEstaSenha1!"
         private const val EMAIL_ALUNO = "it.deliberacao@ufpr.br"
         private const val EMAIL_PROFESSOR = "it.deliberacao.prof@ufpr.br"
         private const val EMAIL_OUTRO = "it.deliberacao.outro@ufpr.br"

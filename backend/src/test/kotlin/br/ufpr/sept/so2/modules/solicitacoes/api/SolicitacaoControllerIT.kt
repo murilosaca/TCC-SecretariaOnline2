@@ -2,12 +2,9 @@ package br.ufpr.sept.so2.modules.solicitacoes.api
 
 import br.ufpr.sept.so2.modules.iam.application.ports.PasswordHasher
 import br.ufpr.sept.so2.modules.iam.application.ports.UsuarioRepository
-import br.ufpr.sept.so2.modules.iam.domain.Usuario
 import br.ufpr.sept.so2.modules.solicitacoes.application.ports.TipoSolicitacaoRepository
 import br.ufpr.sept.so2.modules.solicitacoes.infrastructure.DeclaracaoSimplesSeed
-import br.ufpr.sept.so2.shared.domain.valueobject.Email
-import br.ufpr.sept.so2.shared.domain.valueobject.Grr
-import br.ufpr.sept.so2.shared.infrastructure.Uuids
+import br.ufpr.sept.so2.shared.ItUsuarioFixture
 import org.hamcrest.Matchers.startsWith
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -40,54 +37,25 @@ class SolicitacaoControllerIT {
     @Autowired
     private lateinit var tipoSolicitacaoRepository: TipoSolicitacaoRepository
 
+    private val usuariosIt
+        get() = ItUsuarioFixture(usuarioRepository, passwordHasher, mockMvc)
+
     @BeforeEach
     fun seed() {
         val agora = OffsetDateTime.now()
         if (tipoSolicitacaoRepository.findByCodigo(DeclaracaoSimplesSeed.CODIGO).isEmpty) {
             tipoSolicitacaoRepository.save(DeclaracaoSimplesSeed.tipo(agora))
         }
-        if (usuarioRepository.findByEmail("it.solicitacao@ufpr.br").isEmpty) {
-            usuarioRepository.save(
-                Usuario(
-                    Uuids.v7(),
-                    Email.of("it.solicitacao@ufpr.br"),
-                    null,
-                    Grr.of("GRR20248888"),
-                    passwordHasher.hash("TroqueEstaSenha1!"),
-                    true,
-                    agora,
-                    "127.0.0.1",
-                    "it",
-                    true,
-                    0,
-                    null,
-                    listOf("dashboard.view_own", "request.view_own", "request.open"),
-                    agora,
-                    agora,
-                ),
-            )
-        }
-        if (usuarioRepository.findByEmail("it.outro@ufpr.br").isEmpty) {
-            usuarioRepository.save(
-                Usuario(
-                    Uuids.v7(),
-                    Email.of("it.outro@ufpr.br"),
-                    null,
-                    Grr.of("GRR20247777"),
-                    passwordHasher.hash("TroqueEstaSenha1!"),
-                    true,
-                    agora,
-                    "127.0.0.1",
-                    "it",
-                    true,
-                    0,
-                    null,
-                    listOf("dashboard.view_own", "request.view_own", "request.open"),
-                    agora,
-                    agora,
-                ),
-            )
-        }
+        usuariosIt.criarUsuario(
+            "it.solicitacao@ufpr.br",
+            "GRR20248888",
+            listOf("dashboard.view_own", "request.view_own", "request.open"),
+        )
+        usuariosIt.criarUsuario(
+            "it.outro@ufpr.br",
+            "GRR20247777",
+            listOf("dashboard.view_own", "request.view_own", "request.open"),
+        )
     }
 
     @Test
@@ -95,7 +63,7 @@ class SolicitacaoControllerIT {
         mockMvc.perform(get("/requests"))
             .andExpect(status().isUnauthorized)
 
-        val token = login("it.solicitacao@ufpr.br")
+        val token = usuariosIt.login("it.solicitacao@ufpr.br")
 
         mockMvc.perform(
             post("/requests")
@@ -151,23 +119,12 @@ class SolicitacaoControllerIT {
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.eventos[0].tipo").value("CRIADA"))
 
-        val outro = login("it.outro@ufpr.br")
+        val outro = usuariosIt.login("it.outro@ufpr.br")
         mockMvc.perform(
             get("/requests/$id")
                 .header("Authorization", "Bearer $outro"),
         )
             .andExpect(status().isNotFound)
-    }
-
-    private fun login(email: String): String {
-        val result = mockMvc.perform(
-            post("/auth/login")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"identificador\":\"$email\",\"senha\":\"TroqueEstaSenha1!\"}"),
-        )
-            .andExpect(status().isOk)
-            .andReturn()
-        return extract(result.response.contentAsString, "\"accessToken\":\"", "\"")
     }
 
     companion object {

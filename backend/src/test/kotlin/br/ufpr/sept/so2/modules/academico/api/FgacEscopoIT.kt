@@ -10,10 +10,9 @@ import br.ufpr.sept.so2.modules.academico.domain.Curso
 import br.ufpr.sept.so2.modules.academico.domain.Disciplina
 import br.ufpr.sept.so2.modules.iam.application.ports.PasswordHasher
 import br.ufpr.sept.so2.modules.iam.application.ports.UsuarioRepository
-import br.ufpr.sept.so2.modules.iam.domain.Usuario
+import br.ufpr.sept.so2.shared.ItUsuarioFixture
 import br.ufpr.sept.so2.shared.domain.valueobject.Email
 import br.ufpr.sept.so2.shared.domain.valueobject.Grr
-import br.ufpr.sept.so2.shared.ItJson
 import br.ufpr.sept.so2.shared.infrastructure.Uuids
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -61,6 +60,9 @@ class FgacEscopoIT {
     @Autowired
     private lateinit var transactionManager: PlatformTransactionManager
 
+    private val usuariosIt
+        get() = ItUsuarioFixture(usuarioRepository, passwordHasher, mockMvc)
+
     private lateinit var tokenSec: String
     private lateinit var alunoForaId: UUID
     private lateinit var disciplinaForaId: UUID
@@ -69,8 +71,8 @@ class FgacEscopoIT {
     fun seed() {
         TransactionTemplate(transactionManager).executeWithoutResult {
             val agora = OffsetDateTime.now()
-            val sec = criarUsuario(EMAIL_SEC, "GRR20247121", AUTHORITIES_SEC, agora)
-            val outro = criarUsuario(EMAIL_OUTRO, "GRR20247122", AUTHORITIES_SEC, agora)
+            val sec = usuariosIt.criarUsuario(EMAIL_SEC, "GRR20247121", AUTHORITIES_SEC)
+            val outro = usuariosIt.criarUsuario(EMAIL_OUTRO, "GRR20247122", AUTHORITIES_SEC)
             val cursoA = curso("Curso A Escopo", "ESCA", "ESCA-FGAC", agora)
             val cursoB = curso("Curso B Escopo", "ESCB", "ESCB-FGAC", agora)
             cursoSecretarioRepository.replaceAll(cursoA.id, listOf(sec.id))
@@ -78,7 +80,7 @@ class FgacEscopoIT {
             alunoForaId = aluno("Aluno Fora", "GRR20247129", "it.fgac.aluno.fora@ufpr.br", cursoB.id, agora).id
             disciplinaForaId = disciplina(cursoB.id, "DISC-FORA", agora).id
         }
-        tokenSec = login(EMAIL_SEC)
+        tokenSec = usuariosIt.login(EMAIL_SEC)
     }
 
     @Test
@@ -205,45 +207,7 @@ class FgacEscopoIT {
         )
     }
 
-    private fun criarUsuario(email: String, grr: String, authorities: List<String>, agora: OffsetDateTime): Usuario {
-        val existente = usuarioRepository.findByEmail(email)
-        if (existente.isPresent) {
-            return existente.get()
-        }
-        return usuarioRepository.save(
-            Usuario(
-                Uuids.v7(),
-                Email.of(email),
-                null,
-                Grr.of(grr),
-                passwordHasher.hash(SENHA),
-                true,
-                agora,
-                "127.0.0.1",
-                "it",
-                true,
-                0,
-                null,
-                authorities,
-                agora,
-                agora,
-            ),
-        )
-    }
-
-    private fun login(email: String): String {
-        val result = mockMvc.perform(
-            org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/auth/login")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"identificador\":\"$email\",\"senha\":\"$SENHA\"}"),
-        )
-            .andExpect(status().isOk)
-            .andReturn()
-        return ItJson.text(result.response.contentAsString, "accessToken")
-    }
-
     companion object {
-        private const val SENHA = "TroqueEstaSenha1!"
         private const val EMAIL_SEC = "it.fgac.escopo.sec@ufpr.br"
         private const val EMAIL_OUTRO = "it.fgac.escopo.outro@ufpr.br"
         private val AUTHORITIES_SEC = listOf(

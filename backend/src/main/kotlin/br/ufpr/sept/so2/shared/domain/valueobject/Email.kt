@@ -7,8 +7,9 @@ data class Email private constructor(val value: String) {
     override fun toString(): String = value
 
     companion object {
-        private val EMAIL_REGEX =
-            Regex("^[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}$")
+        const val PATTERN = "^[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}$"
+        const val PATTERN_OR_BLANK = "^$|$PATTERN"
+        private val EMAIL_REGEX = Regex(PATTERN)
 
         @JvmStatic
         fun of(raw: String?): Email {

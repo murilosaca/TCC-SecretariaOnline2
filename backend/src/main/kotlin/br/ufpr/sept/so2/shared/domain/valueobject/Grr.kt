@@ -5,7 +5,8 @@ data class Grr private constructor(val value: String) {
     override fun toString(): String = value
 
     companion object {
-        private val GRR_REGEX = Regex("^GRR\\d{8}$")
+        const val PATTERN = "^GRR\\d{8}$"
+        private val GRR_REGEX = Regex(PATTERN)
 
         @JvmStatic
         fun of(raw: String?): Grr {

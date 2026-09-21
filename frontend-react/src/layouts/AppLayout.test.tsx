@@ -36,13 +36,16 @@ describe('AppLayout', () => {
       eventos: '/eventos',
       formativas: '/formativas',
       certificados: '/certificados',
+      estagios: '/estagios',
       contato: '/contato',
     })
     expect(screen.getByText('Início')).toBeTruthy()
     expect(screen.getByText('Formativas')).toBeTruthy()
+    expect(screen.getByText('Estágios')).toBeTruthy()
     expect(screen.queryByText('Cursos')).toBeNull()
     expect(screen.queryByText('Eventos (prof.)')).toBeNull()
     expect(screen.queryByText('Revisão CAAF')).toBeNull()
+    expect(screen.queryByText('Revisão de estágios')).toBeNull()
   })
 
   it('nav da secretaria mostra Cursos/Alunos e não mostra Solicitações do aluno', () => {
@@ -61,6 +64,8 @@ describe('AppLayout', () => {
     expect(screen.queryByText('Solicitações')).toBeNull()
     expect(screen.queryByText('Revisão CAAF')).toBeNull()
     expect(screen.queryByText('Eventos (prof.)')).toBeNull()
+    expect(screen.queryByText('Estágios')).toBeNull()
+    expect(screen.queryByText('Revisão de estágios')).toBeNull()
   })
 
   it('nav do professor mostra Deliberar e Eventos prof. e não mostra Cursos', () => {
@@ -69,11 +74,14 @@ describe('AppLayout', () => {
       solicitacoes: '/solicitacoes',
       deliberar: '/solicitacoes?to=me',
       'eventos-professor': '/professor/eventos',
+      'estagios-revisao': '/estagios?to=me',
       contato: '/contato',
     })
     expect(screen.getByText('Deliberar')).toBeTruthy()
     expect(screen.getByText('Eventos (prof.)')).toBeTruthy()
+    expect(screen.getByText('Revisão de estágios')).toBeTruthy()
     expect(screen.queryByText('Cursos')).toBeNull()
+    expect(screen.queryByText('Estágios')).toBeNull()
   })
 
   it('some a nav no primeiro acesso', () => {

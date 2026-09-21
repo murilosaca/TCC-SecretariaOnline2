@@ -56,7 +56,7 @@ function query(params: Record<string, string | number | undefined>): string {
 
 function headers(body?: unknown): HeadersInit {
   const result: Record<string, string> = { Accept: 'application/json' }
-  if (body !== undefined) {
+  if (body !== undefined && !(body instanceof FormData)) {
     result['Content-Type'] = 'application/json'
   }
   const token = authSession.getAccessToken()
@@ -170,6 +170,9 @@ export const api = {
   },
   delete(path: string): Promise<void> {
     return request<void>(path, { method: 'DELETE' })
+  },
+  postForm<T>(path: string, form: FormData): Promise<T> {
+    return request<T>(path, { method: 'POST', body: form })
   },
   getBlob(path: string): Promise<Blob> {
     return requestBlob(path)

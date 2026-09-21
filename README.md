@@ -4,7 +4,7 @@ Plataforma digital da secretaria acadêmica do **SEPT/UFPR**. Este é o reposit�
 
 O SO2 não substitui o juízo de docentes, comissões ou secretaria. Ele garante trilha de auditoria, integridade de dados e automação de trâmites repetitivos.
 
-**Onde estamos:** P0 fechado na web e no Expo (itens 1–**8**). **Próxima fatia = 9** (estágio/COE/TCC/egresso/F6.1). Esta fatia **não** é o portal admin F7 (sem F7.1–F7.9). Não abrir lote CAAF, COE, F6.1 nem MinIO neste passo.
+**Onde estamos:** P0 fechado na web e no Expo (itens 1–**8**). **Item 9.1 feito** (estágio + parecer individual do orientador). **Próxima fatia = 9.2** (TCC). Esta fatia **não** é o portal admin F7 (sem F7.1–F7.9). F4.2 (pool COE), lote CAAF, egresso, F6.1, MinIO e o CRUD F5 de estágio continuam fora.
 
 Circuito demonstrável: login → primeiro acesso (senha + LGPD) → `/inicio` do aluno → solicitação + deep-link ao professor → presença **QR\|SECRET × SINGLE\|DUAL** → formativa (`PENDENTE_CONFIRMACAO` → aluno confirma → `AGUARDANDO_CAAF`) → CAAF aprova → certificado oficial (PDF + hash + ED25519) → `/certificados` + F0.7. Secretaria (`secretaria.dev`) opera o CRUD de TADS; aluno/professor/CAAF não veem Cursos.
 
@@ -60,13 +60,14 @@ Pacote `br.ufpr.sept.so2`. Clean Architecture; módulos conversam por ports.
 | `bff` | `GET /bff/dashboard/aluno` (agrega; degrada por bloco). Sem BFF professor |
 | `formativas` | Gatilho na mesma TX da presença **COMPLETA**. Aluno confirma; CAAF aprova/indefere (sem lote). Aprovar emite certificado |
 | `certificados` | Emissão só pelo sistema na aprovação CAAF. PDF `bytea` (sem MinIO). SHA-256 + ED25519 + F0.7. Sem upload oficial |
-| `comunicacao` | Dispatcher Outbox → SMTP (Mailpit). Sem hub F1.6 |
+| `comunicacao` | Dispatcher Outbox → SMTP (Mailpit). Sem hub F1.6. `estagio.*` fecha SENT sem e-mail (no-op, como `certificado.emitido`) |
+| `estagio` | Estágio do aluno + parecer **individual** do orientador (`internship.view_own` / `internship.review`). PDF em `bytea`. Sem lote, sem pool COE, sem CRUD F5 |
 
-Módulos **previstos e ainda sem código**: `estagio`, `tcc`, `auditoria` (módulo dedicado), `arquivos`.
+Módulos **previstos e ainda sem código**: `tcc`, `auditoria` (módulo dedicado), `arquivos`.
 
 ### Flyway (imutável)
 
-`backend/src/main/resources/db/migration/`. **Não edite** migration já aplicada. **Próxima = V012.**
+`backend/src/main/resources/db/migration/`. **Não edite** migration já aplicada. **Próxima = V013.**
 
 | Versão | Conteúdo |
 |---|---|
@@ -81,6 +82,7 @@ Módulos **previstos e ainda sem código**: `estagio`, `tcc`, `auditoria` (módu
 | V009 | Certificados (`bytea`; UNIQUE `id_formativa` / `hash_sha256`) |
 | V010 | Outbox dispatcher (`last_error`, `processed_at`) |
 | V011 | `curso_secretario` (N:N; PK `id_curso`+`id_usuario`) |
+| V012 | Estágio (`estagio`, `estagio_documento`, `estagio_parecer`). PDF em `bytea` |
 
 ### Frontend — pastas
 
@@ -90,12 +92,12 @@ Módulos **previstos e ainda sem código**: `estagio`, `tcc`, `auditoria` (módu
 |---|---|
 | `pages/secretaria/` | CRUD F5.6–F5.9 |
 | `pages/aluno/`, `pages/inicio/`, `pages/professor/` | Aluno, BFF `/inicio`, hospedeiro |
-| `pages/solicitacoes/`, `pages/formativas/`, `pages/publico/` | Fila/deliberar, CAAF, F0 |
+| `pages/solicitacoes/`, `pages/formativas/`, `pages/estagios/`, `pages/publico/` | Fila/deliberar, CAAF, estágio, F0 |
 | `layouts/` | `AuthLayout` (F0) e `AppLayout`. Nav: `useActions(links)` |
 | `hooks/useActions.ts` | Botão só se existir `_links` |
 | `api/` | Access token **só em memória** (nunca `localStorage`) |
 
-Rotas planas `/cursos` → `/secretaria/cursos` (redirect temporário). Em geral a UI **não** repete o prefixo da API. Exceção: `/formativas` é SPA e API — o proxy devolve `index.html` quando `Accept` inclui `text/html`. `/certificados` (SPA) e `/certificates` (API) não colidem.
+Rotas planas `/cursos` → `/secretaria/cursos` (redirect temporário). Em geral a UI **não** repete o prefixo da API. Exceção: `/formativas` e `/estagios` são SPA e API — o proxy devolve `index.html` quando `Accept` inclui `text/html`. `/certificados` (SPA) e `/certificates` (API) não colidem.
 
 ---
 
@@ -126,6 +128,7 @@ Login: `@ufpr.br`, e-mail pessoal ou GRR (`GRR` + 8 dígitos). `senhaAlterada = 
 | `/bff/dashboard/aluno` | JWT + `dashboard.view_own` + (`attendance.view_open` **ou** `request.view_own`) | Dashboard agregado (HTTP 200; degrada por bloco) |
 | `/formativas` | JWT + `formative.view_own` / `confirm_own` / `review` | Sem POST avulso. Sem lote. Aprovar emite certificado |
 | `/certificates` | JWT + `certificate.view_own` | Lista/download do dono. Sem POST. Outro aluno → 404 |
+| `/estagios` | JWT + `internship.view_own` / `internship.review` | `?aluno=me` ou fila `?canReview=true`. Upload PDF, parecer individual, `POST /{id}/encerrar`. Sem lote. Outro aluno ou orientador alheio → 404 |
 | `/.well-known/jwks.json` | Anônimo | Chave pública ED25519 (par separado do RSA do JWT) |
 
 JSON camelCase. Datas ISO-8601 UTC. Listagens `Pageable` (20 / máx. 100) com `_links`.
@@ -146,7 +149,10 @@ O mapa F0–F8 do Figma descreve o produto; **não é cronograma**. A ordem priv
 | 6 | Dispatcher do Outbox + SMTP + deep-link | **Feito** |
 | 7 | FGAC acadêmico + nav | **Feito** — fecha `/academico/**` e a nav; **não** é o portal admin F7 |
 | 8 | Cliente Expo (React Native) | **Feito** — P0 aluno na mesma API; web intacta |
-| 9 | Estágio + COE, TCC, egresso, F6.1 | Módulos novos |
+| 9.1 | Estágio + parecer individual | **Feito** — seed, upload PDF, parecer um a um, arquivar |
+| 9.2 | TCC | Ainda não |
+| 9.3 | Egresso (F2) | Ainda não |
+| 9.4 | F6.1 configuração do curso | Ainda não |
 
 **1. Formativas** — V007; gatilho na TX de `ConfirmarPresencaUseCase` quando a presença fica **COMPLETA**. Aluno confirma ou cancela. Sem `POST /formativas`. BFF soma `APROVADA` (`null` sem cadastro). Não: CAAF/certificado (3 e 5), lote.
 
@@ -184,11 +190,24 @@ Cliente `frontend-react-native/` (Expo Router 57 + NativeWind + TanStack Query) 
 - Recuperar senha no app (202); o Mailpit continua abrindo a **web** `/nova-senha?token=`. Sem deep-link de deliberação no app.
 - Base URL: `EXPO_PUBLIC_API_URL`. Default emulador Android `10.0.2.2:8080`, iOS `localhost:8080`. Aparelho: IP LAN. Detalhe: [`frontend-react-native/README.md`](frontend-react-native/README.md).
 
-**Fora do item 8:** F7, F6.1, COE, lote CAAF, MinIO, BFF professor, FCM, Expo web, CRUD F5 no app, formativas/certificados no Expo.
+**Fora do item 8:** F7, F6.1, COE, lote CAAF, MinIO, BFF professor, FCM, Expo web, CRUD F5 no app, formativas/certificados no Expo. O parecer individual de estágio entrou no **9.1**, não neste item.
+
+**9.1 Estágio + parecer individual** — feito
+
+V012. Seed dev: estágio `ATIVO` do `aluno.dev` no TADS, empresa fictícia, orientador `professor.dev`, documentos TCE e Relatório final em estado que emite `_links.upload`. Secretaria **não** cadastra estágio nesta fatia (CRUD F5 fica para depois).
+
+- Aluno (`internship.view_own`): `GET /estagios?aluno=me` e UI `/estagios` (F1.13). Sem `_links.novo` — não há “Novo estágio”. Detalhe `/estagios/:id` (F1.14) traz documentos e pareceres numa resposta. `POST /estagios/{id}/documentos` (multipart PDF, até 5 MB, `bytea`) → `AGUARDANDO_PARECER`. Outbox `estagio.documento_enviado` na mesma TX.
+- Orientador (`internship.review`): fila `GET /estagios?canReview=true` e UI `/estagios?to=me` (F3.6), só estágios em que `id_orientador` é o usuário. `POST .../documentos/{docId}/parecer` `{ acao, parecer }`. Reprovar/indeferir exige parecer ≥ 20 caracteres. `_links.arquivar` só com todos os obrigatórios `APROVADO`; `POST /estagios/{id}/encerrar` → `CONCLUIDO` + Outbox `estagio.encerrado`. Pendência → 422. `CONCLUIDO` imutável.
+- HATEOAS `upload` / `revisar` / `aprovar` / `reprovar` / `arquivar` só com capability **e** estado. Menu: rel `estagios` ou `estagios-revisao`. UI `useActions`. Sem `internship.approve_batch`, sem checkbox de lote, sem `/commissions/coe`.
+- Fora do vínculo (outro aluno ou orientador que não é o do estágio) → 404. Sem cap → 403. Anônimo → 401.
+- Dispatcher: `estagio.documento_enviado`, `estagio.parecer_emitido` e `estagio.encerrado` fecham `SENT` sem SMTP (no-op, como `certificado.emitido`).
+- PDF em `bytea`. MinIO e `modules/arquivos` não nasceram. Expo não ganhou F1.13: o menu nativo continua a whitelist P0 e ignora o rel novo.
+
+**Ainda não (9.2+):** TCC, egresso/F2, F6.1 (`course.config`), F4.2 (pool COE: atribuir, nunca aprovar em lote), lote CAAF, MinIO, cadastro F5 de estágio, BFF professor, F7.
 
 **9. Estágio + COE, TCC, egresso, F6.1**
 
-Módulos novos, um por vez. Parecer COE sempre individual. Egresso read-only. F6.1 é da coordenação, não da secretaria.
+O item 9 da tabela original era um saco. 9.1 abriu só `modules/estagio` e o parecer individual (RF-F3-005). Parecer COE continua sempre individual. Egresso read-only e F6.1 (coordenação) seguem fechados.
 
 Dívida consciente: tabela **ainda aberta** em [`docs/auditoria-fundacao.md`](docs/auditoria-fundacao.md). Destaques: BFF professor (F3.1); MinIO/S3 (PDF em `bytea`); encerrar evento sem PDF; CA-04; F6.1 e F7; claim `cursoIds`; filtro CAAF por comissão; HostPin em memória; ArchUnit; rate limit em memória. **`/academico/**` e o menu de atalho de dev já não são dívida.**
 
@@ -220,7 +239,7 @@ cd frontend-react-native && npm install && npx expo start
 
 Copie `.env.example` para o shell. Ele já aponta JDBC `:5433` e `FRONTEND_BASE_URL=http://localhost:5174`. O `application.yml` default ainda é JDBC `:5432` e `frontend-base-url` `:5173` — **sobrescreva**.
 
-Proxies Vite → `http://localhost:8080`: `/auth`, `/academico`, `/publico`, `/requests`, `/request-types`, `/bff`, `/events`, `/formativas` (HTML → `index.html`), `/certificates`, `/.well-known`, `/v3`, `/swagger-ui`, `/actuator`. CORS: `http://localhost:5173` e `http://localhost:5174`. Nativo não passa por CORS. Expo web **não** entrou nesta fatia (sem origem extra e sem `*`).
+Proxies Vite → `http://localhost:8080`: `/auth`, `/academico`, `/publico`, `/requests`, `/request-types`, `/bff`, `/events`, `/formativas` (HTML → `index.html`), `/estagios` (HTML → `index.html`), `/certificates`, `/.well-known`, `/v3`, `/swagger-ui`, `/actuator`. CORS: `http://localhost:5173` e `http://localhost:5174`. Nativo não passa por CORS. Expo web **não** entrou nesta fatia (sem origem extra e sem `*`).
 
 ```bash
 cd backend && mvn -q test
@@ -240,9 +259,9 @@ Senha de todos: `TroqueEstaSenha1!` (só local; override `IAM_DEV_SEED_PASSWORD`
 
 | Usuário | GRR | O que testa |
 |---|---|---|
-| `aluno.dev@ufpr.br` | `GRR20240001` | Aluno com senha já alterada + cadastro TADS (120 h) + `certificate.view_own` |
-| `novo.dev@ufpr.br` | `GRR20240002` | Primeiro acesso (`senhaAlterada=false`); também tem cadastro acadêmico |
-| `professor.dev@ufpr.br` | `GRR20240003` | Hospedeiro (`event.manage`, `event.host`) e deliberante (`request.deliberate`). Sem `formative.*` — `GET /formativas?canReview=true` é 403. Seed acadêmico o coloca como **coordenador do TADS** (`CursoEscopoPort`); inofensivo hoje porque não tem `course.manage` |
+| `aluno.dev@ufpr.br` | `GRR20240001` | Aluno com senha já alterada + cadastro TADS (120 h) + `certificate.view_own` + `internship.view_own`. Estágio seed no TADS (não cria outro) |
+| `novo.dev@ufpr.br` | `GRR20240002` | Primeiro acesso (`senhaAlterada=false`); também tem cadastro acadêmico. Tem `internship.view_own` e lista vazia |
+| `professor.dev@ufpr.br` | `GRR20240003` | Hospedeiro (`event.manage`, `event.host`), deliberante (`request.deliberate`) e orientador do estágio seed (`internship.review`). Sem `formative.*` — `GET /formativas?canReview=true` é 403. Sem `internship.view_own` — `GET /estagios?aluno=me` é 403. Seed acadêmico o coloca como **coordenador do TADS** (`CursoEscopoPort`); inofensivo hoje porque não tem `course.manage` |
 | `caaf.dev@ufpr.br` | `GRR20240004` | Revisor CAAF (`formative.review`). Sem `event.manage` / `request.deliberate` |
 | `secretaria.dev@ufpr.br` | `GRR20240005` | CRUD TADS (`course.manage`, `subject.manage`, `user.manage_students`, `calendar.manage`) + `request.view_curso` + `request.triage` + `request.deliberate`. Sem `formative.review` / `event.manage`. Não recebe deep-link. Nav **sem** o item “Solicitações” do aluno (só Deliberar) |
 
@@ -256,13 +275,14 @@ A oficina seed `"Oficina Proof of Stay (dev)"` pode já estar `COMPLETA` para `a
 
 1. **Aluno** — `aluno.dev@ufpr.br` / `GRR20240001` → `/inicio`: saudação, período ou alerta, solicitações, eventos. Horas `N / 120` após CAAF (sem aprovação → `0 / 120`). `/certificados` baixa se `_links.download`. `/eventos` → presença (oficina seed = `SECRET_SINGLE`).
 2. **Primeiro acesso** — `novo.dev@ufpr.br` → `/primeiro-acesso`. O resto do sistema responde 403 no gate.
-3. **Professor** — `professor.dev@ufpr.br` → `/inicio` 403 honesto (não “Olá, aluno”). Nav **sem** Cursos. `/professor/eventos` hospeda os 4 modos. Encerrar → `CONCLUIDO` sem PDF. `GET /formativas?canReview=true` → 403. Fila `/solicitacoes?to=me` **sem** filtro `view_curso`.
+3. **Professor** — `professor.dev@ufpr.br` → `/inicio` 403 honesto (não “Olá, aluno”). Nav **sem** Cursos. `/professor/eventos` hospeda os 4 modos. Encerrar → `CONCLUIDO` sem PDF. `GET /formativas?canReview=true` → 403. Fila `/solicitacoes?to=me` **sem** filtro `view_curso`. Nav tem **Revisão de estágios** (`/estagios?to=me`) e não tem o item Estágios do aluno.
 4. **Anônimo** — `/login`, `/contato`, protocolo 200. `/bff`, `/events` e **`/academico/**`** → 401. Número `PROT-…` sai de `/solicitacoes/nova`.
-5. **Aluno sem cap acadêmica** — `GET /academico/cursos` → 403. Nav **sem** Cursos / Eventos prof. / Revisão CAAF. `GET /events?mine=true` e host-session → 403.
+5. **Aluno sem cap acadêmica** — `GET /academico/cursos` → 403. Nav **sem** Cursos / Eventos prof. / Revisão CAAF. Nav **com** Estágios e **sem** Revisão de estágios. `GET /events?mine=true` e host-session → 403.
 6. **Secretaria** — `secretaria.dev@ufpr.br` → CRUD TADS 200/201; curso de outro secretário → 404. Nav **sem** Revisão CAAF / Eventos prof. / item Solicitações do aluno (só Deliberar). Fila `view_curso` não lista aluno de outro curso.
 7. **Formativas** — presença **COMPLETA** → `PENDENTE_CONFIRMACAO` → aluno confirma → `AGUARDANDO_CAAF`. Em DUAL não nasce na entrada. F5 em `/formativas` recarrega a SPA, não a API.
 8. **Deliberação** — aluno abre `DECLARACAO_SIMPLES`. Mailpit (`:8025`) e-mail ao professor com `?token=`. Sem sessão: banner + login. Deferir consome o JTI. Secretaria não recebe deep-link. Sem `request.deliberate` → 403 na transição.
 9. **Recuperar senha** — `/recuperar-senha` com e-mail válido ou inexistente: mesmo 202. Só o cadastrado chega no Mailpit (`/nova-senha?token=`).
-10. **CAAF** — `caaf.dev@ufpr.br` nav **sem** Eventos prof. / Cursos. Aprova em `/formativas?to=me` → certificado na mesma TX. Aluno: horas `N / 120` e KPI ≥ 1. F0.7 verifica o hash. Sem `formative.review` / `certificate.view_own` → 403.
+10. **CAAF** — `caaf.dev@ufpr.br` nav **sem** Eventos prof. / Cursos / Estágios. Aprova em `/formativas?to=me` → certificado na mesma TX. Aluno: horas `N / 120` e KPI ≥ 1. F0.7 verifica o hash. Sem `formative.review` / `certificate.view_own` → 403.
+11. **Estágio** — `aluno.dev` em `/estagios` vê o seed (sem “Novo estágio”), abre o detalhe e envia o PDF se `_links.upload`. `professor.dev` em `/estagios?to=me` emite parecer no documento e arquiva quando todos os obrigatórios estão `APROVADO`. Sem lote. Anônimo → 401. Outro aluno no id → 404. Secretaria não ganha item de menu de estágio.
 
 F0.7 não aceita upload de PDF (CA-04). Encerrar evento continua sem PDF. Egresso não acessa `/formativas` nem `/certificados`.

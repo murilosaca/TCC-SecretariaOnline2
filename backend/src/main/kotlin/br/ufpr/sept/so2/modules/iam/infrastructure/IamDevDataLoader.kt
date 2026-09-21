@@ -144,6 +144,7 @@ class IamDevDataLoader(
                 "formative.view_own",
                 "formative.confirm_own",
                 "certificate.view_own",
+                "internship.view_own",
             )
 
         private fun authoritiesProfessor(): List<String> =
@@ -152,6 +153,7 @@ class IamDevDataLoader(
                 "event.manage",
                 "event.host",
                 "request.deliberate",
+                "internship.review",
             )
 
         private fun authoritiesCaaf(): List<String> =

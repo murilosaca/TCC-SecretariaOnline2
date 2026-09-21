@@ -2,10 +2,8 @@ package br.ufpr.sept.so2.modules.academico.api
 
 import br.ufpr.sept.so2.modules.iam.application.ports.PasswordHasher
 import br.ufpr.sept.so2.modules.iam.application.ports.UsuarioRepository
-import br.ufpr.sept.so2.modules.iam.domain.Usuario
-import br.ufpr.sept.so2.shared.domain.valueobject.Email
-import br.ufpr.sept.so2.shared.domain.valueobject.Grr
 import br.ufpr.sept.so2.shared.ItJson
+import br.ufpr.sept.so2.shared.ItUsuarioFixture
 import br.ufpr.sept.so2.shared.infrastructure.Uuids
 import org.hamcrest.Matchers.not
 import org.junit.jupiter.api.BeforeEach
@@ -23,7 +21,6 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
-import java.time.OffsetDateTime
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -38,13 +35,15 @@ class CursoControllerIT {
     @Autowired
     private lateinit var passwordHasher: PasswordHasher
 
+    private val usuariosIt
+        get() = ItUsuarioFixture(usuarioRepository, passwordHasher, mockMvc)
+
     @BeforeEach
     fun seed() {
-        val agora = OffsetDateTime.now()
-        criarUsuario(EMAIL_ALUNO, "GRR20247101", AUTHORITIES_ALUNO, agora)
-        criarUsuario(EMAIL_SEC, "GRR20247102", AUTHORITIES_SEC, agora)
-        criarUsuario(EMAIL_SEC_B, "GRR20247103", AUTHORITIES_SEC, agora)
-        criarUsuario(EMAIL_COORD, "GRR20247104", listOf("course.manage"), agora)
+        usuariosIt.criarUsuario(EMAIL_ALUNO, "GRR20247101", AUTHORITIES_ALUNO)
+        usuariosIt.criarUsuario(EMAIL_SEC, "GRR20247102", AUTHORITIES_SEC)
+        usuariosIt.criarUsuario(EMAIL_SEC_B, "GRR20247103", AUTHORITIES_SEC)
+        usuariosIt.criarUsuario(EMAIL_COORD, "GRR20247104", listOf("course.manage"))
     }
 
     @Test
@@ -56,7 +55,7 @@ class CursoControllerIT {
 
     @Test
     fun alunoRecebe403NoCrud() {
-        val token = login(EMAIL_ALUNO)
+        val token = usuariosIt.login(EMAIL_ALUNO)
         mockMvc.perform(get("/academico/cursos").header("Authorization", "Bearer $token"))
             .andExpect(status().isForbidden)
             .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.containsString("access-denied")))
@@ -71,7 +70,7 @@ class CursoControllerIT {
 
     @Test
     fun secretariaCriaListaEPersisteSecretarios() {
-        val token = login(EMAIL_SEC)
+        val token = usuariosIt.login(EMAIL_SEC)
         val secretariaId = usuarioRepository.findByEmail(EMAIL_SEC).get().id
         val created = mockMvc.perform(
             post("/academico/cursos")
@@ -99,8 +98,8 @@ class CursoControllerIT {
 
     @Test
     fun cursoDeOutroSecretarioRetorna404() {
-        val tokenA = login(EMAIL_SEC)
-        val tokenB = login(EMAIL_SEC_B)
+        val tokenA = usuariosIt.login(EMAIL_SEC)
+        val tokenB = usuariosIt.login(EMAIL_SEC_B)
         val idA = usuarioRepository.findByEmail(EMAIL_SEC).get().id
         val idB = usuarioRepository.findByEmail(EMAIL_SEC_B).get().id
         val createdB = mockMvc.perform(
@@ -130,7 +129,7 @@ class CursoControllerIT {
 
     @Test
     fun criaSemSecretariosIncluiOCriadorEExpoeLinksDeEscopo() {
-        val token = login(EMAIL_SEC)
+        val token = usuariosIt.login(EMAIL_SEC)
         val secretariaId = usuarioRepository.findByEmail(EMAIL_SEC).get().id
         val (sigla, codigo) = codigoUnico("VZ")
         val created = mockMvc.perform(
@@ -148,6 +147,8 @@ class CursoControllerIT {
         mockMvc.perform(get("/academico/cursos/$id").header("Authorization", "Bearer $token"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$._links.atualizar").exists())
+            .andExpect(jsonPath("$._links.disciplinas").value(org.hamcrest.Matchers.containsString("/academico/disciplinas?idCurso=")))
+            .andExpect(jsonPath("$._links.disciplinas").value(org.hamcrest.Matchers.containsString(id)))
         mockMvc.perform(get("/academico/cursos").header("Authorization", "Bearer $token"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.content[*].id").value(org.hamcrest.Matchers.hasItem(id)))
@@ -156,7 +157,7 @@ class CursoControllerIT {
 
     @Test
     fun putComSiglaDeOutroCursoDoEscopoRetorna409() {
-        val token = login(EMAIL_SEC)
+        val token = usuariosIt.login(EMAIL_SEC)
         val secretariaId = usuarioRepository.findByEmail(EMAIL_SEC).get().id.toString()
         val (siglaA, codigoA) = codigoUnico("DA")
         val (siglaB, codigoB) = codigoUnico("DB")
@@ -189,8 +190,8 @@ class CursoControllerIT {
 
     @Test
     fun coordenadorSemLinhaDeSecretarioVeOCurso() {
-        val tokenCoord = login(EMAIL_COORD)
-        val tokenSec = login(EMAIL_SEC)
+        val tokenCoord = usuariosIt.login(EMAIL_COORD)
+        val tokenSec = usuariosIt.login(EMAIL_SEC)
         val coordenadorId = usuarioRepository.findByEmail(EMAIL_COORD).get().id
         val (sigla, codigo) = codigoUnico("CO")
         val created = mockMvc.perform(
@@ -221,7 +222,7 @@ class CursoControllerIT {
 
     @Test
     fun excluirCursoComAlunoRetorna409ELiberaAposDesvincular() {
-        val token = login(EMAIL_SEC)
+        val token = usuariosIt.login(EMAIL_SEC)
         val (sigla, codigo) = codigoUnico("EX")
         val created = mockMvc.perform(
             post("/academico/cursos")
@@ -275,44 +276,7 @@ class CursoControllerIT {
             .andExpect(status().isOk)
     }
 
-    private fun criarUsuario(email: String, grr: String, authorities: List<String>, agora: OffsetDateTime) {
-        if (usuarioRepository.findByEmail(email).isPresent) {
-            return
-        }
-        usuarioRepository.save(
-            Usuario(
-                Uuids.v7(),
-                Email.of(email),
-                null,
-                Grr.of(grr),
-                passwordHasher.hash(SENHA),
-                true,
-                agora,
-                "127.0.0.1",
-                "it",
-                true,
-                0,
-                null,
-                authorities,
-                agora,
-                agora,
-            ),
-        )
-    }
-
-    private fun login(email: String): String {
-        val result = mockMvc.perform(
-            post("/auth/login")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"identificador\":\"$email\",\"senha\":\"$SENHA\"}"),
-        )
-            .andExpect(status().isOk)
-            .andReturn()
-        return ItJson.text(result.response.contentAsString, "accessToken")
-    }
-
     companion object {
-        private const val SENHA = "TroqueEstaSenha1!"
         private const val EMAIL_ALUNO = "it.fgac.aluno@ufpr.br"
         private const val EMAIL_SEC = "it.fgac.sec@ufpr.br"
         private const val EMAIL_SEC_B = "it.fgac.secb@ufpr.br"

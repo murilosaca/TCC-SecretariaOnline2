@@ -6,13 +6,10 @@ import br.ufpr.sept.so2.modules.iam.application.ports.JtiBlacklistRepository
 import br.ufpr.sept.so2.modules.iam.application.ports.JwtTokenService
 import br.ufpr.sept.so2.modules.iam.application.ports.PasswordHasher
 import br.ufpr.sept.so2.modules.iam.application.ports.UsuarioRepository
-import br.ufpr.sept.so2.modules.iam.domain.Usuario
 import br.ufpr.sept.so2.modules.iam.infrastructure.persistence.OutboxEventJpaRepository
 import br.ufpr.sept.so2.modules.solicitacoes.application.ports.TipoSolicitacaoRepository
 import br.ufpr.sept.so2.modules.solicitacoes.infrastructure.DeclaracaoSimplesSeed
-import br.ufpr.sept.so2.shared.domain.valueobject.Email
-import br.ufpr.sept.so2.shared.domain.valueobject.Grr
-import br.ufpr.sept.so2.shared.infrastructure.Uuids
+import br.ufpr.sept.so2.shared.ItUsuarioFixture
 import org.hamcrest.Matchers.hasItem
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -74,6 +71,9 @@ class OutboxDispatcherIT {
     @Autowired
     private lateinit var jtiBlacklistRepository: JtiBlacklistRepository
 
+    private val usuariosIt
+        get() = ItUsuarioFixture(usuarioRepository, passwordHasher, mockMvc)
+
     @BeforeEach
     fun seed() {
         mailPort.limpar()
@@ -81,29 +81,25 @@ class OutboxDispatcherIT {
         if (tipoSolicitacaoRepository.findByCodigo(DeclaracaoSimplesSeed.CODIGO).isEmpty) {
             tipoSolicitacaoRepository.save(DeclaracaoSimplesSeed.tipo(agora))
         }
-        criarUsuario(
+        usuariosIt.criarUsuario(
             EMAIL_RESET,
             "GRR20247701",
             listOf("dashboard.view_own"),
-            agora,
         )
-        criarUsuario(
+        usuariosIt.criarUsuario(
             EMAIL_ALUNO,
             "GRR20247702",
             listOf("dashboard.view_own", "request.view_own", "request.open"),
-            agora,
         )
-        criarUsuario(
+        usuariosIt.criarUsuario(
             EMAIL_PROFESSOR,
             "GRR20247703",
             listOf("dashboard.view_own", "event.manage", "event.host", "request.deliberate"),
-            agora,
         )
-        criarUsuario(
+        usuariosIt.criarUsuario(
             EMAIL_SECRETARIA,
             "GRR20247704",
             listOf("dashboard.view_own", "request.deliberate", "request.triage"),
-            agora,
         )
     }
 
@@ -168,7 +164,7 @@ class OutboxDispatcherIT {
 
     @Test
     fun alunoCriaSolicitacaoProfessorDeliberaPorDeepLinkEFilaSemToken() {
-        val tokenAluno = login(EMAIL_ALUNO)
+        val tokenAluno = usuariosIt.login(EMAIL_ALUNO)
         val created = mockMvc.perform(
             post("/requests")
                 .header("Authorization", "Bearer $tokenAluno")
@@ -189,7 +185,7 @@ class OutboxDispatcherIT {
         assertTrue(mailPort.mensagens.none { it.to == EMAIL_SECRETARIA })
 
         val jwt = tokenDoCorpo(mailsProf.first().body)
-        val tokenProfessor = login(EMAIL_PROFESSOR)
+        val tokenProfessor = usuariosIt.login(EMAIL_PROFESSOR)
 
         mockMvc.perform(
             get("/requests/$id")
@@ -256,44 +252,7 @@ class OutboxDispatcherIT {
             .andExpect(jsonPath("$.estado").value("DELIBERADA"))
     }
 
-    private fun criarUsuario(email: String, grr: String, authorities: List<String>, agora: OffsetDateTime) {
-        if (usuarioRepository.findByEmail(email).isPresent) {
-            return
-        }
-        usuarioRepository.save(
-            Usuario(
-                Uuids.v7(),
-                Email.of(email),
-                null,
-                Grr.of(grr),
-                passwordHasher.hash(SENHA),
-                true,
-                agora,
-                "127.0.0.1",
-                "it",
-                true,
-                0,
-                null,
-                authorities,
-                agora,
-                agora,
-            ),
-        )
-    }
-
-    private fun login(email: String): String {
-        val result = mockMvc.perform(
-            post("/auth/login")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"identificador\":\"$email\",\"senha\":\"$SENHA\"}"),
-        )
-            .andExpect(status().isOk)
-            .andReturn()
-        return extract(result.response.contentAsString, "\"accessToken\":\"", "\"")
-    }
-
     companion object {
-        private const val SENHA = "TroqueEstaSenha1!"
         private const val EMAIL_RESET = "it.outbox.reset@ufpr.br"
         private const val EMAIL_ALUNO = "it.outbox.aluno@ufpr.br"
         private const val EMAIL_PROFESSOR = "it.outbox.prof@ufpr.br"

@@ -24,7 +24,7 @@ export function Alunos() {
   const [termo, setTermo] = useState('')
   const [erro, setErro] = useState<string | null>(null)
 
-  const cursos = useQuery({ queryKey: ['cursos'], queryFn: () => academicoApi.listarCursos(0, 100) })
+  const cursos = useQuery({ queryKey: ['cursos', 0, 100], queryFn: () => academicoApi.listarCursos(0, 100) })
   const lista = useQuery({
     queryKey: ['alunos', termo],
     queryFn: () => academicoApi.listarAlunos(undefined, termo || undefined),

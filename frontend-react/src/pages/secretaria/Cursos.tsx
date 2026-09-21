@@ -21,8 +21,8 @@ export function Cursos() {
   const [erro, setErro] = useState<string | null>(null)
 
   const lista = useQuery({
-    queryKey: ['cursos'],
-    queryFn: () => academicoApi.listarCursos(),
+    queryKey: ['cursos', 0, 20],
+    queryFn: () => academicoApi.listarCursos(0, 20),
   })
   const colecao = useActions(lista.data?._links)
   const mostrarForm = editandoId != null || colecao.can('criar')

@@ -39,8 +39,7 @@ class CursoController(
         authentication: Authentication,
     ): PageResponse<CursoResponse> {
         val usuarioId = principal(authentication).userId
-        val cursoIds = cursoApplicationService.cursoIdsDoUsuario(usuarioId)
-        val pagina = cursoApplicationService.listar(usuarioId, pageable)
+        val (pagina, cursoIds) = cursoApplicationService.listar(usuarioId, pageable)
         val secretarios = cursoApplicationService.secretariosPorCursos(pagina.content.map { it.id })
         return PageResponse.ofWithLinks(
             pagina,

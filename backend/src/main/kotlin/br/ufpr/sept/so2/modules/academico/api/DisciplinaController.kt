@@ -41,9 +41,9 @@ class DisciplinaController(
         authentication: Authentication,
     ): PageResponse<DisciplinaResponse> {
         val usuarioId = principal(authentication).userId
-        val cursoIds = disciplinaApplicationService.cursoIdsDoUsuario(usuarioId)
+        val (pagina, cursoIds) = disciplinaApplicationService.listar(usuarioId, idCurso, pageable)
         return PageResponse.ofWithLinks(
-            disciplinaApplicationService.listar(usuarioId, idCurso, pageable),
+            pagina,
             Function { disciplina -> DisciplinaResponse.from(disciplina, disciplina.idCurso in cursoIds) },
             mapOf("criar" to "/academico/disciplinas"),
         )

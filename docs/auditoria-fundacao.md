@@ -90,6 +90,8 @@ Só o que **ainda** está aberto. Não reabrir FGAC, nav, dispatcher, F0.7, KPIs
 | Bucket4j + Redis | RNF-SEC-04 | Janela em memória no processo | Trocar quando houver Redis |
 | Cobertura 85/70/75 | RNF de testes | Ampliar por módulo | Continuar nas fatias seguintes |
 | Combo Alunos/Disciplinas × `course.manage` | seletor de curso nas telas F5.8 / alunos | As quatro `*.manage` andam juntas no seed; o combo reusa `GET /academico/cursos` (exige `course.manage`). Sem ela o form fica desabilitado | Dívida honesta até F7.1 — sem endpoint novo de busca nesta fatia |
+| Flyway nas ITs | migrations imutáveis (V011 = `curso_secretario`) | `application-test.yml` usa H2 `ddl-auto: create-drop` e `flyway.enabled: false`. Toda IT é `@ActiveProfiles("test")`, então V011 nunca é exercitada; divergência DDL × entidade passa verde e só explode no boot contra o Postgres `:5433`. Hoje V011 casa com `CursoSecretarioJpaEntity`. Em dev/prod o `ddl-auto` segue `validate` — a regra do `.cursorrules` **não** foi violada; falta cobertura | Testcontainers + Postgres num perfil `it` numa fatia futura. **Não** implementar Testcontainers nesta correção |
+| Paginação da UI acadêmica | F5.7 pede `Pagination footer`; API emite `_links.first/last/next/prev` | `Cursos.tsx`, `Disciplinas.tsx`, `Alunos.tsx` e `Calendarios.tsx` fixam a primeira página e não renderizam controle. Acima de 20 registros os dados ficam invisíveis sem aviso | Componente `Paginacao` dirigido por `_links` numa fatia de limpeza. **Não** implementar a paginação nesta correção |
 | Fila CAAF por curso | F4.1 / comissão | Sem tabela `commission_member` | Filtro por comissão continua dívida |
 | Períodos por curso / F5.9 tipos | calendário semântico | `periodo_letivo` global; `calendar.manage` all-or-nothing | Schema por curso + tipos quando F6.1/F5.9 abrirem |
 | Janelas pré-agendadas / inelegíveis | CA-02 / CA-06 | Motor v4.1 já tem os quatro modos; janelas desta fatia são ao vivo (15 min) | Pré-agendar e lista ao vivo quando a tela de criação pedir |
@@ -97,7 +99,6 @@ Só o que **ainda** está aberto. Não reabrir FGAC, nav, dispatcher, F0.7, KPIs
 | Hub / templates / push / FORWARD | F1.6, F3.8, F7.5, F3.4-D04 | Dispatcher SMTP já entrega F0.2 e deep-link | Não reabrir o item 6 |
 | Desvincular coordenador | F5.7 / F6.1 | `Curso.atualizar` trata `idCoordenador == null` como "manter". Não há operação que zere o coordenador | F6.1 vai precisar; picker de F5.7 continua dependente de F7.1 |
 | Eventos de calendário | tipos semânticos em F5.9 | Só período letivo | Segunda aba quando o schema existir |
-| ArchUnit | regras de dependência | Não há teste | Adicionar no próximo módulo |
 | Angular em `frontend/` | React oficial | Não é stack deste repo | Não recriar nem commitar |
 
 Lombok: **conforme**. Zero ocorrências. Proibição registrada nas rules.

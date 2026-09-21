@@ -11,4 +11,4 @@ A aplicação sobe em `http://localhost:5174` (`vite.config.ts`; **5173 não** �
 
 Proxies para `http://localhost:8080`: `/academico`, `/publico`, `/auth`, `/bff`, `/requests`, `/request-types`, `/events`, `/formativas` (devolve `index.html` se `Accept` incluir `text/html`), `/certificates`, `/.well-known`, `/v3`, `/swagger-ui`, `/actuator`.
 
-Rotas oficiais (`docs/telas-figma.md`): `/login`, `/inicio`, `/secretaria/cursos|disciplinas|alunos|calendarios`, `/contato`.
+Rotas de exemplo — mapa completo em `docs/telas-figma.md` e `src/App.tsx`.

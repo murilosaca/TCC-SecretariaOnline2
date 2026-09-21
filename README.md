@@ -120,7 +120,7 @@ Login: `@ufpr.br`, e-mail pessoal ou GRR (`GRR` + 8 dígitos). `senhaAlterada = 
 |---|---|---|
 | `/auth/*` | Misto (login anônimo; `me` autenticado) | IAM. `GET /auth/me`._links = rotas de **UI** (menu). Sem `/bff/menu` |
 | `/publico/**` | Anônimo | Contato; protocolo; verificação de certificado |
-| `/academico/**` | JWT + capability da tela | CRUD. Anônimo → 401. Sem cap → 403. Fora do escopo (curso) → 404. Períodos: `calendar.manage` all-or-nothing |
+| `/academico/**` | JWT + capability da tela | CRUD. Anônimo → 401. Sem cap → 403. Fora do escopo (curso) → 404. GRR/e-mail malformado → 422 `validation-error`. `_links.disciplinas` só com `subject.manage`. Períodos: `calendar.manage` all-or-nothing |
 | `/request-types`, `/requests/**` | JWT + `request.*` (**não** anônimo) | Motor. Inbox `?canDeliberate=true`. `POST /{id}/transitions` |
 | `/events` | JWT + `attendance.*` / `event.*` | Presença v4.1 (QR\|SECRET × SINGLE\|DUAL) |
 | `/bff/dashboard/aluno` | JWT + `dashboard.view_own` + (`attendance.view_open` **ou** `request.view_own`) | Dashboard agregado (HTTP 200; degrada por bloco) |
@@ -232,7 +232,7 @@ Senha de todos: `TroqueEstaSenha1!` (só local; override `IAM_DEV_SEED_PASSWORD`
 |---|---|---|
 | `aluno.dev@ufpr.br` | `GRR20240001` | Aluno com senha já alterada + cadastro TADS (120 h) + `certificate.view_own` |
 | `novo.dev@ufpr.br` | `GRR20240002` | Primeiro acesso (`senhaAlterada=false`); também tem cadastro acadêmico |
-| `professor.dev@ufpr.br` | `GRR20240003` | Hospedeiro (`event.manage`, `event.host`) e deliberante (`request.deliberate`). Sem `formative.*` — `GET /formativas?canReview=true` é 403 |
+| `professor.dev@ufpr.br` | `GRR20240003` | Hospedeiro (`event.manage`, `event.host`) e deliberante (`request.deliberate`). Sem `formative.*` — `GET /formativas?canReview=true` é 403. Seed acadêmico o coloca como **coordenador do TADS** (`CursoEscopoPort`); inofensivo hoje porque não tem `course.manage` |
 | `caaf.dev@ufpr.br` | `GRR20240004` | Revisor CAAF (`formative.review`). Sem `event.manage` / `request.deliberate` |
 | `secretaria.dev@ufpr.br` | `GRR20240005` | CRUD TADS (`course.manage`, `subject.manage`, `user.manage_students`, `calendar.manage`) + `request.view_curso` + `request.triage` + `request.deliberate`. Sem `formative.review` / `event.manage`. Não recebe deep-link. Nav **sem** o item “Solicitações” do aluno (só Deliberar) |
 

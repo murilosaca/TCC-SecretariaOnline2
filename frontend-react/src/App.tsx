@@ -7,6 +7,8 @@ import { Certificados } from './pages/aluno/Certificados'
 import { FormativaDetalhe } from './pages/aluno/FormativaDetalhe'
 import { EstagioDetalhe } from './pages/estagios/EstagioDetalhe'
 import { EstagiosRota } from './pages/estagios/EstagiosRota'
+import { TccDetalhe } from './pages/tccs/TccDetalhe'
+import { TccsRota } from './pages/tccs/TccsRota'
 import { FormativasRota } from './pages/formativas/FormativasRota'
 import { RevisarFormativa } from './pages/formativas/RevisarFormativa'
 import { ProfessorEventoDetalhe } from './pages/professor/ProfessorEventoDetalhe'
@@ -59,6 +61,8 @@ export default function App() {
           <Route path="eventos" element={<Eventos />} />
           <Route path="estagios/:id" element={<EstagioDetalhe />} />
           <Route path="estagios" element={<EstagiosRota />} />
+          <Route path="tccs/:id" element={<TccDetalhe />} />
+          <Route path="tccs" element={<TccsRota />} />
           <Route path="formativas/:id/revisar" element={<RevisarFormativa />} />
           <Route path="formativas/:id" element={<FormativaDetalhe />} />
           <Route path="formativas" element={<FormativasRota />} />

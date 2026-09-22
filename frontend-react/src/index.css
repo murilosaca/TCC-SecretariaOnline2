@@ -705,9 +705,21 @@ textarea:focus {
   color: #8a5a00;
 }
 
-.badge.estado-reprovado {
+.badge.estado-reprovado,
+.badge.estado-correcoes_solicitadas,
+.badge.prazo-proximo {
   background: #fde8e8;
   color: var(--danger);
+}
+
+.badge.estado-em_elaboracao,
+.badge.estado-submetido {
+  background: #fff4d6;
+  color: #8a5a00;
+}
+
+.badge.prazo-proximo {
+  margin-left: 0.5rem;
 }
 
 .tabs {

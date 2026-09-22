@@ -11,6 +11,8 @@ const NAV_ITENS: { rel: string; label: string }[] = [
   { rel: 'certificados', label: 'Certificados' },
   { rel: 'estagios', label: 'Estágios' },
   { rel: 'estagios-revisao', label: 'Revisão de estágios' },
+  { rel: 'tccs', label: 'TCCs' },
+  { rel: 'tccs-revisao', label: 'Revisão de TCCs' },
   { rel: 'revisao-caaf', label: 'Revisão CAAF' },
   { rel: 'eventos-professor', label: 'Eventos (prof.)' },
   { rel: 'cursos', label: 'Cursos' },

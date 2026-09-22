@@ -46,6 +46,15 @@ export default defineConfig({
         },
       },
       '/certificates': { target: 'http://localhost:8080', changeOrigin: true },
+      '/comissoes': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        bypass(req) {
+          if (req.headers.accept?.includes('text/html')) {
+            return '/index.html'
+          }
+        },
+      },
       '/coordenacao': {
         target: 'http://localhost:8080',
         changeOrigin: true,

@@ -10,7 +10,7 @@ data class EstagioResponse(
     val idAluno: UUID,
     val alunoNome: String?,
     val idCurso: UUID,
-    val idOrientador: UUID,
+    val idOrientador: UUID?,
     val orientadorRotulo: String?,
     val empresa: String,
     val supervisor: String,

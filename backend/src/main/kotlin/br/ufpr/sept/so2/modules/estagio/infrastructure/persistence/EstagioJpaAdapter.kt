@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
+import java.time.OffsetDateTime
 import java.util.UUID
 
 @Component
@@ -54,5 +55,53 @@ class EstagioJpaAdapter(
     }
 
     @Transactional(readOnly = true)
+    override fun findPoolCoe(cursoIds: Collection<UUID>, usuarioId: UUID): List<Estagio> {
+        if (cursoIds.isEmpty()) {
+            return emptyList()
+        }
+        return jpaRepository.findPoolCoe(cursoIds.toSet(), usuarioId).map { it.toDomain() }
+    }
+
+    @Transactional(readOnly = true)
+    override fun countSemOrientador(cursoIds: Collection<UUID>): Long {
+        if (cursoIds.isEmpty()) {
+            return 0
+        }
+        return jpaRepository.countSemOrientador(cursoIds.toSet())
+    }
+
+    @Transactional(readOnly = true)
+    override fun countAtribuidosAtivos(cursoIds: Collection<UUID>, orientadorId: UUID): Long {
+        if (cursoIds.isEmpty()) {
+            return 0
+        }
+        return jpaRepository.countAtribuidosAtivos(cursoIds.toSet(), orientadorId)
+    }
+
+    @Transactional(readOnly = true)
+    override fun countConcluidosDesde(cursoIds: Collection<UUID>, inicio: OffsetDateTime): Long {
+        if (cursoIds.isEmpty()) {
+            return 0
+        }
+        return jpaRepository.countConcluidosDesde(cursoIds.toSet(), inicio)
+    }
+
+    @Transactional(readOnly = true)
+    override fun countCargaAtiva(cursoIds: Collection<UUID>, orientadorIds: Collection<UUID>): Map<UUID, Long> {
+        if (cursoIds.isEmpty() || orientadorIds.isEmpty()) {
+            return emptyMap()
+        }
+        return jpaRepository.countCargaAtiva(cursoIds.toSet(), orientadorIds.toSet())
+            .associate { it.idOrientador to it.total }
+    }
+
+    @Transactional(readOnly = true)
     override fun existsByAluno(alunoId: UUID): Boolean = jpaRepository.existsByIdAluno(alunoId)
+
+    @Transactional(readOnly = true)
+    override fun existsSemOrientador(cursoId: UUID): Boolean =
+        jpaRepository.existsByIdCursoAndIdOrientadorIsNullAndSituacaoNot(
+            cursoId,
+            EstagioSituacao.CONCLUIDO.name,
+        )
 }

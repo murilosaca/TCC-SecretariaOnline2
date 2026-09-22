@@ -10,7 +10,7 @@ class Estagio(
     val id: UUID,
     val idAluno: UUID,
     val idCurso: UUID,
-    val idOrientador: UUID,
+    idOrientador: UUID?,
     empresa: String,
     supervisor: String,
     val inicio: LocalDate,
@@ -22,6 +22,9 @@ class Estagio(
 ) {
     val empresa: String = empresa.trim()
     val supervisor: String = supervisor.trim()
+
+    var idOrientador: UUID? = idOrientador
+        private set
 
     var situacao: EstagioSituacao = situacao
         private set
@@ -41,6 +44,20 @@ class Estagio(
     fun pertenceAoAluno(alunoId: UUID): Boolean = idAluno == alunoId
 
     fun orientadoPor(usuarioId: UUID): Boolean = idOrientador == usuarioId
+
+    fun semOrientador(): Boolean = idOrientador == null
+
+    fun podeAtribuir(atorId: UUID): Boolean =
+        situacao != EstagioSituacao.CONCLUIDO && (idOrientador == null || idOrientador == atorId)
+
+    fun atribuirOrientador(novoId: UUID, agora: OffsetDateTime) {
+        garantirMutavel()
+        if (idOrientador == novoId) {
+            throw ConflitoEstadoException("Este estágio já está atribuído a este orientador.")
+        }
+        idOrientador = novoId
+        updatedAt = agora
+    }
 
     fun documentoPendente(): String? =
         _documentos
@@ -118,7 +135,7 @@ class Estagio(
             id: UUID,
             idAluno: UUID,
             idCurso: UUID,
-            idOrientador: UUID,
+            idOrientador: UUID?,
             empresa: String,
             supervisor: String,
             inicio: LocalDate,

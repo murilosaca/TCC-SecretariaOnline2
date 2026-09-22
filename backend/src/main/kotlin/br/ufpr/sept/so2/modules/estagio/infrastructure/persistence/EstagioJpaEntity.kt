@@ -23,7 +23,7 @@ class EstagioJpaEntity : BaseEntity() {
     @Column(name = "id_curso", nullable = false)
     var idCurso: UUID? = null
 
-    @Column(name = "id_orientador", nullable = false)
+    @Column(name = "id_orientador")
     var idOrientador: UUID? = null
 
     @Column(nullable = false, length = 200)
@@ -72,7 +72,7 @@ class EstagioJpaEntity : BaseEntity() {
         id!!,
         idAluno!!,
         idCurso!!,
-        idOrientador!!,
+        idOrientador,
         empresa!!,
         supervisor!!,
         inicio!!,

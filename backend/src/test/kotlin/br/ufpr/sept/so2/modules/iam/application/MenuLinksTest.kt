@@ -57,11 +57,13 @@ class MenuLinksTest : StringSpec({
         val links = MenuLinks.from(listOf("internship.view_own"))
         links["estagios"] shouldBe "/estagios"
         links.shouldNotContainKey("estagios-revisao")
+        links.shouldNotContainKey("comissoes-coe")
     }
 
-    "orientador com internship.review ganha a fila e nao o cadastro do aluno" {
+    "orientador com internship.review ganha a fila, o pool COE e nao o cadastro do aluno" {
         val links = MenuLinks.from(listOf("internship.review"))
         links["estagios-revisao"] shouldBe "/estagios?to=me"
+        links["comissoes-coe"] shouldBe "/comissoes/coe"
         links.shouldNotContainKey("estagios")
         links.shouldNotContainKey("cursos")
     }
@@ -72,6 +74,7 @@ class MenuLinksTest : StringSpec({
         )
         links.shouldNotContainKey("estagios")
         links.shouldNotContainKey("estagios-revisao")
+        links.shouldNotContainKey("comissoes-coe")
         links.shouldNotContainKey("tccs")
         links.shouldNotContainKey("tccs-revisao")
     }

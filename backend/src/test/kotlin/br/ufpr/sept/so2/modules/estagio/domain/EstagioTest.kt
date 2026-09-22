@@ -175,4 +175,29 @@ class EstagioTest : StringSpec({
         shouldThrow<ConflitoEstadoException> { estagio.encerrar(agora.plusMinutes(5)) }
         estagio.situacao shouldBe EstagioSituacao.CONCLUIDO
     }
+
+    "estágio sem orientador entra no pool e aceita atribuição" {
+        val estagio = Estagio.abrir(
+            estagioId,
+            alunoId,
+            cursoId,
+            null,
+            "Pool COE SEPT",
+            "Ana Supervisora",
+            LocalDate.parse("2026-04-01"),
+            LocalDate.parse("2026-12-15"),
+            agora,
+            listOf(DocumentoEstagio.pendente(tceId, TipoDocumentoEstagio.TCE)),
+        )
+        estagio.semOrientador() shouldBe true
+        estagio.podeAtribuir(orientadorId) shouldBe true
+        estagio.atribuirOrientador(orientadorId, agora.plusMinutes(1))
+        estagio.orientadoPor(orientadorId) shouldBe true
+        estagio.semOrientador() shouldBe false
+        estagio.podeAtribuir(orientadorId) shouldBe true
+        estagio.podeAtribuir(UUID.fromString("01800000-0000-7000-8000-000000000199")) shouldBe false
+        shouldThrow<ConflitoEstadoException> {
+            estagio.atribuirOrientador(orientadorId, agora.plusMinutes(2))
+        }
+    }
 })

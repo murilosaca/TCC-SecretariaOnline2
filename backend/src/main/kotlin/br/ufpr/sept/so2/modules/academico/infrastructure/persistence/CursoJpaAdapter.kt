@@ -21,6 +21,9 @@ class CursoJpaAdapter(
     override fun findById(id: UUID): Optional<Curso> =
         jpaRepository.findById(id).map { it.toDomain() }
 
+    override fun findByIdForUpdate(id: UUID): Optional<Curso> =
+        jpaRepository.findByIdForUpdate(id).map { it.toDomain() }
+
     override fun findAll(pageable: Pageable): Page<Curso> =
         jpaRepository.findAll(pageable).map { it.toDomain() }
 

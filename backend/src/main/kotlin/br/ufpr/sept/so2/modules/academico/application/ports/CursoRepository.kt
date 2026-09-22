@@ -11,6 +11,8 @@ interface CursoRepository {
 
     fun findById(id: UUID): Optional<Curso>
 
+    fun findByIdForUpdate(id: UUID): Optional<Curso>
+
     fun findAll(pageable: Pageable): Page<Curso>
 
     fun existsBySigla(sigla: String): Boolean

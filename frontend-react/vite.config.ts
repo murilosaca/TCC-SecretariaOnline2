@@ -46,6 +46,15 @@ export default defineConfig({
         },
       },
       '/certificates': { target: 'http://localhost:8080', changeOrigin: true },
+      '/coordenacao': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        bypass(req) {
+          if (req.headers.accept?.includes('text/html')) {
+            return '/index.html'
+          }
+        },
+      },
       '/.well-known': { target: 'http://localhost:8080', changeOrigin: true },
       '/v3': { target: 'http://localhost:8080', changeOrigin: true },
       '/swagger-ui': { target: 'http://localhost:8080', changeOrigin: true },

@@ -15,8 +15,8 @@ import java.util.UUID
 
 /**
  * Parecer individual. Não emite certificado: RF-F3-006 condiciona a emissão
- * a aluno elegível, e essa elegibilidade (nota mínima F6.1, consolidação da
- * banca, colação F5.11) não está definida no tcc-docs.
+ * a aluno elegível. F6.1 grava banca e limiar de horas, mas a consolidação
+ * das avaliações e a colação (F5.11) continuam fora.
  */
 @Service
 class RegistrarAvaliacaoTccUseCase(

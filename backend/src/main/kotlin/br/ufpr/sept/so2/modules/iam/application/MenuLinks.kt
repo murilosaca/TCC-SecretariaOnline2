@@ -36,6 +36,7 @@ object MenuLinks {
         }
         if (caps.contains("internship.review")) {
             links["estagios-revisao"] = "/estagios?to=me"
+            links["comissoes-coe"] = "/comissoes/coe"
         }
         if (caps.contains("tcc.view_own")) {
             links["tccs"] = "/tccs"

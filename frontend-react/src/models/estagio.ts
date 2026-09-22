@@ -31,7 +31,7 @@ export type Estagio = {
   idAluno: string
   alunoNome?: string | null
   idCurso: string
-  idOrientador: string
+  idOrientador?: string | null
   orientadorRotulo?: string | null
   empresa: string
   supervisor: string

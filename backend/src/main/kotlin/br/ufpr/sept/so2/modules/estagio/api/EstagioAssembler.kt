@@ -35,7 +35,7 @@ class EstagioAssembler(
             alunoEstagioPort.nomeDe(estagio.idAluno),
             estagio.idCurso,
             estagio.idOrientador,
-            autorEstagioPort.rotulo(estagio.idOrientador),
+            estagio.idOrientador?.let { autorEstagioPort.rotulo(it) },
             estagio.empresa,
             estagio.supervisor,
             estagio.inicio,

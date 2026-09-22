@@ -166,7 +166,8 @@ button {
   cursor: pointer;
 }
 
-button.ghost {
+button.ghost,
+button.secondary {
   background: transparent;
   color: var(--brand);
   border: 1px solid var(--brand);

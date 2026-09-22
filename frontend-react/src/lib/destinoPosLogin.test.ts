@@ -13,6 +13,15 @@ describe('destinoPosLogin', () => {
     )
   })
 
+  it('egresso cai no próprio início e ignora rota de aluno', () => {
+    const links = { 'egresso-inicio': '/egresso/inicio' }
+    expect(destinoPosLogin(false, undefined, links)).toBe('/egresso/inicio')
+    expect(destinoPosLogin(false, '/inicio', links)).toBe('/egresso/inicio')
+    expect(destinoPosLogin(false, '/eventos/1/presenca', links)).toBe('/egresso/inicio')
+    expect(destinoPosLogin(false, '/contato', links)).toBe('/contato')
+    expect(destinoPosLogin(true, '/inicio', links)).toBe('/primeiro-acesso')
+  })
+
   it('recusa from inseguro e cai em /inicio', () => {
     expect(destinoPosLogin(false, undefined)).toBe('/inicio')
     expect(destinoPosLogin(false, '//evil.example')).toBe('/inicio')

@@ -15,6 +15,7 @@ function renderLogin(from?: string) {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/inicio" element={<p>destino-inicio</p>} />
+        <Route path="/egresso/inicio" element={<p>destino-egresso</p>} />
         <Route path="/primeiro-acesso" element={<p>destino-primeiro</p>} />
         <Route path="/eventos/:id/presenca" element={<p>destino-presenca</p>} />
         <Route path="/solicitacoes/:id/deliberar" element={<p>destino-deliberar</p>} />
@@ -47,6 +48,23 @@ describe('Login', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Entrar' }))
     await waitFor(() => {
       expect(screen.getByText('destino-deliberar')).toBeTruthy()
+    })
+  })
+
+  it('egresso vai para /egresso/inicio e ignora rota de aluno', async () => {
+    login.mockResolvedValue({
+      mustChangePassword: false,
+      accessToken: 'x',
+      expiresIn: 900,
+      tokenType: 'Bearer',
+      links: { 'egresso-inicio': '/egresso/inicio' },
+    })
+    renderLogin('/inicio')
+    fireEvent.change(screen.getByLabelText('E-mail ou GRR'), { target: { value: 'egresso.dev@ufpr.br' } })
+    fireEvent.change(screen.getByLabelText('Senha'), { target: { value: 'TroqueEstaSenha1!' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Entrar' }))
+    await waitFor(() => {
+      expect(screen.getByText('destino-egresso')).toBeTruthy()
     })
   })
 

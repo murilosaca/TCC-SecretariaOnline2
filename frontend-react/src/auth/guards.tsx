@@ -1,8 +1,9 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
+import { inicioDaSessao, rotaBloqueada } from './portal'
 import { useAuth } from './AuthContext'
 
 export function RequireAuth() {
-  const { status, mustChangePassword } = useAuth()
+  const { status, mustChangePassword, links } = useAuth()
   const location = useLocation()
 
   if (status === 'loading') {
@@ -30,13 +31,22 @@ export function RequireAuth() {
     return <Navigate to="/primeiro-acesso" replace />
   }
   if (!mustChangePassword && location.pathname === '/primeiro-acesso') {
-    return <Navigate to="/inicio" replace />
+    return <Navigate to={inicioDaSessao(links)} replace />
+  }
+  return <Outlet />
+}
+
+export function PortalGate() {
+  const { links, mustChangePassword } = useAuth()
+  const location = useLocation()
+  if (!mustChangePassword && rotaBloqueada(location.pathname, links)) {
+    return <Navigate to="/erro/403" replace />
   }
   return <Outlet />
 }
 
 export function RedirectIfAuthenticated() {
-  const { status, mustChangePassword } = useAuth()
+  const { status, mustChangePassword, links } = useAuth()
   if (status === 'loading') {
     return (
       <div className="page" aria-busy="true">
@@ -45,7 +55,7 @@ export function RedirectIfAuthenticated() {
     )
   }
   if (status === 'authenticated') {
-    return <Navigate to={mustChangePassword ? '/primeiro-acesso' : '/inicio'} replace />
+    return <Navigate to={mustChangePassword ? '/primeiro-acesso' : inicioDaSessao(links)} replace />
   }
   return <Outlet />
 }

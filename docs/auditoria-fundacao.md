@@ -66,6 +66,7 @@ Quem ler a tabela de dívida **abaixo** não deve achar que `/academico/**` aind
 | Presença QR \| SECRET × SINGLE \| DUAL | Item 4: motor v4.1 com os quatro modos. Janelas pré-agendadas e lista ao vivo de inelegíveis continuam dívida. |
 | V011 `curso_secretario` | Item 7: N:N + seed TADS + `CursoEscopoPort`. Claim JWT `cursoIds` **não** entrou (dívida abaixo). |
 | P0 Expo aluno | Item 8: login / primeiro acesso / BFF `/inicio` / nova solicitação / presença SECRET+QR. Refresh **(A)** body + Keychain. Web cookie intacto. |
+| Egresso F2 | Item 9.3: `alumni.view_own`, menu `egresso-inicio`, `GET /egressos/me`, reemissão do PDF já gravado (mesmo `hash_sha256` e mesma assinatura, 404 se não for o dono). Sem migration. Diploma, lista F1.19 e Expo ficaram de fora (linhas abertas). |
 
 ## Ainda aberto (dívida consciente — não é P0)
 
@@ -98,7 +99,9 @@ Só o que **ainda** está aberto. Não reabrir FGAC, nav, dispatcher, F0.7, KPIs
 | Cadastro F5 de TCC | secretaria registra o TCC | Seed `@Profile("dev")`. Sem CRUD | Fatia F5 futura |
 | Certificado de conclusão de TCC | RF-F3-006 / F3.7-D02 | A spec manda emitir quando aprovado **e** elegível. Elegibilidade não está fechada: nota mínima e regras de banca são F6.1; a consolidação de várias avaliações está “a definir”; a colação (F5.11) é outro fluxo. **Não** houve emissão nesta fatia | Quando F6.1 ou a colação definirem o gatilho |
 | TCC (módulo) | RF-F1-008 / RF-F3-006 | Item 9.2 entregou acompanhamento, upload `bytea` e parecer individual em `/tccs`. Sem lote | Certificado, F5 e F6.1 seguem abertos |
-| Egresso F2 | RF-F2-001 | Sem `/egresso/inicio` | 9.3 |
+| Diploma e colação | RF-F2-001 / F5.11 | O painel do egresso devolve `diploma`, `colacao`, `concluidoEm` e `kpis.situacaoDiploma` nulos. A UI diz que o registro ainda não está disponível. Não nasceu tabela `diploma` nem wizard de colação | F5.11 |
+| Lista F1.19 do egresso | HU 19 critério 5 | `/certificados` segue `certificate.view_own` e `CertificadoAcesso` continua recusando situação EGRESSO. A reemissão do dono é `GET /egressos/me/certificados/{id}/reemissao` | Não abrir a lista de aluno nesta fatia |
+| Expo F2 | RF-F2-001 | O app nativo não tem `/egresso/inicio`. O menu ignora o rel `egresso-inicio` (whitelist P0) e o egresso cai no `/inicio` com 403 do BFF | mobile-2 |
 | Cadastro F5 de estágio | secretaria registra o estágio | Seed `@Profile("dev")`. Sem CRUD | Fatia F5 futura |
 | MinIO / `arquivos` | upload presigned | PDF de estágio, de TCC e de certificado em `bytea`. Sem `modules/arquivos` e sem MinIO no compose. Download do TCC sai da API, sem URL de 15 min | Quando o compose tiver MinIO |
 | Períodos por curso / F5.9 tipos | calendário semântico | `periodo_letivo` global; `calendar.manage` all-or-nothing | Schema por curso + tipos quando F6.1/F5.9 abrirem |

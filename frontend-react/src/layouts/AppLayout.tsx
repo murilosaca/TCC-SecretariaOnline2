@@ -4,6 +4,7 @@ import { useActions } from '../hooks/useActions'
 
 const NAV_ITENS: { rel: string; label: string }[] = [
   { rel: 'inicio', label: 'Início' },
+  { rel: 'egresso-inicio', label: 'Início' },
   { rel: 'solicitacoes', label: 'Solicitações' },
   { rel: 'deliberar', label: 'Deliberar' },
   { rel: 'eventos', label: 'Eventos' },
@@ -25,11 +26,12 @@ const NAV_ITENS: { rel: string; label: string }[] = [
 export function AppLayout() {
   const { mustChangePassword, logout, status, links } = useAuth()
   const actions = useActions(links)
+  const home = actions.href('egresso-inicio') ?? actions.href('inicio') ?? '/inicio'
 
   return (
     <div className="shell">
       <header className="topbar">
-        <NavLink to={mustChangePassword ? '/primeiro-acesso' : '/inicio'} className="brand">
+        <NavLink to={mustChangePassword ? '/primeiro-acesso' : home} className="brand">
           SO2 · SEPT/UFPR
         </NavLink>
         {!mustChangePassword && (

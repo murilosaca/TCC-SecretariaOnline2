@@ -48,6 +48,8 @@ class MenuLinksTest : StringSpec({
         links.shouldNotContainKey("deliberar")
         links.shouldNotContainKey("estagios")
         links.shouldNotContainKey("estagios-revisao")
+        links.shouldNotContainKey("tccs")
+        links.shouldNotContainKey("tccs-revisao")
     }
 
     "aluno com internship.view_own ganha estagios e nao a fila" {
@@ -69,6 +71,21 @@ class MenuLinksTest : StringSpec({
         )
         links.shouldNotContainKey("estagios")
         links.shouldNotContainKey("estagios-revisao")
+        links.shouldNotContainKey("tccs")
+        links.shouldNotContainKey("tccs-revisao")
+    }
+
+    "aluno com tcc.view_own ganha tccs e nao a fila" {
+        val links = MenuLinks.from(listOf("tcc.view_own"))
+        links["tccs"] shouldBe "/tccs"
+        links.shouldNotContainKey("tccs-revisao")
+    }
+
+    "orientador com tcc.review ganha a fila e nao o cadastro do aluno" {
+        val links = MenuLinks.from(listOf("tcc.review"))
+        links["tccs-revisao"] shouldBe "/tccs?to=me"
+        links.shouldNotContainKey("tccs")
+        links.shouldNotContainKey("cursos")
     }
 
     "professor ganha deliberar e eventos-professor" {

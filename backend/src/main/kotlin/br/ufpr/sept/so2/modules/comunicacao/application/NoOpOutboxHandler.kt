@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component
  * Marcar SENT (no-op) evita retry eterno. Sem push.
  * estagio.documento_enviado, estagio.parecer_emitido e estagio.encerrado
  * seguem o mesmo no-op de certificado.emitido.
+ * tcc.submitted e tcc.reviewed também fecham SENT sem SMTP.
  */
 @Component
 class NoOpOutboxHandler : OutboxEventoHandler {
@@ -22,6 +23,8 @@ class NoOpOutboxHandler : OutboxEventoHandler {
         "estagio.documento_enviado",
         "estagio.parecer_emitido",
         "estagio.encerrado",
+        "tcc.submitted",
+        "tcc.reviewed",
         "presenca.confirmada",
         "evento.janela_aberta",
         "evento.qr_renovado",

@@ -52,6 +52,10 @@ Sessão JWT que não é aluno: BFF devolve 403; `/inicio` mostra empty honesto, 
 
 A ordem das fatias **depois** do P0 (deliberação → CAAF individual → QR, com COE só junto de estágio) está no README. Este arquivo lista dívida; não redefine o cronograma.
 
+## Ordem das fatias 10+ — fica no README
+
+A varredura de tudo o que a spec ainda cobra e o código não entrega (66 RFs e 72 telas F0–F8 classificados em feito / parcial / ausente / P3) e a ordem numerada a partir de **10** estão na seção **O que falta (pós-9.5)** do [`README.md`](../README.md). A tabela de dívida **abaixo** continua sendo a fonte do detalhe por item — não duplicar a ordem aqui, e não ler esta tabela como cronograma.
+
 ## Já fechado (não reabrir)
 
 Quem ler a tabela de dívida **abaixo** não deve achar que `/academico/**` ainda é `permitAll` nem que o menu ainda é atalho de dev.

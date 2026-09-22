@@ -18,7 +18,7 @@ data class SessaoResponse(
                 sessao.id,
                 sessao.mustChangePassword,
                 sessao.authorities,
-                MenuLinks.from(sessao.authorities),
+                MenuLinks.from(sessao.authorities, sessao.cursoConfigurarId),
             )
     }
 }

@@ -144,6 +144,7 @@ class SecurityConfig(
                     .requestMatchers("/formativas", "/formativas/**").authenticated()
                     .requestMatchers("/certificates", "/certificates/**").authenticated()
                     .requestMatchers("/academico", "/academico/**").authenticated()
+                    .requestMatchers("/coordenacao", "/coordenacao/**").authenticated()
                     // Matchers .authenticated() acima documentam a superfície; o default já é authenticated().
                     .anyRequest().authenticated()
             }

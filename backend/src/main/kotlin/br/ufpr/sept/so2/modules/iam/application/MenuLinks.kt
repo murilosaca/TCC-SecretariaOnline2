@@ -1,11 +1,14 @@
 package br.ufpr.sept.so2.modules.iam.application
 
+import java.util.UUID
+
 /**
  * Único ponto que olha authorities para montar o menu (rotas de UI, não de API).
  * Rel em kebab. Omite o item se a capability não existir.
+ * `configurar-curso` só entra com `course.config` e exatamente um curso coordenado.
  */
 object MenuLinks {
-    fun from(authorities: Collection<String>): Map<String, String> {
+    fun from(authorities: Collection<String>, cursoConfigurarId: UUID? = null): Map<String, String> {
         val caps = authorities.toSet()
         val links = linkedMapOf<String, String>()
         if (CapsSessao.egressoPuro(caps)) {
@@ -57,6 +60,9 @@ object MenuLinks {
         }
         if (caps.contains("calendar.manage")) {
             links["calendarios"] = "/secretaria/calendarios"
+        }
+        if (caps.contains("course.config") && cursoConfigurarId != null) {
+            links["configurar-curso"] = "/coordenacao/cursos/$cursoConfigurarId/configurar"
         }
         links["contato"] = "/contato"
         return links

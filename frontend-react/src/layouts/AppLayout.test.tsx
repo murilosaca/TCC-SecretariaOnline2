@@ -90,6 +90,17 @@ describe('AppLayout', () => {
     expect(screen.queryByText('TCCs')).toBeNull()
     expect(screen.queryByText('Cursos')).toBeNull()
     expect(screen.queryByText('Estágios')).toBeNull()
+    expect(screen.queryByText('Configurar curso')).toBeNull()
+  })
+
+  it('nav do coordenador mostra Configurar curso e não mostra Cursos da secretaria', () => {
+    renderNav({
+      inicio: '/inicio',
+      'configurar-curso': '/coordenacao/cursos/tads/configurar',
+      contato: '/contato',
+    })
+    expect(screen.getByText('Configurar curso')).toBeTruthy()
+    expect(screen.queryByText('Cursos')).toBeNull()
   })
 
   it('nav do egresso mostra o início do portal e não mostra rotas de aluno', () => {

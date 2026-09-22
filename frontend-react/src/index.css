@@ -123,6 +123,11 @@ table {
   padding: 1rem 1.1rem;
 }
 
+.form-cards {
+  display: grid;
+  gap: 1rem;
+}
+
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));

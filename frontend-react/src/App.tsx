@@ -34,6 +34,7 @@ import { VerificarCertificado } from './pages/publico/VerificarCertificado'
 import { VerificarProtocolo } from './pages/publico/VerificarProtocolo'
 import { Alunos } from './pages/secretaria/Alunos'
 import { Calendarios } from './pages/secretaria/Calendarios'
+import { ConfigurarCurso } from './pages/coordenacao/ConfigurarCurso'
 import { Cursos } from './pages/secretaria/Cursos'
 import { Disciplinas } from './pages/secretaria/Disciplinas'
 
@@ -80,6 +81,7 @@ export default function App() {
           <Route path="secretaria/disciplinas" element={<Disciplinas />} />
           <Route path="secretaria/alunos" element={<Alunos />} />
           <Route path="secretaria/calendarios" element={<Calendarios />} />
+          <Route path="coordenacao/cursos/:id/configurar" element={<ConfigurarCurso />} />
           </Route>
         </Route>
       </Route>

@@ -165,6 +165,7 @@ class IamDevDataLoader(
                 "request.deliberate",
                 "internship.review",
                 "tcc.review",
+                "course.config",
             )
 
         private fun authoritiesCaaf(): List<String> =

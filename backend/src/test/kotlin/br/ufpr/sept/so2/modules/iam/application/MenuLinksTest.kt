@@ -30,6 +30,7 @@ class MenuLinksTest : StringSpec({
         links.shouldNotContainKey("solicitacoes")
         links.shouldNotContainKey("revisao-caaf")
         links.shouldNotContainKey("eventos-professor")
+        links.shouldNotContainKey("configurar-curso")
     }
 
     "aluno ganha formativas e certificados e nao ganha cursos" {
@@ -114,6 +115,20 @@ class MenuLinksTest : StringSpec({
         val links = MenuLinks.from(listOf("request.deliberate", "event.manage", "event.host"))
         links["deliberar"] shouldBe "/solicitacoes?to=me"
         links["eventos-professor"] shouldBe "/professor/eventos"
+        links.shouldNotContainKey("cursos")
+        links.shouldNotContainKey("configurar-curso")
+    }
+
+    "coordenador com course.config e um curso ganha configurar-curso" {
+        val cursoId = java.util.UUID.fromString("01999999-0000-7000-8000-00000000c061")
+        val links = MenuLinks.from(listOf("course.config", "tcc.review"), cursoId)
+        links["configurar-curso"] shouldBe "/coordenacao/cursos/$cursoId/configurar"
+        links.shouldNotContainKey("cursos")
+    }
+
+    "course.config sem curso coordenado nao ganha o item" {
+        val links = MenuLinks.from(listOf("course.config"))
+        links.shouldNotContainKey("configurar-curso")
         links.shouldNotContainKey("cursos")
     }
 })

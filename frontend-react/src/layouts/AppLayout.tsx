@@ -17,6 +17,7 @@ const NAV_ITENS: { rel: string; label: string }[] = [
   { rel: 'revisao-caaf', label: 'Revisão CAAF' },
   { rel: 'eventos-professor', label: 'Eventos (prof.)' },
   { rel: 'cursos', label: 'Cursos' },
+  { rel: 'configurar-curso', label: 'Configurar curso' },
   { rel: 'disciplinas', label: 'Disciplinas' },
   { rel: 'alunos', label: 'Alunos' },
   { rel: 'calendarios', label: 'Calendários' },

@@ -188,7 +188,8 @@ Regras de dependência (ArchUnit, quando o teste existir):
 
 Módulos previstos (criar só com requisito no sprint):
 `iam`, `academico`, `solicitacoes`, `formativas`, `estagio`, `tcc`,
-`presenca`, `comunicacao`, `certificados`, `auditoria`, `arquivos`, `bff`.
+`presenca`, `comunicacao`, `certificados`, `auditoria`, `arquivos`, `bff`,
+`coordenacao`.
 
 ## Tratamento de exceções
 

@@ -52,7 +52,7 @@ export function Login() {
     try {
       const result = await login(identificador.trim(), senha)
       const from = (location.state as { from?: unknown } | null)?.from
-      navigate(destinoPosLogin(result.mustChangePassword, from), { replace: true })
+      navigate(destinoPosLogin(result.mustChangePassword, from, result.links), { replace: true })
     } catch (error) {
       setSenha('')
       if (error instanceof ApiError && error.status === 429) {

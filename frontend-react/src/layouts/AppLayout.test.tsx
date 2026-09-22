@@ -92,6 +92,23 @@ describe('AppLayout', () => {
     expect(screen.queryByText('Estágios')).toBeNull()
   })
 
+  it('nav do egresso mostra o início do portal e não mostra rotas de aluno', () => {
+    renderNav({
+      'egresso-inicio': '/egresso/inicio',
+      contato: '/contato',
+    })
+    expect(screen.getByRole('link', { name: 'Início' }).getAttribute('href')).toBe('/egresso/inicio')
+    expect(screen.getByRole('link', { name: 'SO2 · SEPT/UFPR' }).getAttribute('href')).toBe(
+      '/egresso/inicio',
+    )
+    expect(screen.getByText('Contato')).toBeTruthy()
+    expect(screen.queryByText('Solicitações')).toBeNull()
+    expect(screen.queryByText('Formativas')).toBeNull()
+    expect(screen.queryByText('Estágios')).toBeNull()
+    expect(screen.queryByText('TCCs')).toBeNull()
+    expect(screen.queryByText('Eventos')).toBeNull()
+  })
+
   it('some a nav no primeiro acesso', () => {
     renderNav({ inicio: '/inicio', cursos: '/secretaria/cursos', contato: '/contato' }, true)
     expect(screen.queryByText('Cursos')).toBeNull()

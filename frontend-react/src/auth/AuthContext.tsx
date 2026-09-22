@@ -10,7 +10,7 @@ type AuthContextValue = {
   mustChangePassword: boolean
   authorities: string[]
   links: HateoasLinks
-  login: (identificador: string, senha: string) => Promise<LoginResponse>
+  login: (identificador: string, senha: string) => Promise<LoginResponse & { links: HateoasLinks }>
   logout: () => Promise<void>
   completeFirstAccess: (novaSenha: string) => Promise<void>
 }
@@ -26,16 +26,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const applySession = useCallback(async (accessToken: string, mustChange: boolean) => {
     authSession.setAccessToken(accessToken)
     setMustChangePassword(mustChange)
+    let sessionLinks: HateoasLinks = {}
     try {
       const me = await authApi.me()
       setMustChangePassword(me.mustChangePassword)
       setAuthorities(me.authorities)
-      setLinks(me._links ?? {})
+      sessionLinks = me._links ?? {}
+      setLinks(sessionLinks)
     } catch {
       setAuthorities([])
       setLinks({})
+      sessionLinks = {}
     }
     setStatus('authenticated')
+    return sessionLinks
   }, [])
 
   useEffect(() => {
@@ -63,8 +67,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(
     async (identificador: string, senha: string) => {
       const result = await authApi.login(identificador, senha)
-      await applySession(result.accessToken, result.mustChangePassword)
-      return result
+      const sessionLinks = await applySession(result.accessToken, result.mustChangePassword)
+      return { ...result, links: sessionLinks }
     },
     [applySession],
   )

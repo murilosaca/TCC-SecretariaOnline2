@@ -1,5 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
-import { RedirectIfAuthenticated, RequireAuth } from './auth/guards'
+import { useAuth } from './auth/AuthContext'
+import { PortalGate, RedirectIfAuthenticated, RequireAuth } from './auth/guards'
+import { inicioDaSessao } from './auth/portal'
 import { AppLayout } from './layouts/AppLayout'
 import { AuthLayout } from './layouts/AuthLayout'
 import { Eventos } from './pages/aluno/Eventos'
@@ -21,6 +23,7 @@ import { PrimeiroAcesso } from './pages/aluno/PrimeiroAcesso'
 import { SolicitacaoDetalhe } from './pages/aluno/SolicitacaoDetalhe'
 import { DeliberarSolicitacao } from './pages/solicitacoes/DeliberarSolicitacao'
 import { SolicitacoesRota } from './pages/solicitacoes/SolicitacoesRota'
+import { EgressoInicio } from './pages/egresso/EgressoInicio'
 import { Inicio } from './pages/inicio/Inicio'
 import { Contato } from './pages/publico/Contato'
 import { Erro } from './pages/publico/Erro'
@@ -50,8 +53,10 @@ export default function App() {
         <Route path="publico/verificar-certificado/:hash" element={<VerificarCertificado />} />
       </Route>
       <Route element={<RequireAuth />}>
-        <Route element={<AppLayout />}>
+        <Route element={<PortalGate />}>
+          <Route element={<AppLayout />}>
           <Route path="inicio" element={<Inicio />} />
+          <Route path="egresso/inicio" element={<EgressoInicio />} />
           <Route path="primeiro-acesso" element={<PrimeiroAcesso />} />
           <Route path="solicitacoes/nova" element={<NovaSolicitacao />} />
           <Route path="solicitacoes/:id/deliberar" element={<DeliberarSolicitacao />} />
@@ -75,13 +80,32 @@ export default function App() {
           <Route path="secretaria/disciplinas" element={<Disciplinas />} />
           <Route path="secretaria/alunos" element={<Alunos />} />
           <Route path="secretaria/calendarios" element={<Calendarios />} />
+          </Route>
         </Route>
       </Route>
-      <Route path="/" element={<Navigate to="/inicio" replace />} />
+      <Route path="/" element={<Raiz />} />
       <Route path="cursos" element={<Navigate to="/secretaria/cursos" replace />} />
       <Route path="disciplinas" element={<Navigate to="/secretaria/disciplinas" replace />} />
       <Route path="alunos" element={<Navigate to="/secretaria/alunos" replace />} />
       <Route path="*" element={<Navigate to="/erro/404" replace />} />
     </Routes>
   )
+}
+
+function Raiz() {
+  const { status, mustChangePassword, links } = useAuth()
+  if (status === 'loading') {
+    return (
+      <div className="page" aria-busy="true">
+        <p className="muted">Carregando…</p>
+      </div>
+    )
+  }
+  if (status !== 'authenticated') {
+    return <Navigate to="/login" replace />
+  }
+  if (mustChangePassword) {
+    return <Navigate to="/primeiro-acesso" replace />
+  }
+  return <Navigate to={inicioDaSessao(links)} replace />
 }

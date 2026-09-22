@@ -61,7 +61,17 @@ class AcademicoDevDataLoader(
         }
         criarAlunoSeAusente("Aluno Dev", "GRR20240001", "aluno.dev@ufpr.br", curso.id, agora)
         criarAlunoSeAusente("Novo Dev", "GRR20240002", "novo.dev@ufpr.br", curso.id, agora)
-        LOG.info("Cadastro acadêmico de desenvolvimento pronto (TADS, secretaria.dev, aluno.dev, novo.dev).")
+        criarAlunoSeAusente(
+            "Egresso Dev",
+            "GRR20240006",
+            "egresso.dev@ufpr.br",
+            curso.id,
+            agora,
+            AlunoSituacao.EGRESSO,
+        )
+        LOG.info(
+            "Cadastro acadêmico de desenvolvimento pronto (TADS, secretaria.dev, aluno.dev, novo.dev, egresso.dev).",
+        )
     }
 
     private fun criarAlunoSeAusente(
@@ -70,6 +80,7 @@ class AcademicoDevDataLoader(
         email: String,
         idCurso: UUID,
         agora: OffsetDateTime,
+        situacao: AlunoSituacao = AlunoSituacao.MATRICULADO,
     ) {
         if (alunoRepository.findByGrr(grr).isPresent) {
             return
@@ -84,7 +95,7 @@ class AcademicoDevDataLoader(
                 null,
                 null,
                 idCurso,
-                AlunoSituacao.MATRICULADO,
+                situacao,
                 true,
                 agora,
                 agora,

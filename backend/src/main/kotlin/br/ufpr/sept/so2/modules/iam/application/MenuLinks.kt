@@ -8,7 +8,11 @@ object MenuLinks {
     fun from(authorities: Collection<String>): Map<String, String> {
         val caps = authorities.toSet()
         val links = linkedMapOf<String, String>()
-        links["inicio"] = "/inicio"
+        if (CapsSessao.egressoPuro(caps)) {
+            links["egresso-inicio"] = "/egresso/inicio"
+        } else {
+            links["inicio"] = "/inicio"
+        }
         if (caps.contains("request.view_own")) {
             links["solicitacoes"] = "/solicitacoes"
         }

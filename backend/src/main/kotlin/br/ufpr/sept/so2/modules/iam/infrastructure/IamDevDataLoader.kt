@@ -79,8 +79,17 @@ class IamDevDataLoader(
             agora,
             authoritiesSecretaria(),
         )
+        criarSeAusente(
+            "egresso.dev@ufpr.br",
+            "GRR20240006",
+            hash,
+            true,
+            agora,
+            agora,
+            authoritiesEgresso(),
+        )
         LOG.info(
-            "Usuários de desenvolvimento IAM prontos (aluno.dev / novo.dev / professor.dev / caaf.dev / secretaria.dev).",
+            "Usuários de desenvolvimento IAM prontos (aluno.dev / novo.dev / professor.dev / caaf.dev / secretaria.dev / egresso.dev).",
         )
     }
 
@@ -174,5 +183,7 @@ class IamDevDataLoader(
                 "request.triage",
                 "request.deliberate",
             )
+
+        private fun authoritiesEgresso(): List<String> = listOf("alumni.view_own")
     }
 }

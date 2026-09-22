@@ -88,6 +88,28 @@ class MenuLinksTest : StringSpec({
         links.shouldNotContainKey("cursos")
     }
 
+    "egresso puro ganha o portal e nao as rotas de aluno" {
+        val links = MenuLinks.from(listOf("alumni.view_own"))
+        links["egresso-inicio"] shouldBe "/egresso/inicio"
+        links["contato"] shouldBe "/contato"
+        links.shouldNotContainKey("inicio")
+        links.shouldNotContainKey("solicitacoes")
+        links.shouldNotContainKey("formativas")
+        links.shouldNotContainKey("estagios")
+        links.shouldNotContainKey("tccs")
+        links.shouldNotContainKey("eventos")
+    }
+
+    "aluno ativo nao ganha o portal mesmo com alumni.view_own" {
+        val links = MenuLinks.from(
+            listOf("alumni.view_own", "request.open", "attendance.view_open", "tcc.view_own"),
+        )
+        links["inicio"] shouldBe "/inicio"
+        links["eventos"] shouldBe "/eventos"
+        links["tccs"] shouldBe "/tccs"
+        links.shouldNotContainKey("egresso-inicio")
+    }
+
     "professor ganha deliberar e eventos-professor" {
         val links = MenuLinks.from(listOf("request.deliberate", "event.manage", "event.host"))
         links["deliberar"] shouldBe "/solicitacoes?to=me"

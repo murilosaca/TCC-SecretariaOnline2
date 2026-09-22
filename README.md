@@ -4,9 +4,9 @@ Plataforma digital da secretaria acadêmica do **SEPT/UFPR**. Este é o reposit�
 
 O SO2 não substitui o juízo de docentes, comissões ou secretaria. Ele garante trilha de auditoria, integridade de dados e automação de trâmites repetitivos.
 
-**Onde estamos:** P0 fechado na web e no Expo (itens 1–**8**). **Item 9.1 feito** (estágio + parecer individual do orientador). **Item 9.2 feito** (TCC + avaliação individual). Esta fatia **não** é o portal admin F7 (sem F7.1–F7.9). F4.2 (pool COE), lote CAAF, egresso, F6.1, MinIO, o CRUD F5 de estágio e o cadastro F5 de TCC continuam fora.
+**Onde estamos:** P0 fechado na web e no Expo (itens 1–**8**). **Item 9.1 feito** (estágio + parecer individual do orientador). **Item 9.2 feito** (TCC + avaliação individual). **Item 9.3 feito** (portal do egresso read-only). Esta fatia **não** é o portal admin F7 (sem F7.1–F7.9). F4.2 (pool COE), lote CAAF, F6.1, MinIO, o CRUD F5 de estágio, o cadastro F5 de TCC e o diploma (F5.11) continuam fora.
 
-Circuito demonstrável: login → primeiro acesso (senha + LGPD) → `/inicio` do aluno → solicitação + deep-link ao professor → presença **QR\|SECRET × SINGLE\|DUAL** → formativa (`PENDENTE_CONFIRMACAO` → aluno confirma → `AGUARDANDO_CAAF`) → CAAF aprova → certificado oficial (PDF + hash + ED25519) → `/certificados` + F0.7. Secretaria (`secretaria.dev`) opera o CRUD de TADS; aluno/professor/CAAF não veem Cursos.
+Circuito demonstrável: login → primeiro acesso (senha + LGPD) → `/inicio` do aluno → solicitação + deep-link ao professor → presença **QR\|SECRET × SINGLE\|DUAL** → formativa (`PENDENTE_CONFIRMACAO` → aluno confirma → `AGUARDANDO_CAAF`) → CAAF aprova → certificado oficial (PDF + hash + ED25519) → `/certificados` + F0.7. Secretaria (`secretaria.dev`) opera o CRUD de TADS; aluno/professor/CAAF não veem Cursos. Egresso (`egresso.dev`) entra em `/egresso/inicio` e reemite o PDF com o mesmo hash; `aluno.dev` não entra em `/egresso/**`.
 
 ---
 
@@ -154,7 +154,7 @@ O mapa F0–F8 do Figma descreve o produto; **não é cronograma**. A ordem priv
 | 8 | Cliente Expo (React Native) | **Feito** — P0 aluno na mesma API; web intacta |
 | 9.1 | Estágio + parecer individual | **Feito** — seed, upload PDF, parecer um a um, arquivar |
 | 9.2 | TCC + avaliação individual | **Feito** — seed, upload PDF, parecer um a um. Sem certificado |
-| 9.3 | Egresso (F2) | Ainda não |
+| 9.3 | Egresso (F2) | **Feito** — painel read-only e reemissão do mesmo PDF. Sem diploma |
 | 9.4 | F6.1 configuração do curso | Ainda não |
 
 **1. Formativas** — V007; gatilho na TX de `ConfirmarPresencaUseCase` quando a presença fica **COMPLETA**. Aluno confirma ou cancela. Sem `POST /formativas`. BFF soma `APROVADA` (`null` sem cadastro). Não: CAAF/certificado (3 e 5), lote.
@@ -165,7 +165,7 @@ O mapa F0–F8 do Figma descreve o produto; **não é cronograma**. A ordem priv
 
 **4. QR / `SECRET_DUAL`** — quatro modos no mesmo motor; janelas ao vivo (15 min). Formativa só na presença **COMPLETA** (não na `ENTRADA` de DUAL). Encerrar sem PDF. Não: janelas pré-agendadas, lista de inelegíveis, câmera Expo.
 
-**5. Certificados + F0.7** — V009; emite na aprovação CAAF (mesma TX). PDF `bytea`, SHA-256 + ED25519, JWKS, F0.7 no browser. Sem POST/upload oficial. Não: MinIO, CA-04, revogação, egresso, PDF ao encerrar evento.
+**5. Certificados + F0.7** — V009; emite na aprovação CAAF (mesma TX). PDF `bytea`, SHA-256 + ED25519, JWKS, F0.7 no browser. Sem POST/upload oficial. Não: MinIO, CA-04, revogação, PDF ao encerrar evento. A reemissão do egresso (mesmo hash, sem nova assinatura) entrou no item 9.3.
 
 **6. Dispatcher + SMTP + deep-link** — at-least-once + Mailpit. F0.2 anti-enumeração. `?token=` **exige sessão**. JTI na TX da deliberação. Tipos no-op → `SENT`. Não: hub F1.6, F3.8, F7.5, push, e-mail de `certificado.emitido`.
 
@@ -219,11 +219,23 @@ V013. Seed dev: TCC `ATIVO` / `EM_ELABORACAO` do `aluno.dev` no TADS, título fi
 - **Certificado de conclusão não é emitido.** RF-F3-006 manda emitir quando aprovado e elegível; a elegibilidade (nota mínima e regras de banca da F6.1, consolidação “a definir”, colação F5.11) está ambígua. Dívida na auditoria.
 - Expo não ganhou tela de TCC: o menu nativo continua a whitelist P0.
 
-**Ainda não (9.3+):** egresso/F2, F6.1 (`course.config`), F4.2 (pool COE: atribuir, nunca aprovar em lote), lote CAAF, MinIO, cadastro F5 de estágio, cadastro F5 de TCC, certificado de conclusão de TCC, BFF professor, F7.
+**9.3 Egresso read-only (F2)** — feito
+
+Sem migration nova: reusa `aluno.situacao = EGRESSO` e a tabela `certificado`. Diploma e colação **não** nasceram (F5.11).
+
+- Seed `egresso.dev` / `GRR20240006`, senha padrão do dev, situação EGRESSO, só `alumni.view_own`. Sem `request.open`, `attendance.*`, `formative.*`, `internship.*` nem `tcc.view_own`.
+- Menu: rel `egresso-inicio` → `/egresso/inicio`. Sem início do aluno, solicitações, formativas, estágios, TCC ou presença.
+- `GET /egressos/me` (`alumni.view_own`). Painel read-only: curso, data de conclusão indisponível, horas formativas validadas, certificados. Diploma e colação ficam nulos. `_links.reemitir` por certificado. Sem `novaSolicitacao`.
+- `GET /egressos/me/certificados/{id}/reemissao` devolve o PDF já gravado. O `hash_sha256` e a assinatura não mudam. Não insere certificado e não assina de novo. Quem não é o dono recebe 404.
+- Quem tem `alumni.view_own` sem caps de aluno ativo toma 403 em `/bff/dashboard/aluno`, `/request-types`, `/formativas`, `/estagios`, `/tccs` e `/events`. Aluno ativo toma 403 em `/egressos/**`. A UI manda `/erro/403`; “Ir ao início” volta para `/egresso/inicio`.
+- FirstAccessGate segue valendo com `senhaAlterada = false`.
+- Expo não ganhou a tela. `/certificados` (F1.19) continua de aluno ativo (`certificate.view_own`).
+
+**Ainda não (9.4+):** F6.1 (`course.config`), F4.2 (pool COE: atribuir, nunca aprovar em lote), lote CAAF, MinIO, cadastro F5 de estágio, cadastro F5 de TCC, certificado de conclusão de TCC, diploma/colação (F5.11), BFF professor, F7.
 
 **9. Estágio + COE, TCC, egresso, F6.1**
 
-O item 9 da tabela original era um saco. 9.1 abriu só `modules/estagio` e o parecer individual (RF-F3-005). 9.2 abriu só `modules/tcc` e a avaliação individual (RF-F3-006), sem certificado. Parecer COE continua sempre individual. Egresso read-only e F6.1 (coordenação) seguem fechados.
+O item 9 da tabela original era um saco. 9.1 abriu só `modules/estagio` e o parecer individual (RF-F3-005). 9.2 abriu só `modules/tcc` e a avaliação individual (RF-F3-006), sem certificado. 9.3 abriu o portal read-only do egresso (RF-F2-001), sem diploma. Parecer COE continua sempre individual. F6.1 (coordenação) segue fechada.
 
 Dívida consciente: tabela **ainda aberta** em [`docs/auditoria-fundacao.md`](docs/auditoria-fundacao.md). Destaques: BFF professor (F3.1); MinIO/S3 (PDF em `bytea`); encerrar evento sem PDF; CA-04; F6.1 e F7; claim `cursoIds`; filtro CAAF por comissão; HostPin em memória; ArchUnit; rate limit em memória. **`/academico/**` e o menu de atalho de dev já não são dívida.**
 

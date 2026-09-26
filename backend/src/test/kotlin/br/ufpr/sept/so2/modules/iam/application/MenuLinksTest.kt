@@ -145,9 +145,11 @@ class MenuLinksTest : StringSpec({
         links.shouldNotContainKey("cursos")
     }
 
-    "course.config sem curso coordenado nao ganha o item" {
-        val links = MenuLinks.from(listOf("course.config"))
-        links.shouldNotContainKey("configurar-curso")
-        links.shouldNotContainKey("cursos")
+    "admin ganha usuarios e secretaria nao" {
+        val admin = MenuLinks.from(listOf("user.manage_all", "user.reset_password"))
+        admin["usuarios"] shouldBe "/admin/usuarios"
+        MenuLinks.from(
+            listOf("course.manage", "subject.manage", "user.manage_students", "calendar.manage"),
+        ).shouldNotContainKey("usuarios")
     }
 })

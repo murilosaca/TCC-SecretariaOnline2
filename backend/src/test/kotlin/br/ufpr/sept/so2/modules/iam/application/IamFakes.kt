@@ -108,6 +108,22 @@ object IamFakes {
         override fun findAtivosByAuthority(authority: String): List<Usuario> =
             byId.values.filter { it.ativo && authority in it.authorities }
 
+        override fun search(termo: String?, pageable: org.springframework.data.domain.Pageable): org.springframework.data.domain.Page<Usuario> {
+            val limpo = termo?.trim()?.lowercase().orEmpty()
+            val filtrados = byId.values.filter { u ->
+                limpo.isEmpty() ||
+                    u.nome.lowercase().contains(limpo) ||
+                    u.emailInstitucional.value.lowercase().contains(limpo) ||
+                    (u.emailPessoal?.value?.lowercase()?.contains(limpo) == true) ||
+                    (u.grr?.value?.lowercase()?.contains(limpo) == true)
+            }.sortedBy { it.nome }
+            val start = pageable.offset.toInt().coerceAtMost(filtrados.size)
+            val end = (start + pageable.pageSize).coerceAtMost(filtrados.size)
+            return org.springframework.data.domain.PageImpl(filtrados.subList(start, end), pageable, filtrados.size.toLong())
+        }
+
+        override fun existsById(id: UUID): Boolean = byId.containsKey(id)
+
         private fun corresponde(usuario: Usuario, identificador: IdentificadorLogin): Boolean {
             if (identificador.tipo == IdentificadorLogin.Tipo.GRR) {
                 return usuario.grr != null && identificador.valor == usuario.grr!!.value

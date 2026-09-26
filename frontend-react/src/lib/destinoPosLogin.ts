@@ -1,7 +1,7 @@
 import type { HateoasLinks } from '../models/academico'
 import { inicioDaSessao, rotaExclusivaAluno } from '../auth/portal'
 
-const ROTAS_PUBLICAS_AUTH = new Set(['/login', '/recuperar-senha', '/nova-senha'])
+const ROTAS_PUBLICAS_AUTH = new Set(['/login', '/recuperar-senha', '/nova-senha', '/redefinir-senha'])
 
 export function destinoPosLogin(
   mustChangePassword: boolean,

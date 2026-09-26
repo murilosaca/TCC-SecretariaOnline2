@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component
 class NoOpOutboxHandler : OutboxEventoHandler {
     override val tipos: Set<String> = setOf(
         "iam.first_access_completed",
+        "iam.user_created",
         "formativa.criada",
         "formativa.confirmada",
         "formativa.aprovada",

@@ -66,6 +66,7 @@ class AlunoDashboardDegradacaoIT {
         usuarioRepository.save(
             Usuario(
                 Uuids.v7(),
+                "Usuário IT",
                 Email.of("it.dashboard.degradacao@ufpr.br"),
                 null,
                 Grr.of("GRR20246666"),

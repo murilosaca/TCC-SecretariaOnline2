@@ -9,6 +9,7 @@ import java.util.UUID
 
 class Usuario(
     val id: UUID,
+    var nome: String,
     var emailInstitucional: Email,
     var emailPessoal: Email?,
     var grr: Grr?,
@@ -81,6 +82,32 @@ class Usuario(
     }
 
     fun precisaPrimeiroAcesso(): Boolean = !senhaAlterada
+
+    fun atualizarPerfil(
+        nome: String,
+        emailInstitucional: Email,
+        emailPessoal: Email?,
+        grr: Grr?,
+        agora: OffsetDateTime,
+    ) {
+        val nomeLimpo = nome.trim()
+        if (nomeLimpo.isEmpty() || nomeLimpo.length > 200) {
+            throw DadoInvalidoException("Nome é obrigatório (até 200 caracteres).")
+        }
+        this.nome = nomeLimpo
+        this.emailInstitucional = emailInstitucional
+        this.emailPessoal = emailPessoal
+        this.grr = grr
+        updatedAt = agora
+    }
+
+    fun desativar(agora: OffsetDateTime) {
+        if (!ativo) {
+            throw ConflitoEstadoException("O usuário já está inativo.")
+        }
+        ativo = false
+        updatedAt = agora
+    }
 
     fun concederAuthorities(novas: List<String>, agora: OffsetDateTime): Boolean {
         var mudou = false

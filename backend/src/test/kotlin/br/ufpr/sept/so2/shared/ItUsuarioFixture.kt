@@ -30,6 +30,7 @@ class ItUsuarioFixture(
         return usuarioRepository.save(
             Usuario(
                 id = Uuids.v7(),
+                nome = email.substringBefore('@'),
                 emailInstitucional = Email.of(email),
                 emailPessoal = null,
                 grr = Grr.of(grr),

@@ -64,6 +64,16 @@ export default defineConfig({
           }
         },
       },
+      '/admin': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        bypass(req) {
+          if (req.headers.accept?.includes('text/html')) {
+            return '/index.html'
+          }
+        },
+      },
+      '/iam': { target: 'http://localhost:8080', changeOrigin: true },
       '/.well-known': { target: 'http://localhost:8080', changeOrigin: true },
       '/v3': { target: 'http://localhost:8080', changeOrigin: true },
       '/swagger-ui': { target: 'http://localhost:8080', changeOrigin: true },

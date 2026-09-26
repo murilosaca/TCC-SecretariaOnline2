@@ -65,6 +65,9 @@ object MenuLinks {
         if (caps.contains("internship.manage")) {
             links["estagios-secretaria"] = "/secretaria/estagios"
         }
+        if (caps.contains("user.manage_all")) {
+            links["usuarios"] = "/admin/usuarios"
+        }
         if (caps.contains("course.config") && cursoConfigurarId != null) {
             links["configurar-curso"] = "/coordenacao/cursos/$cursoConfigurarId/configurar"
         }

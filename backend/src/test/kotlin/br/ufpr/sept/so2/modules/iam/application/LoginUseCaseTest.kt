@@ -82,6 +82,7 @@ private fun usuario(senhaAlterada: Boolean): Usuario {
     val grr = if (senhaAlterada) "GRR20240001" else "GRR20240002"
     return Usuario(
         UUID.randomUUID(),
+        email.substringBefore('@'),
         Email.of(email),
         null,
         Grr.of(grr),

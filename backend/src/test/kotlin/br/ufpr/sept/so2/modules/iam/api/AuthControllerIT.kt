@@ -45,6 +45,7 @@ class AuthControllerIT {
         usuarioRepository.save(
             Usuario(
                 Uuids.v7(),
+                "Usuário IT",
                 Email.of("it.login@ufpr.br"),
                 Email.of("pessoal.it@gmail.com"),
                 Grr.of("GRR20249999"),

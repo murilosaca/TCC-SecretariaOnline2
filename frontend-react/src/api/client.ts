@@ -37,8 +37,12 @@ async function parse<T>(response: Response): Promise<T> {
     }
     throw new ApiError(response.status, message, retryAfterSeconds)
   }
-  if (response.status === 204) {
-    return undefined as T
+  if (response.status === 204 || response.status === 202) {
+    const text = await response.text()
+    if (!text) {
+      return undefined as T
+    }
+    return JSON.parse(text) as T
   }
   return (await response.json()) as T
 }
@@ -96,6 +100,7 @@ function redirecionarSessaoExpirada() {
     path.startsWith('/erro/') ||
     path.startsWith('/recuperar-senha') ||
     path.startsWith('/nova-senha') ||
+    path.startsWith('/redefinir-senha') ||
     path.startsWith('/contato') ||
     path.startsWith('/publico/')
   ) {

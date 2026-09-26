@@ -2,16 +2,19 @@ import { FormEvent, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { academicoApi } from '../../api/academico'
 import { ApiError } from '../../api/client'
+import { UsuarioPicker } from '../../components/UsuarioPicker'
 import { useActions } from '../../hooks/useActions'
 import type { Curso } from '../../models/academico'
 
-const vazio = { nome: '', sigla: '', codigo: '', horasFormativasMinimas: 120, secretariosIds: '' }
-
-function parseSecretarios(raw: string): string[] {
-  return raw
-    .split(/[,;\s]+/)
-    .map((item) => item.trim())
-    .filter((item) => item.length > 0)
+const vazio = {
+  nome: '',
+  sigla: '',
+  codigo: '',
+  horasFormativasMinimas: 120,
+  idCoordenador: null as string | null,
+  coordenadorRotulo: '',
+  secretariosIds: [] as string[],
+  secretariosRotulos: {} as Record<string, string>,
 }
 
 export function Cursos() {
@@ -35,16 +38,20 @@ export function Cursos() {
         sigla: form.sigla,
         codigo: form.codigo,
         horasFormativasMinimas: form.horasFormativasMinimas,
-        secretariosIds: parseSecretarios(form.secretariosIds),
+        idCoordenador: form.idCoordenador,
+        secretariosIds: form.secretariosIds,
       }
       return editandoId ? academicoApi.atualizarCurso(editandoId, body) : academicoApi.criarCurso(body)
     },
     onSuccess: () => {
       setForm(vazio)
       setEditandoId(null)
+      setErro(null)
       queryClient.invalidateQueries({ queryKey: ['cursos'] })
     },
-    onError: () => setErro('Falha ao salvar o curso.'),
+    onError: (falha) => {
+      setErro(falha instanceof ApiError ? falha.message : 'Falha ao salvar o curso.')
+    },
   })
 
   const excluir = useMutation({
@@ -61,12 +68,16 @@ export function Cursos() {
 
   function editar(curso: Curso) {
     setEditandoId(curso.id)
+    const secretarios = curso.secretariosIds ?? []
     setForm({
       nome: curso.nome,
       sigla: curso.sigla,
       codigo: curso.codigo,
       horasFormativasMinimas: curso.horasFormativasMinimas,
-      secretariosIds: (curso.secretariosIds ?? []).join(', '),
+      idCoordenador: curso.idCoordenador ?? null,
+      coordenadorRotulo: curso.idCoordenador ? `Coordenador · ${curso.idCoordenador.slice(0, 8)}` : '',
+      secretariosIds: secretarios,
+      secretariosRotulos: Object.fromEntries(secretarios.map((id) => [id, id.slice(0, 8)])),
     })
   }
 
@@ -74,7 +85,7 @@ export function Cursos() {
     <section className="page">
       <header className="page-head">
         <h1>Cursos</h1>
-        <p>CRUD alinhado a RF-F5-004-a. Ações somente via `_links` (useActions).</p>
+        <p>CRUD alinhado a RF-F5-004-a. Coordenador e secretários via picker (F7.1).</p>
       </header>
       {forbidden && (
         <p className="empty" role="status">
@@ -113,15 +124,34 @@ export function Cursos() {
                 onChange={(e) => setForm({ ...form, horasFormativasMinimas: Number(e.target.value) })}
               />
             </label>
-            <label>
-              Secretários (UUIDs)
-              <input
-                value={form.secretariosIds}
-                onChange={(e) => setForm({ ...form, secretariosIds: e.target.value })}
-                placeholder="uuid, uuid"
-              />
-            </label>
           </div>
+          <UsuarioPicker
+            label="Coordenador"
+            value={form.idCoordenador}
+            selectedLabel={form.coordenadorRotulo}
+            onChange={(id, opcao) =>
+              setForm({
+                ...form,
+                idCoordenador: id,
+                coordenadorRotulo: opcao
+                  ? `${opcao.nome} · ${opcao.emailInstitucional}`
+                  : '',
+              })
+            }
+          />
+          <UsuarioPicker
+            multiple
+            label="Secretários"
+            values={form.secretariosIds}
+            selectedLabels={form.secretariosRotulos}
+            onChange={(ids, labels) =>
+              setForm((atual) => ({
+                ...atual,
+                secretariosIds: ids,
+                secretariosRotulos: labels,
+              }))
+            }
+          />
           <button type="submit" disabled={salvar.isPending}>
             Salvar
           </button>

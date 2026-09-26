@@ -27,6 +27,7 @@ class RefreshTokenUseCaseTest : StringSpec({
         val agora = OffsetDateTime.now()
         val usuario = Usuario(
             UUID.fromString("01800000-0000-7000-8000-0000000000cc"),
+            "Usuário IT",
             Email.of("aluno.dev@ufpr.br"),
             null,
             null,

@@ -204,6 +204,7 @@ class AlunoDashboardControllerIT {
         usuarioRepository.save(
             Usuario(
                 Uuids.v7(),
+                "Usuário IT",
                 Email.of(email),
                 null,
                 Grr.of(grr),

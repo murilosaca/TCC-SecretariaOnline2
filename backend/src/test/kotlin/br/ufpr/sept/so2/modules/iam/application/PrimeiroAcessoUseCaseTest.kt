@@ -34,6 +34,7 @@ class PrimeiroAcessoUseCaseTest : StringSpec({
         val agora = OffsetDateTime.parse("2026-01-01T00:00:00Z")
         novo = Usuario(
             UUID.fromString("01800000-0000-7000-8000-0000000000bb"),
+            "Usuário IT",
             Email.of("novo.dev@ufpr.br"),
             null,
             Grr.of("GRR20240002"),

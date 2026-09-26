@@ -88,8 +88,17 @@ class IamDevDataLoader(
             agora,
             authoritiesEgresso(),
         )
+        criarSeAusente(
+            "admin.dev@ufpr.br",
+            "GRR20240007",
+            hash,
+            true,
+            agora,
+            agora,
+            authoritiesAdmin(),
+        )
         LOG.info(
-            "Usuários de desenvolvimento IAM prontos (aluno.dev / novo.dev / professor.dev / caaf.dev / secretaria.dev / egresso.dev).",
+            "Usuários de desenvolvimento IAM prontos (aluno.dev / novo.dev / professor.dev / caaf.dev / secretaria.dev / egresso.dev / admin.dev).",
         )
     }
 
@@ -122,6 +131,7 @@ class IamDevDataLoader(
         }
         val usuario = Usuario(
             Uuids.v7(),
+            email.substringBefore('@'),
             Email.of(email),
             null,
             Grr.of(grr),
@@ -187,5 +197,12 @@ class IamDevDataLoader(
             )
 
         private fun authoritiesEgresso(): List<String> = listOf("alumni.view_own")
+
+        private fun authoritiesAdmin(): List<String> =
+            listOf(
+                "dashboard.view_own",
+                "user.manage_all",
+                "user.reset_password",
+            )
     }
 }

@@ -6,6 +6,7 @@ import { ApiError } from '../../api/client'
 import { Cursos } from './Cursos'
 
 const listarCursos = vi.fn()
+const buscarUsuarios = vi.fn()
 
 vi.mock('../../api/academico', () => ({
   academicoApi: {
@@ -14,6 +15,13 @@ vi.mock('../../api/academico', () => ({
     atualizarCurso: vi.fn(),
     excluirCurso: vi.fn(),
   },
+}))
+
+vi.mock('../../api/admin', () => ({
+  iamApi: {
+    buscarUsuarios: (...args: unknown[]) => buscarUsuarios(...args),
+  },
+  adminApi: {},
 }))
 
 function renderPage() {
@@ -44,6 +52,10 @@ describe('Cursos', () => {
       ],
       page: { number: 0, size: 20, totalElements: 1, totalPages: 1 },
     })
+    buscarUsuarios.mockResolvedValue({
+      content: [],
+      page: { number: 0, size: 20, totalElements: 0, totalPages: 0 },
+    })
     renderPage()
     expect(await screen.findByText('TADS-SEPT')).toBeTruthy()
     expect(screen.queryByText('Novo curso')).toBeNull()
@@ -72,11 +84,20 @@ describe('Cursos', () => {
       page: { number: 0, size: 20, totalElements: 1, totalPages: 1 },
       _links: { criar: '/academico/cursos' },
     })
+    buscarUsuarios.mockResolvedValue({
+      content: [
+        { id: 'u1', nome: 'Sec', emailInstitucional: 'sec@ufpr.br', grr: 'GRR20240005' },
+      ],
+      page: { number: 0, size: 20, totalElements: 1, totalPages: 1 },
+    })
     renderPage()
     expect(await screen.findByText('Novo curso')).toBeTruthy()
     expect(screen.getByText('Editar')).toBeTruthy()
     expect(screen.getByText('Excluir')).toBeTruthy()
     expect(screen.getByText('1')).toBeTruthy()
+    expect(screen.getByText('Coordenador')).toBeTruthy()
+    expect(screen.getByLabelText('Buscar secretários')).toBeTruthy()
+    expect(screen.queryByPlaceholderText('uuid, uuid')).toBeNull()
   })
 
   it('mostra 403 honesto quando a lista é recusada', async () => {
@@ -104,6 +125,10 @@ describe('Cursos', () => {
         },
       ],
       page: { number: 0, size: 20, totalElements: 1, totalPages: 1 },
+    })
+    buscarUsuarios.mockResolvedValue({
+      content: [],
+      page: { number: 0, size: 20, totalElements: 0, totalPages: 0 },
     })
     vi.mocked(academicoApi.excluirCurso).mockRejectedValue(
       new ApiError(409, 'Curso possui alunos ou disciplinas vinculados; desvincule antes de excluir.'),

@@ -5,8 +5,10 @@ import br.ufpr.sept.so2.modules.academico.application.ports.CursoEscopoPort
 import br.ufpr.sept.so2.modules.academico.application.ports.CursoRepository
 import br.ufpr.sept.so2.modules.academico.application.ports.CursoSecretarioRepository
 import br.ufpr.sept.so2.modules.academico.application.ports.DisciplinaRepository
+import br.ufpr.sept.so2.modules.academico.application.ports.UsuarioExistenciaPort
 import br.ufpr.sept.so2.modules.academico.domain.Curso
 import br.ufpr.sept.so2.shared.domain.exception.ConflitoEstadoException
+import br.ufpr.sept.so2.shared.domain.exception.DadoInvalidoException
 import br.ufpr.sept.so2.shared.domain.exception.RecursoNaoEncontradoException
 import br.ufpr.sept.so2.shared.infrastructure.Uuids
 import org.springframework.data.domain.Page
@@ -25,6 +27,7 @@ class CursoApplicationService(
     private val cursoEscopoPort: CursoEscopoPort,
     private val alunoRepository: AlunoRepository,
     private val disciplinaRepository: DisciplinaRepository,
+    private val usuarioExistenciaPort: UsuarioExistenciaPort,
 ) {
     @Transactional(readOnly = true)
     fun listar(usuarioId: UUID, pageable: Pageable): Pair<Page<Curso>, Set<UUID>> {
@@ -69,6 +72,7 @@ class CursoApplicationService(
         if (cursoRepository.existsByCodigo(codigo)) {
             throw ConflitoEstadoException("Já existe curso com o código $codigo")
         }
+        exigirUsuariosExistentes(idCoordenador, secretariosIds)
         val agora = OffsetDateTime.now()
         val curso = Curso(
             id = Uuids.v7(),
@@ -109,6 +113,7 @@ class CursoApplicationService(
         if (novoCodigo != null && novoCodigo != curso.codigo && cursoRepository.existsByCodigo(novoCodigo)) {
             throw ConflitoEstadoException("Já existe curso com o código $novoCodigo")
         }
+        exigirUsuariosExistentes(idCoordenador, secretariosIds)
         curso.atualizar(nome, novaSigla, novoCodigo, idCoordenador, horas, ativo)
         val persistido = cursoRepository.save(curso)
         if (secretariosIds != null) {
@@ -136,6 +141,16 @@ class CursoApplicationService(
     private fun exigirNoEscopo(usuarioId: UUID, cursoId: UUID) {
         if (cursoId !in cursoEscopoPort.cursoIdsDoUsuario(usuarioId)) {
             throw RecursoNaoEncontradoException("Curso não encontrado.")
+        }
+    }
+
+    private fun exigirUsuariosExistentes(idCoordenador: UUID?, secretariosIds: List<UUID>?) {
+        if (idCoordenador != null && !usuarioExistenciaPort.existe(idCoordenador)) {
+            throw DadoInvalidoException("Coordenador informado não existe.")
+        }
+        val secretarios = secretariosIds.orEmpty()
+        if (secretarios.isNotEmpty() && !usuarioExistenciaPort.existemTodos(secretarios)) {
+            throw DadoInvalidoException("Um ou mais secretários informados não existem.")
         }
     }
 }

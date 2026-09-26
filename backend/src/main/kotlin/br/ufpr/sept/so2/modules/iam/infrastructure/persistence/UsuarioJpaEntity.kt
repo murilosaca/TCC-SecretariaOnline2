@@ -17,6 +17,9 @@ import java.util.HashSet
 @Entity
 @Table(name = "usuario")
 class UsuarioJpaEntity : BaseEntity() {
+    @Column(nullable = false, length = 200)
+    var nome: String? = null
+
     @Column(name = "email_institucional", nullable = false, unique = true, columnDefinition = "citext")
     var emailInstitucional: String? = null
 
@@ -56,6 +59,7 @@ class UsuarioJpaEntity : BaseEntity() {
     var authorities: MutableSet<String> = HashSet()
 
     fun merge(usuario: Usuario) {
+        nome = usuario.nome
         emailInstitucional = usuario.emailInstitucional.value
         emailPessoal = usuario.emailPessoal?.value
         grr = usuario.grr?.value
@@ -73,6 +77,7 @@ class UsuarioJpaEntity : BaseEntity() {
     fun toDomain(): Usuario =
         Usuario(
             id!!,
+            nome ?: emailInstitucional!!.substringBefore('@'),
             Email.of(emailInstitucional),
             if (emailPessoal == null) null else Email.of(emailPessoal),
             if (grr == null) null else Grr.of(grr),

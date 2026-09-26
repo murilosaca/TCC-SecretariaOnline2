@@ -3,6 +3,8 @@ package br.ufpr.sept.so2.modules.iam.infrastructure.persistence
 import br.ufpr.sept.so2.modules.iam.application.ports.UsuarioRepository
 import br.ufpr.sept.so2.modules.iam.domain.IdentificadorLogin
 import br.ufpr.sept.so2.modules.iam.domain.Usuario
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Component
 import java.util.Optional
 import java.util.UUID
@@ -33,4 +35,11 @@ class UsuarioJpaAdapter(
 
     override fun findAtivosByAuthority(authority: String): List<Usuario> =
         jpaRepository.findAtivosByAuthority(authority).map { it.toDomain() }
+
+    override fun search(termo: String?, pageable: Pageable): Page<Usuario> {
+        val limpo = termo?.trim()?.takeIf { it.isNotEmpty() }
+        return jpaRepository.search(limpo, pageable).map { it.toDomain() }
+    }
+
+    override fun existsById(id: UUID): Boolean = jpaRepository.existsById(id)
 }

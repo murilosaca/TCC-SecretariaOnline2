@@ -39,6 +39,7 @@ import { PoolCoe } from './pages/comissoes/PoolCoe'
 import { ConfigurarCurso } from './pages/coordenacao/ConfigurarCurso'
 import { Cursos } from './pages/secretaria/Cursos'
 import { Disciplinas } from './pages/secretaria/Disciplinas'
+import { Usuarios } from './pages/admin/Usuarios'
 
 export default function App() {
   return (
@@ -49,6 +50,7 @@ export default function App() {
           <Route path="recuperar-senha" element={<RecuperarSenha />} />
         </Route>
         <Route path="nova-senha" element={<NovaSenha />} />
+        <Route path="redefinir-senha" element={<NovaSenha />} />
         <Route path="contato" element={<Contato />} />
         <Route path="erro/:codigo" element={<Erro />} />
         <Route path="publico/verificar-protocolo" element={<VerificarProtocolo />} />
@@ -84,6 +86,7 @@ export default function App() {
           <Route path="secretaria/alunos" element={<Alunos />} />
           <Route path="secretaria/estagios" element={<EstagiosSecretaria />} />
           <Route path="secretaria/calendarios" element={<Calendarios />} />
+          <Route path="admin/usuarios" element={<Usuarios />} />
           <Route path="coordenacao/cursos/:id/configurar" element={<ConfigurarCurso />} />
           <Route path="comissoes/coe" element={<PoolCoe />} />
           </Route>

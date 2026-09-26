@@ -21,6 +21,7 @@ class RecuperarSenhaUseCaseTest : StringSpec({
         usuarios.save(
             Usuario(
                 UUID.randomUUID(),
+                "Aluno Dev",
                 Email.of("aluno.dev@ufpr.br"),
                 null,
                 null,

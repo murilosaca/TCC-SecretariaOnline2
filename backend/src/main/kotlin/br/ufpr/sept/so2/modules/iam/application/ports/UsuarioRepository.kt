@@ -2,6 +2,8 @@ package br.ufpr.sept.so2.modules.iam.application.ports
 
 import br.ufpr.sept.so2.modules.iam.domain.IdentificadorLogin
 import br.ufpr.sept.so2.modules.iam.domain.Usuario
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import java.util.Optional
 import java.util.UUID
 
@@ -15,4 +17,8 @@ interface UsuarioRepository {
     fun findByEmail(email: String): Optional<Usuario>
 
     fun findAtivosByAuthority(authority: String): List<Usuario>
+
+    fun search(termo: String?, pageable: Pageable): Page<Usuario>
+
+    fun existsById(id: UUID): Boolean
 }

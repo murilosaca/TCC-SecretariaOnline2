@@ -307,6 +307,48 @@ class CursoControllerIT {
     }
 
     @Test
+    fun secretarioInexistenteNaoGravaVinculoCego() {
+        val token = usuariosIt.login(EMAIL_SEC)
+        val (sigla, codigo) = codigoUnico("FX")
+        val fantasma = Uuids.v7().toString()
+        mockMvc.perform(
+            post("/academico/cursos")
+                .header("Authorization", "Bearer $token")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(payloadCurso("Curso fantasma", sigla, codigo, listOf(fantasma))),
+        )
+            .andExpect(status().isUnprocessableEntity)
+            .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.containsString("validation-error")))
+            .andExpect(jsonPath("$.detail").value(org.hamcrest.Matchers.containsString("secretários")))
+    }
+
+    @Test
+    fun coordenadorInexistenteNaoGravaVinculoCego() {
+        val token = usuariosIt.login(EMAIL_SEC)
+        val (sigla, codigo) = codigoUnico("CX")
+        val fantasma = Uuids.v7().toString()
+        mockMvc.perform(
+            post("/academico/cursos")
+                .header("Authorization", "Bearer $token")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {
+                      "nome": "Curso sem coord",
+                      "sigla": "$sigla",
+                      "codigo": "$codigo",
+                      "horasFormativasMinimas": 120,
+                      "idCoordenador": "$fantasma",
+                      "secretariosIds": []
+                    }
+                    """.trimIndent(),
+                ),
+        )
+            .andExpect(status().isUnprocessableEntity)
+            .andExpect(jsonPath("$.detail").value(org.hamcrest.Matchers.containsString("Coordenador")))
+    }
+
+    @Test
     fun preflightOptionsNaoRetorna401() {
         mockMvc.perform(
             options("/academico/cursos")

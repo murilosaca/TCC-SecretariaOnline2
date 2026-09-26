@@ -150,6 +150,24 @@ export async function apiPost<T>(path: string, body?: unknown): Promise<T> {
   return response.data;
 }
 
+/** Multipart: remove Content-Type fixo para o runtime definir o boundary. */
+export async function apiPostForm<T>(path: string, form: FormData): Promise<T> {
+  const response = await apiClient.post<T>(path, form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    transformRequest: [
+      (data, headers) => {
+        if (typeof FormData !== 'undefined' && data instanceof FormData) {
+          if (headers && typeof headers === 'object' && 'Content-Type' in headers) {
+            delete (headers as Record<string, unknown>)['Content-Type'];
+          }
+        }
+        return data;
+      },
+    ],
+  });
+  return response.data;
+}
+
 function compact(params?: Record<string, string | number | undefined>) {
   if (!params) {
     return undefined;

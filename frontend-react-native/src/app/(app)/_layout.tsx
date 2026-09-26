@@ -1,9 +1,10 @@
 import { Redirect, Stack, usePathname } from 'expo-router';
 import { ActivityIndicator, View } from 'react-native';
 import { useAuth } from '@/auth/AuthContext';
+import { inicioDaSessao, rotaBloqueada } from '@/auth/portal';
 
 export default function AppGroupLayout() {
-  const { status, mustChangePassword } = useAuth();
+  const { status, mustChangePassword, links } = useAuth();
   const pathname = usePathname();
 
   if (status === 'loading') {
@@ -20,7 +21,10 @@ export default function AppGroupLayout() {
     return <Redirect href="/primeiro-acesso" />;
   }
   if (!mustChangePassword && pathname === '/primeiro-acesso') {
-    return <Redirect href="/inicio" />;
+    return <Redirect href={inicioDaSessao(links)} />;
+  }
+  if (!mustChangePassword && rotaBloqueada(pathname, links)) {
+    return <Redirect href={inicioDaSessao(links)} />;
   }
   return <Stack screenOptions={{ headerShown: false }} />;
 }

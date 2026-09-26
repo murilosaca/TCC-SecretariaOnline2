@@ -8,6 +8,7 @@ import br.ufpr.sept.so2.modules.tcc.application.ports.AlunoTccPort
 import br.ufpr.sept.so2.modules.tcc.application.ports.AutorTccPort
 import br.ufpr.sept.so2.modules.tcc.domain.PapelBancaTcc
 import br.ufpr.sept.so2.modules.tcc.domain.Tcc
+import br.ufpr.sept.so2.modules.tcc.domain.TccSituacao
 import org.springframework.stereotype.Component
 import java.util.UUID
 
@@ -29,6 +30,9 @@ class TccAssembler(
         }
         if ((dono || membro != null) && tcc.temArquivo()) {
             links["download"] = "$self/arquivo"
+        }
+        if (TccAcesso.MANAGE in authorities && tcc.situacao == TccSituacao.ATIVO) {
+            links["editar"] = self
         }
         val orientador = tcc.membros.first { it.papel == PapelBancaTcc.ORIENTADOR }
         return TccResponse(

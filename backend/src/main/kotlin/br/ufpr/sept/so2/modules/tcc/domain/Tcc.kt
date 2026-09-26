@@ -14,8 +14,8 @@ class Tcc(
     titulo: String,
     situacao: TccSituacao,
     estado: TccEstado,
-    val dataDefesa: LocalDate,
-    val dataEntrega: LocalDate,
+    dataDefesa: LocalDate,
+    dataEntrega: LocalDate,
     nomeArquivo: String? = null,
     contentType: String? = null,
     conteudo: ByteArray? = null,
@@ -26,12 +26,19 @@ class Tcc(
     membros: List<MembroBancaTcc>,
     avaliacoes: List<AvaliacaoTcc> = emptyList(),
 ) {
-    val titulo: String = titulo.trim()
+    var titulo: String = titulo.trim()
+        private set
 
     var situacao: TccSituacao = situacao
         private set
 
     var estado: TccEstado = estado
+        private set
+
+    var dataDefesa: LocalDate = dataDefesa
+        private set
+
+    var dataEntrega: LocalDate = dataEntrega
         private set
 
     var nomeArquivo: String? = nomeArquivo
@@ -52,18 +59,18 @@ class Tcc(
     var updatedAt: OffsetDateTime = updatedAt
         private set
 
-    private val _membros: List<MembroBancaTcc> = membros.toList()
+    private val _membros: MutableList<MembroBancaTcc> = membros.toMutableList()
 
     private val _avaliacoes: MutableList<AvaliacaoTcc> = avaliacoes.toMutableList()
 
     val membros: List<MembroBancaTcc>
-        get() = _membros
+        get() = _membros.toList()
 
     val avaliacoes: List<AvaliacaoTcc>
         get() = _avaliacoes.sortedByDescending { it.createdAt }
 
     init {
-        validar(this.titulo, dataDefesa, dataEntrega, _membros)
+        validar(this.titulo, this.dataDefesa, this.dataEntrega, _membros)
     }
 
     fun pertenceAoAluno(alunoId: UUID): Boolean = idAluno == alunoId
@@ -122,6 +129,24 @@ class Tcc(
         estado = registrada.resultado
         updatedAt = agora
         return registrada
+    }
+
+    fun atualizarCadastro(
+        titulo: String,
+        dataDefesa: LocalDate,
+        dataEntrega: LocalDate,
+        membros: List<MembroBancaTcc>,
+        agora: OffsetDateTime,
+    ) {
+        exigirAtivo()
+        val tituloLimpo = titulo.trim()
+        validar(tituloLimpo, dataDefesa, dataEntrega, membros)
+        this.titulo = tituloLimpo
+        this.dataDefesa = dataDefesa
+        this.dataEntrega = dataEntrega
+        _membros.clear()
+        _membros.addAll(membros)
+        updatedAt = agora
     }
 
     private fun exigirAtivo() {

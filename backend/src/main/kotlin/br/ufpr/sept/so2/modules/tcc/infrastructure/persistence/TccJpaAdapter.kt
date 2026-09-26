@@ -43,6 +43,24 @@ class TccJpaAdapter(
     }
 
     @Transactional(readOnly = true)
+    override fun findByCursos(
+        cursoIds: Collection<UUID>,
+        situacao: TccSituacao?,
+        pageable: Pageable,
+    ): Page<Tcc> {
+        if (cursoIds.isEmpty()) {
+            return Page.empty(pageable)
+        }
+        val ids = cursoIds.toSet()
+        val page = if (situacao == null) {
+            jpaRepository.findByIdCursoIn(ids, pageable)
+        } else {
+            jpaRepository.findByIdCursoInAndSituacao(ids, situacao.name, pageable)
+        }
+        return page.map { it.toDomain() }
+    }
+
+    @Transactional(readOnly = true)
     override fun existsAtivoByAluno(alunoId: UUID): Boolean =
         jpaRepository.existsByIdAlunoAndSituacao(alunoId, TccSituacao.ATIVO.name)
 }

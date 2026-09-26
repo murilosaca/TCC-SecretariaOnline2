@@ -65,6 +65,9 @@ object MenuLinks {
         if (caps.contains("internship.manage")) {
             links["estagios-secretaria"] = "/secretaria/estagios"
         }
+        if (caps.contains("tcc.manage")) {
+            links["tccs-secretaria"] = "/secretaria/tccs"
+        }
         if (caps.contains("user.manage_all")) {
             links["usuarios"] = "/admin/usuarios"
         }

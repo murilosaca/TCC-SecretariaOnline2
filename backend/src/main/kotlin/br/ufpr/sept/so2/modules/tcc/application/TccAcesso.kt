@@ -10,6 +10,7 @@ import java.util.UUID
 internal object TccAcesso {
     const val VIEW = "tcc.view_own"
     const val REVIEW = "tcc.review"
+    const val MANAGE = "tcc.manage"
 
     fun exigirAlunoAtivo(port: AlunoTccPort, usuarioId: UUID): AlunoRef {
         val aluno = port.resolver(usuarioId)

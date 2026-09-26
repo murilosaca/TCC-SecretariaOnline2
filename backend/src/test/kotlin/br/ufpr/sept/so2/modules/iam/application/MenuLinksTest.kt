@@ -78,6 +78,7 @@ class MenuLinksTest : StringSpec({
         links.shouldNotContainKey("comissoes-coe")
         links.shouldNotContainKey("tccs")
         links.shouldNotContainKey("tccs-revisao")
+        links.shouldNotContainKey("tccs-secretaria")
     }
 
     "secretaria com internship.manage ganha o cadastro e nao a lista do aluno" {
@@ -88,11 +89,24 @@ class MenuLinksTest : StringSpec({
         links.shouldNotContainKey("estagios")
         links.shouldNotContainKey("estagios-revisao")
         links.shouldNotContainKey("comissoes-coe")
+        links.shouldNotContainKey("tccs-secretaria")
+    }
+
+    "secretaria com tcc.manage ganha o cadastro e nao a lista do aluno" {
+        val links = MenuLinks.from(
+            listOf("course.manage", "user.manage_students", "tcc.manage"),
+        )
+        links["tccs-secretaria"] shouldBe "/secretaria/tccs"
+        links.shouldNotContainKey("tccs")
+        links.shouldNotContainKey("tccs-revisao")
+        links.shouldNotContainKey("estagios-secretaria")
     }
 
     "aluno e professor nao ganham o cadastro da secretaria" {
         MenuLinks.from(listOf("internship.view_own")).shouldNotContainKey("estagios-secretaria")
         MenuLinks.from(listOf("internship.review")).shouldNotContainKey("estagios-secretaria")
+        MenuLinks.from(listOf("tcc.view_own")).shouldNotContainKey("tccs-secretaria")
+        MenuLinks.from(listOf("tcc.review")).shouldNotContainKey("tccs-secretaria")
     }
 
     "aluno com tcc.view_own ganha tccs e nao a fila" {

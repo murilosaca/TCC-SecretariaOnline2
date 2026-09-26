@@ -78,6 +78,8 @@ class TccJpaEntity : BaseEntity() {
             createdAt = tcc.createdAt
         }
         updatedAt = tcc.updatedAt
+        val manter = tcc.membros.map { it.id }.toSet()
+        membros.removeIf { it.id !in manter }
         tcc.membros.forEach { membro ->
             val entity = membros.find { it.id == membro.id } ?: TccMembroJpaEntity().also {
                 it.id = membro.id

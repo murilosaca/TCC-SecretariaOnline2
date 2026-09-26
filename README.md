@@ -4,9 +4,9 @@ Plataforma digital da secretaria acadêmica do **SEPT/UFPR**. Este é o reposit�
 
 O SO2 não substitui o juízo de docentes, comissões ou secretaria. Ele garante trilha de auditoria, integridade de dados e automação de trâmites repetitivos.
 
-**Onde estamos:** P0 fechado na web e no Expo (itens 1–**8**). **Item 9 neste recorte:** 9.1–9.4 no ar e **9.5 pool COE** (só atribuição). Esta fatia **não** é o portal admin F7 (sem F7.1–F7.9). F6.2 (relatórios), lote CAAF, MinIO, o CRUD F5 de estágio, o cadastro F5 de TCC e o diploma (F5.11) continuam fora.
+**Onde estamos:** P0 fechado na web e no Expo (itens 1–**8**). **Item 9 neste recorte:** 9.1–9.4 no ar e **9.5 pool COE** (só atribuição). Fatias **10–12** no ar (cadastro F5 de estágio, F7.1 usuários/picker, cadastro F5 de TCC). Esta fatia **não** é o portal admin F7 completo (sem F7.2–F7.9). F6.2 (relatórios), lote CAAF, MinIO e o diploma (F5.11) continuam fora.
 
-Circuito demonstrável: login → primeiro acesso (senha + LGPD) → `/inicio` do aluno → solicitação + deep-link ao professor → presença **QR\|SECRET × SINGLE\|DUAL** → formativa (`PENDENTE_CONFIRMACAO` → aluno confirma → `AGUARDANDO_CAAF`) → CAAF aprova → certificado oficial (PDF + hash + ED25519) → `/certificados` + F0.7. Secretaria (`secretaria.dev`) opera o CRUD de TADS; aluno/professor/CAAF não veem Cursos. Egresso (`egresso.dev`) entra em `/egresso/inicio` e reemite o PDF com o mesmo hash; `aluno.dev` não entra em `/egresso/**`.
+Circuito demonstrável: login → primeiro acesso (senha + LGPD) → `/inicio` do aluno → solicitação + deep-link ao professor → presença **QR\|SECRET × SINGLE\|DUAL** → formativa (`PENDENTE_CONFIRMACAO` → aluno confirma → `AGUARDANDO_CAAF`) → CAAF aprova → certificado oficial (PDF + hash + ED25519) → `/certificados` + F0.7. Secretaria (`secretaria.dev`) opera o CRUD de TADS, estágios e TCCs; aluno/professor/CAAF não veem Cursos. Egresso (`egresso.dev`) entra em `/egresso/inicio` e reemite o PDF com o mesmo hash; `aluno.dev` não entra em `/egresso/**`.
 
 ### CAAF e COE (o que são)
 
@@ -75,7 +75,7 @@ Pacote `br.ufpr.sept.so2`. Clean Architecture; módulos conversam por ports.
 | `certificados` | Emissão só pelo sistema na aprovação CAAF. PDF `bytea` (sem MinIO). SHA-256 + ED25519 + F0.7. Sem upload oficial |
 | `comunicacao` | Dispatcher Outbox → SMTP (Mailpit). Sem hub F1.6. `estagio.*`, `tcc.submitted` e `tcc.reviewed` fecham SENT sem e-mail (no-op, como `certificado.emitido`) |
 | `estagio` | Estágio do aluno + parecer **individual** do orientador (`internship.view_own` / `internship.review`) + pool COE (só atribuição). PDF em `bytea`. Sem lote de parecer, sem CRUD F5 |
-| `tcc` | TCC do aluno + avaliação **individual** do orientador/banca (`tcc.view_own` / `tcc.review`). PDF em `bytea`. Sem lote, sem certificado de conclusão, sem CRUD F5 |
+| `tcc` | TCC do aluno + avaliação individual + cadastro F5 (`tcc.manage`). PDF em `bytea`. Sem lote, sem certificado de conclusão |
 | `coordenacao` | F6.1 `GET`/`PATCH /coordenacao/cursos/{id}/config` (`course.config` + `idCoordenador`). Sem F6.2 |
 | `egresso` | F2.1 `GET /egressos/me` + reemissão do PDF já gravado (`alumni.view_own`). Diploma e colação nulos |
 
@@ -109,7 +109,7 @@ Módulos **previstos e ainda sem código**: `auditoria` (módulo dedicado; `audi
 
 | Pasta | Uso |
 |---|---|
-| `pages/secretaria/` | CRUD F5.6–F5.9 |
+| `pages/secretaria/` | CRUD F5.6–F5.9 + cadastro F5 de estágio/TCC |
 | `pages/aluno/`, `pages/inicio/`, `pages/professor/` | Aluno, BFF `/inicio`, hospedeiro |
 | `pages/solicitacoes/`, `pages/formativas/`, `pages/estagios/`, `pages/tccs/`, `pages/publico/` | Fila/deliberar, CAAF, estágio, TCC, F0 |
 | `pages/coordenacao/` | F6.1 `/coordenacao/cursos/:id/configurar` |
@@ -150,7 +150,7 @@ Login: `@ufpr.br`, e-mail pessoal ou GRR (`GRR` + 8 dígitos). `senhaAlterada = 
 | `/formativas` | JWT + `formative.view_own` / `confirm_own` / `review` | Sem POST avulso. Sem lote. Aprovar emite certificado |
 | `/certificates` | JWT + `certificate.view_own` | Lista/download do dono. Sem POST. Outro aluno → 404 |
 | `/estagios` | JWT + `internship.view_own` / `internship.review` | `?aluno=me` ou fila `?canReview=true`. Upload PDF, parecer individual, `POST /{id}/encerrar`. Sem lote. Outro aluno ou orientador alheio → 404 |
-| `/tccs` | JWT + `tcc.view_own` / `tcc.review` | `?aluno=me` ou fila `?canReview=true`. Upload PDF, avaliação individual. Sem lote e sem certificado. Outro aluno ou banca alheia → 404 |
+| `/tccs` | JWT + `tcc.view_own` / `tcc.review` / `tcc.manage` | `?aluno=me`, fila `?canReview=true`, escopo `?escopo=cursos` + `POST`/`PUT` (`tcc.manage`). Upload PDF, avaliação individual. Sem lote e sem certificado. Outro aluno ou banca alheia → 404 |
 | `/coordenacao/cursos/{id}/config` | JWT + `course.config` **e** `idCoordenador = usuarioId` | GET/PATCH F6.1. Sem `course.manage`. Outro curso → 403. Anônimo → 401. Sem `/courses/{id}/config` |
 | `/comissoes/coe` | JWT + `internship.review` | Pool F4.2: KPIs + não atribuídos + “comigo”. `POST /comissoes/coe/atribuicoes` `{ estagioId, assigneeId }`. Sem cap → 403. Estágio fora do curso da comissão → 404. Sem parecer em lote |
 | `/.well-known/jwks.json` | Anônimo | Chave pública ED25519 (par separado do RSA do JWT) |
@@ -288,6 +288,22 @@ Sem migration: o cadastro cabe nas colunas da V012/V015 (`id_orientador` já é 
 - O seed `@Profile("dev")` do `aluno.dev` e do pool COE continua. A secretaria deixa de depender dele para alimentar o pool e a revisão F3.6.
 - Fora: parecer, reprovar e encerrar (já no 9.1), lote, MinIO / `modules/arquivos`, cadastro de TCC, F7.1, Expo, mudança no pool COE.
 
+**11. F7.1 + F7.8 usuários e picker** — feito
+
+`user.manage_all` / `user.reset_password` no seed `admin.dev`. V016 `usuario.nome`. CRUD `/admin/usuarios` e picker `GET /iam/usuarios` (também com `course.manage` na F5.7). Sem e-mail síncrono (`iam.user_created` → SENT no-op). Perfis/matriz FGAC (32), jobs e módulo `auditoria` ficam fora.
+
+**12. Cadastro F5 de TCC** — feito
+
+Sem migration: o cadastro cabe na V013 (`tcc` + `tcc_membro`). `tcc.manage` entra só no seed de `secretaria.dev`. Aluno continua `tcc.view_own`. Professor/banca continua `tcc.review`.
+
+- `POST /tccs` e `PUT /tccs/{id}` (`tcc.manage`). Corpo `alunoId`, `titulo`, `dataDefesa`, `dataEntrega`, `membros[]` (`idUsuario` + `papel`). Nasce `ATIVO` / `EM_ELABORACAO` via `Tcc.abrir`, com exatamente um `ORIENTADOR`. O aluno sai de `GET /academico/alunos` e precisa estar num curso de `curso_secretario` do chamador (`CursoEscopoPort`). Fora do escopo ou aluno inexistente → 404 (a mesma resposta). Membro da banca inexistente → 422. Segundo `ATIVO` do mesmo aluno → 409 (V013). Sem cap → 403. Anônimo → 401.
+- `PUT` só em TCC `ATIVO` do escopo. `CONCLUIDO` permanece imutável (409). O aluno não é trocado.
+- Listagem da secretaria: `GET /tccs?escopo=cursos`, filtrada pelos cursos dela, com `_links.novo`. O `GET /tccs?aluno=me` e `?canReview=true` não mudam de contrato. A lista do aluno continua sem `_links.novo`.
+- `audit_log` append-only na mesma TX (`tcc.registrado`, `tcc.atualizado`). Esses tipos fecham `SENT` sem SMTP, no mesmo no-op dos `tcc.*` já existentes. Sem e-mail síncrono.
+- UI `/secretaria/tccs` (rota derivada; o mapa F0–F8 não tem tela F5 de TCC). Menu: rel `tccs-secretaria` só com `tcc.manage`, montado em `MenuLinks` e consumido por `useActions`. Banca pelo `UsuarioPicker` da fatia 11. F1.15 continua sem “Novo TCC”.
+- O seed `@Profile("dev")` do `aluno.dev` continua. A secretaria deixa de depender dele para alimentar a revisão F3.7.
+- Fora: avaliação e upload (já no 9.2), certificado de conclusão, lote, MinIO / `modules/arquivos`, F7.2, Expo.
+
 **Ainda não:** a lista solta virou a tabela numerada da seção **O que falta (pós-9.5)**, abaixo. Não manter duas listas divergentes aqui.
 
 **9. Estágio + COE, TCC, egresso, F6.1**
@@ -306,7 +322,7 @@ O item 9 fechou **o recorte dele** (estágio, TCC, egresso, F6.1, pool COE), nã
 |---|---|---|---|---|
 | 10 | Cadastro F5 de estágio (RF-F1-007) | 9.1, 9.5 | **Feito** — `POST`/`PUT /estagios` (`internship.manage`), aluno via `GET /academico/alunos`, `id_orientador` nulo, UI `/secretaria/estagios`. O seed de dev deixa de ser o único jeito de alimentar o pool COE e a revisão F3.6 | Parecer e encerramento (já no 9.1), lote, MinIO, TCC |
 | 11 | F7.1 + F7.8 usuários e picker | 10 | **Feito** — `GET`/`POST`/`PUT` `/admin/usuarios` + `POST .../desativar` (`user.manage_all`), `POST .../reset-senha` (`user.reset_password`, JWT 1-uso reusa `/nova-senha`), picker `GET /iam/usuarios` na F5.7 (coord+secretários), seed `admin.dev`, V016 `usuario.nome`. Sem e-mail síncrono (`iam.user_created` → SENT no-op) | Perfis/matriz FGAC (32), jobs, auditoria, `cursoIds` no JWT |
-| 12 | Cadastro F5 de TCC (RF-F1-008) | 11 | `POST`/`PUT /tccs` para a secretaria (`tcc.manage`) e banca (`tcc_membro`) montada pelo picker da 11. V013 já garante um `ATIVO` por aluno | Certificado de conclusão, lote, MinIO |
+| 12 | Cadastro F5 de TCC (RF-F1-008) | 11 | **Feito** — `POST`/`PUT /tccs` (`tcc.manage`), aluno via `GET /academico/alunos`, banca via picker `GET /iam/usuarios`, UI `/secretaria/tccs`. V013 já garante um `ATIVO` por aluno | Certificado de conclusão, lote, MinIO |
 | 13 | F3.1 BFF do professor | 9.1, 9.2 | `GET /bff/dashboard/professor` (`dashboard.view_self_professor`) agregando por porta a fila de deliberação, eventos do dia, CAAF, estágios e TCCs; degrada por bloco como o do aluno. `/inicio` deixa de ser 403 honesto para quem só é professor | Dashboard da secretaria (21), KPI de SLA calculado, Expo |
 | 14 | F4.1 pool + lote CAAF | 3, 9.5 | `/comissoes/caaf` (`formative.review`): KPIs, self-assign, atribuição a colega com carga e aprovação em lote **só** de formativa cuja presença o sistema já validou. Exige tabela genérica de membro de comissão — hoje só existe `coe_membro` (V015) | Indeferir em lote, comprovante manual (24), mexer no parecer individual do item 3 |
 | 15 | MinIO + `modules/arquivos` | 10, 12 | MinIO no `docker-compose.yml`, `modules/arquivos` com upload/download por URL pré-assinada (15 min) e migração dos PDFs hoje em `bytea` (certificado V009, estágio V012, TCC V013) | Antivírus, versionamento de arquivo, exportação assíncrona (29) |
@@ -403,7 +419,7 @@ Senha de todos: `TroqueEstaSenha1!` (só local; override `IAM_DEV_SEED_PASSWORD`
 | `novo.dev@ufpr.br` | `GRR20240002` | Primeiro acesso (`senhaAlterada=false`); também tem cadastro acadêmico. Tem `internship.view_own` e `tcc.view_own` e listas vazias |
 | `professor.dev@ufpr.br` | `GRR20240003` | Hospedeiro (`event.manage`, `event.host`), deliberante (`request.deliberate`), orientador do estágio (`internship.review`) e da banca do TCC (`tcc.review`). **Membro COE do TADS** e **coordenador do TADS** com `course.config` e **sem** `course.manage` — configura F6.1 e não vê o CRUD `/secretaria/cursos`. Sem `formative.*` — `GET /formativas?canReview=true` é 403. Sem `internship.view_own` / `tcc.view_own` — `GET /estagios?aluno=me` e `GET /tccs?aluno=me` são 403 |
 | `caaf.dev@ufpr.br` | `GRR20240004` | Revisor CAAF (`formative.review`). Sem `event.manage` / `request.deliberate` |
-| `secretaria.dev@ufpr.br` | `GRR20240005` | CRUD TADS (`course.manage`, `subject.manage`, `user.manage_students`, `calendar.manage`) + `internship.manage` + `request.view_curso` + `request.triage` + `request.deliberate`. Sem `course.config` / `formative.review` / `event.manage` / `internship.view_own` / `internship.review` / `user.manage_all`. Não recebe deep-link. Nav **sem** o item “Solicitações” do aluno (só Deliberar), **sem** Configurar curso / Usuários e **com** Cadastro de estágios (`/secretaria/estagios`). Sem o item Estágios do aluno, a fila de revisão e o pool COE |
+| `secretaria.dev@ufpr.br` | `GRR20240005` | CRUD TADS (`course.manage`, `subject.manage`, `user.manage_students`, `calendar.manage`) + `internship.manage` + `tcc.manage` + `request.view_curso` + `request.triage` + `request.deliberate`. Sem `course.config` / `formative.review` / `event.manage` / `internship.view_own` / `internship.review` / `user.manage_all`. Não recebe deep-link. Nav **sem** o item “Solicitações” do aluno (só Deliberar), **sem** Configurar curso / Usuários e **com** Cadastro de estágios (`/secretaria/estagios`) e Cadastro de TCCs (`/secretaria/tccs`). Sem o item Estágios/TCCs do aluno, a fila de revisão e o pool COE |
 | `egresso.dev@ufpr.br` | `GRR20240006` | Portal egresso (`alumni.view_own`) |
 | `admin.dev@ufpr.br` | `GRR20240007` | F7.1/F7.8 (`user.manage_all`, `user.reset_password`). Nav **com** Usuários (`/admin/usuarios`). Sem caps de secretaria/aluno |
 
@@ -426,7 +442,7 @@ A oficina seed `"Oficina Proof of Stay (dev)"` pode já estar `COMPLETA` para `a
 9. **Recuperar senha** — `/recuperar-senha` com e-mail válido ou inexistente: mesmo 202. Só o cadastrado chega no Mailpit (`/nova-senha?token=`).
 10. **CAAF** — `caaf.dev@ufpr.br` nav **sem** Eventos prof. / Cursos / Estágios. Aprova em `/formativas?to=me` → certificado na mesma TX. Aluno: horas `N / 120` e KPI ≥ 1. F0.7 verifica o hash. Sem `formative.review` / `certificate.view_own` → 403.
 11. **Estágio** — `aluno.dev` em `/estagios` vê o seed (sem “Novo estágio”), abre o detalhe e envia o PDF se `_links.upload`. `professor.dev` em `/estagios?to=me` emite parecer no documento e arquiva quando todos os obrigatórios estão `APROVADO`. Sem lote de parecer. Anônimo → 401. Outro aluno no id → 404. `secretaria.dev` registra em `/secretaria/estagios` (menu Cadastro de estágios, `internship.manage`) um estágio com orientador vazio; `aluno.dev` e `professor.dev` não veem esse item e tomam 403 no `POST /estagios`.
-12. **TCC** — `aluno.dev` em `/tccs` vê o seed (sem “Novo TCC”), abre o detalhe e envia o PDF se `_links.upload-final`. `professor.dev` em `/tccs?to=me` só vê o TCC depois do envio e registra nota + parecer um a um. Sem lote e sem certificado. Anônimo → 401. Outro aluno no id → 404. Secretaria não ganha item de menu de TCC.
+12. **TCC** — `aluno.dev` em `/tccs` vê o seed (sem “Novo TCC”), abre o detalhe e envia o PDF se `_links.upload-final`. `professor.dev` em `/tccs?to=me` só vê o TCC depois do envio e registra nota + parecer um a um. Sem lote e sem certificado. Anônimo → 401. Outro aluno no id → 404. `secretaria.dev` registra em `/secretaria/tccs` (menu Cadastro de TCCs, `tcc.manage`) com banca pelo picker; `aluno.dev` e `professor.dev` não veem esse item e tomam 403 no `POST /tccs`.
 13. **F6.1** — `professor.dev` abre Configurar curso (TADS), altera horas 120→150 e salva. UUID de outro curso → 403. `secretaria.dev` não vê a tela. Quem já era elegível pelo limiar 120 permanece.
 14. **Pool COE** — `professor.dev` em `/comissoes/coe` vê o seed sem orientador, **Atribuir a mim**, e o item passa a `/estagios?to=me`. Sem botão “Aprovar selecionados”. Sem `internship.review` → 403. Secretaria/aluno não veem o item.
 

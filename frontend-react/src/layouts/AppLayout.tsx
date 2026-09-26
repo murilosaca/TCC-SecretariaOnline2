@@ -23,6 +23,7 @@ const NAV_ITENS: { rel: string; label: string }[] = [
   { rel: 'alunos', label: 'Alunos' },
   { rel: 'calendarios', label: 'Calendários' },
   { rel: 'estagios-secretaria', label: 'Cadastro de estágios' },
+  { rel: 'tccs-secretaria', label: 'Cadastro de TCCs' },
   { rel: 'usuarios', label: 'Usuários' },
   { rel: 'contato', label: 'Contato' },
 ]

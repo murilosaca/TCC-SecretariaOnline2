@@ -46,8 +46,12 @@ class TccJpaEntity : BaseEntity() {
     @Column(name = "content_type", length = 100)
     var contentType: String? = null
 
+    /** Legado bytea; nulo após migração para MinIO. */
     @Column(columnDefinition = "bytea")
     var conteudo: ByteArray? = null
+
+    @Column(name = "storage_key", length = 512)
+    var storageKey: String? = null
 
     var tamanho: Int? = null
 
@@ -71,7 +75,8 @@ class TccJpaEntity : BaseEntity() {
         dataEntrega = tcc.dataEntrega
         nomeArquivo = tcc.nomeArquivo
         contentType = tcc.contentType
-        conteudo = tcc.conteudo?.copyOf()
+        storageKey = tcc.storageKey
+        conteudo = null
         tamanho = tcc.tamanho
         enviadoEm = tcc.enviadoEm
         if (createdAt == null) {
@@ -110,7 +115,7 @@ class TccJpaEntity : BaseEntity() {
         dataEntrega!!,
         nomeArquivo,
         contentType,
-        conteudo?.copyOf(),
+        storageKey,
         tamanho,
         enviadoEm,
         createdAt!!,

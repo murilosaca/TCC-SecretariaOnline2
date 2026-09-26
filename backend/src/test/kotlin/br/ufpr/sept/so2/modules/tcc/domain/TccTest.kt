@@ -75,24 +75,24 @@ class TccTest : StringSpec({
     "envio de PDF muda para submetido e arquivo inválido não altera o estado" {
         val tcc = ativo()
         shouldThrow<DadoInvalidoException> {
-            tcc.enviarVersaoFinal("nota.txt", "text/plain", "nao e pdf".toByteArray(), agora)
+            tcc.enviarVersaoFinal("nota.txt", "text/plain", "nao e pdf".toByteArray(), "tccs/key.pdf", agora)
         }
         tcc.estado shouldBe TccEstado.EM_ELABORACAO
 
-        tcc.enviarVersaoFinal("tcc.pdf", "application/pdf", pdf, agora)
+        tcc.enviarVersaoFinal("tcc.pdf", "application/pdf", pdf, "tccs/key.pdf", agora)
         tcc.estado shouldBe TccEstado.SUBMETIDO
         tcc.podeEnviar() shouldBe false
         tcc.podeAvaliar(orientadorId) shouldBe true
 
         shouldThrow<ConflitoEstadoException> {
-            tcc.enviarVersaoFinal("tcc.pdf", "application/pdf", pdf, agora)
+            tcc.enviarVersaoFinal("tcc.pdf", "application/pdf", pdf, "tccs/key.pdf", agora)
         }
         tcc.estado shouldBe TccEstado.SUBMETIDO
     }
 
     "indeferir curto não muda o estado e o longo reprova" {
         val tcc = ativo()
-        tcc.enviarVersaoFinal("tcc.pdf", "application/pdf", pdf, agora)
+        tcc.enviarVersaoFinal("tcc.pdf", "application/pdf", pdf, "tccs/key.pdf", agora)
         shouldThrow<DadoInvalidoException> {
             tcc.avaliar("INDEFERIR", BigDecimal("4"), "curto", orientadorId, avaliacaoId, agora)
         }
@@ -109,13 +109,13 @@ class TccTest : StringSpec({
 
     "correções devolvem o envio e a aprovação seguinte encerra a avaliação" {
         val tcc = ativo()
-        tcc.enviarVersaoFinal("tcc.pdf", "application/pdf", pdf, agora)
+        tcc.enviarVersaoFinal("tcc.pdf", "application/pdf", pdf, "tccs/key.pdf", agora)
         tcc.avaliar("SOLICITAR_CORRECOES", BigDecimal("6.5"), parecerLongo, orientadorId, avaliacaoId, agora)
         tcc.estado shouldBe TccEstado.CORRECOES_SOLICITADAS
         tcc.podeEnviar() shouldBe true
         tcc.podeAvaliar(orientadorId) shouldBe false
 
-        tcc.enviarVersaoFinal("tcc-v2.pdf", "application/pdf", pdf, agora.plusMinutes(1))
+        tcc.enviarVersaoFinal("tcc-v2.pdf", "application/pdf", pdf, "tccs/key.pdf", agora.plusMinutes(1))
         tcc.estado shouldBe TccEstado.SUBMETIDO
         shouldThrow<DadoInvalidoException> {
             tcc.avaliar("APROVAR", BigDecimal("10.55"), "Nota inválida neste parecer.", orientadorId, UUID.randomUUID(), agora)

@@ -12,7 +12,7 @@ class DocumentoEstagio(
     estado: EstadoDocumentoEstagio,
     nomeArquivo: String? = null,
     contentType: String? = null,
-    conteudo: ByteArray? = null,
+    storageKey: String? = null,
     tamanho: Int? = null,
     enviadoEm: OffsetDateTime? = null,
     pareceres: List<ParecerEstagio> = emptyList(),
@@ -26,7 +26,7 @@ class DocumentoEstagio(
     var contentType: String? = contentType
         private set
 
-    var conteudo: ByteArray? = conteudo
+    var storageKey: String? = storageKey
         private set
 
     var tamanho: Int? = tamanho
@@ -40,18 +40,29 @@ class DocumentoEstagio(
     val pareceres: List<ParecerEstagio>
         get() = _pareceres.toList()
 
+    fun temArquivo(): Boolean = !storageKey.isNullOrBlank()
+
     fun podeEnviar(): Boolean = estado.podeEnviar()
 
     fun podeRevisar(): Boolean = estado.podeRevisar()
 
-    fun registrarEnvio(nome: String, contentType: String?, bytes: ByteArray, agora: OffsetDateTime) {
+    fun registrarEnvio(
+        nome: String,
+        contentType: String?,
+        bytes: ByteArray,
+        storageKey: String,
+        agora: OffsetDateTime,
+    ) {
         if (!podeEnviar()) {
             throw ConflitoEstadoException("Este documento não aceita envio no estado atual.")
+        }
+        if (storageKey.isBlank()) {
+            throw DadoInvalidoException("Chave de armazenamento do documento é obrigatória.")
         }
         val pdf = validarPdf(nome, contentType, bytes)
         this.nomeArquivo = pdf
         this.contentType = "application/pdf"
-        this.conteudo = bytes.copyOf()
+        this.storageKey = storageKey
         this.tamanho = bytes.size
         this.enviadoEm = agora
         this.estado = EstadoDocumentoEstagio.AGUARDANDO_PARECER

@@ -71,7 +71,7 @@ class EgressoConsultaAdapter(
         return PdfDoEgresso(
             certificado.id,
             certificado.titulo,
-            certificado.pdf,
+            certificado.storageKey,
             certificado.hashSha256,
         )
     }

@@ -76,13 +76,7 @@ export function TccDetalhe() {
     setBaixando(true)
     setErroDownload('')
     try {
-      const blob = await tccsApi.baixar(href)
-      const url = URL.createObjectURL(blob)
-      const ancora = document.createElement('a')
-      ancora.href = url
-      ancora.download = item.nomeArquivo || `tcc-${item.id}.pdf`
-      ancora.click()
-      URL.revokeObjectURL(url)
+      await tccsApi.baixar(href, item.nomeArquivo || `tcc-${item.id}.pdf`)
     } catch {
       setErroDownload('Não foi possível baixar o PDF.')
     } finally {

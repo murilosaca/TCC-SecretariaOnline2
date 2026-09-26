@@ -1,5 +1,7 @@
 package br.ufpr.sept.so2.modules.certificados.application
 
+import br.ufpr.sept.so2.modules.arquivos.application.ports.ObjectStoragePort
+import br.ufpr.sept.so2.modules.arquivos.domain.StorageKey
 import br.ufpr.sept.so2.modules.certificados.application.ports.BeneficiarioPort
 import br.ufpr.sept.so2.modules.certificados.application.ports.CertificadoPorFormativaPort
 import br.ufpr.sept.so2.modules.certificados.application.ports.CertificadoRepository
@@ -29,6 +31,7 @@ class EmitirCertificadoPorFormativaUseCase(
     private val beneficiarioPort: BeneficiarioPort,
     private val renderer: PdfCertificadoRenderer,
     private val signer: CertificadoSigner,
+    private val objectStoragePort: ObjectStoragePort,
     private val outboxPort: OutboxPort,
     private val auditLogPort: AuditLogPort,
     private val objectMapper: ObjectMapper,
@@ -61,6 +64,8 @@ class EmitirCertificadoPorFormativaUseCase(
         val qrUrl = "${frontendBaseUrl.trimEnd('/')}/publico/verificar-certificado/$hashHex"
         val pdf = renderer.render(dados.copy(hashSha256 = hashHex), qrUrl)
         val assinatura = signer.sign(hashBytes)
+        val storageKey = StorageKey.certificado(id).value
+        objectStoragePort.putObject(storageKey, "application/pdf", pdf)
         val certificado = Certificado.deFormativa(
             id,
             alunoId,
@@ -71,7 +76,7 @@ class EmitirCertificadoPorFormativaUseCase(
             nome,
             hashHex,
             assinatura,
-            pdf,
+            storageKey,
             agora,
         )
         try {
@@ -87,6 +92,7 @@ class EmitirCertificadoPorFormativaUseCase(
                 "alunoId" to alunoId.toString(),
                 "hashSha256" to hashHex,
                 "cargaHoraria" to cargaHoraria,
+                "storageKey" to storageKey,
             ),
         )
         outboxPort.enqueue(TIPO, payload)

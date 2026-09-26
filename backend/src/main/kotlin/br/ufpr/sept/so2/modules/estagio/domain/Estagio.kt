@@ -91,12 +91,13 @@ class Estagio(
         nome: String,
         contentType: String?,
         bytes: ByteArray,
+        storageKey: String,
         agora: OffsetDateTime,
     ) {
         garantirMutavel()
         val documento = _documentos.find { it.tipo == tipo }
             ?: throw DadoInvalidoException("Tipo de documento não exigido neste estágio.")
-        documento.registrarEnvio(nome, contentType, bytes, agora)
+        documento.registrarEnvio(nome, contentType, bytes, storageKey, agora)
         updatedAt = agora
     }
 

@@ -18,7 +18,7 @@ class Tcc(
     dataEntrega: LocalDate,
     nomeArquivo: String? = null,
     contentType: String? = null,
-    conteudo: ByteArray? = null,
+    storageKey: String? = null,
     tamanho: Int? = null,
     enviadoEm: OffsetDateTime? = null,
     val createdAt: OffsetDateTime,
@@ -47,7 +47,7 @@ class Tcc(
     var contentType: String? = contentType
         private set
 
-    var conteudo: ByteArray? = conteudo
+    var storageKey: String? = storageKey
         private set
 
     var tamanho: Int? = tamanho
@@ -79,21 +79,30 @@ class Tcc(
 
     fun idOrientador(): UUID = _membros.first { it.papel == PapelBancaTcc.ORIENTADOR }.idUsuario
 
-    fun temArquivo(): Boolean = conteudo != null
+    fun temArquivo(): Boolean = !storageKey.isNullOrBlank()
 
     fun podeEnviar(): Boolean = situacao == TccSituacao.ATIVO && estado.podeEnviar()
 
     fun podeAvaliar(usuarioId: UUID): Boolean =
         situacao == TccSituacao.ATIVO && estado.podeAvaliar() && membroDe(usuarioId) != null
 
-    fun enviarVersaoFinal(nome: String, contentType: String?, bytes: ByteArray, agora: OffsetDateTime) {
+    fun enviarVersaoFinal(
+        nome: String,
+        contentType: String?,
+        bytes: ByteArray,
+        storageKey: String,
+        agora: OffsetDateTime,
+    ) {
         exigirAtivo()
         if (!estado.podeEnviar()) {
             throw ConflitoEstadoException("Este TCC não aceita envio no estado atual.")
         }
+        if (storageKey.isBlank()) {
+            throw DadoInvalidoException("Chave de armazenamento do TCC é obrigatória.")
+        }
         this.nomeArquivo = VersaoFinalTcc.validar(nome, contentType, bytes)
         this.contentType = "application/pdf"
-        this.conteudo = bytes.copyOf()
+        this.storageKey = storageKey
         this.tamanho = bytes.size
         this.enviadoEm = agora
         this.estado = TccEstado.SUBMETIDO

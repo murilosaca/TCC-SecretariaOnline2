@@ -22,6 +22,6 @@ data class PainelEgresso(
 class PdfDoEgresso(
     val id: UUID,
     val titulo: String,
-    val pdf: ByteArray,
+    val storageKey: String,
     val hashSha256: String,
 )

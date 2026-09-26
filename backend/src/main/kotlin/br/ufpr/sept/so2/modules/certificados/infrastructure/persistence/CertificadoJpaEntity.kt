@@ -47,8 +47,12 @@ class CertificadoJpaEntity : BaseEntity() {
     @Column(nullable = false)
     var assinatura: String? = null
 
-    @Column(nullable = false, columnDefinition = "bytea")
+    /** Legado bytea; nulo após migração para MinIO. */
+    @Column(columnDefinition = "bytea")
     var pdf: ByteArray? = null
+
+    @Column(name = "storage_key", length = 512)
+    var storageKey: String? = null
 
     @Column(name = "emitido_em", nullable = false)
     var emitidoEm: OffsetDateTime? = null
@@ -63,7 +67,8 @@ class CertificadoJpaEntity : BaseEntity() {
         beneficiarioNome = certificado.beneficiarioNome
         hashSha256 = certificado.hashSha256
         assinatura = certificado.assinatura
-        pdf = certificado.pdf
+        storageKey = certificado.storageKey
+        pdf = null
         emitidoEm = certificado.emitidoEm
     }
 
@@ -78,7 +83,7 @@ class CertificadoJpaEntity : BaseEntity() {
         beneficiarioNome!!,
         hashSha256!!,
         assinatura!!,
-        pdf!!,
+        storageKey!!,
         emitidoEm!!,
         createdAt!!,
         updatedAt!!,

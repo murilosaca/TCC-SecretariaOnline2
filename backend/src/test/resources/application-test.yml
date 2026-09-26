@@ -23,3 +23,14 @@ app:
   comunicacao:
     dispatcher-enabled: false
     from: so2@localhost
+  storage:
+    mode: memory
+    endpoint: http://localhost:9000
+    public-endpoint: http://localhost:9000
+    access-key: test
+    secret-key: test
+    bucket: so2-test
+    region: us-east-1
+    path-style: true
+    download-ttl-seconds: 900
+    upload-ttl-seconds: 300

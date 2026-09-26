@@ -239,6 +239,8 @@ function DocumentoCard({
   const actions = useActions(documento._links)
   const [arquivo, setArquivo] = useState<File | null>(null)
   const [erroArquivo, setErroArquivo] = useState<string | null>(null)
+  const [baixando, setBaixando] = useState(false)
+  const [erroDownload, setErroDownload] = useState<string | null>(null)
   const inputId = `upload-${documento.id}`
 
   function onSubmit(event: FormEvent) {
@@ -252,6 +254,22 @@ function DocumentoCard({
     onEnviar(arquivo)
   }
 
+  async function baixar() {
+    const href = actions.href('download')
+    if (!href) {
+      return
+    }
+    setErroDownload(null)
+    setBaixando(true)
+    try {
+      await estagiosApi.baixar(href, documento.nomeArquivo || `${documento.tipo.toLowerCase()}.pdf`)
+    } catch {
+      setErroDownload('Não foi possível baixar o PDF.')
+    } finally {
+      setBaixando(false)
+    }
+  }
+
   return (
     <article className="panel">
       <header className="page-head">
@@ -261,6 +279,18 @@ function DocumentoCard({
         </span>
       </header>
       {documento.nomeArquivo && <p className="muted">{documento.nomeArquivo}</p>}
+      {actions.can('download') && (
+        <p>
+          <button type="button" className="ghost" onClick={() => void baixar()} disabled={baixando}>
+            {baixando ? 'Baixando…' : 'Baixar PDF'}
+          </button>
+          {erroDownload && (
+            <span className="field-error" role="alert">
+              {erroDownload}
+            </span>
+          )}
+        </p>
+      )}
       {actions.can('upload') && (
         <form onSubmit={onSubmit}>
           <label htmlFor={inputId}>

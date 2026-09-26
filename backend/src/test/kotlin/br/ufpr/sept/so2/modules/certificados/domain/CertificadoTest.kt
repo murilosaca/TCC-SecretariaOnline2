@@ -24,7 +24,7 @@ class CertificadoTest : StringSpec({
                 "Aluno Dev",
                 hash,
                 "assinatura",
-                byteArrayOf(1, 2, 3),
+                "certificados/c1.pdf",
                 agora,
                 agora,
                 agora,
@@ -44,7 +44,7 @@ class CertificadoTest : StringSpec({
             "Aluno Dev",
             hash,
             "assinatura",
-            byteArrayOf(1, 2, 3),
+            "certificados/c1.pdf",
             agora,
         )
         cert.tipo shouldBe CertificadoTipo.FORMATIVA

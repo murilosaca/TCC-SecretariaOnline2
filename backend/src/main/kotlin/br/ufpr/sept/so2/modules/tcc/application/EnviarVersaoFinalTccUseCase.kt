@@ -1,5 +1,7 @@
 package br.ufpr.sept.so2.modules.tcc.application
 
+import br.ufpr.sept.so2.modules.arquivos.application.ports.ObjectStoragePort
+import br.ufpr.sept.so2.modules.arquivos.domain.StorageKey
 import br.ufpr.sept.so2.modules.tcc.application.ports.AlunoTccPort
 import br.ufpr.sept.so2.modules.tcc.application.ports.TccRepository
 import br.ufpr.sept.so2.modules.tcc.domain.Tcc
@@ -16,6 +18,7 @@ import java.util.UUID
 class EnviarVersaoFinalTccUseCase(
     private val alunoTccPort: AlunoTccPort,
     private val tccRepository: TccRepository,
+    private val objectStoragePort: ObjectStoragePort,
     private val outboxPort: OutboxPort,
     private val auditLogPort: AuditLogPort,
     private val objectMapper: ObjectMapper,
@@ -33,7 +36,9 @@ class EnviarVersaoFinalTccUseCase(
         val tcc = tccRepository.findById(tccId)
             ?: throw RecursoNaoEncontradoException("TCC não encontrado.")
         TccAcesso.exigirDono(tcc, aluno.id)
-        tcc.enviarVersaoFinal(TccArquivo.nomeSeguro(nomeArquivo), contentType, bytes, OffsetDateTime.now())
+        val storageKey = StorageKey.tccVersaoFinal(tcc.id).value
+        tcc.enviarVersaoFinal(TccArquivo.nomeSeguro(nomeArquivo), contentType, bytes, storageKey, OffsetDateTime.now())
+        objectStoragePort.putObject(storageKey, "application/pdf", bytes)
         val salvo = tccRepository.save(tcc)
         val evento = TccJson.de(
             objectMapper,
@@ -43,6 +48,7 @@ class EnviarVersaoFinalTccUseCase(
                 "orientadorId" to salvo.idOrientador().toString(),
                 "bancaIds" to salvo.membros.map { it.idUsuario.toString() },
                 "estado" to salvo.estado.name,
+                "storageKey" to storageKey,
             ),
         )
         outboxPort.enqueue(TIPO, evento)

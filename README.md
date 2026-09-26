@@ -4,7 +4,7 @@ Plataforma digital da secretaria acadêmica do **SEPT/UFPR**. Este é o reposit�
 
 O SO2 não substitui o juízo de docentes, comissões ou secretaria. Ele garante trilha de auditoria, integridade de dados e automação de trâmites repetitivos.
 
-**Onde estamos:** P0 fechado na web e no Expo (itens 1–**8**). **Item 9 neste recorte:** 9.1–9.4 no ar e **9.5 pool COE** (só atribuição). Fatias **10–14** no ar (cadastro F5 de estágio, F7.1 usuários/picker, cadastro F5 de TCC, BFF professor F3.1, pool/lote CAAF F4.1). Esta fatia **não** é o portal admin F7 completo (sem F7.2–F7.9). F6.2 (relatórios), MinIO e o diploma (F5.11) continuam fora.
+**Onde estamos:** P0 fechado na web e no Expo (itens 1–**8**). **Item 9 neste recorte:** 9.1–9.4 no ar e **9.5 pool COE** (só atribuição). Fatias **10–15** no ar (cadastro F5 de estágio, F7.1 usuários/picker, cadastro F5 de TCC, BFF professor F3.1, pool/lote CAAF F4.1, MinIO + `modules/arquivos`). Esta fatia **não** é o portal admin F7 completo (sem F7.2–F7.9). F6.2 (relatórios) e o diploma (F5.11) continuam fora.
 
 Circuito demonstrável: login → primeiro acesso (senha + LGPD) → `/inicio` do aluno → solicitação + deep-link ao professor → presença **QR\|SECRET × SINGLE\|DUAL** → formativa (`PENDENTE_CONFIRMACAO` → aluno confirma → `AGUARDANDO_CAAF`) → CAAF aprova → certificado oficial (PDF + hash + ED25519) → `/certificados` + F0.7. Secretaria (`secretaria.dev`) opera o CRUD de TADS, estágios e TCCs; aluno/professor/CAAF não veem Cursos. Egresso (`egresso.dev`) entra em `/egresso/inicio` e reemite o PDF com o mesmo hash; `aluno.dev` não entra em `/egresso/**`.
 
@@ -72,18 +72,19 @@ Pacote `br.ufpr.sept.so2`. Clean Architecture; módulos conversam por ports.
 | `presenca` | Evento + Proof of Stay **QR\|SECRET × SINGLE\|DUAL**. Segredo em claro só na host-session. Sem geofence |
 | `bff` | `GET /bff/dashboard/aluno` e `GET /bff/dashboard/professor` (agrega; degrada por bloco). Sem BFF secretaria |
 | `formativas` | Gatilho na mesma TX da presença **COMPLETA**. Aluno confirma; CAAF aprova/indefere (individual) + pool/lote F4.1. Aprovar emite certificado |
-| `certificados` | Emissão só pelo sistema na aprovação CAAF. PDF `bytea` (sem MinIO). SHA-256 + ED25519 + F0.7. Sem upload oficial |
+| `certificados` | Emissão só pelo sistema na aprovação CAAF. PDF no MinIO (`storage_key`). SHA-256 + ED25519 + F0.7. Sem upload oficial |
 | `comunicacao` | Dispatcher Outbox → SMTP (Mailpit). Sem hub F1.6. `estagio.*`, `tcc.submitted` e `tcc.reviewed` fecham SENT sem e-mail (no-op, como `certificado.emitido`) |
-| `estagio` | Estágio do aluno + parecer **individual** do orientador (`internship.view_own` / `internship.review`) + pool COE (só atribuição). PDF em `bytea`. Sem lote de parecer, sem CRUD F5 |
-| `tcc` | TCC do aluno + avaliação individual + cadastro F5 (`tcc.manage`). PDF em `bytea`. Sem lote, sem certificado de conclusão |
+| `estagio` | Estágio do aluno + parecer **individual** do orientador (`internship.view_own` / `internship.review`) + pool COE (só atribuição). PDF no MinIO. Sem lote de parecer |
+| `tcc` | TCC do aluno + avaliação individual + cadastro F5 (`tcc.manage`). PDF no MinIO. Sem lote, sem certificado de conclusão |
 | `coordenacao` | F6.1 `GET`/`PATCH /coordenacao/cursos/{id}/config` (`course.config` + `idCoordenador`). Sem F6.2 |
-| `egresso` | F2.1 `GET /egressos/me` + reemissão do PDF já gravado (`alumni.view_own`). Diploma e colação nulos |
+| `egresso` | F2.1 `GET /egressos/me` + reemissão pré-assinada do PDF já gravado (`alumni.view_own`). Diploma e colação nulos |
+| `arquivos` | Porta S3-compatível (MinIO/dev). Upload server-side + download por URL pré-assinada (TTL 15 min). Sem antivírus/versionamento |
 
-Módulos **previstos e ainda sem código**: `auditoria` (módulo dedicado; `audit_log` mora no `iam`), `arquivos`.
+Módulos **previstos e ainda sem código**: `auditoria` (módulo dedicado; `audit_log` mora no `iam`).
 
 ### Flyway (imutável)
 
-`backend/src/main/resources/db/migration/`. **Não edite** migration já aplicada. **Próxima = V018.**
+`backend/src/main/resources/db/migration/`. **Não edite** migration já aplicada. **Próxima = V019.**
 
 | Versão | Conteúdo |
 |---|---|
@@ -95,15 +96,16 @@ Módulos **previstos e ainda sem código**: `auditoria` (módulo dedicado; `audi
 | V006 | `evento.id_anfitriao` |
 | V007 | Formativas |
 | V008 | Parecer CAAF em `formativa` |
-| V009 | Certificados (`bytea`; UNIQUE `id_formativa` / `hash_sha256`) |
+| V009 | Certificados (`bytea` legado; UNIQUE `id_formativa` / `hash_sha256`) |
 | V010 | Outbox dispatcher (`last_error`, `processed_at`) |
 | V011 | `curso_secretario` (N:N; PK `id_curso`+`id_usuario`) |
-| V012 | Estágio (`estagio`, `estagio_documento`, `estagio_parecer`). PDF em `bytea` |
-| V013 | TCC (`tcc`, `tcc_membro`, `tcc_avaliacao`). PDF em `bytea`. Um `ATIVO` por aluno |
+| V012 | Estágio (`estagio`, `estagio_documento`, `estagio_parecer`). PDF legado em `bytea` |
+| V013 | TCC (`tcc`, `tcc_membro`, `tcc_avaliacao`). PDF legado em `bytea`. Um `ATIVO` por aluno |
 | V014 | F6.1 (`curso_configuracao` + `elegibilidade_horas`). Horas mínimas continuam em `curso` |
 | V015 | Pool COE (`coe_membro` + `estagio.id_orientador` opcional). Sem tabela genérica de comissão |
 | V016 | `usuario.nome` (F7.1) |
 | V017 | Pool CAAF (`comissao_membro` genérico + `formativa.id_responsavel`) |
+| V018 | `storage_key` em certificado/estágio_documento/tcc; bytea opcional (migração → MinIO) |
 
 ### Frontend — pastas
 
@@ -329,7 +331,7 @@ V017. `comissao_membro` (tipo `CAAF`|`COE`) + `formativa.id_responsavel`. `caaf.
 
 O item 9 da tabela original era um saco. 9.1–9.5 fecharam o recorte: estágio com parecer individual (RF-F3-005), pool COE só de atribuição (RF-F4-002), TCC com avaliação individual (RF-F3-006, sem certificado), portal read-only do egresso (RF-F2-001, sem diploma) e F6.1 da coordenação (RF-F6-001). Parecer COE continua sempre individual. F6.2 e F7 seguem fora.
 
-Dívida consciente: tabela **ainda aberta** em [`docs/auditoria-fundacao.md`](docs/auditoria-fundacao.md). Destaques: MinIO/S3 (PDF em `bytea`); encerrar evento sem PDF; CA-04; F6.2 e F7; claim `cursoIds`; HostPin em memória; ArchUnit; rate limit em memória. **`/academico/**`, menu de atalho de dev, BFF professor e filtro CAAF por comissão (V017) já não são dívida.**
+Dívida consciente: tabela **ainda aberta** em [`docs/auditoria-fundacao.md`](docs/auditoria-fundacao.md). Destaques: encerrar evento sem PDF; CA-04; F6.2 e F7; claim `cursoIds`; HostPin em memória; ArchUnit; rate limit em memória. **`/academico/**`, menu de atalho de dev, BFF professor, filtro CAAF por comissão (V017) e MinIO/`modules/arquivos` (V018) já não são dívida.**
 
 ---
 
@@ -344,7 +346,7 @@ O item 9 fechou **o recorte dele** (estágio, TCC, egresso, F6.1, pool COE), nã
 | 12 | Cadastro F5 de TCC (RF-F1-008) | 11 | **Feito** — `POST`/`PUT /tccs` (`tcc.manage`), aluno via `GET /academico/alunos`, banca via picker `GET /iam/usuarios`, UI `/secretaria/tccs`. V013 já garante um `ATIVO` por aluno | Certificado de conclusão, lote, MinIO |
 | 13 | F3.1 BFF do professor | 9.1, 9.2 | **Feito** — `GET /bff/dashboard/professor` (`dashboard.view_self_professor`) agrega por porta deliberação, eventos do dia, CAAF (só com `formative.review`), estágios e TCCs; degrada por bloco como o do aluno. `/inicio` deixa de ser 403 para professor puro | Dashboard da secretaria (21), KPI de SLA calculado, Expo |
 | 14 | F4.1 pool + lote CAAF | 3, 9.5 | **Feito** — `GET`/`POST /comissoes/caaf` (`formative.review`): KPIs, self-assign, atribuição a colega com carga (`comissao_membro` V017 + `formativa.id_responsavel`), aprovação em lote **só** `PRESENCA_VALIDADA`. Menu rel `comissoes-caaf`. Parecer individual intacto | Indeferir em lote, comprovante manual (24), mexer no parecer individual do item 3 |
-| 15 | MinIO + `modules/arquivos` | 10, 12 | MinIO no `docker-compose.yml`, `modules/arquivos` com upload/download por URL pré-assinada (15 min) e migração dos PDFs hoje em `bytea` (certificado V009, estágio V012, TCC V013) | Antivírus, versionamento de arquivo, exportação assíncrona (29) |
+| 15 | MinIO + `modules/arquivos` | 10, 12 | **Feito** — MinIO no `docker-compose.yml`, `modules/arquivos` (S3-compatível), PDF de certificado/estágio/TCC em object storage + `storage_key` (V018), download por URL pré-assinada (TTL 15 min). Upload multipart grava no bucket (mesmo `_links`) | Antivírus, versionamento de arquivo, exportação assíncrona (29) |
 | 16 | F5.11 diploma e colação | 15, 11 | Tabela `diploma`, wizard de colação em lote com elegibilidade, transição ALUNO → EGRESSO e registro de entrega física. Preenche `diploma`, `colacao`, `concluidoEm` e `situacaoDiploma`, que a F2.1 devolve nulos desde o 9.3 | Lista/exportação de egressos (26), certificado de conclusão de TCC |
 | 17 | F6.2 relatórios da coordenação | 9.4, 14, 16 | `GET /reports/coordinator` (`report.view_coordinator`) + `/coordenacao/relatorios`: KPIs, séries históricas (evasão, formativas, aprovação), alerta de threshold e escopo do curso do coordenador (403 fora) | Comparativo com curso de outro coordenador, export, F5.18 (19) |
 | 18 | Mobile P2 (Expo) | 9.1, 9.2, 9.3 | Estágio (F1.13/F1.14), TCC (F1.15/F1.16), formativas (F1.10/F1.12), certificados (F1.19) e egresso (F2.1) no app; o menu nativo abandona a whitelist P0 e passa a ler todo `_links` de `GET /auth/me` | Deliberação, CAAF e F5 no app; FCM; Expo web |
@@ -392,16 +394,17 @@ Linha a linha, com evidência de arquivo e o “por que não agora” de cada it
 
 Neste ambiente o Postgres do SO2 é o container **`so2_postgres_iam` na porta 5433**, banco `secretaria_dev` / usuário `secretaria`.
 
-O `docker compose` deste repositório sobe **outro** Postgres em **:5432**, com outro histórico Flyway. **Não aponte a API para 5432.** O mesmo compose sobe o **Mailpit** (SMTP `:1025`, UI `:8025`) — este **é** o do SO2.
+O `docker compose` deste repositório sobe **outro** Postgres em **:5432**, com outro histórico Flyway. **Não aponte a API para 5432.** O mesmo compose sobe o **Mailpit** (SMTP `:1025`, UI `:8025`) e o **MinIO** (API `:9000`, console `:9001`, bucket `so2`) — estes **são** do SO2.
 
 ```bash
 # 1. Banco SO2: so2_postgres_iam :5433 / secretaria_dev
-#    Mailpit: docker compose up -d mailpit
+#    Mailpit + MinIO: docker compose up -d mailpit minio minio-init
 
 # 2. API :8080 (PowerShell — sobrescreve o default :5432 do application.yml)
 cd backend
 $env:SPRING_DATASOURCE_URL="jdbc:postgresql://localhost:5433/secretaria_dev"
 $env:MAIL_HOST="localhost"; $env:MAIL_PORT="1025"; $env:MAIL_FROM="so2@localhost"
+$env:STORAGE_ENDPOINT="http://localhost:9000"; $env:STORAGE_PUBLIC_ENDPOINT="http://localhost:9000"
 mvn spring-boot:run
 
 # 3. Web :5174 (vite.config.ts; 5173 não é o default deste repo)

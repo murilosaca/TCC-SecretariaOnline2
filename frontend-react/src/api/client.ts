@@ -138,20 +138,20 @@ async function refreshAccessToken(): Promise<boolean> {
   return refreshInFlight
 }
 
-async function requestBlob(path: string, retried = false): Promise<Blob> {
+async function requestBlob(path: string, retried = false, accept = '*/*'): Promise<Blob> {
   const token = authSession.getAccessToken()
   const response = await fetch(path, {
     method: 'GET',
     credentials: 'include',
     headers: {
-      Accept: 'application/pdf',
+      Accept: accept,
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
   })
   if (response.status === 401 && !retried && shouldRefresh(path)) {
     const ok = await refreshAccessToken()
     if (ok) {
-      return requestBlob(path, true)
+      return requestBlob(path, true, accept)
     }
   }
   if (!response.ok) {
@@ -182,7 +182,7 @@ export const api = {
   postForm<T>(path: string, form: FormData): Promise<T> {
     return request<T>(path, { method: 'POST', body: form })
   },
-  getBlob(path: string): Promise<Blob> {
-    return requestBlob(path)
+  getBlob(path: string, accept = '*/*'): Promise<Blob> {
+    return requestBlob(path, false, accept)
   },
 }

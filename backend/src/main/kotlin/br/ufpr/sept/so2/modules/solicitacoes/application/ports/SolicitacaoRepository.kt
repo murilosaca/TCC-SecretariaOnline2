@@ -31,4 +31,13 @@ interface SolicitacaoRepository {
         pageable: Pageable,
         solicitanteIds: Collection<UUID>? = null,
     ): Page<Solicitacao>
+
+    fun findFilaCurso(
+        solicitanteIds: Collection<UUID>,
+        estados: Collection<String>?,
+        tipoCodigo: String?,
+        somenteAtraso: Boolean,
+        agora: OffsetDateTime,
+        pageable: Pageable,
+    ): Page<Solicitacao>
 }

@@ -44,6 +44,7 @@ import { Relatorios } from './pages/coordenacao/Relatorios'
 import { Cursos } from './pages/secretaria/Cursos'
 import { Disciplinas } from './pages/secretaria/Disciplinas'
 import { Estatisticas } from './pages/secretaria/Estatisticas'
+import { Atrasados } from './pages/secretaria/Atrasados'
 import { Usuarios } from './pages/admin/Usuarios'
 
 export default function App() {
@@ -94,6 +95,7 @@ export default function App() {
           <Route path="secretaria/diplomas" element={<Diplomas />} />
           <Route path="secretaria/calendarios" element={<Calendarios />} />
           <Route path="secretaria/estatisticas" element={<Estatisticas />} />
+          <Route path="secretaria/atrasados" element={<Atrasados />} />
           <Route path="admin/usuarios" element={<Usuarios />} />
           <Route path="coordenacao/cursos/:id/configurar" element={<ConfigurarCurso />} />
           <Route path="coordenacao/relatorios" element={<Relatorios />} />

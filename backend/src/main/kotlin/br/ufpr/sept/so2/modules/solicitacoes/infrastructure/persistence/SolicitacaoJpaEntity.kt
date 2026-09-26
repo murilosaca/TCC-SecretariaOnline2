@@ -55,6 +55,9 @@ class SolicitacaoJpaEntity protected constructor() : BaseEntity() {
     @field:Column(name = "hash_sha256", length = 64)
     var hashSha256: String? = null
 
+    @field:Column(name = "deliberador_id")
+    var deliberadorId: UUID? = null
+
     fun merge(solicitacao: Solicitacao) {
         this.tipoId = solicitacao.tipoId
         this.tipoCodigo = solicitacao.tipoCodigo
@@ -68,6 +71,7 @@ class SolicitacaoJpaEntity protected constructor() : BaseEntity() {
         this.workflowSnapshot = solicitacao.workflowSnapshot
         this.prazoEm = solicitacao.prazoEm
         this.hashSha256 = solicitacao.hashSha256
+        this.deliberadorId = solicitacao.deliberadorId
     }
 
     fun toDomain(eventos: List<SolicitacaoEvento>): Solicitacao =
@@ -85,6 +89,7 @@ class SolicitacaoJpaEntity protected constructor() : BaseEntity() {
             workflowSnapshot,
             prazoEm,
             hashSha256,
+            deliberadorId,
             eventos,
             createdAt,
             updatedAt,

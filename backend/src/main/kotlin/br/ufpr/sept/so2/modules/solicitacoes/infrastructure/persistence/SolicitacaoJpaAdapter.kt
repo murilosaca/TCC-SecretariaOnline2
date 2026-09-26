@@ -73,6 +73,30 @@ class SolicitacaoJpaAdapter(
         ).map(SolicitacaoJpaEntity::toDomainSemEventos)
     }
 
+    override fun findFilaCurso(
+        solicitanteIds: Collection<UUID>,
+        estados: Collection<String>?,
+        tipoCodigo: String?,
+        somenteAtraso: Boolean,
+        agora: OffsetDateTime,
+        pageable: Pageable,
+    ): Page<Solicitacao> {
+        if (solicitanteIds.isEmpty()) {
+            return Page.empty(pageable)
+        }
+        val filtrarEstados = !estados.isNullOrEmpty()
+        val listaEstados = estados?.toList() ?: listOf("__none__")
+        return jpaRepository.findFilaCurso(
+            solicitanteIds.toList(),
+            filtrarEstados,
+            listaEstados,
+            tipoCodigo,
+            somenteAtraso,
+            agora,
+            pageable,
+        ).map(SolicitacaoJpaEntity::toDomainSemEventos)
+    }
+
     private fun carregar(id: UUID): Optional<Solicitacao> =
         jpaRepository.findById(id).map { entity -> entity.toDomain(eventosDe(id)) }
 

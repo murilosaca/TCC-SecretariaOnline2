@@ -1,5 +1,21 @@
-import type { RequestType, RequestTypePage, Solicitacao, SolicitacaoPage } from '../models/solicitacao'
+import type {
+  RequestType,
+  RequestTypePage,
+  Solicitacao,
+  SolicitacaoFilaPage,
+  SolicitacaoPage,
+} from '../models/solicitacao'
 import { api } from './client'
+
+function qs(params: Record<string, string | number | boolean | undefined>): string {
+  const search = new URLSearchParams()
+  for (const [key, value] of Object.entries(params)) {
+    if (value === undefined || value === '') continue
+    search.set(key, String(value))
+  }
+  const raw = search.toString()
+  return raw ? `?${raw}` : ''
+}
 
 export const solicitacoesApi = {
   listarTipos: (page = 0, size = 20) =>
@@ -14,6 +30,40 @@ export const solicitacoesApi = {
       page: filtros.page ?? 0,
       size: filtros.size ?? 20,
     }),
+  listarFilaCurso: (
+    filtros: {
+      estado?: string
+      tipo?: string
+      curso?: string
+      atraso?: boolean
+      slaBreached?: boolean
+      page?: number
+      size?: number
+    } = {},
+  ) =>
+    api.get<SolicitacaoFilaPage>('/requests', {
+      estado: filtros.estado,
+      tipo: filtros.tipo,
+      curso: filtros.curso,
+      atraso: filtros.atraso ? 'true' : undefined,
+      slaBreached: filtros.slaBreached ? 'true' : undefined,
+      page: filtros.page ?? 0,
+      size: filtros.size ?? 20,
+    }),
+  exportarAtrasadosCsv: (
+    filtros: { page?: number; size?: number } = {},
+  ) =>
+    api.getBlob(
+      `/requests${qs({
+        slaBreached: true,
+        format: 'csv',
+        page: filtros.page ?? 0,
+        size: filtros.size ?? 20,
+      })}`,
+      'text/csv',
+    ),
+  atribuirEmMassa: (ids: string[], deliberadorId: string) =>
+    api.patch<Solicitacao[]>('/requests/bulk', { ids, deliberadorId }),
   criar: (tipoCodigo: string, payload: Record<string, unknown>) =>
     api.post<Solicitacao>('/requests', { tipoCodigo, payload }),
   obter: (id: string, token?: string) =>

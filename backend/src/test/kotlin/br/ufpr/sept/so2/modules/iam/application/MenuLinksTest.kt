@@ -27,6 +27,8 @@ class MenuLinksTest : StringSpec({
         links.shouldContainKey("cursos")
         links.shouldContainKey("alunos")
         links.shouldContainKey("deliberar")
+        links["fila-solicitacoes"] shouldBe "/solicitacoes"
+        links["atrasados"] shouldBe "/secretaria/atrasados"
         links.shouldNotContainKey("solicitacoes")
         links.shouldNotContainKey("revisao-caaf")
         links.shouldNotContainKey("eventos-professor")

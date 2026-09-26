@@ -48,4 +48,23 @@ interface SolicitacaoJpaRepository : JpaRepository<SolicitacaoJpaEntity, UUID> {
         @Param("solicitanteIds") solicitanteIds: Collection<UUID>,
         pageable: Pageable,
     ): Page<SolicitacaoJpaEntity>
+
+    @Query(
+        """
+            SELECT s FROM SolicitacaoJpaEntity s
+            WHERE s.solicitanteId IN :solicitanteIds
+              AND (:filtrarEstados = false OR s.estado IN :estados)
+              AND (:tipoCodigo IS NULL OR s.tipoCodigo = :tipoCodigo)
+              AND (:somenteAtraso = false OR s.prazoEm < :agora)
+            """,
+    )
+    fun findFilaCurso(
+        @Param("solicitanteIds") solicitanteIds: Collection<UUID>,
+        @Param("filtrarEstados") filtrarEstados: Boolean,
+        @Param("estados") estados: Collection<String>,
+        @Param("tipoCodigo") tipoCodigo: String?,
+        @Param("somenteAtraso") somenteAtraso: Boolean,
+        @Param("agora") agora: OffsetDateTime,
+        pageable: Pageable,
+    ): Page<SolicitacaoJpaEntity>
 }

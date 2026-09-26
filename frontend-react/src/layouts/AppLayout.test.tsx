@@ -175,10 +175,18 @@ describe('AppLayout', () => {
       inicio: '/inicio',
       cursos: '/secretaria/cursos',
       estatisticas: '/secretaria/estatisticas',
+      'fila-solicitacoes': '/solicitacoes',
+      atrasados: '/secretaria/atrasados',
       contato: '/contato',
     })
     expect(screen.getByRole('link', { name: 'Estatísticas' }).getAttribute('href')).toBe(
       '/secretaria/estatisticas',
+    )
+    expect(screen.getByRole('link', { name: 'Fila de solicitações' }).getAttribute('href')).toBe(
+      '/solicitacoes',
+    )
+    expect(screen.getByRole('link', { name: 'Atrasados' }).getAttribute('href')).toBe(
+      '/secretaria/atrasados',
     )
     expect(screen.queryByText('Relatórios')).toBeNull()
   })

@@ -11,6 +11,7 @@ import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.stereotype.Component
 import java.time.OffsetDateTime
+import java.time.temporal.ChronoUnit
 import java.util.LinkedHashMap
 
 @Component
@@ -26,11 +27,10 @@ class SolicitacaoAssembler(
         val self = "/requests/" + solicitacao.id
         val links = LinkedHashMap<String, String>()
         links["self"] = self
-        if (authorities.contains(AUTHORITY_DELIBERATE)) {
-            val acoes = acoesDoEstado(solicitacao)
-            if (acoes.isNotEmpty()) {
-                links["deliberar"] = self
-            }
+        val acoes = acoesDoEstado(solicitacao)
+        if (authorities.contains(AUTHORITY_DELIBERATE) && acoes.isNotEmpty()) {
+            links["deliberar"] = self
+            links["deliberate"] = "/solicitacoes/${solicitacao.id}/deliberar"
             if ("DEFER" in acoes) {
                 links["deferir"] = "$self/transitions"
             }
@@ -41,28 +41,41 @@ class SolicitacaoAssembler(
                 links["solicitar-ajustes"] = "$self/transitions"
             }
         }
+        if (podeBulkAssign(authorities, acoes)) {
+            links["bulk_assign"] = "/requests/bulk"
+        }
         val eventos = if (detalhe) {
             solicitacao.eventos.map(SolicitacaoEventoResponse::from)
         } else {
             emptyList()
         }
+        val solicitante = solicitanteResumoPort.resumoDe(solicitacao.solicitanteId)
+        val deliberadorNome = solicitacao.deliberadorId?.let { solicitanteResumoPort.nomeDe(it) }
         return SolicitacaoResponse(
-            solicitacao.id,
-            solicitacao.protocolo.valor,
-            solicitacao.tipoCodigo,
-            solicitacao.tipoNome,
-            solicitacao.tipoVersao,
-            solicitacao.estado,
-            readMap(solicitacao.payloadJson),
-            if (detalhe) readMap(solicitacao.formSchemaSnapshot) else null,
-            solicitanteResumoPort.nomeDe(solicitacao.solicitanteId),
-            solicitacao.prazoEm,
-            vencido,
-            if (vencido) "ATRASADO" else "NO_PRAZO",
-            solicitacao.createdAt,
-            solicitacao.updatedAt,
-            eventos,
-            links,
+            id = solicitacao.id,
+            protocolo = solicitacao.protocolo.valor,
+            tipoCodigo = solicitacao.tipoCodigo,
+            tipoNome = solicitacao.tipoNome,
+            tipoVersao = solicitacao.tipoVersao,
+            estado = solicitacao.estado,
+            payload = readMap(solicitacao.payloadJson),
+            formSchema = if (detalhe) readMap(solicitacao.formSchemaSnapshot) else null,
+            solicitanteNome = solicitante.nome,
+            solicitanteGrr = solicitante.grr,
+            cursoId = solicitante.cursoId,
+            cursoNome = solicitante.cursoNome,
+            cursoSigla = solicitante.cursoSigla,
+            deliberadorId = solicitacao.deliberadorId,
+            deliberadorNome = deliberadorNome,
+            prazoEm = solicitacao.prazoEm,
+            prazoVencido = vencido,
+            sla = if (vencido) "ATRASADO" else "NO_PRAZO",
+            slaStatus = slaStatus(solicitacao.prazoEm, agora),
+            diasAtraso = diasAtraso(solicitacao.prazoEm, agora),
+            createdAt = solicitacao.createdAt,
+            updatedAt = solicitacao.updatedAt,
+            eventos = eventos,
+            links = links,
         )
     }
 
@@ -79,6 +92,12 @@ class SolicitacaoAssembler(
             readMap(tipo.workflowJson),
             mapOf("self" to "/request-types/" + tipo.codigo),
         )
+
+    private fun podeBulkAssign(authorities: List<String>, acoes: Set<String>): Boolean {
+        val podeTriar = authorities.contains(AUTHORITY_TRIAGE) ||
+            (authorities.contains(AUTHORITY_VIEW_CURSO) && authorities.contains(AUTHORITY_DELIBERATE))
+        return podeTriar && acoes.isNotEmpty()
+    }
 
     private fun acoesDoEstado(solicitacao: Solicitacao): Set<String> =
         try {
@@ -101,6 +120,28 @@ class SolicitacaoAssembler(
 
     companion object {
         const val AUTHORITY_DELIBERATE = "request.deliberate"
+        const val AUTHORITY_TRIAGE = "request.triage"
+        const val AUTHORITY_VIEW_CURSO = "request.view_curso"
         private val MAPA: TypeReference<Map<String, Any?>> = object : TypeReference<Map<String, Any?>>() {}
+
+        fun slaStatus(prazoEm: OffsetDateTime?, agora: OffsetDateTime): String? {
+            if (prazoEm == null) {
+                return null
+            }
+            if (agora.isAfter(prazoEm)) {
+                return "danger"
+            }
+            if (prazoEm.isBefore(agora.plusHours(24))) {
+                return "warning"
+            }
+            return null
+        }
+
+        fun diasAtraso(prazoEm: OffsetDateTime?, agora: OffsetDateTime): Long? {
+            if (prazoEm == null || !agora.isAfter(prazoEm)) {
+                return null
+            }
+            return ChronoUnit.DAYS.between(prazoEm.toLocalDate(), agora.toLocalDate()).coerceAtLeast(0)
+        }
     }
 }

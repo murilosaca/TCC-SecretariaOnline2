@@ -4,6 +4,7 @@ import br.ufpr.sept.so2.modules.academico.application.ports.AlunoRepository
 import br.ufpr.sept.so2.modules.academico.application.ports.CursoEscopoPort
 import br.ufpr.sept.so2.modules.iam.application.ports.UsuarioRepository
 import br.ufpr.sept.so2.modules.iam.domain.IdentificadorLogin
+import br.ufpr.sept.so2.shared.domain.exception.AcessoNegadoException
 import org.springframework.stereotype.Component
 import java.util.UUID
 
@@ -13,13 +14,24 @@ class SolicitacaoCursoEscopo(
     private val alunoRepository: AlunoRepository,
     private val usuarioRepository: UsuarioRepository,
 ) {
-    fun solicitanteIdsNoEscopo(usuarioId: UUID): Set<UUID> {
+    fun solicitanteIdsNoEscopo(usuarioId: UUID): Set<UUID> =
+        solicitanteIdsNoEscopo(usuarioId, null)
+
+    fun solicitanteIdsNoEscopo(usuarioId: UUID, cursoIdFiltro: UUID?): Set<UUID> {
         val cursoIds = cursoEscopoPort.cursoIdsDoUsuario(usuarioId)
         if (cursoIds.isEmpty()) {
             return emptySet()
         }
+        val alvo = if (cursoIdFiltro == null) {
+            cursoIds
+        } else {
+            if (cursoIdFiltro !in cursoIds) {
+                throw AcessoNegadoException("Curso fora do seu escopo.")
+            }
+            setOf(cursoIdFiltro)
+        }
         val ids = mutableSetOf<UUID>()
-        for (aluno in alunoRepository.findByIdCursoIn(cursoIds)) {
+        for (aluno in alunoRepository.findByIdCursoIn(alvo)) {
             val porGrr = IdentificadorLogin.tryParse(aluno.grr.value)
                 ?.let { usuarioRepository.findByIdentificador(it) }
             if (porGrr != null && porGrr.isPresent) {

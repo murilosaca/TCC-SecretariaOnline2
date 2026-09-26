@@ -17,6 +17,7 @@ class Solicitacao(
     val workflowSnapshot: String?,
     val prazoEm: OffsetDateTime?,
     val hashSha256: String?,
+    deliberadorId: UUID?,
     eventos: List<SolicitacaoEvento>?,
     val createdAt: OffsetDateTime?,
     updatedAt: OffsetDateTime?,
@@ -25,6 +26,9 @@ class Solicitacao(
         private set
 
     var updatedAt: OffsetDateTime? = updatedAt
+        private set
+
+    var deliberadorId: UUID? = deliberadorId
         private set
 
     private val eventosInternos: MutableList<SolicitacaoEvento> =
@@ -57,6 +61,26 @@ class Solicitacao(
         )
     }
 
+    fun atribuirDeliberador(
+        eventoId: UUID,
+        novoDeliberadorId: UUID,
+        atorId: UUID,
+        agora: OffsetDateTime,
+    ) {
+        deliberadorId = novoDeliberadorId
+        updatedAt = agora
+        eventosInternos += SolicitacaoEvento(
+            eventoId,
+            EVENTO_ATRIBUICAO,
+            estado,
+            estado,
+            atorId,
+            null,
+            """{"para":"$novoDeliberadorId"}""",
+            agora,
+        )
+    }
+
     fun pertenceA(usuarioId: UUID): Boolean = solicitanteId == usuarioId
 
     fun prazoVencido(agora: OffsetDateTime): Boolean =
@@ -65,6 +89,7 @@ class Solicitacao(
     companion object {
         const val EVENTO_CRIADA = "CRIADA"
         const val EVENTO_TRANSICAO = "TRANSICAO"
+        const val EVENTO_ATRIBUICAO = "ATRIBUICAO"
 
         @JvmStatic
         fun abrir(
@@ -91,6 +116,7 @@ class Solicitacao(
                 tipo.formSchema,
                 tipo.workflowJson,
                 agora.plusDays(tipo.prazoDias.toLong()),
+                null,
                 null,
                 mutableListOf(),
                 agora,

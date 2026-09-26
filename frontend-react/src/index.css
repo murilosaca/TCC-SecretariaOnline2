@@ -376,6 +376,11 @@ button.light {
   font-weight: 600;
 }
 
+.sla-warning {
+  color: var(--warning, #b45309);
+  font-weight: 600;
+}
+
 .stepper {
   display: flex;
   gap: 1rem;

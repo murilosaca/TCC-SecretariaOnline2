@@ -19,6 +19,10 @@ object MenuLinks {
         if (caps.contains("request.view_own")) {
             links["solicitacoes"] = "/solicitacoes"
         }
+        if (caps.contains("request.view_curso")) {
+            links["fila-solicitacoes"] = "/solicitacoes"
+            links["atrasados"] = "/secretaria/atrasados"
+        }
         if (caps.containsAny("request.deliberate", "request.view_curso")) {
             links["deliberar"] = "/solicitacoes?to=me"
         }

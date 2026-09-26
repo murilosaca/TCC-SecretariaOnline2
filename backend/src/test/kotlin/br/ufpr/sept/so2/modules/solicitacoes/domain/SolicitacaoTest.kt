@@ -43,6 +43,20 @@ class SolicitacaoTest : StringSpec({
         ultimo.estadoDe shouldBe "EM_ANALISE"
         ultimo.estadoPara shouldBe "DELIBERADA"
     }
+
+    "atribuir deliberador registra ATRIBUICAO sem mudar estado" {
+        val solicitacao = aberta()
+        val deliberador = UUID.fromString("01800000-0000-7000-8000-0000000000dd")
+        solicitacao.atribuirDeliberador(
+            UUID.fromString("01800000-0000-7000-8000-0000000000ee"),
+            deliberador,
+            solicitacao.solicitanteId,
+            AGORA,
+        )
+        solicitacao.deliberadorId shouldBe deliberador
+        solicitacao.estado shouldBe "EM_ANALISE"
+        solicitacao.eventos.last().tipo shouldBe Solicitacao.EVENTO_ATRIBUICAO
+    }
 })
 
 private val AGORA: OffsetDateTime = OffsetDateTime.parse("2026-03-01T12:00:00Z")

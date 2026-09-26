@@ -4,7 +4,7 @@ Plataforma digital da secretaria acadêmica do **SEPT/UFPR**. Este é o reposit�
 
 O SO2 não substitui o juízo de docentes, comissões ou secretaria. Ele garante trilha de auditoria, integridade de dados e automação de trâmites repetitivos.
 
-**Onde estamos:** P0 fechado na web e no Expo (itens 1–**8**). **Item 9 neste recorte:** 9.1–9.4 no ar e **9.5 pool COE** (só atribuição). Fatias **10–19** no ar (cadastro F5 de estágio, F7.1 usuários/picker, cadastro F5 de TCC, BFF professor F3.1, pool/lote CAAF F4.1, MinIO + `modules/arquivos`, diploma/colação F5.11, F6.2 relatórios da coordenação, Mobile P2 no Expo, F5.18 estatísticas da secretaria). Esta fatia **não** é o portal admin F7 completo (sem F7.2–F7.9).
+**Onde estamos:** P0 fechado na web e no Expo (itens 1–**8**). **Item 9 neste recorte:** 9.1–9.4 no ar e **9.5 pool COE** (só atribuição). Fatias **10–20** no ar (cadastro F5 de estágio, F7.1 usuários/picker, cadastro F5 de TCC, BFF professor F3.1, pool/lote CAAF F4.1, MinIO + `modules/arquivos`, diploma/colação F5.11, F6.2 relatórios da coordenação, Mobile P2 no Expo, F5.18 estatísticas da secretaria, F5.2+F5.5 fila central e atrasados). Esta fatia **não** é o portal admin F7 completo (sem F7.2–F7.9).
 
 Circuito demonstrável: login → primeiro acesso (senha + LGPD) → `/inicio` do aluno → solicitação + deep-link ao professor → presença **QR\|SECRET × SINGLE\|DUAL** → formativa (`PENDENTE_CONFIRMACAO` → aluno confirma → `AGUARDANDO_CAAF`) → CAAF aprova → certificado oficial (PDF + hash + ED25519) → `/certificados` + F0.7. Secretaria (`secretaria.dev`) opera o CRUD de TADS, estágios e TCCs; aluno/professor/CAAF não veem Cursos. Egresso (`egresso.dev`) entra em `/egresso/inicio` e reemite o PDF com o mesmo hash; `aluno.dev` não entra em `/egresso/**`.
 
@@ -167,25 +167,60 @@ JSON camelCase. Datas ISO-8601 UTC. Listagens `Pageable` (20 / máx. 100) com `_
 
 ---
 
-## Plano depois do P0
+## Fatias (1–36)
 
-O mapa F0–F8 do Figma descreve o produto; **não é cronograma**. A ordem privilegia: (1) fechar o que já existe no código; (2) valor de banca (deliberação, horas `N / 120`); (3) dependência real (certificado exige formativa `APROVADA`; COE exige estágio). Uma fatia vertical por sprint. Não abrir dois bounded contexts no mesmo PR.
+Ordem de dependência real — um bounded context por fatia. O mapa F0–F8 do Figma descreve o produto; **não é cronograma**. Detalhe das fatias feitas está nas seções numeradas abaixo da tabela.
 
-| # | Fatia | Estado |
-|---|---|---|
-| 1 | Formativas via presença | **Feito** |
-| 2 | Deliberação do motor | **Feito** |
-| 3 | CAAF individual | **Feito** |
-| 4 | Presença v4.1 (QR / `SECRET_DUAL`) | **Feito** |
-| 5 | Certificados oficiais + F0.7 | **Feito** |
-| 6 | Dispatcher do Outbox + SMTP + deep-link | **Feito** |
-| 7 | FGAC acadêmico + nav | **Feito** — fecha `/academico/**` e a nav; **não** é o portal admin F7 |
-| 8 | Cliente Expo (React Native) | **Feito** — P0 aluno na mesma API; web intacta |
-| 9.1 | Estágio + parecer individual | **Feito** — seed, upload PDF, parecer um a um, arquivar |
-| 9.2 | TCC + avaliação individual | **Feito** — seed, upload PDF, parecer um a um. Sem certificado |
-| 9.3 | Egresso (F2) | **Feito** — painel read-only e reemissão do mesmo PDF. Sem diploma |
-| 9.4 | F6.1 configuração do curso | **Feito** — horas, calendário 15/18, banca e regimento. Sem F6.2 |
-| 9.5 | Pool COE (F4.2) | **Feito** — atribuir (self/colega/lote). Parecer continua individual no 9.1. Sem lote CAAF |
+| # | Fatia | Depende de | Entrega / estado | Fora desta fatia |
+|---|---|---|---|---|
+| 1 | Formativas via presença | P0 | **Feito** — V007; gatilho na TX de presença `COMPLETA`; aluno confirma/cancela; BFF soma `APROVADA` | CAAF/certificado (3, 5), lote |
+| 2 | Deliberação do motor | P0 | **Feito** — `POST /requests/{id}/transitions` + fila `?canDeliberate=true`; UI `/solicitacoes?to=me` | Lote, F3.1, FORWARD, novo RequestType |
+| 3 | CAAF individual | 1 | **Feito** — `AGUARDANDO_CAAF` → `APROVADA`/`INDEFERIDA`; seed `formative.review`; fila `?canReview=true` | Lote/F4.1 (14), filtro por comissão, COE, comprovante |
+| 4 | Presença v4.1 (QR / `SECRET_DUAL`) | P0 | **Feito** — quatro modos no mesmo motor; janelas ao vivo 15 min | Janelas pré-agendadas, lista de inelegíveis, câmera Expo |
+| 5 | Certificados oficiais + F0.7 | 3 | **Feito** — V009; emite na aprovação CAAF; PDF + SHA-256 + ED25519 + JWKS + F0.7 | MinIO (15), CA-04, revogação; reemissão egresso no 9.3 |
+| 6 | Dispatcher do Outbox + SMTP + deep-link | 2 | **Feito** — at-least-once + Mailpit; `?token=` exige sessão; JTI na TX | Hub F1.6 (23), F3.8, F7.5, push |
+| 7 | FGAC acadêmico + nav | P0 | **Feito** — fecha `/academico/**` e a nav; **não** é o portal admin F7 | F7 completo, claim `cursoIds`, F5.2 (20) |
+| 8 | Cliente Expo (React Native) | P0 | **Feito** — P0 aluno na mesma API; web intacta | FCM, Expo web; Mobile P2 no 18 |
+| 9.1 | Estágio + parecer individual | 8 | **Feito** — seed, upload PDF, parecer um a um, arquivar | Pool COE (9.5), lote, cadastro F5 (10) |
+| 9.2 | TCC + avaliação individual | 8 | **Feito** — seed, upload PDF, parecer um a um | Certificado de conclusão, lote, cadastro F5 (12) |
+| 9.3 | Egresso (F2) | 5 | **Feito** — painel read-only e reemissão do mesmo PDF | Diploma/colação (16), lista egressos (26) |
+| 9.4 | F6.1 configuração do curso | 7 | **Feito** — horas, calendário 15/18, banca e regimento | F6.2 (17) |
+| 9.5 | Pool COE (F4.2) | 9.1 | **Feito** — atribuir (self/colega/lote); parecer continua individual no 9.1 | Lote CAAF (14), parecer em lote (proibido) |
+| 10 | Cadastro F5 de estágio (RF-F1-007) | 9.1, 9.5 | **Feito** — `POST`/`PUT /estagios` (`internship.manage`), aluno via `GET /academico/alunos`, `id_orientador` nulo, UI `/secretaria/estagios` | Parecer/encerramento (9.1), lote, MinIO, TCC |
+| 11 | F7.1 + F7.8 usuários e picker | 10 | **Feito** — CRUD `/admin/usuarios`, reset-senha, picker `GET /iam/usuarios`, seed `admin.dev`, V016 `usuario.nome` | Perfis/matriz FGAC (32), jobs, auditoria, `cursoIds` no JWT |
+| 12 | Cadastro F5 de TCC (RF-F1-008) | 11 | **Feito** — `POST`/`PUT /tccs` (`tcc.manage`), banca via picker, UI `/secretaria/tccs` | Certificado de conclusão, lote, MinIO |
+| 13 | F3.1 BFF do professor | 9.1, 9.2 | **Feito** — `GET /bff/dashboard/professor`; `/inicio` deixa de ser 403 para professor puro | Dashboard secretaria (21), KPI de SLA, Expo |
+| 14 | F4.1 pool + lote CAAF | 3, 9.5 | **Feito** — `GET`/`POST /comissoes/caaf`; lote só `PRESENCA_VALIDADA`; V017 | Indeferir em lote, comprovante manual (24) |
+| 15 | MinIO + `modules/arquivos` | 10, 12 | **Feito** — MinIO + `modules/arquivos`, PDF com `storage_key` (V018), URL pré-assinada | Antivírus, versionamento, export assíncrona (29) |
+| 16 | F5.11 diploma e colação | 15, 11 | **Feito** — tabela `diploma` (V019), wizard `/secretaria/diplomas`, colação em lote, F2.1 preenchido | Lista/exportação de egressos (26) |
+| 17 | F6.2 relatórios da coordenação | 9.4, 14, 16 | **Feito** — `GET /reports/coordinator` + `/coordenacao/relatorios` | Comparativo entre cursos, export, F5.18 (19) |
+| 18 | Mobile P2 (Expo) | 9.1, 9.2, 9.3 | **Feito** — formativas, estágio, TCC, certificados e egresso no app; menu via `_links` | Deliberação/CAAF/F5 no app; FCM; Expo web |
+| 19 | F5.18 estatísticas da secretaria | 17 | **Feito** — `GET /reports/secretary` + `/secretaria/estatisticas` | Export, materialização/cache de métrica |
+| 20 | F5.2 + F5.5 fila central e atrasados | 2, 7 | **Feito** — `GET /requests` (`view_curso`, `slaBreached`, `slaStatus`), `PATCH /requests/bulk`, CSV, menu `fila-solicitacoes` + `atrasados`, V020 | Solicitação interna (28), editor RequestType (33), FORWARD |
+| 21 | F5.1 dashboard da secretaria | 20, 13 | `GET /bff/dashboard/secretary` (`dashboard.view_secretary`): KPIs, fila priorizada, alerta de SLA e agenda do dia | F6.2, kanban (P3) |
+| 22 | F1.3–F1.5 perfil, segurança e notificações | 11, 15 | `GET`/`PATCH /me`, troca de senha, sessões e preferência de canal/DND/digest | Push, foto sem a 15, SSO |
+| 23 | F1.6 + F3.8 hub de comunicação | 6 | `GET`/`POST /communications` (inbox + comunicado Markdown via Outbox) | Templates (34), push/FCM, digest |
+| 24 | F1.11 formativa manual com comprovante | 15, 14 | `POST /formative-entries` (`formative.submit`) com upload; nasce em `AGUARDANDO_CAAF` sem presença | OCR, validação automática de CH |
+| 25 | F5.13 + F1.20 atendimentos | 11 | Módulo `atendimentos`: registro imutável + ciência do aluno | Fila/SLA de atendimento, agendamento |
+| 26 | F5.10 egressos (lista + CSV) | 16 | `/secretaria/egressos` (`alumni.list`) com filtros e CSV síncrono | Exportação assíncrona (29), colação (já na 16) |
+| 27 | F5.14 + F5.15 eventos da secretaria | 15 | `/secretaria/eventos` + operação sobre o motor v4.1; `PATCH`/`DELETE /events/{id}` | Janelas pré-agendadas, lista ao vivo de inelegíveis |
+| 28 | F5.3 + F5.12 solicitação interna e autorização de imagem | 20, 15 | `POST /requests { onBehalfOf }` + fila `AUTORIZACAO_IMAGEM` com lote | RequestType pelo editor (33), FORWARD |
+| 29 | F5.16 + F5.17 importações e exportações | 15, 11 | Wizard CSV/XLSX + export assíncrona com job e download pré-assinado | RabbitMQ, agendamento recorrente |
+| 30 | F7.7 audit-log + módulo `auditoria` | 11 | Extrai `audit_log` para `modules/auditoria`; busca imutável (`audit.read`) | Retenção/export; DELETE na trilha (proibido) |
+| 31 | F7.6 Outbox e jobs | 30 | `/admin/jobs` (`system.observe`): reentrega e alerta de latência | Grafana (P3), fila externa |
+| 32 | F7.2 + F7.3 perfis e matriz FGAC | 11, 30 | `role` + `role_authority`, CRUD de perfil e matriz | Editor de workflow (33), claim `cursoIds` |
+| 33 | F7.4 editor de RequestType | 32 | Editor de `form_schema` + `workflow_json` com versionamento e publicação | Migrar solicitação em voo, FORWARD automático |
+| 34 | F7.5 templates de comunicação | 23, 33 | CRUD de template Markdown versionado; dispatcher renderiza template | Push, A/B de mensagem |
+| 35 | F8.1 busca global | 11, 30 | `GET /search?q=` filtrada por capabilities + paleta `Ctrl+K` | Índice externo, ranking semântico |
+| 36 | F8.2 suporte e FAQ | 33 | FAQ + ticket via `RequestType=SUPORTE_TECNICO` | Chat, base de conhecimento editável |
+
+Duas observações sobre as fatias 10 e 12: a spec só diz que estágio e TCC são “registrados pela secretaria” (RF-F1-007 / RF-F1-008) e o mapa F0–F8 **não tem tela F5 para isso** — as rotas `/secretaria/estagios` e `/secretaria/tccs` são derivadas. São dois bounded contexts, por isso duas fatias; entre elas entra a 11 (banca de TCC precisa do picker de usuários).
+
+### Detalhe das fatias feitas
+
+O item 9 da tabela original era um saco. 9.1–9.5 fecharam o recorte: estágio com parecer individual (RF-F3-005), pool COE só de atribuição (RF-F4-002), TCC com avaliação individual (RF-F3-006, sem certificado), portal read-only do egresso (RF-F2-001, sem diploma) e F6.1 da coordenação (RF-F6-001). Parecer COE continua sempre individual. F6.2 entrou na fatia 17; F7 completo segue fora.
+
+Dívida consciente: tabela **ainda aberta** em [`docs/auditoria-fundacao.md`](docs/auditoria-fundacao.md). Destaques: encerrar evento sem PDF; CA-04; F7; claim `cursoIds`; HostPin em memória; ArchUnit; rate limit em memória. **`/academico/**`, menu de atalho de dev, BFF professor, filtro CAAF por comissão (V017), MinIO/`modules/arquivos` (V018), diploma/colação (V019), F6.2/`GET /reports/coordinator`, F5.18/`GET /reports/secretary` e F5.2/F5.5 fila+atrasados já não são dívida.**
 
 **1. Formativas** — V007; gatilho na TX de `ConfirmarPresencaUseCase` quando a presença fica **COMPLETA**. Aluno confirma ou cancela. Sem `POST /formativas`. BFF soma `APROVADA` (`null` sem cadastro). Não: CAAF/certificado (3 e 5), lote.
 
@@ -207,11 +242,11 @@ Fecha `/academico/**` e o menu. **Não** é F7. Detalhe (anti-lockout do PUT, jo
 - Capabilities: `course.manage` / `subject.manage` / `user.manage_students` / `calendar.manage` (não `curso.manage` / `student.manage`).
 - V011 + escopo no use case (`CursoEscopoPort`). Claim `cursoIds` **não** entrou no JWT.
 - POST inclui o criador na mesma TX; PUT re-adiciona quem edita (anti-lockout). Transferir curso depende de F7.1.
-- `request.view_curso` filtra a fila; professor só com `request.deliberate` **não** herda o filtro. Secretaria tem triage+deliberate e **não** recebe deep-link. Rel de menu `solicitacoes` exige `request.view_own` (secretaria não ganha esse item; usa `deliberar` = `/solicitacoes?to=me`). **F5.2 ficou de fora.**
+- `request.view_curso` filtra a fila; professor só com `request.deliberate` **não** herda o filtro. Secretaria tem triage+deliberate e **não** recebe deep-link. Rel de menu `solicitacoes` exige `request.view_own`; a fila central F5.2 usa `fila-solicitacoes` (fatia 20).
 - Menu: `MenuLinks` é o único ponto que olha caps; UI `useActions(links)`.
 - Seed `secretaria.dev` / `GRR20240005` (four manage + triage/deliberate/`view_curso`). As quatro `*.manage` andam juntas no seed — combo Alunos/Disciplinas reusa `GET /academico/cursos` (`course.manage`). Form F5.7 pede UUID cru (picker = F7.1).
 
-**Não entrou no item 7:** F7, F6.1, `cursoIds` no JWT, fila F5.2, Expo.
+**Não entrou no item 7:** F7, F6.1, `cursoIds` no JWT, Expo. Fila F5.2 entrou na **20**.
 
 **8. Expo** — feito
 
@@ -326,52 +361,6 @@ V017. `comissao_membro` (tipo `CAAF`|`COE`) + `formativa.id_responsavel`. `caaf.
 - Menu: rel `comissoes-caaf` só com `formative.review`. UI `useActions`. BulkActionBar: atribuir + “Aprovar selecionados” (desabilitado se a seleção misturar tipos).
 - Parecer individual (`/formativas?to=me`, item 3) intacto. Sem cap → 403. Cross-curso → 404. Anônimo → 401.
 - Fora: indeferir em lote, comprovante manual (24), MinIO, pool COE, Expo.
-
-**Ainda não:** a lista solta virou a tabela numerada da seção **O que falta (pós-9.5)**, abaixo. Não manter duas listas divergentes aqui.
-
-**9. Estágio + COE, TCC, egresso, F6.1**
-
-O item 9 da tabela original era um saco. 9.1–9.5 fecharam o recorte: estágio com parecer individual (RF-F3-005), pool COE só de atribuição (RF-F4-002), TCC com avaliação individual (RF-F3-006, sem certificado), portal read-only do egresso (RF-F2-001, sem diploma) e F6.1 da coordenação (RF-F6-001). Parecer COE continua sempre individual. F6.2 entrou na fatia 17; F7 segue fora.
-
-Dívida consciente: tabela **ainda aberta** em [`docs/auditoria-fundacao.md`](docs/auditoria-fundacao.md). Destaques: encerrar evento sem PDF; CA-04; F7; claim `cursoIds`; HostPin em memória; ArchUnit; rate limit em memória. **`/academico/**`, menu de atalho de dev, BFF professor, filtro CAAF por comissão (V017), MinIO/`modules/arquivos` (V018), diploma/colação (V019), F6.2/`GET /reports/coordinator` e F5.18/`GET /reports/secretary` já não são dívida.**
-
----
-
-## O que falta (pós-9.5)
-
-O item 9 fechou **o recorte dele** (estágio, TCC, egresso, F6.1, pool COE), não o produto. Varrendo `docs/tcc-docs.md` contra o código: dos **66 requisitos funcionais F0–F8**, 23 estão feitos, 15 parciais, 26 ausentes e 2 são P3 da própria spec; das **72 telas** do índice Figma, 29 feitas, 10 parciais, 31 ausentes e 2 P3. Ou seja: o circuito de banca está de pé, o mapa F0–F8 está em torno de 40 %. A tabela abaixo é **ordem de dependência real**, não a ordem do Figma — um bounded context por fatia, começando pelo que destrava outra fatia.
-
-| # | Fatia | Depende de | Entrega mínima | Fora desta fatia |
-|---|---|---|---|---|
-| 10 | Cadastro F5 de estágio (RF-F1-007) | 9.1, 9.5 | **Feito** — `POST`/`PUT /estagios` (`internship.manage`), aluno via `GET /academico/alunos`, `id_orientador` nulo, UI `/secretaria/estagios`. O seed de dev deixa de ser o único jeito de alimentar o pool COE e a revisão F3.6 | Parecer e encerramento (já no 9.1), lote, MinIO, TCC |
-| 11 | F7.1 + F7.8 usuários e picker | 10 | **Feito** — `GET`/`POST`/`PUT` `/admin/usuarios` + `POST .../desativar` (`user.manage_all`), `POST .../reset-senha` (`user.reset_password`, JWT 1-uso reusa `/nova-senha`), picker `GET /iam/usuarios` na F5.7 (coord+secretários), seed `admin.dev`, V016 `usuario.nome`. Sem e-mail síncrono (`iam.user_created` → SENT no-op) | Perfis/matriz FGAC (32), jobs, auditoria, `cursoIds` no JWT |
-| 12 | Cadastro F5 de TCC (RF-F1-008) | 11 | **Feito** — `POST`/`PUT /tccs` (`tcc.manage`), aluno via `GET /academico/alunos`, banca via picker `GET /iam/usuarios`, UI `/secretaria/tccs`. V013 já garante um `ATIVO` por aluno | Certificado de conclusão, lote, MinIO |
-| 13 | F3.1 BFF do professor | 9.1, 9.2 | **Feito** — `GET /bff/dashboard/professor` (`dashboard.view_self_professor`) agrega por porta deliberação, eventos do dia, CAAF (só com `formative.review`), estágios e TCCs; degrada por bloco como o do aluno. `/inicio` deixa de ser 403 para professor puro | Dashboard da secretaria (21), KPI de SLA calculado, Expo |
-| 14 | F4.1 pool + lote CAAF | 3, 9.5 | **Feito** — `GET`/`POST /comissoes/caaf` (`formative.review`): KPIs, self-assign, atribuição a colega com carga (`comissao_membro` V017 + `formativa.id_responsavel`), aprovação em lote **só** `PRESENCA_VALIDADA`. Menu rel `comissoes-caaf`. Parecer individual intacto | Indeferir em lote, comprovante manual (24), mexer no parecer individual do item 3 |
-| 15 | MinIO + `modules/arquivos` | 10, 12 | **Feito** — MinIO no `docker-compose.yml`, `modules/arquivos` (S3-compatível), PDF de certificado/estágio/TCC em object storage + `storage_key` (V018), download por URL pré-assinada (TTL 15 min). Upload multipart grava no bucket (mesmo `_links`) | Antivírus, versionamento de arquivo, exportação assíncrona (29) |
-| 16 | F5.11 diploma e colação | 15, 11 | **Feito** — tabela `diploma` (V019), wizard `/secretaria/diplomas` (`diploma.register`): elegíveis, colação em lote atômica (ALUNO→EGRESSO + Outbox `egressos.graduated` + audit), entrega física PENDENTE→ENTREGUE e PDF no MinIO. F2.1 passa a preencher `diploma`/`colacao`/`concluidoEm`/`situacaoDiploma` com `_links.download` pré-assinado | Lista/exportação de egressos (26), certificado de conclusão de TCC |
-| 17 | F6.2 relatórios da coordenação | 9.4, 14, 16 | **Feito** — `GET /reports/coordinator` (`report.view_coordinator`) + `/coordenacao/relatorios`: KPIs, séries históricas (evasão, formativas, aprovação), alerta de threshold e escopo do curso do coordenador (403 fora). Seed do professor.dev. Sem migration nova | Comparativo com curso de outro coordenador, export, F5.18 (19) |
-| 18 | Mobile P2 (Expo) | 9.1, 9.2, 9.3 | **Feito** — telas nativas formativas (F1.10/F1.12), estágio (F1.13/F1.14 + parecer se `_links`), TCC (F1.15/F1.16 + upload-final), certificados (F1.19) e egresso F2.1; menu abandona whitelist P0 e lê `_links` de `GET /auth/me` via `navItensVisiveis`/`useActions`. Refresh nativo (A) intacto | Deliberação, CAAF e F5 no app; FCM; Expo web |
-| 19 | F5.18 estatísticas da secretaria | 17 | **Feito** — `GET /reports/secretary` (`report.view_secretary`) + `/secretaria/estatisticas`: 4 datasets (tipo, estado, presença, horas), drill-down tabular client-side, resumo textual e escopo dos cursos vinculados (403 fora). Seed da secretaria.dev. Sem migration nova | Export, materialização/cache de métrica |
-| 20 | F5.2 + F5.5 fila central e atrasados | 2, 7 | `/solicitacoes` como fila central da secretaria com rel próprio no menu (hoje ela só recebe `deliberar`, porque `solicitacoes` exige `request.view_own`), `?slaBreached=true` em `/secretaria/atrasados`, ações em massa de atribuição e CSV | Solicitação interna (28), editor de RequestType (33), FORWARD |
-| 21 | F5.1 dashboard da secretaria | 20, 13 | `GET /bff/dashboard/secretary` (`dashboard.view_secretary`): KPIs, fila priorizada, alerta de SLA e agenda do dia, filtrados pelos cursos vinculados ao usuário | F6.2, kanban (P3) |
-| 22 | F1.3–F1.5 perfil, segurança e notificações | 11, 15 | `GET`/`PATCH /me` com campos institucionais read-only, troca de senha exigindo a atual, listar/encerrar sessões (`refresh_token` já existe) e preferência de canal/DND/digest | Push, foto sem a 15, SSO |
-| 23 | F1.6 + F3.8 hub de comunicação | 6 | `GET /communications` (`communication.read`) com inbox in-app, marcação de leitura e CTA, mais `POST /communications` (`communication.publish_class`) para o comunicado Markdown do professor, entregue pelo Outbox | Templates (34), push/FCM, digest |
-| 24 | F1.11 formativa manual com comprovante | 15, 14 | `POST /formative-entries` (`formative.submit`) com upload do comprovante; nasce em `AGUARDANDO_CAAF` sem presença e por isso **não** entra no lote da 14 | OCR, validação automática de carga horária |
-| 25 | F5.13 + F1.20 atendimentos | 11 | Módulo `atendimentos`: registro imutável pela secretaria (`service_record.create`) com busca de aluno e anexo, e ciência do aluno (`service_record.view_own`) auditada | Fila/SLA de atendimento, agendamento |
-| 26 | F5.10 egressos (lista + CSV) | 16 | `/secretaria/egressos` (`alumni.list`) com filtros, situação do diploma, criação manual excepcional e CSV síncrono | Exportação assíncrona (29), colação (já na 16) |
-| 27 | F5.14 + F5.15 eventos da secretaria | 15 | `event.manage` / `event.host` no escopo dos cursos da secretaria com `/secretaria/eventos` e `.../operacao` sobre o motor v4.1; inclui o `PATCH`/`DELETE /events/{id}` que hoje **não existe** (RF-F3-002-a) e o encerramento que emite certificado (RF-F3-002-b / RF-F5-008-b) | Janelas pré-agendadas, lista ao vivo de inelegíveis |
-| 28 | F5.3 + F5.12 solicitação interna e autorização de imagem | 20, 15 | `POST /requests { onBehalfOf }` (`request.internal_open`) reusando o wizard do aluno, e fila compacta de `AUTORIZACAO_IMAGEM` com thumbnail e aprovação em lote transacional | RequestType novo pelo editor (33), FORWARD |
-| 29 | F5.16 + F5.17 importações e exportações | 15, 11 | Wizard CSV/XLSX com preview linha a linha, validação assíncrona e confirmação transacional (`import.run`); exportação assíncrona com histórico de job, download pré-assinado e e-mail (`export.run`) | RabbitMQ, agendamento recorrente |
-| 30 | F7.7 audit-log + módulo `auditoria` | 11 | Extrai `audit_log` do `iam` para `modules/auditoria` e publica busca imutável (`audit.read`) por ator, ação, entidade e período, com diff JSON em drawer | Retenção/arquivamento, export, DELETE na trilha (proibido) |
-| 31 | F7.6 Outbox e jobs | 30 | `/admin/jobs` (`system.observe`): lista `PENDING`/`SENT`/`FAILED`/`DEAD`, reentrega manual do evento falho e alerta de latência do dispatcher | Grafana (P3), fila externa |
-| 32 | F7.2 + F7.3 perfis e matriz FGAC | 11, 30 | `role` + `role_authority`, CRUD de perfil com proteção dos perfis do sistema, matriz role×authority e invalidação de capability (hoje o seed `substituirAuthorities` é o único caminho) | Editor de workflow (33), claim `cursoIds` |
-| 33 | F7.4 editor de RequestType | 32 | Editor de 3 painéis para `form_schema` + `workflow_json` com preview, versionamento atômico e publicação (`request_type.manage`) — é o que permite chegar aos 19 tipos de RF-TR-001 sem código novo | Migrar solicitação em voo, FORWARD automático |
-| 34 | F7.5 templates de comunicação | 23, 33 | CRUD de template Markdown com placeholder, preview e versionamento imutável por revisão (`communication.manage_templates`); o dispatcher passa a renderizar template em vez de texto fixo | Push, A/B de mensagem |
-| 35 | F8.1 busca global | 11, 30 | `GET /search?q=` devolvendo aluno, solicitação, evento e usuário **filtrados pelas capabilities do token**, com paleta `Ctrl+K` na topbar | Índice externo, ranking semântico |
-| 36 | F8.2 suporte e FAQ | 33 | FAQ em Accordion acessível e ticket via `RequestType=SUPORTE_TECNICO` (sem tabela nova), com protocolo gerado pelo motor | Chat, base de conhecimento editável |
-
-Duas observações honestas sobre as fatias 10 e 12: a spec só diz que o estágio e o TCC são “registrados pela secretaria” (RF-F1-007 / RF-F1-008) e o mapa F0–F8 **não tem tela F5 para isso** — a rota `/secretaria/estagios` e `/secretaria/tccs` é derivada, não copiada do Figma. E elas são dois bounded contexts (`estagio` e `tcc`), por isso são duas fatias e não uma: entre elas entra a 11, porque a banca de TCC precisa escolher professores e o estágio não (o orientador fica nulo e o pool COE do 9.5 atribui).
 
 ### Fora do escopo de banca / P3
 

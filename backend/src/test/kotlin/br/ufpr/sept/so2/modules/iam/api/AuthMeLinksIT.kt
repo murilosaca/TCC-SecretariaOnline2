@@ -68,6 +68,8 @@ class AuthMeLinksIT {
             .andExpect(jsonPath("$._links.cursos").value("/secretaria/cursos"))
             .andExpect(jsonPath("$._links.alunos").value("/secretaria/alunos"))
             .andExpect(jsonPath("$._links.deliberar").value("/solicitacoes?to=me"))
+            .andExpect(jsonPath("$._links['fila-solicitacoes']").value("/solicitacoes"))
+            .andExpect(jsonPath("$._links.atrasados").value("/secretaria/atrasados"))
             .andExpect(jsonPath("$._links.solicitacoes").doesNotExist())
             .andExpect(jsonPath("$._links.contato").value("/contato"))
             .andExpect(jsonPath("$._links['revisao-caaf']").doesNotExist())

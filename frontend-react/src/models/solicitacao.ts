@@ -53,14 +53,32 @@ export type Solicitacao = {
   payload: Record<string, unknown>
   formSchema?: JsonSchema
   solicitanteNome?: string | null
+  solicitanteGrr?: string | null
+  cursoId?: string | null
+  cursoNome?: string | null
+  cursoSigla?: string | null
+  deliberadorId?: string | null
+  deliberadorNome?: string | null
   prazoEm: string
   prazoVencido: boolean
   sla: 'NO_PRAZO' | 'ATRASADO'
+  slaStatus?: 'danger' | 'warning' | null
+  diasAtraso?: number | null
   createdAt: string
   updatedAt: string
   eventos: SolicitacaoEvento[]
   _links?: HateoasLinks
 }
 
+export type DeliberadorOpcao = {
+  id: string
+  nome: string
+}
+
 export type SolicitacaoPage = PageResponse<Solicitacao>
+
+export type SolicitacaoFilaPage = PageResponse<Solicitacao> & {
+  deliberadores: DeliberadorOpcao[]
+}
+
 export type RequestTypePage = PageResponse<RequestType>

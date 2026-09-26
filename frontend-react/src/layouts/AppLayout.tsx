@@ -6,6 +6,8 @@ const NAV_ITENS: { rel: string; label: string }[] = [
   { rel: 'inicio', label: 'Início' },
   { rel: 'egresso-inicio', label: 'Início' },
   { rel: 'solicitacoes', label: 'Solicitações' },
+  { rel: 'fila-solicitacoes', label: 'Fila de solicitações' },
+  { rel: 'atrasados', label: 'Atrasados' },
   { rel: 'deliberar', label: 'Deliberar' },
   { rel: 'eventos', label: 'Eventos' },
   { rel: 'formativas', label: 'Formativas' },

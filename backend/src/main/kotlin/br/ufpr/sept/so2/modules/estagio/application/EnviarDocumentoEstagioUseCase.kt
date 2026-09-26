@@ -1,5 +1,7 @@
 package br.ufpr.sept.so2.modules.estagio.application
 
+import br.ufpr.sept.so2.modules.arquivos.application.ports.ObjectStoragePort
+import br.ufpr.sept.so2.modules.arquivos.domain.StorageKey
 import br.ufpr.sept.so2.modules.estagio.application.ports.AlunoEstagioPort
 import br.ufpr.sept.so2.modules.estagio.application.ports.EstagioRepository
 import br.ufpr.sept.so2.modules.estagio.domain.Estagio
@@ -17,6 +19,7 @@ import java.util.UUID
 class EnviarDocumentoEstagioUseCase(
     private val alunoEstagioPort: AlunoEstagioPort,
     private val estagioRepository: EstagioRepository,
+    private val objectStoragePort: ObjectStoragePort,
     private val outboxPort: OutboxPort,
     private val auditLogPort: AuditLogPort,
     private val objectMapper: ObjectMapper,
@@ -36,14 +39,19 @@ class EnviarDocumentoEstagioUseCase(
             ?: throw RecursoNaoEncontradoException("Estágio não encontrado.")
         EstagioAcesso.exigirDono(estagio, aluno.id)
         val tipoDocumento = TipoDocumentoEstagio.from(tipo)
+        val documento = estagio.documentos.find { it.tipo == tipoDocumento }
+            ?: throw RecursoNaoEncontradoException("Documento de estágio não encontrado.")
         val agora = OffsetDateTime.now()
+        val storageKey = StorageKey.estagioDocumento(estagio.id, documento.id).value
         estagio.enviarDocumento(
             tipoDocumento,
             EstagioArquivo.nomeSeguro(nomeArquivo),
             contentType,
             bytes,
+            storageKey,
             agora,
         )
+        objectStoragePort.putObject(storageKey, "application/pdf", bytes)
         val salvo = estagioRepository.save(estagio)
         val evento = EstagioJson.de(
             objectMapper,
@@ -53,6 +61,7 @@ class EnviarDocumentoEstagioUseCase(
                 "orientadorId" to salvo.idOrientador.toString(),
                 "tipo" to tipoDocumento.name,
                 "estado" to "AGUARDANDO_PARECER",
+                "storageKey" to storageKey,
             ),
         )
         outboxPort.enqueue(TIPO, evento)

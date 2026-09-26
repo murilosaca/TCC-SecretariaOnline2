@@ -252,13 +252,7 @@ function Linha({ item }: { item: EgressoCertificado }) {
 }
 
 async function baixarPdf(href: string, nomeArquivo: string) {
-  const blob = await egressosApi.baixar(href)
-  const url = URL.createObjectURL(blob)
-  const ancora = document.createElement('a')
-  ancora.href = url
-  ancora.download = nomeArquivo
-  ancora.click()
-  URL.revokeObjectURL(url)
+  await egressosApi.baixar(href, nomeArquivo)
 }
 
 function ColacaoBloco({ colacao }: { colacao: EgressoColacao | null }) {

@@ -28,7 +28,6 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.time.LocalDate
@@ -189,8 +188,8 @@ class TccControllerIT {
             get("/tccs/${tcc.id}/arquivo").header("Authorization", "Bearer $tokenProfessor"),
         )
             .andExpect(status().isOk)
-            .andExpect(content().contentType(MediaType.APPLICATION_PDF))
-            .andExpect(content().bytes(PDF))
+            .andExpect(jsonPath("$.downloadUrl").isString)
+            .andExpect(jsonPath("$.expiresInSeconds").value(900))
 
         mockMvc.perform(
             post("/tccs/${tcc.id}/avaliacoes")

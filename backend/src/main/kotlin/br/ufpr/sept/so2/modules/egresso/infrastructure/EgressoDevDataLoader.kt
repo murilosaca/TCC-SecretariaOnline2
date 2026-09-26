@@ -1,5 +1,7 @@
 package br.ufpr.sept.so2.modules.egresso.infrastructure
 
+import br.ufpr.sept.so2.modules.arquivos.application.ports.ObjectStoragePort
+import br.ufpr.sept.so2.modules.arquivos.domain.StorageKey
 import br.ufpr.sept.so2.modules.academico.application.ports.AlunoRepository
 import br.ufpr.sept.so2.modules.certificados.application.ports.CertificadoRepository
 import br.ufpr.sept.so2.modules.certificados.application.ports.CertificadoSigner
@@ -24,7 +26,7 @@ import java.util.UUID
 
 /**
  * Emissão original do certificado de desenvolvimento. A reemissão do portal não passa por aqui:
- * ela só lê o PDF, o hash e a assinatura já gravados.
+ * ela só gera URL pré-assinada do artefato já gravado (mesmo hash/assinatura).
  */
 @Component
 @Profile("dev")
@@ -35,6 +37,7 @@ class EgressoDevDataLoader(
     private val certificadoRepository: CertificadoRepository,
     private val renderer: PdfCertificadoRenderer,
     private val signer: CertificadoSigner,
+    private val objectStoragePort: ObjectStoragePort,
     @Value("\${app.iam.frontend-base-url:http://localhost:5174}")
     private val frontendBaseUrl: String,
 ) : ApplicationRunner {
@@ -61,6 +64,7 @@ class EgressoDevDataLoader(
 
     private fun emitir(alunoId: UUID, nome: String) {
         val agora = OffsetDateTime.now()
+        val id = Uuids.v7()
         val dados = Dados(nome, TITULO, CARGA, agora, null)
         val canonico = renderer.render(dados, null)
         val hashBytes = MessageDigest.getInstance("SHA-256").digest(canonico)
@@ -68,9 +72,11 @@ class EgressoDevDataLoader(
         val qr = "${frontendBaseUrl.trimEnd('/')}/publico/verificar-certificado/$hashHex"
         val pdf = renderer.render(dados.copy(hashSha256 = hashHex), qr)
         val assinatura = signer.sign(hashBytes)
+        val storageKey = StorageKey.certificado(id).value
+        objectStoragePort.putObject(storageKey, "application/pdf", pdf)
         certificadoRepository.save(
             Certificado(
-                Uuids.v7(),
+                id,
                 alunoId,
                 null,
                 null,
@@ -80,7 +86,7 @@ class EgressoDevDataLoader(
                 nome,
                 hashHex,
                 assinatura,
-                pdf,
+                storageKey,
                 agora,
                 agora,
                 agora,

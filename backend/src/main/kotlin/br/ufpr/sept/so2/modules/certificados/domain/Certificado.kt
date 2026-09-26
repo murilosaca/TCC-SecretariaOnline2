@@ -15,13 +15,13 @@ class Certificado(
     val beneficiarioNome: String,
     val hashSha256: String,
     val assinatura: String,
-    val pdf: ByteArray,
+    val storageKey: String,
     val emitidoEm: OffsetDateTime,
     val createdAt: OffsetDateTime,
     val updatedAt: OffsetDateTime,
 ) {
     init {
-        validar(titulo, cargaHoraria, beneficiarioNome, hashSha256, assinatura, pdf, tipo, idFormativa)
+        validar(titulo, cargaHoraria, beneficiarioNome, hashSha256, assinatura, storageKey, tipo, idFormativa)
     }
 
     fun pertenceAoAluno(alunoId: UUID): Boolean = idAluno == alunoId
@@ -39,7 +39,7 @@ class Certificado(
             beneficiarioNome: String,
             hashSha256: String,
             assinatura: String,
-            pdf: ByteArray,
+            storageKey: String,
             agora: OffsetDateTime,
         ): Certificado = Certificado(
             id,
@@ -52,7 +52,7 @@ class Certificado(
             beneficiarioNome,
             hashSha256,
             assinatura,
-            pdf,
+            storageKey,
             agora,
             agora,
             agora,
@@ -64,7 +64,7 @@ class Certificado(
             beneficiarioNome: String?,
             hashSha256: String?,
             assinatura: String?,
-            pdf: ByteArray?,
+            storageKey: String?,
             tipo: CertificadoTipo,
             idFormativa: UUID?,
         ) {
@@ -84,8 +84,8 @@ class Certificado(
             if (assinatura.isNullOrBlank()) {
                 throw DadoInvalidoException("Assinatura do certificado é obrigatória.")
             }
-            if (pdf == null || pdf.isEmpty()) {
-                throw DadoInvalidoException("PDF do certificado é obrigatório.")
+            if (storageKey.isNullOrBlank()) {
+                throw DadoInvalidoException("Chave de armazenamento do certificado é obrigatória.")
             }
             if (tipo == CertificadoTipo.FORMATIVA && idFormativa == null) {
                 throw DadoInvalidoException("Certificado de formativa exige id da formativa.")

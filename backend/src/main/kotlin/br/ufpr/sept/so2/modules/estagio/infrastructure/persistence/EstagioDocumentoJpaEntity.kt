@@ -43,8 +43,12 @@ class EstagioDocumentoJpaEntity : BaseEntity() {
     @Column(name = "content_type", length = 100)
     var contentType: String? = null
 
+    /** Legado bytea; nulo após migração para MinIO. */
     @Column(columnDefinition = "bytea")
     var conteudo: ByteArray? = null
+
+    @Column(name = "storage_key", length = 512)
+    var storageKey: String? = null
 
     var tamanho: Int? = null
 
@@ -60,7 +64,8 @@ class EstagioDocumentoJpaEntity : BaseEntity() {
         estado = documento.estado.name
         nomeArquivo = documento.nomeArquivo
         contentType = documento.contentType
-        conteudo = documento.conteudo?.copyOf()
+        storageKey = documento.storageKey
+        conteudo = null
         tamanho = documento.tamanho
         enviadoEm = documento.enviadoEm
         if (createdAt == null) {
@@ -86,7 +91,7 @@ class EstagioDocumentoJpaEntity : BaseEntity() {
         EstadoDocumentoEstagio.from(estado),
         nomeArquivo,
         contentType,
-        conteudo?.copyOf(),
+        storageKey,
         tamanho,
         enviadoEm,
         pareceres.map { it.toDomain() },

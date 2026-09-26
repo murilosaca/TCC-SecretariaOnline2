@@ -1,5 +1,6 @@
 package br.ufpr.sept.so2.modules.tcc.api
 
+import br.ufpr.sept.so2.modules.arquivos.api.dto.DownloadUrlResponse
 import br.ufpr.sept.so2.modules.iam.infrastructure.security.IamPrincipal
 import br.ufpr.sept.so2.modules.tcc.api.dto.RegistrarAvaliacaoTccRequest
 import br.ufpr.sept.so2.modules.tcc.api.dto.RegistrarTccRequest
@@ -24,11 +25,8 @@ import jakarta.servlet.http.HttpServletRequest
 import jakarta.validation.Valid
 import org.springframework.data.domain.Pageable
 import org.springframework.data.web.PageableDefault
-import org.springframework.http.ContentDisposition
-import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
-import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.GetMapping
@@ -168,15 +166,11 @@ class TccController(
 
     @GetMapping("/{id}/arquivo")
     @PreAuthorize("hasAnyAuthority('tcc.view_own','tcc.review')")
-    @Operation(summary = "Baixar o PDF da versão final armazenado pelo sistema")
-    fun arquivo(@PathVariable id: UUID, authentication: Authentication): ResponseEntity<ByteArray> {
+    @Operation(summary = "URL pré-assinada do PDF da versão final (TTL 15 min)")
+    fun arquivo(@PathVariable id: UUID, authentication: Authentication): DownloadUrlResponse {
         val principal = principal(authentication)
         val arquivo = baixarVersaoFinalTccUseCase.execute(id, principal.userId, principal.authorities)
-        val nome = arquivo.nome.replace(Regex("[^A-Za-z0-9._-]"), "_").ifEmpty { "tcc.pdf" }
-        return ResponseEntity.ok()
-            .contentType(MediaType.APPLICATION_PDF)
-            .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment().filename(nome).build().toString())
-            .body(arquivo.bytes)
+        return DownloadUrlResponse(arquivo.downloadUrl, arquivo.expiresInSeconds)
     }
 
     @PostMapping("/{id}/versao-final", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])

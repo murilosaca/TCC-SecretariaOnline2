@@ -100,23 +100,23 @@ class EstagioTest : StringSpec({
 
     "envio de PDF aguarda parecer e reenvio no mesmo estado conflita" {
         val estagio = ativo()
-        estagio.enviarDocumento(TipoDocumentoEstagio.RELATORIO_FINAL, "relatorio.pdf", "application/pdf", pdf, agora)
+        estagio.enviarDocumento(TipoDocumentoEstagio.RELATORIO_FINAL, "relatorio.pdf", "application/pdf", pdf, "estagios/key.pdf", agora)
         val relatorio = estagio.documentos.first { it.tipo == TipoDocumentoEstagio.RELATORIO_FINAL }
         relatorio.estado shouldBe EstadoDocumentoEstagio.AGUARDANDO_PARECER
         relatorio.podeEnviar() shouldBe false
         estagio.documentoPendente() shouldBe "RELATORIO_FINAL"
         shouldThrow<ConflitoEstadoException> {
-            estagio.enviarDocumento(TipoDocumentoEstagio.RELATORIO_FINAL, "relatorio.pdf", "application/pdf", pdf, agora)
+            estagio.enviarDocumento(TipoDocumentoEstagio.RELATORIO_FINAL, "relatorio.pdf", "application/pdf", pdf, "estagios/key.pdf", agora)
         }
         shouldThrow<DadoInvalidoException> {
-            estagio.enviarDocumento(TipoDocumentoEstagio.TCE, "nota.txt", "text/plain", "oi".toByteArray(), agora)
+            estagio.enviarDocumento(TipoDocumentoEstagio.TCE, "nota.txt", "text/plain", "oi".toByteArray(), "estagios/key.pdf", agora)
         }
         estagio.documentos.first { it.tipo == TipoDocumentoEstagio.TCE }.estado shouldBe EstadoDocumentoEstagio.PENDENTE
     }
 
     "reprovar com parecer curto é inválido e não muda o estado" {
         val estagio = ativo()
-        estagio.enviarDocumento(TipoDocumentoEstagio.TCE, "tce.pdf", "application/pdf", pdf, agora)
+        estagio.enviarDocumento(TipoDocumentoEstagio.TCE, "tce.pdf", "application/pdf", pdf, "estagios/key.pdf", agora)
         shouldThrow<DadoInvalidoException> {
             estagio.emitirParecer(tceId, "REPROVAR", "curto demais", orientadorId, parecerId, agora.plusMinutes(1))
         }
@@ -129,7 +129,7 @@ class EstagioTest : StringSpec({
 
     "reprovar libera reenvio e aprovar os obrigatórios permite arquivar" {
         val estagio = ativo()
-        estagio.enviarDocumento(TipoDocumentoEstagio.TCE, "tce.pdf", "application/pdf", pdf, agora)
+        estagio.enviarDocumento(TipoDocumentoEstagio.TCE, "tce.pdf", "application/pdf", pdf, "estagios/key.pdf", agora)
         estagio.emitirParecer(
             tceId,
             "REPROVAR",
@@ -139,7 +139,7 @@ class EstagioTest : StringSpec({
             agora.plusMinutes(1),
         )
         estagio.documentos.first { it.id == tceId }.estado shouldBe EstadoDocumentoEstagio.REPROVADO
-        estagio.enviarDocumento(TipoDocumentoEstagio.TCE, "tce.pdf", "application/pdf", pdf, agora.plusMinutes(2))
+        estagio.enviarDocumento(TipoDocumentoEstagio.TCE, "tce.pdf", "application/pdf", pdf, "estagios/key.pdf", agora.plusMinutes(2))
         estagio.documentos.first { it.id == tceId }.estado shouldBe EstadoDocumentoEstagio.AGUARDANDO_PARECER
 
         estagio.emitirParecer(
@@ -150,7 +150,7 @@ class EstagioTest : StringSpec({
             UUID.fromString("01800000-0000-7000-8000-000000000108"),
             agora.plusMinutes(3),
         )
-        estagio.enviarDocumento(TipoDocumentoEstagio.RELATORIO_FINAL, "relatorio.pdf", "application/pdf", pdf, agora)
+        estagio.enviarDocumento(TipoDocumentoEstagio.RELATORIO_FINAL, "relatorio.pdf", "application/pdf", pdf, "estagios/key.pdf", agora)
         shouldThrow<DadoInvalidoException> { estagio.encerrar(agora.plusMinutes(4)) }
         estagio.situacao shouldBe EstagioSituacao.ATIVO
 
@@ -171,8 +171,8 @@ class EstagioTest : StringSpec({
 
     "estágio concluído é imutável" {
         val estagio = ativo()
-        estagio.enviarDocumento(TipoDocumentoEstagio.TCE, "tce.pdf", "application/pdf", pdf, agora)
-        estagio.enviarDocumento(TipoDocumentoEstagio.RELATORIO_FINAL, "relatorio.pdf", "application/pdf", pdf, agora)
+        estagio.enviarDocumento(TipoDocumentoEstagio.TCE, "tce.pdf", "application/pdf", pdf, "estagios/key.pdf", agora)
+        estagio.enviarDocumento(TipoDocumentoEstagio.RELATORIO_FINAL, "relatorio.pdf", "application/pdf", pdf, "estagios/key.pdf", agora)
         estagio.emitirParecer(tceId, "APROVAR", "Ok.", orientadorId, parecerId, agora.plusMinutes(1))
         estagio.emitirParecer(
             relatorioId,
@@ -184,7 +184,7 @@ class EstagioTest : StringSpec({
         )
         estagio.encerrar(agora.plusMinutes(3))
         shouldThrow<ConflitoEstadoException> {
-            estagio.enviarDocumento(TipoDocumentoEstagio.TCE, "tce.pdf", "application/pdf", pdf, agora.plusMinutes(4))
+            estagio.enviarDocumento(TipoDocumentoEstagio.TCE, "tce.pdf", "application/pdf", pdf, "estagios/key.pdf", agora.plusMinutes(4))
         }
         shouldThrow<ConflitoEstadoException> {
             estagio.emitirParecer(tceId, "APROVAR", "Novo parecer.", orientadorId, parecerId, agora.plusMinutes(4))
@@ -253,8 +253,8 @@ class EstagioTest : StringSpec({
         )
 
         val concluido = ativo()
-        concluido.enviarDocumento(TipoDocumentoEstagio.TCE, "tce.pdf", "application/pdf", pdf, agora)
-        concluido.enviarDocumento(TipoDocumentoEstagio.RELATORIO_FINAL, "relatorio.pdf", "application/pdf", pdf, agora)
+        concluido.enviarDocumento(TipoDocumentoEstagio.TCE, "tce.pdf", "application/pdf", pdf, "estagios/key.pdf", agora)
+        concluido.enviarDocumento(TipoDocumentoEstagio.RELATORIO_FINAL, "relatorio.pdf", "application/pdf", pdf, "estagios/key.pdf", agora)
         concluido.emitirParecer(tceId, "APROVAR", "Ok.", orientadorId, parecerId, agora.plusMinutes(1))
         concluido.emitirParecer(
             relatorioId,

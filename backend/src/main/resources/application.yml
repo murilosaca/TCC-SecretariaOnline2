@@ -98,6 +98,17 @@ app:
     lote: 20
     max-tentativas: 5
     stale-processing-seconds: 60
+  storage:
+    mode: ${STORAGE_MODE:s3}
+    endpoint: ${STORAGE_ENDPOINT:http://localhost:9000}
+    public-endpoint: ${STORAGE_PUBLIC_ENDPOINT:${STORAGE_ENDPOINT:http://localhost:9000}}
+    access-key: ${STORAGE_ACCESS_KEY:minioadmin}
+    secret-key: ${STORAGE_SECRET_KEY:minioadmin}
+    bucket: ${STORAGE_BUCKET:so2}
+    region: ${STORAGE_REGION:us-east-1}
+    path-style: true
+    download-ttl-seconds: 900
+    upload-ttl-seconds: 300
 
 management:
   endpoints:

@@ -73,6 +73,9 @@ class EstagioAssembler(
         if (dono && estagio.situacao != EstagioSituacao.CONCLUIDO && documento.podeEnviar()) {
             links["upload"] = "$base/documentos"
         }
+        if ((dono || revisor) && documento.temArquivo()) {
+            links["download"] = "$base/documentos/${documento.id}/arquivo"
+        }
         if (revisor && documento.podeRevisar()) {
             val parecer = "$base/documentos/${documento.id}/parecer"
             links["revisar"] = base

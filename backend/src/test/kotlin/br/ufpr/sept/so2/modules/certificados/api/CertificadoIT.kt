@@ -28,8 +28,6 @@ import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.header
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.time.OffsetDateTime
@@ -143,12 +141,11 @@ class CertificadoIT {
                 .header("Authorization", "Bearer $tokenAluno"),
         )
             .andExpect(status().isOk)
-            .andExpect(content().contentType(MediaType.APPLICATION_PDF))
-            .andExpect(header().string("Content-Disposition", startsWith("attachment;")))
+            .andExpect(jsonPath("$.downloadUrl").isString)
+            .andExpect(jsonPath("$.expiresInSeconds").value(900))
             .andExpect { result ->
-                val body = result.response.contentAsByteArray
-                assert(body.size > 100)
-                assert(body.copyOfRange(0, 4).contentEquals("%PDF".toByteArray()))
+                val url = extract(result.response.contentAsString, "\"downloadUrl\":\"", "\"")
+                assert(url.contains("so2-test") || url.contains("certificados/"))
             }
 
         mockMvc.perform(get("/publico/certificados/$hash/verificacao"))

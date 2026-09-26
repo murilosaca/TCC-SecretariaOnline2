@@ -1,4 +1,5 @@
 import { api } from './client'
+import { baixarViaPresign } from './download'
 import type { Estagio, EstagioPage, RegistrarEstagioRequest } from '../models/estagio'
 
 export const estagiosApi = {
@@ -20,4 +21,5 @@ export const estagiosApi = {
   parecer: (id: string, documentoId: string, acao: 'APROVAR' | 'REPROVAR', parecer: string) =>
     api.post<Estagio>(`/estagios/${id}/documentos/${documentoId}/parecer`, { acao, parecer }),
   encerrar: (id: string) => api.post<Estagio>(`/estagios/${id}/encerrar`),
+  baixar: (href: string, nomeArquivo: string) => baixarViaPresign(href, nomeArquivo),
 }

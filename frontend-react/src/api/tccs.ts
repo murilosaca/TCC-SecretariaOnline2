@@ -1,4 +1,5 @@
 import { api } from './client'
+import { baixarViaPresign } from './download'
 import type { RegistrarTccRequest, Tcc, TccPage } from '../models/tcc'
 
 export const tccsApi = {
@@ -18,5 +19,5 @@ export const tccsApi = {
   },
   avaliar: (id: string, acao: string, nota: number, parecer: string) =>
     api.post<Tcc>(`/tccs/${id}/avaliacoes`, { acao, nota, parecer }),
-  baixar: (href: string) => api.getBlob(href),
+  baixar: (href: string, nomeArquivo: string) => baixarViaPresign(href, nomeArquivo),
 }

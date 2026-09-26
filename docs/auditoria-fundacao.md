@@ -106,8 +106,8 @@ Só o que **ainda** está aberto. Não reabrir FGAC, nav, dispatcher, F0.7, KPIs
 | Diploma e colação | RF-F2-001 / F5.11 | O painel do egresso devolve `diploma`, `colacao`, `concluidoEm` e `kpis.situacaoDiploma` nulos. A UI diz que o registro ainda não está disponível. Não nasceu tabela `diploma` nem wizard de colação | F5.11 |
 | Lista F1.19 do egresso | HU 19 critério 5 | `/certificados` segue `certificate.view_own` e `CertificadoAcesso` continua recusando situação EGRESSO. A reemissão do dono é `GET /egressos/me/certificados/{id}/reemissao` | Não abrir a lista de aluno nesta fatia |
 | Expo F2 | RF-F2-001 | O app nativo não tem `/egresso/inicio`. O menu ignora o rel `egresso-inicio` (whitelist P0) e o egresso cai no `/inicio` com 403 do BFF | mobile-2 |
-| Cadastro F5 de estágio | secretaria registra o estágio | Fatia 10: `POST`/`PUT /estagios` (`internship.manage`), UI `/secretaria/estagios`, orientador nulo. PDF continua `bytea` | MinIO, lote, TCC |
-| MinIO / `arquivos` | upload presigned | PDF de estágio, de TCC e de certificado em `bytea`. Sem `modules/arquivos` e sem MinIO no compose. Download do TCC sai da API, sem URL de 15 min | Quando o compose tiver MinIO |
+| Cadastro F5 de estágio | secretaria registra o estágio | Fatia 10: `POST`/`PUT /estagios` (`internship.manage`), UI `/secretaria/estagios`, orientador nulo. PDF no MinIO desde a 15 | Lote, TCC |
+| MinIO / `arquivos` | upload/download presigned | Fatia 15: MinIO no compose, `modules/arquivos`, `storage_key` (V018), download TTL 15 min. PDF deixa de trafegar pelo backend | Antivírus, versionamento, anexos de solicitação |
 | Períodos por curso / F5.9 tipos | calendário semântico | F6.1 gravou só a duração 15/18 em `curso_configuracao`. `periodo_letivo` continua global | Schema por curso + tipos na F5.9 |
 | Janelas pré-agendadas / inelegíveis | CA-02 / CA-06 | Motor v4.1 já tem os quatro modos; janelas desta fatia são ao vivo (15 min) | Pré-agendar e lista ao vivo quando a tela de criação pedir |
 | CA-04 / `REVOGADO` | upload na F0.7; revogação | F0.7 verifica hash; sem upload de PDF; sem estado `REVOGADO` | Fora desta fatia |

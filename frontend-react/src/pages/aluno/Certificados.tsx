@@ -76,13 +76,7 @@ function Linha({ item }: { item: Certificado }) {
     setErro(null)
     setBaixando(true)
     try {
-      const blob = await certificadosApi.baixar(href)
-      const url = URL.createObjectURL(blob)
-      const ancora = document.createElement('a')
-      ancora.href = url
-      ancora.download = `certificado-${item.id}.pdf`
-      ancora.click()
-      URL.revokeObjectURL(url)
+      await certificadosApi.baixar(href, `certificado-${item.id}.pdf`)
     } catch {
       setErro('Não foi possível baixar o PDF.')
     } finally {

@@ -1,5 +1,7 @@
 package br.ufpr.sept.so2.modules.egresso.api
 
+import br.ufpr.sept.so2.modules.arquivos.application.ports.ObjectStoragePort
+import br.ufpr.sept.so2.modules.arquivos.domain.StorageKey
 import br.ufpr.sept.so2.modules.academico.application.ports.AlunoRepository
 import br.ufpr.sept.so2.modules.academico.application.ports.CursoRepository
 import br.ufpr.sept.so2.modules.academico.domain.Aluno
@@ -27,7 +29,6 @@ import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.security.MessageDigest
@@ -60,6 +61,9 @@ class EgressoControllerIT {
 
     @Autowired
     private lateinit var jdbcTemplate: JdbcTemplate
+
+    @Autowired
+    private lateinit var objectStoragePort: ObjectStoragePort
 
     private val usuariosIt
         get() = ItUsuarioFixture(usuarioRepository, passwordHasher, mockMvc)
@@ -157,11 +161,11 @@ class EgressoControllerIT {
 
         mockMvc.perform(get(reemissao()).header("Authorization", "Bearer $token"))
             .andExpect(status().isOk)
-            .andExpect(content().contentType(MediaType.APPLICATION_PDF))
-            .andExpect(content().bytes(PDF))
+            .andExpect(jsonPath("$.downloadUrl").isString)
+            .andExpect(jsonPath("$.expiresInSeconds").value(900))
         mockMvc.perform(get(reemissao()).header("Authorization", "Bearer $token"))
             .andExpect(status().isOk)
-            .andExpect(content().bytes(PDF))
+            .andExpect(jsonPath("$.downloadUrl").isString)
 
         org.junit.jupiter.api.Assertions.assertEquals(antes, contarCertificados())
         org.junit.jupiter.api.Assertions.assertEquals(hashAntes, coluna("hash_sha256"))
@@ -294,9 +298,12 @@ class EgressoControllerIT {
         if (existente != null && existente.pertenceAoAluno(alunoId)) {
             return existente
         }
+        val id = Uuids.v7()
+        val key = StorageKey.certificado(id).value
+        objectStoragePort.putObject(key, "application/pdf", PDF)
         return certificadoRepository.save(
             Certificado(
-                Uuids.v7(),
+                id,
                 alunoId,
                 null,
                 null,
@@ -306,7 +313,7 @@ class EgressoControllerIT {
                 "Egresso IT",
                 HASH,
                 ASSINATURA,
-                PDF,
+                key,
                 agora,
                 agora,
                 agora,

@@ -17,7 +17,6 @@ class EgressoPainelUseCaseTest : StringSpec({
     val usuarioId = UUID.randomUUID()
     val alunoId = UUID.randomUUID()
     val certificadoId = UUID.randomUUID()
-    val pdf = "pdf-original".toByteArray()
     val hash = "ab".repeat(32)
     val agora = OffsetDateTime.parse("2026-06-01T12:00:00Z")
     val cadastro = Cadastro(
@@ -67,12 +66,12 @@ class EgressoPainelUseCaseTest : StringSpec({
         }
     }
 
-    "reemitir devolve o mesmo pdf e 404 se nao for o dono" {
-        val arquivo = PdfDoEgresso(certificadoId, "Seminário", pdf, hash)
+    "reemitir devolve o mesmo storageKey e 404 se nao for o dono" {
+        val arquivo = PdfDoEgresso(certificadoId, "Seminário", "certificados/$certificadoId.pdf", hash)
         val fake = FakeConsulta(cadastro, arquivo)
         val useCase = ReemitirCertificadoEgressoUseCase(fake)
         val baixado = useCase.execute(usuarioId, listOf("alumni.view_own"), certificadoId)
-        baixado.pdf.toList() shouldBe pdf.toList()
+        baixado.storageKey shouldBe "certificados/$certificadoId.pdf"
         baixado.hashSha256 shouldBe hash
         fake.gravacoes shouldBe 0
         shouldThrow<RecursoNaoEncontradoException> {
@@ -81,7 +80,7 @@ class EgressoPainelUseCaseTest : StringSpec({
     }
 
     "reemitir recusa aluno ativo antes de ler o arquivo" {
-        val fake = FakeConsulta(cadastro, PdfDoEgresso(certificadoId, "Seminário", pdf, hash))
+        val fake = FakeConsulta(cadastro, PdfDoEgresso(certificadoId, "Seminário", "certificados/x.pdf", hash))
         val useCase = ReemitirCertificadoEgressoUseCase(fake)
         shouldThrow<AcessoNegadoException> {
             useCase.execute(usuarioId, listOf("alumni.view_own", "tcc.view_own"), certificadoId)

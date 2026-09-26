@@ -1,9 +1,11 @@
 package br.ufpr.sept.so2.modules.estagio.api
 
+import br.ufpr.sept.so2.modules.arquivos.api.dto.DownloadUrlResponse
 import br.ufpr.sept.so2.modules.estagio.api.dto.EmitirParecerEstagioRequest
 import br.ufpr.sept.so2.modules.estagio.api.dto.EstagioResponse
 import br.ufpr.sept.so2.modules.estagio.api.dto.RegistrarEstagioRequest
 import br.ufpr.sept.so2.modules.estagio.application.AtualizarEstagioUseCase
+import br.ufpr.sept.so2.modules.estagio.application.BaixarDocumentoEstagioUseCase
 import br.ufpr.sept.so2.modules.estagio.application.EncerrarEstagioUseCase
 import br.ufpr.sept.so2.modules.estagio.application.EnviarDocumentoEstagioUseCase
 import br.ufpr.sept.so2.modules.estagio.application.EstagioAcesso
@@ -52,6 +54,7 @@ class EstagioController(
     private val atualizarEstagioUseCase: AtualizarEstagioUseCase,
     private val obterEstagioUseCase: ObterEstagioUseCase,
     private val enviarDocumentoEstagioUseCase: EnviarDocumentoEstagioUseCase,
+    private val baixarDocumentoEstagioUseCase: BaixarDocumentoEstagioUseCase,
     private val emitirParecerEstagioUseCase: EmitirParecerEstagioUseCase,
     private val encerrarEstagioUseCase: EncerrarEstagioUseCase,
     private val alunoEstagioPort: AlunoEstagioPort,
@@ -164,6 +167,24 @@ class EstagioController(
             obterEstagioUseCase.execute(id, principal.userId, principal.authorities),
             principal,
         )
+    }
+
+    @GetMapping("/{id}/documentos/{documentoId}/arquivo")
+    @PreAuthorize("hasAnyAuthority('internship.view_own','internship.review')")
+    @Operation(summary = "URL pré-assinada do PDF do documento (TTL 15 min)")
+    fun baixarDocumento(
+        @PathVariable id: UUID,
+        @PathVariable documentoId: UUID,
+        authentication: Authentication,
+    ): DownloadUrlResponse {
+        val principal = principal(authentication)
+        val arquivo = baixarDocumentoEstagioUseCase.execute(
+            id,
+            documentoId,
+            principal.userId,
+            principal.authorities,
+        )
+        return DownloadUrlResponse(arquivo.downloadUrl, arquivo.expiresInSeconds)
     }
 
     @PostMapping("/{id}/documentos", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])

@@ -168,6 +168,12 @@ class MenuLinksTest : StringSpec({
         links.shouldNotContainKey("cursos")
     }
 
+    "coordenador com report.view_coordinator ganha relatorios" {
+        val links = MenuLinks.from(listOf("report.view_coordinator", "course.config"))
+        links["relatorios"] shouldBe "/coordenacao/relatorios"
+        MenuLinks.from(listOf("course.config")).shouldNotContainKey("relatorios")
+    }
+
     "secretaria com diploma.register ganha diplomas" {
         val links = MenuLinks.from(listOf("diploma.register", "course.manage"))
         links["diplomas"] shouldBe "/secretaria/diplomas"

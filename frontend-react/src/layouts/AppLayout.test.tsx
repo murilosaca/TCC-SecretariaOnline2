@@ -155,13 +155,17 @@ describe('AppLayout', () => {
     expect(screen.queryByText('Cadastro de estágios')).toBeNull()
   })
 
-  it('nav do coordenador mostra Configurar curso e não mostra Cursos da secretaria', () => {
+  it('nav do coordenador mostra Configurar curso, Relatórios e não mostra Cursos da secretaria', () => {
     renderNav({
       inicio: '/inicio',
       'configurar-curso': '/coordenacao/cursos/tads/configurar',
+      relatorios: '/coordenacao/relatorios',
       contato: '/contato',
     })
     expect(screen.getByText('Configurar curso')).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Relatórios' }).getAttribute('href')).toBe(
+      '/coordenacao/relatorios',
+    )
     expect(screen.queryByText('Cursos')).toBeNull()
   })
 

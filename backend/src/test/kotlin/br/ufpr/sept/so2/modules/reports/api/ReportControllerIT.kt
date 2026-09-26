@@ -1,6 +1,7 @@
 package br.ufpr.sept.so2.modules.reports.api
 
 import br.ufpr.sept.so2.modules.academico.application.ports.CursoRepository
+import br.ufpr.sept.so2.modules.academico.application.ports.CursoSecretarioRepository
 import br.ufpr.sept.so2.modules.academico.application.ports.PeriodoLetivoRepository
 import br.ufpr.sept.so2.modules.academico.domain.Curso
 import br.ufpr.sept.so2.modules.academico.domain.PeriodoLetivo
@@ -40,6 +41,9 @@ class ReportControllerIT {
     private lateinit var cursoRepository: CursoRepository
 
     @Autowired
+    private lateinit var cursoSecretarioRepository: CursoSecretarioRepository
+
+    @Autowired
     private lateinit var periodoLetivoRepository: PeriodoLetivoRepository
 
     private val usuariosIt
@@ -61,10 +65,20 @@ class ReportControllerIT {
             GRR_OUTRO,
             listOf("report.view_coordinator", "course.config"),
         )
-        usuariosIt.criarUsuario(EMAIL_SECRETARIA, GRR_SECRETARIA, listOf("course.manage"))
+        val secretaria = usuariosIt.criarUsuario(
+            EMAIL_SECRETARIA,
+            GRR_SECRETARIA,
+            listOf("course.manage", "report.view_secretary", "request.view_curso"),
+        )
         usuariosIt.criarUsuario(EMAIL_SEM_CAP, GRR_SEM_CAP, listOf("course.config"))
+        usuariosIt.criarUsuario(
+            EMAIL_SEC_SEM_VINCULO,
+            GRR_SEC_SEM_VINCULO,
+            listOf("course.manage", "report.view_secretary"),
+        )
         cursoTadsId = garantirCurso(CODIGO_TADS, "TADS F62", "T62", coord.id, agora)
         cursoEcId = garantirCurso(CODIGO_EC, "EC F62", "E62", outroCoord.id, agora)
+        cursoSecretarioRepository.adicionarSeAusente(cursoTadsId, secretaria.id)
         garantirPeriodo(2026, 2, LocalDate.of(2026, 7, 1), LocalDate.of(2026, 12, 15), agora)
         garantirPeriodo(2026, 1, LocalDate.of(2026, 2, 1), LocalDate.of(2026, 6, 30), agora)
     }
@@ -86,10 +100,80 @@ class ReportControllerIT {
     }
 
     @Test
-    fun secretariaSemCapRecebe403() {
+    fun secretariaSemCapRecebe403NoCoordinator() {
         val token = usuariosIt.login(EMAIL_SECRETARIA)
         mockMvc.perform(get("/reports/coordinator").header("Authorization", "Bearer $token"))
             .andExpect(status().isForbidden)
+    }
+
+    @Test
+    fun coordenadorPuroSemCapRecebe403NoSecretaryESemMenu() {
+        val token = usuariosIt.login(EMAIL_COORD)
+        mockMvc.perform(get("/reports/secretary").header("Authorization", "Bearer $token"))
+            .andExpect(status().isForbidden)
+        mockMvc.perform(get("/auth/me").header("Authorization", "Bearer $token"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$._links.estatisticas").doesNotExist())
+    }
+
+    @Test
+    fun secretariaLeDatasetsDoEscopoEGanhaMenu() {
+        val token = usuariosIt.login(EMAIL_SECRETARIA)
+        mockMvc.perform(get("/auth/me").header("Authorization", "Bearer $token"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$._links.estatisticas").value("/secretaria/estatisticas"))
+
+        mockMvc.perform(
+            get("/reports/secretary")
+                .param("periodo", "2026-2")
+                .param("curso", "T62")
+                .header("Authorization", "Bearer $token"),
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.filtros.curso").value("T62"))
+            .andExpect(jsonPath("$.filtros.cursoId").value(cursoTadsId.toString()))
+            .andExpect(jsonPath("$.filtros.periodo").value("2026-2"))
+            .andExpect(jsonPath("$.filtros.cursos").isArray)
+            .andExpect(jsonPath("$.solicitacoesPorTipo").isArray)
+            .andExpect(jsonPath("$.solicitacoesPorEstado").isArray)
+            .andExpect(jsonPath("$.presencas").isArray)
+            .andExpect(jsonPath("$.horasFormativas").isArray)
+            .andExpect(jsonPath("$.itensSolicitacao").isArray)
+            .andExpect(jsonPath("$._links.self").value("/reports/secretary?periodo=2026-2&curso=T62"))
+            .andExpect(jsonPath("$._links.estatisticas").value("/secretaria/estatisticas"))
+            .andExpect(jsonPath("$._links.deliberar").value("/solicitacoes?to=me"))
+    }
+
+    @Test
+    fun secretariaSemCursoAgregaTodosVinculados() {
+        val token = usuariosIt.login(EMAIL_SECRETARIA)
+        mockMvc.perform(get("/reports/secretary").header("Authorization", "Bearer $token"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.filtros.curso").doesNotExist())
+            .andExpect(jsonPath("$.filtros.cursoNome").value("Cursos vinculados"))
+            .andExpect(jsonPath("$.filtros.cursos[0].sigla").value("T62"))
+            .andExpect(jsonPath("$._links.self").exists())
+    }
+
+    @Test
+    fun secretariaCursoForaDoEscopoDevolve403() {
+        val token = usuariosIt.login(EMAIL_SECRETARIA)
+        mockMvc.perform(
+            get("/reports/secretary")
+                .param("curso", "E62")
+                .header("Authorization", "Bearer $token"),
+        )
+            .andExpect(status().isForbidden)
+            .andExpect(jsonPath("$.detail").value("Curso fora do escopo da sua secretaria."))
+            .andExpect(jsonPath("$.solicitacoesPorTipo").doesNotExist())
+    }
+
+    @Test
+    fun secretariaSemVinculoDevolve403() {
+        val token = usuariosIt.login(EMAIL_SEC_SEM_VINCULO)
+        mockMvc.perform(get("/reports/secretary").header("Authorization", "Bearer $token"))
+            .andExpect(status().isForbidden)
+            .andExpect(jsonPath("$.detail").value("Nenhum curso vinculado à sua secretaria foi encontrado."))
     }
 
     @Test
@@ -193,6 +277,8 @@ class ReportControllerIT {
         private const val GRR_SECRETARIA = "GRR62000003"
         private const val EMAIL_SEM_CAP = "prof.sem.relatorio@ufpr.br"
         private const val GRR_SEM_CAP = "GRR62000004"
+        private const val EMAIL_SEC_SEM_VINCULO = "secretaria.sem.vinculo@ufpr.br"
+        private const val GRR_SEC_SEM_VINCULO = "GRR62000005"
         private const val CODIGO_TADS = "TADS-F62-REP"
         private const val CODIGO_EC = "EC-F62-REP"
     }

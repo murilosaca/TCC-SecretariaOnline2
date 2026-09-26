@@ -81,6 +81,9 @@ object MenuLinks {
         if (caps.contains("report.view_coordinator")) {
             links["relatorios"] = "/coordenacao/relatorios"
         }
+        if (caps.contains("report.view_secretary")) {
+            links["estatisticas"] = "/secretaria/estatisticas"
+        }
         links["contato"] = "/contato"
         return links
     }

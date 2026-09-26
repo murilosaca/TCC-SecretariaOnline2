@@ -985,6 +985,11 @@ textarea:focus {
   outline: none;
 }
 
+.quick-tile.selecionado {
+  border-color: var(--brand);
+  background: color-mix(in srgb, var(--brand) 12%, var(--card));
+}
+
 .data-table {
   width: 100%;
   border-collapse: collapse;

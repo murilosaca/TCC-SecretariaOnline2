@@ -7,8 +7,9 @@ import org.springframework.stereotype.Component
 /**
  * Tipos enfileirados hoje que ainda não disparam e-mail nesta fatia.
  * Marcar SENT (no-op) evita retry eterno. Sem push.
- * estagio.documento_enviado, estagio.parecer_emitido, estagio.encerrado
- * e estagio.orientador_atribuido seguem o mesmo no-op de certificado.emitido.
+ * estagio.documento_enviado, estagio.parecer_emitido, estagio.encerrado,
+ * estagio.orientador_atribuido, estagio.registrado e estagio.atualizado
+ * seguem o mesmo no-op de certificado.emitido.
  * tcc.submitted e tcc.reviewed também fecham SENT sem SMTP.
  */
 @Component
@@ -24,6 +25,8 @@ class NoOpOutboxHandler : OutboxEventoHandler {
         "estagio.parecer_emitido",
         "estagio.encerrado",
         "estagio.orientador_atribuido",
+        "estagio.registrado",
+        "estagio.atualizado",
         "tcc.submitted",
         "tcc.reviewed",
         "presenca.confirmada",

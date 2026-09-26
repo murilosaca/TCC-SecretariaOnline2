@@ -7,8 +7,15 @@ interface AlunoEstagioPort {
 
     fun nomeDe(alunoId: UUID): String?
 
+    fun cadastro(alunoId: UUID): Cadastro?
+
     data class AlunoRef(
         val id: UUID,
         val egresso: Boolean,
+    )
+
+    data class Cadastro(
+        val id: UUID,
+        val idCurso: UUID,
     )
 }

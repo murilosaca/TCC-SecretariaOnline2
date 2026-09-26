@@ -31,6 +31,12 @@ class EstagioConsultaAdapter(
         alunoRepository.findById(alunoId).map { it.nome }.orElse(null)
 
     @Transactional(readOnly = true)
+    override fun cadastro(alunoId: UUID): AlunoEstagioPort.Cadastro? =
+        alunoRepository.findById(alunoId)
+            .map { AlunoEstagioPort.Cadastro(it.id, it.idCurso) }
+            .orElse(null)
+
+    @Transactional(readOnly = true)
     override fun rotulo(usuarioId: UUID): String? =
         usuarioRepository.findById(usuarioId).map { it.emailInstitucional.value }.orElse(null)
 }

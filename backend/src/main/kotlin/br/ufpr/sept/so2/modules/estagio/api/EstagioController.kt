@@ -2,13 +2,17 @@ package br.ufpr.sept.so2.modules.estagio.api
 
 import br.ufpr.sept.so2.modules.estagio.api.dto.EmitirParecerEstagioRequest
 import br.ufpr.sept.so2.modules.estagio.api.dto.EstagioResponse
+import br.ufpr.sept.so2.modules.estagio.api.dto.RegistrarEstagioRequest
+import br.ufpr.sept.so2.modules.estagio.application.AtualizarEstagioUseCase
 import br.ufpr.sept.so2.modules.estagio.application.EncerrarEstagioUseCase
 import br.ufpr.sept.so2.modules.estagio.application.EnviarDocumentoEstagioUseCase
 import br.ufpr.sept.so2.modules.estagio.application.EstagioAcesso
 import br.ufpr.sept.so2.modules.estagio.application.EmitirParecerEstagioUseCase
+import br.ufpr.sept.so2.modules.estagio.application.ListarEstagiosDoEscopoUseCase
 import br.ufpr.sept.so2.modules.estagio.application.ListarFilaRevisaoEstagioUseCase
 import br.ufpr.sept.so2.modules.estagio.application.ListarMeusEstagiosUseCase
 import br.ufpr.sept.so2.modules.estagio.application.ObterEstagioUseCase
+import br.ufpr.sept.so2.modules.estagio.application.RegistrarEstagioUseCase
 import br.ufpr.sept.so2.modules.estagio.application.ports.AlunoEstagioPort
 import br.ufpr.sept.so2.modules.iam.infrastructure.security.IamPrincipal
 import br.ufpr.sept.so2.shared.api.PageResponse
@@ -17,17 +21,21 @@ import br.ufpr.sept.so2.shared.domain.exception.DadoInvalidoException
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.servlet.http.HttpServletRequest
+import jakarta.validation.Valid
 import org.springframework.data.domain.Pageable
 import org.springframework.data.web.PageableDefault
+import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.multipart.MultipartFile
 import java.util.UUID
@@ -39,6 +47,9 @@ import java.util.function.Function
 class EstagioController(
     private val listarMeusEstagiosUseCase: ListarMeusEstagiosUseCase,
     private val listarFilaRevisaoEstagioUseCase: ListarFilaRevisaoEstagioUseCase,
+    private val listarEstagiosDoEscopoUseCase: ListarEstagiosDoEscopoUseCase,
+    private val registrarEstagioUseCase: RegistrarEstagioUseCase,
+    private val atualizarEstagioUseCase: AtualizarEstagioUseCase,
     private val obterEstagioUseCase: ObterEstagioUseCase,
     private val enviarDocumentoEstagioUseCase: EnviarDocumentoEstagioUseCase,
     private val emitirParecerEstagioUseCase: EmitirParecerEstagioUseCase,
@@ -47,7 +58,7 @@ class EstagioController(
     private val assembler: EstagioAssembler,
 ) {
 
-    @GetMapping
+    @GetMapping(params = ["!escopo"])
     @PreAuthorize("hasAnyAuthority('internship.view_own','internship.review')")
     @Operation(summary = "Listar estágios do aluno ou a fila individual do orientador")
     fun listar(
@@ -75,6 +86,72 @@ class EstagioController(
         return PageResponse.ofWithLinks(
             listarMeusEstagiosUseCase.execute(principal.userId, aluno, situacao, pageable),
             Function { item -> assembler.from(item, principal.userId, alunoId, principal.authorities) },
+        )
+    }
+
+    @GetMapping(params = ["escopo=cursos"])
+    @PreAuthorize("hasAuthority('internship.manage')")
+    @Operation(summary = "Listar estágios dos cursos da secretaria")
+    fun listarDoEscopo(
+        @RequestParam(required = false) situacao: String?,
+        @PageableDefault(size = 20) pageable: Pageable,
+        authentication: Authentication,
+    ): PageResponse<EstagioResponse> {
+        val principal = principal(authentication)
+        val alunoId = alunoIdOuNulo(principal.userId)
+        return PageResponse.ofWithLinks(
+            listarEstagiosDoEscopoUseCase.execute(principal.userId, situacao, pageable),
+            Function { item -> assembler.from(item, principal.userId, alunoId, principal.authorities) },
+            mapOf("novo" to "/estagios"),
+        )
+    }
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasAuthority('internship.manage')")
+    @Operation(summary = "Registrar estágio ativo sem orientador")
+    fun registrar(
+        @Valid @RequestBody request: RegistrarEstagioRequest,
+        authentication: Authentication,
+        http: HttpServletRequest,
+    ): EstagioResponse {
+        val principal = principal(authentication)
+        return responder(
+            registrarEstagioUseCase.execute(
+                principal.userId,
+                request.alunoId!!,
+                request.empresa!!,
+                request.supervisor!!,
+                request.inicio!!,
+                request.fim!!,
+                clientIp(http),
+            ),
+            principal,
+        )
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('internship.manage')")
+    @Operation(summary = "Atualizar estágio ativo do escopo da secretaria")
+    fun atualizar(
+        @PathVariable id: UUID,
+        @Valid @RequestBody request: RegistrarEstagioRequest,
+        authentication: Authentication,
+        http: HttpServletRequest,
+    ): EstagioResponse {
+        val principal = principal(authentication)
+        return responder(
+            atualizarEstagioUseCase.execute(
+                principal.userId,
+                id,
+                request.alunoId!!,
+                request.empresa!!,
+                request.supervisor!!,
+                request.inicio!!,
+                request.fim!!,
+                clientIp(http),
+            ),
+            principal,
         )
     }
 

@@ -16,6 +16,7 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.Pageable
 import java.time.LocalDate
 import java.time.OffsetDateTime
@@ -150,6 +151,11 @@ private class FakeEstagios(
 
     override fun findParaRevisao(orientadorId: UUID, situacao: EstagioSituacao?, pageable: Pageable): Page<Estagio> =
         Page.empty()
+
+    override fun findByCursos(cursoIds: Collection<UUID>, situacao: EstagioSituacao?, pageable: Pageable): Page<Estagio> {
+        val filtrados = itens.filter { it.idCurso in cursoIds && (situacao == null || it.situacao == situacao) }
+        return PageImpl(filtrados, pageable, filtrados.size.toLong())
+    }
 
     override fun findPoolCoe(cursoIds: Collection<UUID>, usuarioId: UUID): List<Estagio> =
         itens.filter { it.idCurso in cursoIds && it.situacao != EstagioSituacao.CONCLUIDO && it.podeAtribuir(usuarioId) }

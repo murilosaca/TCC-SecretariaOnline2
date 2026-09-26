@@ -74,9 +74,25 @@ class MenuLinksTest : StringSpec({
         )
         links.shouldNotContainKey("estagios")
         links.shouldNotContainKey("estagios-revisao")
+        links.shouldNotContainKey("estagios-secretaria")
         links.shouldNotContainKey("comissoes-coe")
         links.shouldNotContainKey("tccs")
         links.shouldNotContainKey("tccs-revisao")
+    }
+
+    "secretaria com internship.manage ganha o cadastro e nao a lista do aluno" {
+        val links = MenuLinks.from(
+            listOf("course.manage", "user.manage_students", "internship.manage"),
+        )
+        links["estagios-secretaria"] shouldBe "/secretaria/estagios"
+        links.shouldNotContainKey("estagios")
+        links.shouldNotContainKey("estagios-revisao")
+        links.shouldNotContainKey("comissoes-coe")
+    }
+
+    "aluno e professor nao ganham o cadastro da secretaria" {
+        MenuLinks.from(listOf("internship.view_own")).shouldNotContainKey("estagios-secretaria")
+        MenuLinks.from(listOf("internship.review")).shouldNotContainKey("estagios-secretaria")
     }
 
     "aluno com tcc.view_own ganha tccs e nao a fila" {

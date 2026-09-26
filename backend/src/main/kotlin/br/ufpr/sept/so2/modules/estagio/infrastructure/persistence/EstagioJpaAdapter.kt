@@ -55,6 +55,24 @@ class EstagioJpaAdapter(
     }
 
     @Transactional(readOnly = true)
+    override fun findByCursos(
+        cursoIds: Collection<UUID>,
+        situacao: EstagioSituacao?,
+        pageable: Pageable,
+    ): Page<Estagio> {
+        if (cursoIds.isEmpty()) {
+            return Page.empty(pageable)
+        }
+        val ids = cursoIds.toSet()
+        val page = if (situacao == null) {
+            jpaRepository.findByIdCursoIn(ids, pageable)
+        } else {
+            jpaRepository.findByIdCursoInAndSituacao(ids, situacao.name, pageable)
+        }
+        return page.map { it.toDomain() }
+    }
+
+    @Transactional(readOnly = true)
     override fun findPoolCoe(cursoIds: Collection<UUID>, usuarioId: UUID): List<Estagio> {
         if (cursoIds.isEmpty()) {
             return emptyList()

@@ -47,6 +47,23 @@ class EstagioTest : StringSpec({
         estagio.documentos.all { it.podeEnviar() } shouldBe true
     }
 
+    "estágio sem documento é recusado" {
+        shouldThrow<DadoInvalidoException> {
+            Estagio.abrir(
+                estagioId,
+                alunoId,
+                cursoId,
+                null,
+                "Empresa",
+                "Supervisor",
+                LocalDate.parse("2026-03-02"),
+                LocalDate.parse("2026-11-30"),
+                agora,
+                emptyList(),
+            )
+        }
+    }
+
     "vigência invertida e tipo repetido são inválidos" {
         shouldThrow<DadoInvalidoException> {
             Estagio.abrir(
@@ -199,5 +216,65 @@ class EstagioTest : StringSpec({
         shouldThrow<ConflitoEstadoException> {
             estagio.atribuirOrientador(orientadorId, agora.plusMinutes(2))
         }
+    }
+
+    "cadastro ativo atualiza vigência e o concluído permanece imutável" {
+        val estagio = Estagio.abrir(
+            estagioId,
+            alunoId,
+            cursoId,
+            null,
+            "Empresa Fictícia SEPT",
+            "Carla Supervisora",
+            LocalDate.parse("2026-03-02"),
+            LocalDate.parse("2026-11-30"),
+            agora,
+            listOf(
+                DocumentoEstagio.pendente(tceId, TipoDocumentoEstagio.TCE),
+                DocumentoEstagio.pendente(relatorioId, TipoDocumentoEstagio.RELATORIO_FINAL),
+            ),
+        )
+        estagio.atualizarCadastro(
+            "Outra Empresa",
+            "Paulo Supervisor",
+            LocalDate.parse("2026-04-01"),
+            LocalDate.parse("2026-12-15"),
+            agora.plusDays(1),
+        )
+        estagio.empresa shouldBe "Outra Empresa"
+        estagio.supervisor shouldBe "Paulo Supervisor"
+        estagio.inicio shouldBe LocalDate.parse("2026-04-01")
+        estagio.fim shouldBe LocalDate.parse("2026-12-15")
+        estagio.semOrientador() shouldBe true
+        estagio.situacao shouldBe EstagioSituacao.ATIVO
+        estagio.documentos.map { it.tipo } shouldBe listOf(
+            TipoDocumentoEstagio.TCE,
+            TipoDocumentoEstagio.RELATORIO_FINAL,
+        )
+
+        val concluido = ativo()
+        concluido.enviarDocumento(TipoDocumentoEstagio.TCE, "tce.pdf", "application/pdf", pdf, agora)
+        concluido.enviarDocumento(TipoDocumentoEstagio.RELATORIO_FINAL, "relatorio.pdf", "application/pdf", pdf, agora)
+        concluido.emitirParecer(tceId, "APROVAR", "Ok.", orientadorId, parecerId, agora.plusMinutes(1))
+        concluido.emitirParecer(
+            relatorioId,
+            "APROVAR",
+            "Ok.",
+            orientadorId,
+            UUID.fromString("01800000-0000-7000-8000-00000000010b"),
+            agora.plusMinutes(2),
+        )
+        concluido.encerrar(agora.plusMinutes(3))
+        shouldThrow<ConflitoEstadoException> {
+            concluido.atualizarCadastro(
+                "Outra Empresa",
+                "Paulo Supervisor",
+                LocalDate.parse("2026-04-01"),
+                LocalDate.parse("2026-12-15"),
+                agora.plusDays(2),
+            )
+        }
+        concluido.empresa shouldBe "Empresa Fictícia SEPT"
+        concluido.situacao shouldBe EstagioSituacao.CONCLUIDO
     }
 })

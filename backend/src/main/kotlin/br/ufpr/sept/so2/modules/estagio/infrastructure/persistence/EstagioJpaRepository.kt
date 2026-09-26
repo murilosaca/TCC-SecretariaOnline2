@@ -25,6 +25,14 @@ interface EstagioJpaRepository : JpaRepository<EstagioJpaEntity, UUID> {
         pageable: Pageable,
     ): Page<EstagioJpaEntity>
 
+    fun findByIdCursoIn(idCursos: Collection<UUID>, pageable: Pageable): Page<EstagioJpaEntity>
+
+    fun findByIdCursoInAndSituacao(
+        idCursos: Collection<UUID>,
+        situacao: String,
+        pageable: Pageable,
+    ): Page<EstagioJpaEntity>
+
     fun existsByIdAluno(idAluno: UUID): Boolean
 
     fun existsByIdCursoAndIdOrientadorIsNullAndSituacaoNot(idCurso: UUID, situacao: String): Boolean

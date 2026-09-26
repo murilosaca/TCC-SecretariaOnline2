@@ -13,15 +13,24 @@ class Estagio(
     idOrientador: UUID?,
     empresa: String,
     supervisor: String,
-    val inicio: LocalDate,
-    val fim: LocalDate,
+    inicio: LocalDate,
+    fim: LocalDate,
     situacao: EstagioSituacao,
     val createdAt: OffsetDateTime,
     updatedAt: OffsetDateTime,
     documentos: List<DocumentoEstagio>,
 ) {
-    val empresa: String = empresa.trim()
-    val supervisor: String = supervisor.trim()
+    var empresa: String = empresa.trim()
+        private set
+
+    var supervisor: String = supervisor.trim()
+        private set
+
+    var inicio: LocalDate = inicio
+        private set
+
+    var fim: LocalDate = fim
+        private set
 
     var idOrientador: UUID? = idOrientador
         private set
@@ -111,6 +120,24 @@ class Estagio(
         )
         updatedAt = agora
         return registrado
+    }
+
+    fun atualizarCadastro(
+        empresa: String,
+        supervisor: String,
+        inicio: LocalDate,
+        fim: LocalDate,
+        agora: OffsetDateTime,
+    ) {
+        garantirMutavel()
+        val empresaLimpa = empresa.trim()
+        val supervisorLimpo = supervisor.trim()
+        validar(empresaLimpa, supervisorLimpo, inicio, fim, _documentos)
+        this.empresa = empresaLimpa
+        this.supervisor = supervisorLimpo
+        this.inicio = inicio
+        this.fim = fim
+        updatedAt = agora
     }
 
     fun encerrar(agora: OffsetDateTime) {

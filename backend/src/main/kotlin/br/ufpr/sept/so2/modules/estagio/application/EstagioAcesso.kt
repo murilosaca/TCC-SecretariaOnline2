@@ -10,6 +10,7 @@ import java.util.UUID
 internal object EstagioAcesso {
     const val VIEW = "internship.view_own"
     const val REVIEW = "internship.review"
+    const val MANAGE = "internship.manage"
 
     fun exigirAlunoAtivo(port: AlunoEstagioPort, usuarioId: UUID): AlunoRef {
         val aluno = port.resolver(usuarioId)

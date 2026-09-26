@@ -62,3 +62,41 @@ export type AlunoDashboard = {
   pendenciasFormativas?: PendenciaDashboard[] | null
   _links?: HateoasLinks
 }
+
+export type KpisProfessorDashboard = {
+  pendentesDeliberar: number | null
+  formativasRevisao: number | null
+  eventosHoje: number | null
+  slaUrgentes: number | null
+}
+
+export type FilaSolicitacaoProfessor = {
+  id: string
+  protocolo: string
+  tipoNome: string
+  estado: string
+  prazoEm: string | null
+  slaVencido: boolean
+  urgente: boolean
+  href: string
+}
+
+export type MeuEventoProfessor = {
+  id: string
+  titulo: string
+  inicioEm: string
+  fimEm: string
+  estado: string
+  _links?: HateoasLinks
+}
+
+export type ProfessorDashboard = {
+  saudacao: { nome: string }
+  kpis: KpisProfessorDashboard
+  filaSolicitacoes: FilaSolicitacaoProfessor[] | null
+  meusEventos: MeuEventoProfessor[] | null
+  formativasCaaf: PendenciaDashboard[] | null
+  estagiosPendentes: PendenciaDashboard[] | null
+  tccsPendentes: PendenciaDashboard[] | null
+  _links?: HateoasLinks
+}

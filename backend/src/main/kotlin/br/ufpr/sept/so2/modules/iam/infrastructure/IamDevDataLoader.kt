@@ -169,7 +169,7 @@ class IamDevDataLoader(
 
         private fun authoritiesProfessor(): List<String> =
             listOf(
-                "dashboard.view_own",
+                "dashboard.view_self_professor",
                 "event.manage",
                 "event.host",
                 "request.deliberate",

@@ -4,7 +4,7 @@ Plataforma digital da secretaria acadêmica do **SEPT/UFPR**. Este é o reposit�
 
 O SO2 não substitui o juízo de docentes, comissões ou secretaria. Ele garante trilha de auditoria, integridade de dados e automação de trâmites repetitivos.
 
-**Onde estamos:** P0 fechado na web e no Expo (itens 1–**8**). **Item 9 neste recorte:** 9.1–9.4 no ar e **9.5 pool COE** (só atribuição). Fatias **10–12** no ar (cadastro F5 de estágio, F7.1 usuários/picker, cadastro F5 de TCC). Esta fatia **não** é o portal admin F7 completo (sem F7.2–F7.9). F6.2 (relatórios), lote CAAF, MinIO e o diploma (F5.11) continuam fora.
+**Onde estamos:** P0 fechado na web e no Expo (itens 1–**8**). **Item 9 neste recorte:** 9.1–9.4 no ar e **9.5 pool COE** (só atribuição). Fatias **10–13** no ar (cadastro F5 de estágio, F7.1 usuários/picker, cadastro F5 de TCC, BFF professor F3.1). Esta fatia **não** é o portal admin F7 completo (sem F7.2–F7.9). F6.2 (relatórios), lote CAAF, MinIO e o diploma (F5.11) continuam fora.
 
 Circuito demonstrável: login → primeiro acesso (senha + LGPD) → `/inicio` do aluno → solicitação + deep-link ao professor → presença **QR\|SECRET × SINGLE\|DUAL** → formativa (`PENDENTE_CONFIRMACAO` → aluno confirma → `AGUARDANDO_CAAF`) → CAAF aprova → certificado oficial (PDF + hash + ED25519) → `/certificados` + F0.7. Secretaria (`secretaria.dev`) opera o CRUD de TADS, estágios e TCCs; aluno/professor/CAAF não veem Cursos. Egresso (`egresso.dev`) entra em `/egresso/inicio` e reemite o PDF com o mesmo hash; `aluno.dev` não entra em `/egresso/**`.
 
@@ -70,7 +70,7 @@ Pacote `br.ufpr.sept.so2`. Clean Architecture; módulos conversam por ports.
 | `iam` | Login, refresh, logout, primeiro acesso + LGPD, recuperação via Outbox despachada. JWT RS256 15 min; cookie `so2_refresh`; senha só Argon2id. JWT de deliberação (72 h) |
 | `solicitacoes` | Motor `RequestType` + `form_schema` + `workflow_json`. Seed `DECLARACAO_SIMPLES`. Protocolo público. Fila e transições autenticadas (`request.*`) |
 | `presenca` | Evento + Proof of Stay **QR\|SECRET × SINGLE\|DUAL**. Segredo em claro só na host-session. Sem geofence |
-| `bff` | `GET /bff/dashboard/aluno` (agrega; degrada por bloco). Sem BFF professor |
+| `bff` | `GET /bff/dashboard/aluno` e `GET /bff/dashboard/professor` (agrega; degrada por bloco). Sem BFF secretaria |
 | `formativas` | Gatilho na mesma TX da presença **COMPLETA**. Aluno confirma; CAAF aprova/indefere (sem lote). Aprovar emite certificado |
 | `certificados` | Emissão só pelo sistema na aprovação CAAF. PDF `bytea` (sem MinIO). SHA-256 + ED25519 + F0.7. Sem upload oficial |
 | `comunicacao` | Dispatcher Outbox → SMTP (Mailpit). Sem hub F1.6. `estagio.*`, `tcc.submitted` e `tcc.reviewed` fecham SENT sem e-mail (no-op, como `certificado.emitido`) |
@@ -147,6 +147,7 @@ Login: `@ufpr.br`, e-mail pessoal ou GRR (`GRR` + 8 dígitos). `senhaAlterada = 
 | `/request-types`, `/requests/**` | JWT + `request.*` (**não** anônimo) | Motor. Inbox `?canDeliberate=true`. `POST /{id}/transitions` |
 | `/events` | JWT + `attendance.*` / `event.*` | Presença v4.1 (QR\|SECRET × SINGLE\|DUAL) |
 | `/bff/dashboard/aluno` | JWT + `dashboard.view_own` + (`attendance.view_open` **ou** `request.view_own`) | Dashboard agregado (HTTP 200; degrada por bloco) |
+| `/bff/dashboard/professor` | JWT + `dashboard.view_self_professor` | Dashboard agregado do professor (HTTP 200; degrada por bloco; CAAF só com `formative.review`) |
 | `/formativas` | JWT + `formative.view_own` / `confirm_own` / `review` | Sem POST avulso. Sem lote. Aprovar emite certificado |
 | `/certificates` | JWT + `certificate.view_own` | Lista/download do dono. Sem POST. Outro aluno → 404 |
 | `/estagios` | JWT + `internship.view_own` / `internship.review` | `?aluno=me` ou fila `?canReview=true`. Upload PDF, parecer individual, `POST /{id}/encerrar`. Sem lote. Outro aluno ou orientador alheio → 404 |
@@ -323,7 +324,7 @@ O item 9 fechou **o recorte dele** (estágio, TCC, egresso, F6.1, pool COE), nã
 | 10 | Cadastro F5 de estágio (RF-F1-007) | 9.1, 9.5 | **Feito** — `POST`/`PUT /estagios` (`internship.manage`), aluno via `GET /academico/alunos`, `id_orientador` nulo, UI `/secretaria/estagios`. O seed de dev deixa de ser o único jeito de alimentar o pool COE e a revisão F3.6 | Parecer e encerramento (já no 9.1), lote, MinIO, TCC |
 | 11 | F7.1 + F7.8 usuários e picker | 10 | **Feito** — `GET`/`POST`/`PUT` `/admin/usuarios` + `POST .../desativar` (`user.manage_all`), `POST .../reset-senha` (`user.reset_password`, JWT 1-uso reusa `/nova-senha`), picker `GET /iam/usuarios` na F5.7 (coord+secretários), seed `admin.dev`, V016 `usuario.nome`. Sem e-mail síncrono (`iam.user_created` → SENT no-op) | Perfis/matriz FGAC (32), jobs, auditoria, `cursoIds` no JWT |
 | 12 | Cadastro F5 de TCC (RF-F1-008) | 11 | **Feito** — `POST`/`PUT /tccs` (`tcc.manage`), aluno via `GET /academico/alunos`, banca via picker `GET /iam/usuarios`, UI `/secretaria/tccs`. V013 já garante um `ATIVO` por aluno | Certificado de conclusão, lote, MinIO |
-| 13 | F3.1 BFF do professor | 9.1, 9.2 | `GET /bff/dashboard/professor` (`dashboard.view_self_professor`) agregando por porta a fila de deliberação, eventos do dia, CAAF, estágios e TCCs; degrada por bloco como o do aluno. `/inicio` deixa de ser 403 honesto para quem só é professor | Dashboard da secretaria (21), KPI de SLA calculado, Expo |
+| 13 | F3.1 BFF do professor | 9.1, 9.2 | **Feito** — `GET /bff/dashboard/professor` (`dashboard.view_self_professor`) agrega por porta deliberação, eventos do dia, CAAF (só com `formative.review`), estágios e TCCs; degrada por bloco como o do aluno. `/inicio` deixa de ser 403 para professor puro | Dashboard da secretaria (21), KPI de SLA calculado, Expo |
 | 14 | F4.1 pool + lote CAAF | 3, 9.5 | `/comissoes/caaf` (`formative.review`): KPIs, self-assign, atribuição a colega com carga e aprovação em lote **só** de formativa cuja presença o sistema já validou. Exige tabela genérica de membro de comissão — hoje só existe `coe_membro` (V015) | Indeferir em lote, comprovante manual (24), mexer no parecer individual do item 3 |
 | 15 | MinIO + `modules/arquivos` | 10, 12 | MinIO no `docker-compose.yml`, `modules/arquivos` com upload/download por URL pré-assinada (15 min) e migração dos PDFs hoje em `bytea` (certificado V009, estágio V012, TCC V013) | Antivírus, versionamento de arquivo, exportação assíncrona (29) |
 | 16 | F5.11 diploma e colação | 15, 11 | Tabela `diploma`, wizard de colação em lote com elegibilidade, transição ALUNO → EGRESSO e registro de entrega física. Preenche `diploma`, `colacao`, `concluidoEm` e `situacaoDiploma`, que a F2.1 devolve nulos desde o 9.3 | Lista/exportação de egressos (26), certificado de conclusão de TCC |

@@ -130,6 +130,17 @@ describe('AppLayout', () => {
     expect(screen.queryByText('Cadastro de TCCs')).toBeNull()
   })
 
+  it('mostra diplomas só quando o rel da secretaria existe', () => {
+    renderNav({
+      inicio: '/inicio',
+      diplomas: '/secretaria/diplomas',
+      contato: '/contato',
+    })
+    expect(screen.getByRole('link', { name: 'Diplomas' }).getAttribute('href')).toBe(
+      '/secretaria/diplomas',
+    )
+  })
+
   it('mostra cadastro de TCCs só quando o rel da secretaria existe', () => {
     renderNav({
       inicio: '/inicio',

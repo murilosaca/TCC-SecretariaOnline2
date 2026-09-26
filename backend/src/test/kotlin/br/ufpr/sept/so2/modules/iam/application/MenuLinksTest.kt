@@ -168,6 +168,12 @@ class MenuLinksTest : StringSpec({
         links.shouldNotContainKey("cursos")
     }
 
+    "secretaria com diploma.register ganha diplomas" {
+        val links = MenuLinks.from(listOf("diploma.register", "course.manage"))
+        links["diplomas"] shouldBe "/secretaria/diplomas"
+        MenuLinks.from(listOf("course.manage")).shouldNotContainKey("diplomas")
+    }
+
     "admin ganha usuarios e secretaria nao" {
         val admin = MenuLinks.from(listOf("user.manage_all", "user.reset_password"))
         admin["usuarios"] shouldBe "/admin/usuarios"

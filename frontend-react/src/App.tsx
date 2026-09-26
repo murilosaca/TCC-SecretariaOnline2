@@ -33,6 +33,7 @@ import { RecuperarSenha } from './pages/publico/RecuperarSenha'
 import { VerificarCertificado } from './pages/publico/VerificarCertificado'
 import { VerificarProtocolo } from './pages/publico/VerificarProtocolo'
 import { Alunos } from './pages/secretaria/Alunos'
+import { Diplomas } from './pages/secretaria/Diplomas'
 import { EstagiosSecretaria } from './pages/secretaria/EstagiosSecretaria'
 import { TccsSecretaria } from './pages/secretaria/TccsSecretaria'
 import { Calendarios } from './pages/secretaria/Calendarios'
@@ -88,6 +89,7 @@ export default function App() {
           <Route path="secretaria/alunos" element={<Alunos />} />
           <Route path="secretaria/estagios" element={<EstagiosSecretaria />} />
           <Route path="secretaria/tccs" element={<TccsSecretaria />} />
+          <Route path="secretaria/diplomas" element={<Diplomas />} />
           <Route path="secretaria/calendarios" element={<Calendarios />} />
           <Route path="admin/usuarios" element={<Usuarios />} />
           <Route path="coordenacao/cursos/:id/configurar" element={<ConfigurarCurso />} />

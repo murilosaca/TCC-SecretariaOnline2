@@ -69,6 +69,9 @@ object MenuLinks {
         if (caps.contains("tcc.manage")) {
             links["tccs-secretaria"] = "/secretaria/tccs"
         }
+        if (caps.contains("diploma.register")) {
+            links["diplomas"] = "/secretaria/diplomas"
+        }
         if (caps.contains("user.manage_all")) {
             links["usuarios"] = "/admin/usuarios"
         }

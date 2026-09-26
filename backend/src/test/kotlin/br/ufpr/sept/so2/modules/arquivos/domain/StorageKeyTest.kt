@@ -11,6 +11,7 @@ class StorageKeyTest : StringSpec({
         StorageKey.certificado(id).value shouldBe "certificados/$id.pdf"
         StorageKey.tccVersaoFinal(id).value shouldBe "tccs/$id/versao-final.pdf"
         StorageKey.estagioDocumento(id, id).value shouldBe "estagios/$id/$id.pdf"
+        StorageKey.diploma(id).value shouldBe "diplomas/$id.pdf"
     }
 
     "rejeita chave inválida" {

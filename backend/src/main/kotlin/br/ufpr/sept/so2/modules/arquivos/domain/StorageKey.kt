@@ -22,5 +22,8 @@ value class StorageKey(val value: String) {
 
         fun tccVersaoFinal(tccId: java.util.UUID): StorageKey =
             StorageKey("tccs/$tccId/versao-final.pdf")
+
+        fun diploma(id: java.util.UUID): StorageKey =
+            StorageKey("diplomas/$id.pdf")
     }
 }

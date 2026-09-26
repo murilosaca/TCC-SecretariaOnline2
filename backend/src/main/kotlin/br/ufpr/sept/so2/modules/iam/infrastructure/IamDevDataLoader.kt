@@ -201,6 +201,7 @@ class IamDevDataLoader(
                 "calendar.manage",
                 "internship.manage",
                 "tcc.manage",
+                "diploma.register",
                 "request.view_curso",
                 "request.triage",
                 "request.deliberate",

@@ -3,6 +3,7 @@ package br.ufpr.sept.so2.modules.egresso.api
 import br.ufpr.sept.so2.modules.arquivos.api.dto.DownloadUrlResponse
 import br.ufpr.sept.so2.modules.arquivos.application.PresignDownloadUseCase
 import br.ufpr.sept.so2.modules.egresso.api.dto.EgressoPainelResponse
+import br.ufpr.sept.so2.modules.egresso.application.BaixarDiplomaEgressoUseCase
 import br.ufpr.sept.so2.modules.egresso.application.ObterPainelEgressoUseCase
 import br.ufpr.sept.so2.modules.egresso.application.ReemitirCertificadoEgressoUseCase
 import br.ufpr.sept.so2.modules.iam.infrastructure.security.IamPrincipal
@@ -22,6 +23,7 @@ import java.util.UUID
 class EgressoController(
     private val obterPainelEgressoUseCase: ObterPainelEgressoUseCase,
     private val reemitirCertificadoEgressoUseCase: ReemitirCertificadoEgressoUseCase,
+    private val baixarDiplomaEgressoUseCase: BaixarDiplomaEgressoUseCase,
     private val presignDownloadUseCase: PresignDownloadUseCase,
     private val assembler: EgressoAssembler,
 ) {
@@ -32,6 +34,19 @@ class EgressoController(
     fun me(authentication: Authentication): EgressoPainelResponse {
         val principal = principal(authentication)
         return assembler.from(obterPainelEgressoUseCase.execute(principal.userId, principal.authorities))
+    }
+
+    @GetMapping("/me/diploma")
+    @PreAuthorize("hasAuthority('alumni.view_own')")
+    @Operation(summary = "URL pré-assinada do PDF oficial do diploma (TTL 15 min)")
+    fun baixarDiploma(authentication: Authentication): DownloadUrlResponse {
+        val principal = principal(authentication)
+        val diploma = baixarDiplomaEgressoUseCase.execute(principal.userId, principal.authorities)
+        val url = presignDownloadUseCase.execute(
+            diploma.storageKey!!,
+            "diploma-${diploma.numero}.pdf",
+        )
+        return DownloadUrlResponse(url, presignDownloadUseCase.ttlSeconds())
     }
 
     @GetMapping("/me/certificados/{id}/reemissao")

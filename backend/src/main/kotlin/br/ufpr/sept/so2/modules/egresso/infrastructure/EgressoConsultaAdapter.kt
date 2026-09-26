@@ -5,10 +5,11 @@ import br.ufpr.sept.so2.modules.academico.application.ports.CursoRepository
 import br.ufpr.sept.so2.modules.academico.domain.Aluno
 import br.ufpr.sept.so2.modules.academico.domain.AlunoSituacao
 import br.ufpr.sept.so2.modules.certificados.application.ports.CertificadoRepository
+import br.ufpr.sept.so2.modules.diplomas.application.ports.DiplomaRepository
 import br.ufpr.sept.so2.modules.egresso.application.CertificadoDoEgresso
+import br.ufpr.sept.so2.modules.egresso.application.DiplomaDoEgresso
 import br.ufpr.sept.so2.modules.egresso.application.PdfDoEgresso
 import br.ufpr.sept.so2.modules.egresso.application.ports.EgressoConsultaPort
-import br.ufpr.sept.so2.modules.egresso.application.ports.EgressoConsultaPort.Cadastro
 import br.ufpr.sept.so2.modules.formativas.application.ports.FormativaRepository
 import br.ufpr.sept.so2.modules.formativas.domain.FormativaEstado
 import br.ufpr.sept.so2.modules.iam.application.ports.UsuarioRepository
@@ -26,10 +27,11 @@ class EgressoConsultaAdapter(
     private val cursoRepository: CursoRepository,
     private val formativaRepository: FormativaRepository,
     private val certificadoRepository: CertificadoRepository,
+    private val diplomaRepository: DiplomaRepository,
 ) : EgressoConsultaPort {
 
     @Transactional(readOnly = true)
-    override fun consultar(usuarioId: UUID): Cadastro? {
+    override fun consultar(usuarioId: UUID): EgressoConsultaPort.Cadastro? {
         val usuario = usuarioRepository.findById(usuarioId).orElse(null) ?: return null
         val aluno = resolverAluno(usuario) ?: return null
         val curso = cursoRepository.findById(aluno.idCurso).orElse(null)?.let { item ->
@@ -51,7 +53,7 @@ class EgressoConsultaAdapter(
             )
         }
         val total = pagina.totalElements.coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
-        return Cadastro(
+        return EgressoConsultaPort.Cadastro(
             aluno.id,
             aluno.situacao == AlunoSituacao.EGRESSO,
             nomePublico(aluno),
@@ -59,6 +61,7 @@ class EgressoConsultaAdapter(
             horas,
             total,
             certificados,
+            diplomaDoAluno(aluno.id),
         )
     }
 
@@ -73,6 +76,22 @@ class EgressoConsultaAdapter(
             certificado.titulo,
             certificado.storageKey,
             certificado.hashSha256,
+        )
+    }
+
+    @Transactional(readOnly = true)
+    override fun diploma(alunoId: UUID): DiplomaDoEgresso? = diplomaDoAluno(alunoId)
+
+    private fun diplomaDoAluno(alunoId: UUID): DiplomaDoEgresso? {
+        val diploma = diplomaRepository.findByAluno(alunoId) ?: return null
+        return DiplomaDoEgresso(
+            diploma.id,
+            diploma.numero,
+            diploma.dataColacao,
+            diploma.situacao.name,
+            diploma.dataColacao,
+            diploma.turma,
+            diploma.storageKey,
         )
     }
 

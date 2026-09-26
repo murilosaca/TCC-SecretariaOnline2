@@ -4,7 +4,7 @@ Plataforma digital da secretaria acadêmica do **SEPT/UFPR**. Este é o reposit�
 
 O SO2 não substitui o juízo de docentes, comissões ou secretaria. Ele garante trilha de auditoria, integridade de dados e automação de trâmites repetitivos.
 
-**Onde estamos:** P0 fechado na web e no Expo (itens 1–**8**). **Item 9 neste recorte:** 9.1–9.4 no ar e **9.5 pool COE** (só atribuição). Fatias **10–18** no ar (cadastro F5 de estágio, F7.1 usuários/picker, cadastro F5 de TCC, BFF professor F3.1, pool/lote CAAF F4.1, MinIO + `modules/arquivos`, diploma/colação F5.11, F6.2 relatórios da coordenação, Mobile P2 no Expo). Esta fatia **não** é o portal admin F7 completo (sem F7.2–F7.9).
+**Onde estamos:** P0 fechado na web e no Expo (itens 1–**8**). **Item 9 neste recorte:** 9.1–9.4 no ar e **9.5 pool COE** (só atribuição). Fatias **10–19** no ar (cadastro F5 de estágio, F7.1 usuários/picker, cadastro F5 de TCC, BFF professor F3.1, pool/lote CAAF F4.1, MinIO + `modules/arquivos`, diploma/colação F5.11, F6.2 relatórios da coordenação, Mobile P2 no Expo, F5.18 estatísticas da secretaria). Esta fatia **não** é o portal admin F7 completo (sem F7.2–F7.9).
 
 Circuito demonstrável: login → primeiro acesso (senha + LGPD) → `/inicio` do aluno → solicitação + deep-link ao professor → presença **QR\|SECRET × SINGLE\|DUAL** → formativa (`PENDENTE_CONFIRMACAO` → aluno confirma → `AGUARDANDO_CAAF`) → CAAF aprova → certificado oficial (PDF + hash + ED25519) → `/certificados` + F0.7. Secretaria (`secretaria.dev`) opera o CRUD de TADS, estágios e TCCs; aluno/professor/CAAF não veem Cursos. Egresso (`egresso.dev`) entra em `/egresso/inicio` e reemite o PDF com o mesmo hash; `aluno.dev` não entra em `/egresso/**`.
 
@@ -79,7 +79,7 @@ Pacote `br.ufpr.sept.so2`. Clean Architecture; módulos conversam por ports.
 | `coordenacao` | F6.1 `GET`/`PATCH /coordenacao/cursos/{id}/config` (`course.config` + `idCoordenador`). F6.2 via `modules/reports` |
 | `egresso` | F2.1 `GET /egressos/me` + reemissão/download pré-assinados (`alumni.view_own`). Diploma/colação preenchidos após F5.11 |
 | `diplomas` | F5.11 colação em lote, entrega física e PDF no MinIO (`diploma.register`) |
-| `reports` | F6.2 `GET /reports/coordinator` (`report.view_coordinator`). Sem F5.18 |
+| `reports` | F6.2 `GET /reports/coordinator` + F5.18 `GET /reports/secretary` |
 | `arquivos` | Porta S3-compatível (MinIO/dev). Upload server-side + download por URL pré-assinada (TTL 15 min). Sem antivírus/versionamento |
 
 Módulos **previstos e ainda sem código**: `auditoria` (módulo dedicado; `audit_log` mora no `iam`).
@@ -333,7 +333,7 @@ V017. `comissao_membro` (tipo `CAAF`|`COE`) + `formativa.id_responsavel`. `caaf.
 
 O item 9 da tabela original era um saco. 9.1–9.5 fecharam o recorte: estágio com parecer individual (RF-F3-005), pool COE só de atribuição (RF-F4-002), TCC com avaliação individual (RF-F3-006, sem certificado), portal read-only do egresso (RF-F2-001, sem diploma) e F6.1 da coordenação (RF-F6-001). Parecer COE continua sempre individual. F6.2 entrou na fatia 17; F7 segue fora.
 
-Dívida consciente: tabela **ainda aberta** em [`docs/auditoria-fundacao.md`](docs/auditoria-fundacao.md). Destaques: encerrar evento sem PDF; CA-04; F7; claim `cursoIds`; HostPin em memória; ArchUnit; rate limit em memória. **`/academico/**`, menu de atalho de dev, BFF professor, filtro CAAF por comissão (V017), MinIO/`modules/arquivos` (V018), diploma/colação (V019) e F6.2/`GET /reports/coordinator` já não são dívida.**
+Dívida consciente: tabela **ainda aberta** em [`docs/auditoria-fundacao.md`](docs/auditoria-fundacao.md). Destaques: encerrar evento sem PDF; CA-04; F7; claim `cursoIds`; HostPin em memória; ArchUnit; rate limit em memória. **`/academico/**`, menu de atalho de dev, BFF professor, filtro CAAF por comissão (V017), MinIO/`modules/arquivos` (V018), diploma/colação (V019), F6.2/`GET /reports/coordinator` e F5.18/`GET /reports/secretary` já não são dívida.**
 
 ---
 
@@ -352,7 +352,7 @@ O item 9 fechou **o recorte dele** (estágio, TCC, egresso, F6.1, pool COE), nã
 | 16 | F5.11 diploma e colação | 15, 11 | **Feito** — tabela `diploma` (V019), wizard `/secretaria/diplomas` (`diploma.register`): elegíveis, colação em lote atômica (ALUNO→EGRESSO + Outbox `egressos.graduated` + audit), entrega física PENDENTE→ENTREGUE e PDF no MinIO. F2.1 passa a preencher `diploma`/`colacao`/`concluidoEm`/`situacaoDiploma` com `_links.download` pré-assinado | Lista/exportação de egressos (26), certificado de conclusão de TCC |
 | 17 | F6.2 relatórios da coordenação | 9.4, 14, 16 | **Feito** — `GET /reports/coordinator` (`report.view_coordinator`) + `/coordenacao/relatorios`: KPIs, séries históricas (evasão, formativas, aprovação), alerta de threshold e escopo do curso do coordenador (403 fora). Seed do professor.dev. Sem migration nova | Comparativo com curso de outro coordenador, export, F5.18 (19) |
 | 18 | Mobile P2 (Expo) | 9.1, 9.2, 9.3 | **Feito** — telas nativas formativas (F1.10/F1.12), estágio (F1.13/F1.14 + parecer se `_links`), TCC (F1.15/F1.16 + upload-final), certificados (F1.19) e egresso F2.1; menu abandona whitelist P0 e lê `_links` de `GET /auth/me` via `navItensVisiveis`/`useActions`. Refresh nativo (A) intacto | Deliberação, CAAF e F5 no app; FCM; Expo web |
-| 19 | F5.18 estatísticas da secretaria | 17 | `/secretaria/estatisticas` reusando a camada de gráfico da 17, filtro por período e curso, drill-down tabular e resumo textual acessível | Export, materialização/cache de métrica |
+| 19 | F5.18 estatísticas da secretaria | 17 | **Feito** — `GET /reports/secretary` (`report.view_secretary`) + `/secretaria/estatisticas`: 4 datasets (tipo, estado, presença, horas), drill-down tabular client-side, resumo textual e escopo dos cursos vinculados (403 fora). Seed da secretaria.dev. Sem migration nova | Export, materialização/cache de métrica |
 | 20 | F5.2 + F5.5 fila central e atrasados | 2, 7 | `/solicitacoes` como fila central da secretaria com rel próprio no menu (hoje ela só recebe `deliberar`, porque `solicitacoes` exige `request.view_own`), `?slaBreached=true` em `/secretaria/atrasados`, ações em massa de atribuição e CSV | Solicitação interna (28), editor de RequestType (33), FORWARD |
 | 21 | F5.1 dashboard da secretaria | 20, 13 | `GET /bff/dashboard/secretary` (`dashboard.view_secretary`): KPIs, fila priorizada, alerta de SLA e agenda do dia, filtrados pelos cursos vinculados ao usuário | F6.2, kanban (P3) |
 | 22 | F1.3–F1.5 perfil, segurança e notificações | 11, 15 | `GET`/`PATCH /me` com campos institucionais read-only, troca de senha exigindo a atual, listar/encerrar sessões (`refresh_token` já existe) e preferência de canal/DND/digest | Push, foto sem a 15, SSO |

@@ -130,3 +130,35 @@ export function resumoCarga(pontos: { nome: string; quantidade: number }[]): str
   const topo = pontos[0]
   return `Maior carga: ${topo.nome} com ${topo.quantidade} deliberação(ões).`
 }
+
+export function resumoSolicitacoesPorTipo(
+  pontos: { tipoNome: string; quantidade: number }[],
+): string {
+  if (pontos.length === 0) {
+    return 'Sem solicitações no período filtrado.'
+  }
+  const topo = pontos[0]
+  return `Tipo mais frequente: ${topo.tipoNome} (${topo.quantidade}).`
+}
+
+export function resumoSolicitacoesPorEstado(
+  pontos: { estado: string; quantidade: number }[],
+): string {
+  if (pontos.length === 0) {
+    return 'Sem distribuição de estados no período.'
+  }
+  const topo = pontos.reduce((a, b) => (b.quantidade > a.quantidade ? b : a))
+  return `Estado predominante: ${topo.estado} (${topo.quantidade}).`
+}
+
+export function resumoPresencas(
+  pontos: { periodo: string; confirmadas: number; registradas: number }[],
+): string {
+  if (pontos.length === 0) {
+    return 'Sem registros de presença no intervalo.'
+  }
+  const totalConf = pontos.reduce((acc, p) => acc + p.confirmadas, 0)
+  const totalReg = pontos.reduce((acc, p) => acc + p.registradas, 0)
+  return `Presenças confirmadas: ${totalConf} de ${totalReg} registro(s).`
+}
+

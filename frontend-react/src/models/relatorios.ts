@@ -58,3 +58,54 @@ export type CoordinatorReport = {
   cargaPorDeliberador: CargaDeliberador[]
   _links: HateoasLinks
 }
+
+export type SecretaryReportFiltros = {
+  periodo: string | null
+  periodoRotulo: string | null
+  curso: string | null
+  cursoId: string | null
+  cursoNome: string
+  cursos: { id: string; sigla: string; nome: string }[]
+}
+
+export type PontoTipoSolicitacao = {
+  tipoCodigo: string
+  tipoNome: string
+  quantidade: number
+}
+
+export type PontoEstadoSolicitacao = {
+  estado: string
+  quantidade: number
+}
+
+export type PontoPresencaSecretaria = {
+  periodo: string
+  confirmadas: number
+  registradas: number
+}
+
+export type PontoHorasSecretaria = {
+  periodo: string
+  horasValidadas: number
+}
+
+export type ItemSolicitacaoRelatorio = {
+  id: string
+  protocolo: string
+  tipoCodigo: string
+  tipoNome: string
+  estado: string
+  createdAt: string
+  cursoSigla: string
+}
+
+export type SecretaryReport = {
+  filtros: SecretaryReportFiltros
+  solicitacoesPorTipo: PontoTipoSolicitacao[]
+  solicitacoesPorEstado: PontoEstadoSolicitacao[]
+  presencas: PontoPresencaSecretaria[]
+  horasFormativas: PontoHorasSecretaria[]
+  itensSolicitacao: ItemSolicitacaoRelatorio[]
+  _links: HateoasLinks
+}

@@ -167,6 +167,20 @@ describe('AppLayout', () => {
       '/coordenacao/relatorios',
     )
     expect(screen.queryByText('Cursos')).toBeNull()
+    expect(screen.queryByText('Estatísticas')).toBeNull()
+  })
+
+  it('nav da secretaria mostra Estatísticas quando o rel existe', () => {
+    renderNav({
+      inicio: '/inicio',
+      cursos: '/secretaria/cursos',
+      estatisticas: '/secretaria/estatisticas',
+      contato: '/contato',
+    })
+    expect(screen.getByRole('link', { name: 'Estatísticas' }).getAttribute('href')).toBe(
+      '/secretaria/estatisticas',
+    )
+    expect(screen.queryByText('Relatórios')).toBeNull()
   })
 
   it('nav do egresso mostra o início do portal e não mostra rotas de aluno', () => {

@@ -9,9 +9,13 @@ import java.util.UUID
 interface RelatorioCursoEscopoPort {
     fun idsCoordenados(usuarioId: UUID): Set<UUID>
 
+    fun idsSecretariados(usuarioId: UUID): Set<UUID>
+
     fun resolverCurso(cursoId: UUID): CursoEscopo?
 
     fun localizarPorSigla(sigla: String, entre: Set<UUID>): CursoEscopo?
+
+    fun listarCursos(ids: Set<UUID>): List<CursoEscopo>
 
     data class CursoEscopo(
         val id: UUID,

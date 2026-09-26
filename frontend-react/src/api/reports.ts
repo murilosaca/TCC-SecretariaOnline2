@@ -1,13 +1,13 @@
-import type { CoordinatorReport } from '../models/relatorios'
+import type { CoordinatorReport, SecretaryReport } from '../models/relatorios'
 import { api } from './client'
 
-export type CoordinatorReportFiltrosQuery = {
+export type ReportFiltrosQuery = {
   periodo?: string
   curso?: string
 }
 
 export const reportsApi = {
-  coordinator: (filtros: CoordinatorReportFiltrosQuery = {}) => {
+  coordinator: (filtros: ReportFiltrosQuery = {}) => {
     const params = new URLSearchParams()
     if (filtros.periodo) {
       params.set('periodo', filtros.periodo)
@@ -17,5 +17,16 @@ export const reportsApi = {
     }
     const qs = params.toString()
     return api.get<CoordinatorReport>(`/reports/coordinator${qs ? `?${qs}` : ''}`)
+  },
+  secretary: (filtros: ReportFiltrosQuery = {}) => {
+    const params = new URLSearchParams()
+    if (filtros.periodo) {
+      params.set('periodo', filtros.periodo)
+    }
+    if (filtros.curso) {
+      params.set('curso', filtros.curso)
+    }
+    const qs = params.toString()
+    return api.get<SecretaryReport>(`/reports/secretary${qs ? `?${qs}` : ''}`)
   },
 }

@@ -180,6 +180,7 @@ class IamDevDataLoader(
                 "subject.manage",
                 "user.manage_students",
                 "calendar.manage",
+                "internship.manage",
                 "request.view_curso",
                 "request.triage",
                 "request.deliberate",

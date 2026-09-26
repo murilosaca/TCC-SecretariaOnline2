@@ -28,6 +28,9 @@ class EstagioAssembler(
         if (revisor && estagio.podeArquivar()) {
             links["arquivar"] = "$self/encerrar"
         }
+        if (EstagioAcesso.MANAGE in authorities && estagio.situacao == EstagioSituacao.ATIVO) {
+            links["editar"] = self
+        }
         val tipos = estagio.documentos.associate { it.id to it.tipo.name }
         return EstagioResponse(
             estagio.id,

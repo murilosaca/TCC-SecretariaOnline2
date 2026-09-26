@@ -49,6 +49,7 @@ describe('AppLayout', () => {
     expect(screen.queryByText('Eventos (prof.)')).toBeNull()
     expect(screen.queryByText('Revisão CAAF')).toBeNull()
     expect(screen.queryByText('Revisão de estágios')).toBeNull()
+    expect(screen.queryByText('Cadastro de estágios')).toBeNull()
     expect(screen.queryByText('Pool COE')).toBeNull()
   })
 
@@ -69,6 +70,7 @@ describe('AppLayout', () => {
     expect(screen.queryByText('Revisão CAAF')).toBeNull()
     expect(screen.queryByText('Eventos (prof.)')).toBeNull()
     expect(screen.queryByText('Estágios')).toBeNull()
+    expect(screen.queryByText('Cadastro de estágios')).toBeNull()
     expect(screen.queryByText('Revisão de estágios')).toBeNull()
     expect(screen.queryByText('Pool COE')).toBeNull()
     expect(screen.queryByText('TCCs')).toBeNull()
@@ -94,7 +96,22 @@ describe('AppLayout', () => {
     expect(screen.queryByText('TCCs')).toBeNull()
     expect(screen.queryByText('Cursos')).toBeNull()
     expect(screen.queryByText('Estágios')).toBeNull()
+    expect(screen.queryByText('Cadastro de estágios')).toBeNull()
     expect(screen.queryByText('Configurar curso')).toBeNull()
+  })
+
+  it('mostra cadastro de estágios só quando o rel da secretaria existe', () => {
+    renderNav({
+      inicio: '/inicio',
+      'estagios-secretaria': '/secretaria/estagios',
+      contato: '/contato',
+    })
+    expect(screen.getByRole('link', { name: 'Cadastro de estágios' }).getAttribute('href')).toBe(
+      '/secretaria/estagios',
+    )
+    expect(screen.queryByText('Estágios')).toBeNull()
+    expect(screen.queryByText('Revisão de estágios')).toBeNull()
+    expect(screen.queryByText('Pool COE')).toBeNull()
   })
 
   it('nav do coordenador mostra Configurar curso e não mostra Cursos da secretaria', () => {

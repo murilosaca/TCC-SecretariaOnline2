@@ -16,6 +16,8 @@ interface EstagioRepository {
 
     fun findParaRevisao(orientadorId: UUID, situacao: EstagioSituacao?, pageable: Pageable): Page<Estagio>
 
+    fun findByCursos(cursoIds: Collection<UUID>, situacao: EstagioSituacao?, pageable: Pageable): Page<Estagio>
+
     fun findPoolCoe(cursoIds: Collection<UUID>, usuarioId: UUID): List<Estagio>
 
     fun countSemOrientador(cursoIds: Collection<UUID>): Long

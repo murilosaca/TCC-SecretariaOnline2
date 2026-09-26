@@ -21,6 +21,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.context.request.WebRequest
+import org.springframework.web.servlet.resource.NoResourceFoundException
 import java.net.URI
 import java.time.OffsetDateTime
 import java.util.UUID
@@ -59,9 +60,14 @@ class GlobalExceptionHandler {
         return detail
     }
 
-    @ExceptionHandler(RecursoNaoEncontradoException::class)
-    fun handleNotFound(ex: RecursoNaoEncontradoException): ProblemDetail =
-        problemDetail(HttpStatus.NOT_FOUND, "Recurso não encontrado", ex.message, "not-found")
+    @ExceptionHandler(RecursoNaoEncontradoException::class, NoResourceFoundException::class)
+    fun handleNotFound(ex: Exception): ProblemDetail =
+        problemDetail(
+            HttpStatus.NOT_FOUND,
+            "Recurso não encontrado",
+            if (ex is RecursoNaoEncontradoException) ex.message else "Recurso não encontrado.",
+            "not-found",
+        )
 
     @ExceptionHandler(SenhaReutilizadaException::class)
     fun handleSenhaReutilizada(ex: SenhaReutilizadaException): ProblemDetail =

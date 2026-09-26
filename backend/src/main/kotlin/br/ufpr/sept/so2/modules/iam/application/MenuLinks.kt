@@ -62,6 +62,9 @@ object MenuLinks {
         if (caps.contains("calendar.manage")) {
             links["calendarios"] = "/secretaria/calendarios"
         }
+        if (caps.contains("internship.manage")) {
+            links["estagios-secretaria"] = "/secretaria/estagios"
+        }
         if (caps.contains("course.config") && cursoConfigurarId != null) {
             links["configurar-curso"] = "/coordenacao/cursos/$cursoConfigurarId/configurar"
         }

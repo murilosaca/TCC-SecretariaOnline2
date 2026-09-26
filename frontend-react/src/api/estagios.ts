@@ -1,9 +1,13 @@
 import { api } from './client'
-import type { Estagio, EstagioPage } from '../models/estagio'
+import type { Estagio, EstagioPage, RegistrarEstagioRequest } from '../models/estagio'
 
 export const estagiosApi = {
   listarMeus: (situacao?: string, page = 0, size = 20) =>
     api.get<EstagioPage>('/estagios', { aluno: 'me', situacao: situacao || undefined, page, size }),
+  listarDoEscopo: (situacao?: string, page = 0, size = 20) =>
+    api.get<EstagioPage>('/estagios', { escopo: 'cursos', situacao: situacao || undefined, page, size }),
+  criar: (body: RegistrarEstagioRequest) => api.post<Estagio>('/estagios', body),
+  atualizar: (id: string, body: RegistrarEstagioRequest) => api.put<Estagio>(`/estagios/${id}`, body),
   listarParaRevisao: (page = 0, size = 20) =>
     api.get<EstagioPage>('/estagios', { canReview: 'true', page, size }),
   obter: (id: string) => api.get<Estagio>(`/estagios/${id}`),

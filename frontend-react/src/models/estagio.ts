@@ -45,3 +45,11 @@ export type Estagio = {
 }
 
 export type EstagioPage = PageResponse<Estagio>
+
+export type RegistrarEstagioRequest = {
+  alunoId: string
+  empresa: string
+  supervisor: string
+  inicio: string
+  fim: string
+}

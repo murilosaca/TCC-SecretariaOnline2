@@ -18,6 +18,7 @@ class Formativa(
     parecer: String? = null,
     idRevisor: UUID? = null,
     reviewedAt: OffsetDateTime? = null,
+    idResponsavel: UUID? = null,
 ) {
     var estado: FormativaEstado = estado
         private set
@@ -32,6 +33,9 @@ class Formativa(
         private set
 
     var reviewedAt: OffsetDateTime? = reviewedAt
+        private set
+
+    var idResponsavel: UUID? = idResponsavel
         private set
 
     init {
@@ -76,6 +80,26 @@ class Formativa(
         estado = FormativaEstado.INDEFERIDA
         updatedAt = agora
     }
+
+    fun semResponsavel(): Boolean = idResponsavel == null
+
+    fun atribuidaA(usuarioId: UUID): Boolean = idResponsavel == usuarioId
+
+    fun podeAtribuir(atorId: UUID): Boolean =
+        estado.podeRevisar() && (idResponsavel == null || idResponsavel == atorId)
+
+    fun atribuirResponsavel(novoId: UUID, agora: OffsetDateTime) {
+        garantirAguardandoCaaf()
+        if (idResponsavel == novoId) {
+            throw ConflitoEstadoException("Esta formativa já está atribuída a este responsável.")
+        }
+        idResponsavel = novoId
+        updatedAt = agora
+    }
+
+    /** Lote CAAF (F4.1): só presença já validada pelo sistema. */
+    fun elegivelAprovacaoEmLote(): Boolean =
+        estado.podeRevisar() && origem == FormativaOrigem.PRESENCA_VALIDADA
 
     private fun garantirPendente() {
         if (!estado.podeConfirmarOuCancelar()) {

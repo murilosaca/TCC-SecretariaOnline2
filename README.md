@@ -4,7 +4,7 @@ Plataforma digital da secretaria acadêmica do **SEPT/UFPR**. Este é o reposit�
 
 O SO2 não substitui o juízo de docentes, comissões ou secretaria. Ele garante trilha de auditoria, integridade de dados e automação de trâmites repetitivos.
 
-**Onde estamos:** P0 fechado na web e no Expo (itens 1–**8**). **Item 9 neste recorte:** 9.1–9.4 no ar e **9.5 pool COE** (só atribuição). Fatias **10–13** no ar (cadastro F5 de estágio, F7.1 usuários/picker, cadastro F5 de TCC, BFF professor F3.1). Esta fatia **não** é o portal admin F7 completo (sem F7.2–F7.9). F6.2 (relatórios), lote CAAF, MinIO e o diploma (F5.11) continuam fora.
+**Onde estamos:** P0 fechado na web e no Expo (itens 1–**8**). **Item 9 neste recorte:** 9.1–9.4 no ar e **9.5 pool COE** (só atribuição). Fatias **10–14** no ar (cadastro F5 de estágio, F7.1 usuários/picker, cadastro F5 de TCC, BFF professor F3.1, pool/lote CAAF F4.1). Esta fatia **não** é o portal admin F7 completo (sem F7.2–F7.9). F6.2 (relatórios), MinIO e o diploma (F5.11) continuam fora.
 
 Circuito demonstrável: login → primeiro acesso (senha + LGPD) → `/inicio` do aluno → solicitação + deep-link ao professor → presença **QR\|SECRET × SINGLE\|DUAL** → formativa (`PENDENTE_CONFIRMACAO` → aluno confirma → `AGUARDANDO_CAAF`) → CAAF aprova → certificado oficial (PDF + hash + ED25519) → `/certificados` + F0.7. Secretaria (`secretaria.dev`) opera o CRUD de TADS, estágios e TCCs; aluno/professor/CAAF não veem Cursos. Egresso (`egresso.dev`) entra em `/egresso/inicio` e reemite o PDF com o mesmo hash; `aluno.dev` não entra em `/egresso/**`.
 
@@ -14,7 +14,7 @@ São **comissões acadêmicas do SEPT**, não “papéis de tela”. O SO2 não 
 
 | Sigla | Nome | O que decide | Neste repo |
 |---|---|---|---|
-| **CAAF** | Comissão de Atividades Acadêmicas Formativas | Avalia e **valida horas** de atividades formativas (oficina, evento, comprovante). Aprovar dispara certificado oficial. Indeferir exige parecer. | Fila individual **feita** (`caaf.dev`, `/formativas?to=me`, cap `formative.review`). Pool/lote F4.1 **ainda não**. Lote só pode aprovar item cuja **presença já foi validada** pelo sistema. |
+| **CAAF** | Comissão de Atividades Acadêmicas Formativas | Avalia e **valida horas** de atividades formativas (oficina, evento, comprovante). Aprovar dispara certificado oficial. Indeferir exige parecer. | Fila individual **feita** (`caaf.dev`, `/formativas?to=me`, cap `formative.review`). Pool/lote F4.1 **feito** (`/comissoes/caaf`). Lote só aprova item cuja **presença já foi validada** pelo sistema. |
 | **COE** | Comissão de Estágios | Acompanha estágio curricular: **atribui orientador** e emite parecer **por documento**. | Pool F4.2 **feito** (`/comissoes/coe`, só atribuição). Parecer continua **sempre individual** (9.1). Sem “aprovar estágio em lote”. |
 
 **CAAF ≠ COE.** Formativa/horas/certificado é CAAF. Estágio/TCE/relatório/orientador é COE. Um professor pode estar nas duas (caps diferentes); a UI não decide isso por `user.role`.
@@ -71,7 +71,7 @@ Pacote `br.ufpr.sept.so2`. Clean Architecture; módulos conversam por ports.
 | `solicitacoes` | Motor `RequestType` + `form_schema` + `workflow_json`. Seed `DECLARACAO_SIMPLES`. Protocolo público. Fila e transições autenticadas (`request.*`) |
 | `presenca` | Evento + Proof of Stay **QR\|SECRET × SINGLE\|DUAL**. Segredo em claro só na host-session. Sem geofence |
 | `bff` | `GET /bff/dashboard/aluno` e `GET /bff/dashboard/professor` (agrega; degrada por bloco). Sem BFF secretaria |
-| `formativas` | Gatilho na mesma TX da presença **COMPLETA**. Aluno confirma; CAAF aprova/indefere (sem lote). Aprovar emite certificado |
+| `formativas` | Gatilho na mesma TX da presença **COMPLETA**. Aluno confirma; CAAF aprova/indefere (individual) + pool/lote F4.1. Aprovar emite certificado |
 | `certificados` | Emissão só pelo sistema na aprovação CAAF. PDF `bytea` (sem MinIO). SHA-256 + ED25519 + F0.7. Sem upload oficial |
 | `comunicacao` | Dispatcher Outbox → SMTP (Mailpit). Sem hub F1.6. `estagio.*`, `tcc.submitted` e `tcc.reviewed` fecham SENT sem e-mail (no-op, como `certificado.emitido`) |
 | `estagio` | Estágio do aluno + parecer **individual** do orientador (`internship.view_own` / `internship.review`) + pool COE (só atribuição). PDF em `bytea`. Sem lote de parecer, sem CRUD F5 |
@@ -83,7 +83,7 @@ Módulos **previstos e ainda sem código**: `auditoria` (módulo dedicado; `audi
 
 ### Flyway (imutável)
 
-`backend/src/main/resources/db/migration/`. **Não edite** migration já aplicada. **Próxima = V016.**
+`backend/src/main/resources/db/migration/`. **Não edite** migration já aplicada. **Próxima = V018.**
 
 | Versão | Conteúdo |
 |---|---|
@@ -102,6 +102,8 @@ Módulos **previstos e ainda sem código**: `auditoria` (módulo dedicado; `audi
 | V013 | TCC (`tcc`, `tcc_membro`, `tcc_avaliacao`). PDF em `bytea`. Um `ATIVO` por aluno |
 | V014 | F6.1 (`curso_configuracao` + `elegibilidade_horas`). Horas mínimas continuam em `curso` |
 | V015 | Pool COE (`coe_membro` + `estagio.id_orientador` opcional). Sem tabela genérica de comissão |
+| V016 | `usuario.nome` (F7.1) |
+| V017 | Pool CAAF (`comissao_membro` genérico + `formativa.id_responsavel`) |
 
 ### Frontend — pastas
 
@@ -113,7 +115,7 @@ Módulos **previstos e ainda sem código**: `auditoria` (módulo dedicado; `audi
 | `pages/aluno/`, `pages/inicio/`, `pages/professor/` | Aluno, BFF `/inicio`, hospedeiro |
 | `pages/solicitacoes/`, `pages/formativas/`, `pages/estagios/`, `pages/tccs/`, `pages/publico/` | Fila/deliberar, CAAF, estágio, TCC, F0 |
 | `pages/coordenacao/` | F6.1 `/coordenacao/cursos/:id/configurar` |
-| `pages/comissoes/` | F4.2 `/comissoes/coe` (só atribuição) |
+| `pages/comissoes/` | F4.2 `/comissoes/coe` (só atribuição) + F4.1 `/comissoes/caaf` (atribuir + lote presença) |
 | `layouts/` | `AuthLayout` (F0) e `AppLayout`. Nav: `useActions(links)` |
 | `hooks/useActions.ts` | Botão só se existir `_links` |
 | `api/` | Access token **só em memória** (nunca `localStorage`) |
@@ -148,12 +150,13 @@ Login: `@ufpr.br`, e-mail pessoal ou GRR (`GRR` + 8 dígitos). `senhaAlterada = 
 | `/events` | JWT + `attendance.*` / `event.*` | Presença v4.1 (QR\|SECRET × SINGLE\|DUAL) |
 | `/bff/dashboard/aluno` | JWT + `dashboard.view_own` + (`attendance.view_open` **ou** `request.view_own`) | Dashboard agregado (HTTP 200; degrada por bloco) |
 | `/bff/dashboard/professor` | JWT + `dashboard.view_self_professor` | Dashboard agregado do professor (HTTP 200; degrada por bloco; CAAF só com `formative.review`) |
-| `/formativas` | JWT + `formative.view_own` / `confirm_own` / `review` | Sem POST avulso. Sem lote. Aprovar emite certificado |
+| `/formativas` | JWT + `formative.view_own` / `confirm_own` / `review` | Sem POST avulso. Lote só em `/comissoes/caaf`. Aprovar emite certificado |
 | `/certificates` | JWT + `certificate.view_own` | Lista/download do dono. Sem POST. Outro aluno → 404 |
 | `/estagios` | JWT + `internship.view_own` / `internship.review` | `?aluno=me` ou fila `?canReview=true`. Upload PDF, parecer individual, `POST /{id}/encerrar`. Sem lote. Outro aluno ou orientador alheio → 404 |
 | `/tccs` | JWT + `tcc.view_own` / `tcc.review` / `tcc.manage` | `?aluno=me`, fila `?canReview=true`, escopo `?escopo=cursos` + `POST`/`PUT` (`tcc.manage`). Upload PDF, avaliação individual. Sem lote e sem certificado. Outro aluno ou banca alheia → 404 |
 | `/coordenacao/cursos/{id}/config` | JWT + `course.config` **e** `idCoordenador = usuarioId` | GET/PATCH F6.1. Sem `course.manage`. Outro curso → 403. Anônimo → 401. Sem `/courses/{id}/config` |
 | `/comissoes/coe` | JWT + `internship.review` | Pool F4.2: KPIs + não atribuídos + “comigo”. `POST /comissoes/coe/atribuicoes` `{ estagioId, assigneeId }`. Sem cap → 403. Estágio fora do curso da comissão → 404. Sem parecer em lote |
+| `/comissoes/caaf` | JWT + `formative.review` | Pool F4.1: KPIs + não atribuídas + “comigo”. `POST /atribuicoes` `{ formativaId, assigneeId }`. `POST /lote` `{ ids, decisao: APROVADA }` só `PRESENCA_VALIDADA`. Sem cap → 403. Cross-curso → 404 |
 | `/.well-known/jwks.json` | Anônimo | Chave pública ED25519 (par separado do RSA do JWT) |
 
 JSON camelCase. Datas ISO-8601 UTC. Listagens `Pageable` (20 / máx. 100) com `_links`.
@@ -305,13 +308,28 @@ Sem migration: o cadastro cabe na V013 (`tcc` + `tcc_membro`). `tcc.manage` entr
 - O seed `@Profile("dev")` do `aluno.dev` continua. A secretaria deixa de depender dele para alimentar a revisão F3.7.
 - Fora: avaliação e upload (já no 9.2), certificado de conclusão, lote, MinIO / `modules/arquivos`, F7.2, Expo.
 
+**13. F3.1 BFF do professor** — feito
+
+`GET /bff/dashboard/professor` (`dashboard.view_self_professor`) agrega deliberação, eventos do dia, CAAF (só com `formative.review`), estágios e TCCs; degrada por bloco. `/inicio` deixa de ser 403 para professor puro.
+
+**14. F4.1 pool + lote CAAF** — feito
+
+V017. `comissao_membro` (tipo `CAAF`|`COE`) + `formativa.id_responsavel`. `caaf.dev` e `caaf.colegadev` são membros CAAF do TADS. Seed: duas formativas `AGUARDANDO_CAAF` / `PRESENCA_VALIDADA` sem responsável. `coe_membro` (V015) não foi reutilizado.
+
+- `GET /comissoes/caaf` (`formative.review`): KPIs (pool total, atribuídas a mim, prazo médio, aprovadas no período) + lista (não atribuídas + “comigo”). Escopo por `comissao_membro`. `_links.assign-member` / `batch-approve` via HATEOAS.
+- `POST /comissoes/caaf/atribuicoes` `{ formativaId, assigneeId }`. Self-assign e colega membro do mesmo curso. Outbox + `audit_log` (`formativas.assigned`). Sem auto-notificar o ator.
+- `POST /comissoes/caaf/lote` `{ ids, decisao: "APROVADA" }` só `PRESENCA_VALIDADA` + `AGUARDANDO_CAAF`. Cada item ganha `formativa.aprovada` + certificado; lote emite `formativas.batch_approved`. Indeferir em lote → 422.
+- Menu: rel `comissoes-caaf` só com `formative.review`. UI `useActions`. BulkActionBar: atribuir + “Aprovar selecionados” (desabilitado se a seleção misturar tipos).
+- Parecer individual (`/formativas?to=me`, item 3) intacto. Sem cap → 403. Cross-curso → 404. Anônimo → 401.
+- Fora: indeferir em lote, comprovante manual (24), MinIO, pool COE, Expo.
+
 **Ainda não:** a lista solta virou a tabela numerada da seção **O que falta (pós-9.5)**, abaixo. Não manter duas listas divergentes aqui.
 
 **9. Estágio + COE, TCC, egresso, F6.1**
 
 O item 9 da tabela original era um saco. 9.1–9.5 fecharam o recorte: estágio com parecer individual (RF-F3-005), pool COE só de atribuição (RF-F4-002), TCC com avaliação individual (RF-F3-006, sem certificado), portal read-only do egresso (RF-F2-001, sem diploma) e F6.1 da coordenação (RF-F6-001). Parecer COE continua sempre individual. F6.2 e F7 seguem fora.
 
-Dívida consciente: tabela **ainda aberta** em [`docs/auditoria-fundacao.md`](docs/auditoria-fundacao.md). Destaques: BFF professor (F3.1); MinIO/S3 (PDF em `bytea`); encerrar evento sem PDF; CA-04; F6.2 e F7; claim `cursoIds`; filtro CAAF por comissão; HostPin em memória; ArchUnit; rate limit em memória. **`/academico/**` e o menu de atalho de dev já não são dívida.**
+Dívida consciente: tabela **ainda aberta** em [`docs/auditoria-fundacao.md`](docs/auditoria-fundacao.md). Destaques: MinIO/S3 (PDF em `bytea`); encerrar evento sem PDF; CA-04; F6.2 e F7; claim `cursoIds`; HostPin em memória; ArchUnit; rate limit em memória. **`/academico/**`, menu de atalho de dev, BFF professor e filtro CAAF por comissão (V017) já não são dívida.**
 
 ---
 
@@ -325,7 +343,7 @@ O item 9 fechou **o recorte dele** (estágio, TCC, egresso, F6.1, pool COE), nã
 | 11 | F7.1 + F7.8 usuários e picker | 10 | **Feito** — `GET`/`POST`/`PUT` `/admin/usuarios` + `POST .../desativar` (`user.manage_all`), `POST .../reset-senha` (`user.reset_password`, JWT 1-uso reusa `/nova-senha`), picker `GET /iam/usuarios` na F5.7 (coord+secretários), seed `admin.dev`, V016 `usuario.nome`. Sem e-mail síncrono (`iam.user_created` → SENT no-op) | Perfis/matriz FGAC (32), jobs, auditoria, `cursoIds` no JWT |
 | 12 | Cadastro F5 de TCC (RF-F1-008) | 11 | **Feito** — `POST`/`PUT /tccs` (`tcc.manage`), aluno via `GET /academico/alunos`, banca via picker `GET /iam/usuarios`, UI `/secretaria/tccs`. V013 já garante um `ATIVO` por aluno | Certificado de conclusão, lote, MinIO |
 | 13 | F3.1 BFF do professor | 9.1, 9.2 | **Feito** — `GET /bff/dashboard/professor` (`dashboard.view_self_professor`) agrega por porta deliberação, eventos do dia, CAAF (só com `formative.review`), estágios e TCCs; degrada por bloco como o do aluno. `/inicio` deixa de ser 403 para professor puro | Dashboard da secretaria (21), KPI de SLA calculado, Expo |
-| 14 | F4.1 pool + lote CAAF | 3, 9.5 | `/comissoes/caaf` (`formative.review`): KPIs, self-assign, atribuição a colega com carga e aprovação em lote **só** de formativa cuja presença o sistema já validou. Exige tabela genérica de membro de comissão — hoje só existe `coe_membro` (V015) | Indeferir em lote, comprovante manual (24), mexer no parecer individual do item 3 |
+| 14 | F4.1 pool + lote CAAF | 3, 9.5 | **Feito** — `GET`/`POST /comissoes/caaf` (`formative.review`): KPIs, self-assign, atribuição a colega com carga (`comissao_membro` V017 + `formativa.id_responsavel`), aprovação em lote **só** `PRESENCA_VALIDADA`. Menu rel `comissoes-caaf`. Parecer individual intacto | Indeferir em lote, comprovante manual (24), mexer no parecer individual do item 3 |
 | 15 | MinIO + `modules/arquivos` | 10, 12 | MinIO no `docker-compose.yml`, `modules/arquivos` com upload/download por URL pré-assinada (15 min) e migração dos PDFs hoje em `bytea` (certificado V009, estágio V012, TCC V013) | Antivírus, versionamento de arquivo, exportação assíncrona (29) |
 | 16 | F5.11 diploma e colação | 15, 11 | Tabela `diploma`, wizard de colação em lote com elegibilidade, transição ALUNO → EGRESSO e registro de entrega física. Preenche `diploma`, `colacao`, `concluidoEm` e `situacaoDiploma`, que a F2.1 devolve nulos desde o 9.3 | Lista/exportação de egressos (26), certificado de conclusão de TCC |
 | 17 | F6.2 relatórios da coordenação | 9.4, 14, 16 | `GET /reports/coordinator` (`report.view_coordinator`) + `/coordenacao/relatorios`: KPIs, séries históricas (evasão, formativas, aprovação), alerta de threshold e escopo do curso do coordenador (403 fora) | Comparativo com curso de outro coordenador, export, F5.18 (19) |

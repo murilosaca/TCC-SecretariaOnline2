@@ -46,6 +46,7 @@ object MenuLinks {
         }
         if (caps.contains("formative.review")) {
             links["revisao-caaf"] = "/formativas?to=me"
+            links["comissoes-caaf"] = "/comissoes/caaf"
         }
         if (caps.containsAny("event.manage", "event.host")) {
             links["eventos-professor"] = "/professor/eventos"

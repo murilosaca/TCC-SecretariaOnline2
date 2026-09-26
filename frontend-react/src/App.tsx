@@ -37,6 +37,7 @@ import { EstagiosSecretaria } from './pages/secretaria/EstagiosSecretaria'
 import { TccsSecretaria } from './pages/secretaria/TccsSecretaria'
 import { Calendarios } from './pages/secretaria/Calendarios'
 import { PoolCoe } from './pages/comissoes/PoolCoe'
+import { PoolCaaf } from './pages/comissoes/PoolCaaf'
 import { ConfigurarCurso } from './pages/coordenacao/ConfigurarCurso'
 import { Cursos } from './pages/secretaria/Cursos'
 import { Disciplinas } from './pages/secretaria/Disciplinas'
@@ -91,6 +92,7 @@ export default function App() {
           <Route path="admin/usuarios" element={<Usuarios />} />
           <Route path="coordenacao/cursos/:id/configurar" element={<ConfigurarCurso />} />
           <Route path="comissoes/coe" element={<PoolCoe />} />
+          <Route path="comissoes/caaf" element={<PoolCaaf />} />
           </Route>
         </Route>
       </Route>

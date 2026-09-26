@@ -4,7 +4,7 @@ Plataforma digital da secretaria acadêmica do **SEPT/UFPR**. Este é o reposit�
 
 O SO2 não substitui o juízo de docentes, comissões ou secretaria. Ele garante trilha de auditoria, integridade de dados e automação de trâmites repetitivos.
 
-**Onde estamos:** P0 fechado na web e no Expo (itens 1–**8**). **Item 9 neste recorte:** 9.1–9.4 no ar e **9.5 pool COE** (só atribuição). Fatias **10–17** no ar (cadastro F5 de estágio, F7.1 usuários/picker, cadastro F5 de TCC, BFF professor F3.1, pool/lote CAAF F4.1, MinIO + `modules/arquivos`, diploma/colação F5.11, F6.2 relatórios da coordenação). Esta fatia **não** é o portal admin F7 completo (sem F7.2–F7.9).
+**Onde estamos:** P0 fechado na web e no Expo (itens 1–**8**). **Item 9 neste recorte:** 9.1–9.4 no ar e **9.5 pool COE** (só atribuição). Fatias **10–18** no ar (cadastro F5 de estágio, F7.1 usuários/picker, cadastro F5 de TCC, BFF professor F3.1, pool/lote CAAF F4.1, MinIO + `modules/arquivos`, diploma/colação F5.11, F6.2 relatórios da coordenação, Mobile P2 no Expo). Esta fatia **não** é o portal admin F7 completo (sem F7.2–F7.9).
 
 Circuito demonstrável: login → primeiro acesso (senha + LGPD) → `/inicio` do aluno → solicitação + deep-link ao professor → presença **QR\|SECRET × SINGLE\|DUAL** → formativa (`PENDENTE_CONFIRMACAO` → aluno confirma → `AGUARDANDO_CAAF`) → CAAF aprova → certificado oficial (PDF + hash + ED25519) → `/certificados` + F0.7. Secretaria (`secretaria.dev`) opera o CRUD de TADS, estágios e TCCs; aluno/professor/CAAF não veem Cursos. Egresso (`egresso.dev`) entra em `/egresso/inicio` e reemite o PDF com o mesmo hash; `aluno.dev` não entra em `/egresso/**`.
 
@@ -49,7 +49,7 @@ TCC-SecretariaOnline2/
 │       ├── shared/          RFC 7807, Security, CORS, UUID v7, VOs
 │       └── modules/         Um bounded context por pasta
 ├── frontend-react/          Portal oficial (React 18 + Vite + TypeScript)
-├── frontend-react-native/   Expo P0 aluno (login, início, solicitação, presença)
+├── frontend-react-native/   Expo aluno/egresso (P0 + P2: formativas, estágio, TCC, certificados)
 ├── docs/
 ├── docker-compose.yml       Outro Postgres em :5432 — ver “Como subir”
 ├── .env.example
@@ -223,7 +223,7 @@ Cliente `frontend-react-native/` (Expo Router 57 + NativeWind + TanStack Query) 
 - Recuperar senha no app (202); o Mailpit continua abrindo a **web** `/nova-senha?token=`. Sem deep-link de deliberação no app.
 - Base URL: `EXPO_PUBLIC_API_URL`. Default emulador Android `10.0.2.2:8080`, iOS `localhost:8080`. Aparelho: IP LAN. Detalhe: [`frontend-react-native/README.md`](frontend-react-native/README.md).
 
-**Fora do item 8:** F7, F6.1, COE, lote CAAF, MinIO, BFF professor, FCM, Expo web, CRUD F5 no app, formativas/certificados no Expo. O parecer individual de estágio entrou no **9.1**, não neste item.
+**Fora do item 8:** F7, F6.1, COE, lote CAAF, MinIO, BFF professor, FCM, Expo web, CRUD F5 no app. Formativas/certificados/estágio/TCC/egresso no Expo entraram no **18**. O parecer individual de estágio (API/web) entrou no **9.1**.
 
 **9.1 Estágio + parecer individual** — feito
 
@@ -234,7 +234,7 @@ V012. Seed dev: estágio `ATIVO` do `aluno.dev` no TADS, empresa fictícia, orie
 - HATEOAS `upload` / `revisar` / `aprovar` / `reprovar` / `arquivar` só com capability **e** estado. Menu: rel `estagios` ou `estagios-revisao`. UI `useActions`. Sem `internship.approve_batch`. O pool COE (atribuir, nunca aprovar em lote) entrou no **9.5**.
 - Fora do vínculo (outro aluno ou orientador que não é o do estágio) → 404. Sem cap → 403. Anônimo → 401.
 - Dispatcher: `estagio.documento_enviado`, `estagio.parecer_emitido` e `estagio.encerrado` fecham `SENT` sem SMTP (no-op, como `certificado.emitido`).
-- PDF em `bytea`. MinIO e `modules/arquivos` não nasceram. Expo não ganhou F1.13: o menu nativo continua a whitelist P0 e ignora o rel novo.
+- PDF em `bytea`. MinIO e `modules/arquivos` não nasceram. Expo F1.13/F1.14 entrou no **18** (nesta fatia o menu nativo ainda era whitelist P0).
 
 **9.2 TCC + avaliação individual** — feito
 
@@ -247,7 +247,7 @@ V013. Seed dev: TCC `ATIVO` / `EM_ELABORACAO` do `aluno.dev` no TADS, título fi
 - Fora do vínculo (outro aluno ou revisor que não é da banca) → 404. Sem cap → 403. Anônimo → 401.
 - Dispatcher: `tcc.submitted` e `tcc.reviewed` fecham `SENT` sem SMTP (no-op).
 - **Certificado de conclusão não é emitido.** RF-F3-006 manda emitir quando aprovado e elegível; a elegibilidade (nota mínima e regras de banca da F6.1, consolidação “a definir”, colação F5.11) está ambígua. Dívida na auditoria.
-- Expo não ganhou tela de TCC: o menu nativo continua a whitelist P0.
+- Expo F1.15/F1.16 entrou no **18** (nesta fatia o menu nativo ainda era whitelist P0).
 
 **9.3 Egresso read-only (F2)** — feito
 
@@ -259,7 +259,7 @@ Sem migration nova: reusa `aluno.situacao = EGRESSO` e a tabela `certificado`. D
 - `GET /egressos/me/certificados/{id}/reemissao` devolve o PDF já gravado. O `hash_sha256` e a assinatura não mudam. Não insere certificado e não assina de novo. Quem não é o dono recebe 404.
 - Quem tem `alumni.view_own` sem caps de aluno ativo toma 403 em `/bff/dashboard/aluno`, `/request-types`, `/formativas`, `/estagios`, `/tccs` e `/events`. Aluno ativo toma 403 em `/egressos/**`. A UI manda `/erro/403`; “Ir ao início” volta para `/egresso/inicio`.
 - FirstAccessGate segue valendo com `senhaAlterada = false`.
-- Expo não ganhou a tela. `/certificados` (F1.19) continua de aluno ativo (`certificate.view_own`).
+- Expo F2.1 entrou no **18**. `/certificados` (F1.19) continua de aluno ativo (`certificate.view_own`); no app nativo também na fatia **18**.
 
 **9.4 F6.1 configurar curso (coordenação)** — feito
 
@@ -351,7 +351,7 @@ O item 9 fechou **o recorte dele** (estágio, TCC, egresso, F6.1, pool COE), nã
 | 15 | MinIO + `modules/arquivos` | 10, 12 | **Feito** — MinIO no `docker-compose.yml`, `modules/arquivos` (S3-compatível), PDF de certificado/estágio/TCC em object storage + `storage_key` (V018), download por URL pré-assinada (TTL 15 min). Upload multipart grava no bucket (mesmo `_links`) | Antivírus, versionamento de arquivo, exportação assíncrona (29) |
 | 16 | F5.11 diploma e colação | 15, 11 | **Feito** — tabela `diploma` (V019), wizard `/secretaria/diplomas` (`diploma.register`): elegíveis, colação em lote atômica (ALUNO→EGRESSO + Outbox `egressos.graduated` + audit), entrega física PENDENTE→ENTREGUE e PDF no MinIO. F2.1 passa a preencher `diploma`/`colacao`/`concluidoEm`/`situacaoDiploma` com `_links.download` pré-assinado | Lista/exportação de egressos (26), certificado de conclusão de TCC |
 | 17 | F6.2 relatórios da coordenação | 9.4, 14, 16 | **Feito** — `GET /reports/coordinator` (`report.view_coordinator`) + `/coordenacao/relatorios`: KPIs, séries históricas (evasão, formativas, aprovação), alerta de threshold e escopo do curso do coordenador (403 fora). Seed do professor.dev. Sem migration nova | Comparativo com curso de outro coordenador, export, F5.18 (19) |
-| 18 | Mobile P2 (Expo) | 9.1, 9.2, 9.3 | Estágio (F1.13/F1.14), TCC (F1.15/F1.16), formativas (F1.10/F1.12), certificados (F1.19) e egresso (F2.1) no app; o menu nativo abandona a whitelist P0 e passa a ler todo `_links` de `GET /auth/me` | Deliberação, CAAF e F5 no app; FCM; Expo web |
+| 18 | Mobile P2 (Expo) | 9.1, 9.2, 9.3 | **Feito** — telas nativas formativas (F1.10/F1.12), estágio (F1.13/F1.14 + parecer se `_links`), TCC (F1.15/F1.16 + upload-final), certificados (F1.19) e egresso F2.1; menu abandona whitelist P0 e lê `_links` de `GET /auth/me` via `navItensVisiveis`/`useActions`. Refresh nativo (A) intacto | Deliberação, CAAF e F5 no app; FCM; Expo web |
 | 19 | F5.18 estatísticas da secretaria | 17 | `/secretaria/estatisticas` reusando a camada de gráfico da 17, filtro por período e curso, drill-down tabular e resumo textual acessível | Export, materialização/cache de métrica |
 | 20 | F5.2 + F5.5 fila central e atrasados | 2, 7 | `/solicitacoes` como fila central da secretaria com rel próprio no menu (hoje ela só recebe `deliberar`, porque `solicitacoes` exige `request.view_own`), `?slaBreached=true` em `/secretaria/atrasados`, ações em massa de atribuição e CSV | Solicitação interna (28), editor de RequestType (33), FORWARD |
 | 21 | F5.1 dashboard da secretaria | 20, 13 | `GET /bff/dashboard/secretary` (`dashboard.view_secretary`): KPIs, fila priorizada, alerta de SLA e agenda do dia, filtrados pelos cursos vinculados ao usuário | F6.2, kanban (P3) |

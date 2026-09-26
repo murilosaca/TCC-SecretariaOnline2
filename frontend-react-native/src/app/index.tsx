@@ -1,9 +1,10 @@
 import { Redirect } from 'expo-router';
 import { ActivityIndicator, View } from 'react-native';
 import { useAuth } from '@/auth/AuthContext';
+import { inicioDaSessao } from '@/auth/portal';
 
 export default function Index() {
-  const { status, mustChangePassword } = useAuth();
+  const { status, mustChangePassword, links } = useAuth();
   if (status === 'loading') {
     return (
       <View className="flex-1 items-center justify-center bg-so2-background">
@@ -14,5 +15,5 @@ export default function Index() {
   if (status === 'anonymous') {
     return <Redirect href="/login" />;
   }
-  return <Redirect href={mustChangePassword ? '/primeiro-acesso' : '/inicio'} />;
+  return <Redirect href={mustChangePassword ? '/primeiro-acesso' : inicioDaSessao(links)} />;
 }

@@ -3,10 +3,11 @@ import { Redirect, Link } from 'expo-router';
 import { ActivityIndicator, Text, TextInput, TouchableOpacity, View, ScrollView } from 'react-native';
 import { ApiError } from '@/api/client';
 import { useAuth } from '@/auth/AuthContext';
+import { inicioDaSessao } from '@/auth/portal';
 import { Banner } from '@/components/Banner';
 
 export default function LoginScreen() {
-  const { status, mustChangePassword, login } = useAuth();
+  const { status, mustChangePassword, links, login } = useAuth();
   const [identificador, setIdentificador] = useState('');
   const [senha, setSenha] = useState('');
   const [mostrarSenha, setMostrarSenha] = useState(false);
@@ -45,7 +46,7 @@ export default function LoginScreen() {
     );
   }
   if (status === 'authenticated') {
-    return <Redirect href={mustChangePassword ? '/primeiro-acesso' : '/inicio'} />;
+    return <Redirect href={mustChangePassword ? '/primeiro-acesso' : inicioDaSessao(links)} />;
   }
 
   return (

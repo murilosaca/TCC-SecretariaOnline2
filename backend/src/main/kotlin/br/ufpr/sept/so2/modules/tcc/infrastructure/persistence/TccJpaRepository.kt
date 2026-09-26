@@ -12,6 +12,14 @@ interface TccJpaRepository : JpaRepository<TccJpaEntity, UUID> {
 
     fun findByIdAlunoAndEstado(idAluno: UUID, estado: String, pageable: Pageable): Page<TccJpaEntity>
 
+    fun findByIdCursoIn(idCursos: Collection<UUID>, pageable: Pageable): Page<TccJpaEntity>
+
+    fun findByIdCursoInAndSituacao(
+        idCursos: Collection<UUID>,
+        situacao: String,
+        pageable: Pageable,
+    ): Page<TccJpaEntity>
+
     fun existsByIdAlunoAndSituacao(idAluno: UUID, situacao: String): Boolean
 
     @Query(

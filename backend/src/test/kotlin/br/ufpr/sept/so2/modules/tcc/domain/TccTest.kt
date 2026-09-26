@@ -125,4 +125,54 @@ class TccTest : StringSpec({
         tcc.avaliacoes.size shouldBe 2
         tcc.podeEnviar() shouldBe false
     }
+
+    "atualizar cadastro troca título, datas e banca em ativo" {
+        val tcc = ativo()
+        val outroOrientador = UUID.fromString("01800000-0000-7000-8000-000000000208")
+        val bancaId = UUID.fromString("01800000-0000-7000-8000-000000000209")
+        tcc.atualizarCadastro(
+            "  Título atualizado do TCC  ",
+            LocalDate.parse("2026-12-01"),
+            LocalDate.parse("2026-11-01"),
+            listOf(
+                MembroBancaTcc(membroId, outroOrientador, PapelBancaTcc.ORIENTADOR),
+                MembroBancaTcc(bancaId, orientadorId, PapelBancaTcc.BANCA),
+            ),
+            agora.plusMinutes(5),
+        )
+        tcc.titulo shouldBe "Título atualizado do TCC"
+        tcc.dataDefesa shouldBe LocalDate.parse("2026-12-01")
+        tcc.idOrientador() shouldBe outroOrientador
+        tcc.membros.size shouldBe 2
+    }
+
+    "concluído não aceita atualização de cadastro" {
+        val tcc = Tcc(
+            tccId,
+            alunoId,
+            cursoId,
+            "Título",
+            TccSituacao.CONCLUIDO,
+            TccEstado.APROVADO,
+            LocalDate.parse("2026-11-12"),
+            LocalDate.parse("2026-10-03"),
+            null,
+            null,
+            null,
+            null,
+            null,
+            agora,
+            agora,
+            listOf(MembroBancaTcc(membroId, orientadorId, PapelBancaTcc.ORIENTADOR)),
+        )
+        shouldThrow<ConflitoEstadoException> {
+            tcc.atualizarCadastro(
+                "Outro",
+                LocalDate.parse("2026-11-12"),
+                LocalDate.parse("2026-10-03"),
+                listOf(MembroBancaTcc(membroId, orientadorId, PapelBancaTcc.ORIENTADOR)),
+                agora,
+            )
+        }
+    }
 })

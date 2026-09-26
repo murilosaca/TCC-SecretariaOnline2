@@ -2,13 +2,17 @@ package br.ufpr.sept.so2.modules.tcc.api
 
 import br.ufpr.sept.so2.modules.iam.infrastructure.security.IamPrincipal
 import br.ufpr.sept.so2.modules.tcc.api.dto.RegistrarAvaliacaoTccRequest
+import br.ufpr.sept.so2.modules.tcc.api.dto.RegistrarTccRequest
 import br.ufpr.sept.so2.modules.tcc.api.dto.TccResponse
+import br.ufpr.sept.so2.modules.tcc.application.AtualizarTccUseCase
 import br.ufpr.sept.so2.modules.tcc.application.BaixarVersaoFinalTccUseCase
 import br.ufpr.sept.so2.modules.tcc.application.EnviarVersaoFinalTccUseCase
 import br.ufpr.sept.so2.modules.tcc.application.ListarFilaRevisaoTccUseCase
 import br.ufpr.sept.so2.modules.tcc.application.ListarMeusTccsUseCase
+import br.ufpr.sept.so2.modules.tcc.application.ListarTccsDoEscopoUseCase
 import br.ufpr.sept.so2.modules.tcc.application.ObterTccUseCase
 import br.ufpr.sept.so2.modules.tcc.application.RegistrarAvaliacaoTccUseCase
+import br.ufpr.sept.so2.modules.tcc.application.RegistrarTccUseCase
 import br.ufpr.sept.so2.modules.tcc.application.TccAcesso
 import br.ufpr.sept.so2.modules.tcc.application.ports.AlunoTccPort
 import br.ufpr.sept.so2.shared.api.PageResponse
@@ -17,10 +21,12 @@ import br.ufpr.sept.so2.shared.domain.exception.DadoInvalidoException
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.servlet.http.HttpServletRequest
+import jakarta.validation.Valid
 import org.springframework.data.domain.Pageable
 import org.springframework.data.web.PageableDefault
 import org.springframework.http.ContentDisposition
 import org.springframework.http.HttpHeaders
+import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
@@ -28,9 +34,11 @@ import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.multipart.MultipartFile
 import java.util.UUID
@@ -42,6 +50,9 @@ import java.util.function.Function
 class TccController(
     private val listarMeusTccsUseCase: ListarMeusTccsUseCase,
     private val listarFilaRevisaoTccUseCase: ListarFilaRevisaoTccUseCase,
+    private val listarTccsDoEscopoUseCase: ListarTccsDoEscopoUseCase,
+    private val registrarTccUseCase: RegistrarTccUseCase,
+    private val atualizarTccUseCase: AtualizarTccUseCase,
     private val obterTccUseCase: ObterTccUseCase,
     private val enviarVersaoFinalTccUseCase: EnviarVersaoFinalTccUseCase,
     private val registrarAvaliacaoTccUseCase: RegistrarAvaliacaoTccUseCase,
@@ -50,7 +61,7 @@ class TccController(
     private val assembler: TccAssembler,
 ) {
 
-    @GetMapping
+    @GetMapping(params = ["!escopo"])
     @PreAuthorize("hasAnyAuthority('tcc.view_own','tcc.review')")
     @Operation(summary = "Listar TCCs do aluno ou a fila individual do orientador/banca")
     fun listar(
@@ -78,6 +89,72 @@ class TccController(
         return PageResponse.ofWithLinks(
             listarMeusTccsUseCase.execute(principal.userId, aluno, estado, pageable),
             Function { item -> assembler.from(item, principal.userId, alunoId, principal.authorities) },
+        )
+    }
+
+    @GetMapping(params = ["escopo=cursos"])
+    @PreAuthorize("hasAuthority('tcc.manage')")
+    @Operation(summary = "Listar TCCs dos cursos da secretaria")
+    fun listarDoEscopo(
+        @RequestParam(required = false) situacao: String?,
+        @PageableDefault(size = 20) pageable: Pageable,
+        authentication: Authentication,
+    ): PageResponse<TccResponse> {
+        val principal = principal(authentication)
+        val alunoId = alunoIdOuNulo(principal.userId)
+        return PageResponse.ofWithLinks(
+            listarTccsDoEscopoUseCase.execute(principal.userId, situacao, pageable),
+            Function { item -> assembler.from(item, principal.userId, alunoId, principal.authorities) },
+            mapOf("novo" to "/tccs"),
+        )
+    }
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasAuthority('tcc.manage')")
+    @Operation(summary = "Registrar TCC ativo com banca")
+    fun registrar(
+        @Valid @RequestBody request: RegistrarTccRequest,
+        authentication: Authentication,
+        http: HttpServletRequest,
+    ): TccResponse {
+        val principal = principal(authentication)
+        return responder(
+            registrarTccUseCase.execute(
+                principal.userId,
+                request.alunoId!!,
+                request.titulo!!,
+                request.dataDefesa!!,
+                request.dataEntrega!!,
+                membrosDe(request),
+                clientIp(http),
+            ),
+            principal,
+        )
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('tcc.manage')")
+    @Operation(summary = "Atualizar TCC ativo do escopo da secretaria")
+    fun atualizar(
+        @PathVariable id: UUID,
+        @Valid @RequestBody request: RegistrarTccRequest,
+        authentication: Authentication,
+        http: HttpServletRequest,
+    ): TccResponse {
+        val principal = principal(authentication)
+        return responder(
+            atualizarTccUseCase.execute(
+                principal.userId,
+                id,
+                request.alunoId!!,
+                request.titulo!!,
+                request.dataDefesa!!,
+                request.dataEntrega!!,
+                membrosDe(request),
+                clientIp(http),
+            ),
+            principal,
         )
     }
 
@@ -167,5 +244,8 @@ class TccController(
             }
             return request.remoteAddr
         }
+
+        private fun membrosDe(request: RegistrarTccRequest): List<Pair<UUID, String>> =
+            request.membros!!.map { it.idUsuario!! to it.papel!! }
     }
 }

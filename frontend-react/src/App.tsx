@@ -34,6 +34,7 @@ import { VerificarCertificado } from './pages/publico/VerificarCertificado'
 import { VerificarProtocolo } from './pages/publico/VerificarProtocolo'
 import { Alunos } from './pages/secretaria/Alunos'
 import { EstagiosSecretaria } from './pages/secretaria/EstagiosSecretaria'
+import { TccsSecretaria } from './pages/secretaria/TccsSecretaria'
 import { Calendarios } from './pages/secretaria/Calendarios'
 import { PoolCoe } from './pages/comissoes/PoolCoe'
 import { ConfigurarCurso } from './pages/coordenacao/ConfigurarCurso'
@@ -85,6 +86,7 @@ export default function App() {
           <Route path="secretaria/disciplinas" element={<Disciplinas />} />
           <Route path="secretaria/alunos" element={<Alunos />} />
           <Route path="secretaria/estagios" element={<EstagiosSecretaria />} />
+          <Route path="secretaria/tccs" element={<TccsSecretaria />} />
           <Route path="secretaria/calendarios" element={<Calendarios />} />
           <Route path="admin/usuarios" element={<Usuarios />} />
           <Route path="coordenacao/cursos/:id/configurar" element={<ConfigurarCurso />} />

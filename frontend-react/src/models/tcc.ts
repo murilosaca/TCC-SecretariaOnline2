@@ -48,4 +48,12 @@ export type Tcc = {
   _links?: HateoasLinks
 }
 
+export type RegistrarTccRequest = {
+  alunoId: string
+  titulo: string
+  dataDefesa: string
+  dataEntrega: string
+  membros: { idUsuario: string; papel: string }[]
+}
+
 export type TccPage = PageResponse<Tcc>

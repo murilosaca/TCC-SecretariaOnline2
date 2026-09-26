@@ -31,6 +31,12 @@ class TccConsultaAdapter(
         alunoRepository.findById(alunoId).map { it.nome }.orElse(null)
 
     @Transactional(readOnly = true)
+    override fun cadastro(alunoId: UUID): AlunoTccPort.Cadastro? =
+        alunoRepository.findById(alunoId)
+            .map { AlunoTccPort.Cadastro(it.id, it.idCurso) }
+            .orElse(null)
+
+    @Transactional(readOnly = true)
     override fun rotulo(usuarioId: UUID): String? =
         usuarioRepository.findById(usuarioId).map { it.emailInstitucional.value }.orElse(null)
 }

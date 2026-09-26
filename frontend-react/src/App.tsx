@@ -40,6 +40,7 @@ import { Calendarios } from './pages/secretaria/Calendarios'
 import { PoolCoe } from './pages/comissoes/PoolCoe'
 import { PoolCaaf } from './pages/comissoes/PoolCaaf'
 import { ConfigurarCurso } from './pages/coordenacao/ConfigurarCurso'
+import { Relatorios } from './pages/coordenacao/Relatorios'
 import { Cursos } from './pages/secretaria/Cursos'
 import { Disciplinas } from './pages/secretaria/Disciplinas'
 import { Usuarios } from './pages/admin/Usuarios'
@@ -93,6 +94,7 @@ export default function App() {
           <Route path="secretaria/calendarios" element={<Calendarios />} />
           <Route path="admin/usuarios" element={<Usuarios />} />
           <Route path="coordenacao/cursos/:id/configurar" element={<ConfigurarCurso />} />
+          <Route path="coordenacao/relatorios" element={<Relatorios />} />
           <Route path="comissoes/coe" element={<PoolCoe />} />
           <Route path="comissoes/caaf" element={<PoolCaaf />} />
           </Route>

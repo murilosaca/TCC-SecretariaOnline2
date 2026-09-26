@@ -185,6 +185,7 @@ class IamDevDataLoader(
                 "internship.review",
                 "tcc.review",
                 "course.config",
+                "report.view_coordinator",
             )
 
         private fun authoritiesCaaf(): List<String> =

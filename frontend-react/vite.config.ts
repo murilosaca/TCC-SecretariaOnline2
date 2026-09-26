@@ -64,6 +64,7 @@ export default defineConfig({
           }
         },
       },
+      '/reports': { target: 'http://localhost:8080', changeOrigin: true },
       '/admin': {
         target: 'http://localhost:8080',
         changeOrigin: true,

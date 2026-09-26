@@ -78,6 +78,9 @@ object MenuLinks {
         if (caps.contains("course.config") && cursoConfigurarId != null) {
             links["configurar-curso"] = "/coordenacao/cursos/$cursoConfigurarId/configurar"
         }
+        if (caps.contains("report.view_coordinator")) {
+            links["relatorios"] = "/coordenacao/relatorios"
+        }
         links["contato"] = "/contato"
         return links
     }

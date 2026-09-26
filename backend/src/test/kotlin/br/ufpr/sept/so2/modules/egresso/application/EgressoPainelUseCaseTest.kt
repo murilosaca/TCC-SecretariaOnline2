@@ -3,6 +3,9 @@ package br.ufpr.sept.so2.modules.egresso.application
 import br.ufpr.sept.so2.modules.egresso.api.EgressoAssembler
 import br.ufpr.sept.so2.modules.egresso.application.ports.EgressoConsultaPort
 import br.ufpr.sept.so2.modules.egresso.application.ports.EgressoConsultaPort.Cadastro
+import br.ufpr.sept.so2.modules.egresso.application.CertificadoDoEgresso
+import br.ufpr.sept.so2.modules.egresso.application.DiplomaDoEgresso
+import br.ufpr.sept.so2.modules.egresso.application.PdfDoEgresso
 import br.ufpr.sept.so2.shared.domain.exception.AcessoNegadoException
 import br.ufpr.sept.so2.shared.domain.exception.RecursoNaoEncontradoException
 import io.kotest.assertions.throwables.shouldThrow
@@ -27,6 +30,7 @@ class EgressoPainelUseCaseTest : StringSpec({
         0,
         1,
         listOf(CertificadoDoEgresso(certificadoId, "Seminário", "EVENTO", agora, hash)),
+        null,
     )
 
     "painel nao oferece criacao e diploma fica nulo" {
@@ -47,6 +51,26 @@ class EgressoPainelUseCaseTest : StringSpec({
         response.certificados.single().links["reemitir"] shouldBe
             "/egressos/me/certificados/$certificadoId/reemissao"
         response.certificados.single().hashSha256 shouldBe hash
+    }
+
+    "painel preenche diploma e colacao quando registrados" {
+        val diploma = DiplomaDoEgresso(
+            UUID.randomUUID(),
+            "L12-F3-001",
+            agora,
+            "PENDENTE",
+            agora,
+            "2026/2",
+            "diplomas/x.pdf",
+        )
+        val comDiploma = cadastro.copy(diploma = diploma)
+        val useCase = ObterPainelEgressoUseCase(FakeConsulta(comDiploma, null))
+        val response = EgressoAssembler().from(useCase.execute(usuarioId, listOf("alumni.view_own")))
+        response.concluidoEm shouldBe agora
+        response.kpis.situacaoDiploma shouldBe "EMITIDO"
+        response.diploma!!.numero shouldBe "L12-F3-001"
+        response.diploma!!.links["download"] shouldBe "/egressos/me/diploma"
+        response.colacao!!.turma shouldBe "2026/2"
     }
 
     "aluno ativo nao consulta o painel" {
@@ -108,4 +132,7 @@ private class FakeConsulta(
         }
         return arquivo
     }
+
+    override fun diploma(alunoId: UUID): DiplomaDoEgresso? =
+        cadastro?.takeIf { it.alunoId == alunoId }?.diploma
 }

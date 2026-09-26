@@ -21,4 +21,8 @@ class AlunoResumoAdapter(
         val nome = aluno.nome.trim()
         return nome.ifEmpty { null }
     }
+
+    @Transactional(readOnly = true)
+    override fun cursoDe(alunoId: UUID): UUID? =
+        alunoRepository.findById(alunoId).map { it.idCurso }.orElse(null)
 }

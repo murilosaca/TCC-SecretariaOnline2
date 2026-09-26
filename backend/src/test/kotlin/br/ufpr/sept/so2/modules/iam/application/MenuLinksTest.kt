@@ -66,6 +66,15 @@ class MenuLinksTest : StringSpec({
         links["comissoes-coe"] shouldBe "/comissoes/coe"
         links.shouldNotContainKey("estagios")
         links.shouldNotContainKey("cursos")
+        links.shouldNotContainKey("comissoes-caaf")
+    }
+
+    "membro CAAF com formative.review ganha revisao e pool" {
+        val links = MenuLinks.from(listOf("formative.review"))
+        links["revisao-caaf"] shouldBe "/formativas?to=me"
+        links["comissoes-caaf"] shouldBe "/comissoes/caaf"
+        links.shouldNotContainKey("comissoes-coe")
+        links.shouldNotContainKey("formativas")
     }
 
     "secretaria nao ganha menu de estagio" {

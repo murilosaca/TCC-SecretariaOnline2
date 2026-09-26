@@ -47,6 +47,9 @@ class FormativaJpaEntity : BaseEntity() {
     @Column(name = "reviewed_at")
     var reviewedAt: OffsetDateTime? = null
 
+    @Column(name = "id_responsavel")
+    var idResponsavel: UUID? = null
+
     fun merge(formativa: Formativa) {
         idAluno = formativa.idAluno
         idEvento = formativa.idEvento
@@ -57,6 +60,7 @@ class FormativaJpaEntity : BaseEntity() {
         parecer = formativa.parecer
         idRevisor = formativa.idRevisor
         reviewedAt = formativa.reviewedAt
+        idResponsavel = formativa.idResponsavel
     }
 
     fun toDomain(): Formativa = Formativa(
@@ -72,6 +76,7 @@ class FormativaJpaEntity : BaseEntity() {
         parecer,
         idRevisor,
         reviewedAt,
+        idResponsavel,
     )
 
     companion object {

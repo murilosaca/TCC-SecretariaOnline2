@@ -21,6 +21,8 @@ class NoOpOutboxHandler : OutboxEventoHandler {
         "formativa.confirmada",
         "formativa.aprovada",
         "formativa.indeferida",
+        "formativas.assigned",
+        "formativas.batch_approved",
         "certificado.emitido",
         "estagio.documento_enviado",
         "estagio.parecer_emitido",

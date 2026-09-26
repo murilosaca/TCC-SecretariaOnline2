@@ -71,6 +71,15 @@ class IamDevDataLoader(
             authoritiesCaaf(),
         )
         criarSeAusente(
+            "caaf.colegadev@ufpr.br",
+            "GRR20240008",
+            hash,
+            true,
+            agora,
+            agora,
+            authoritiesCaaf(),
+        )
+        criarSeAusente(
             "secretaria.dev@ufpr.br",
             "GRR20240005",
             hash,
@@ -98,7 +107,7 @@ class IamDevDataLoader(
             authoritiesAdmin(),
         )
         LOG.info(
-            "Usuários de desenvolvimento IAM prontos (aluno.dev / novo.dev / professor.dev / caaf.dev / secretaria.dev / egresso.dev / admin.dev).",
+            "Usuários de desenvolvimento IAM prontos (aluno.dev / novo.dev / professor.dev / caaf.dev / caaf.colegadev / secretaria.dev / egresso.dev / admin.dev).",
         )
     }
 

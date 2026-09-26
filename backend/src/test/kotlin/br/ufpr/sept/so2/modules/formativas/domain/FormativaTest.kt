@@ -112,4 +112,20 @@ class FormativaTest : StringSpec({
         formativa.indeferir("Atividade não corresponde ao evento validado.", revisor, agora.plusMinutes(2))
         formativa.estado shouldBe FormativaEstado.INDEFERIDA
     }
+
+    "atribuir responsável e elegibilidade de lote" {
+        val formativa = pendente()
+        formativa.confirmar(agora.plusMinutes(1))
+        formativa.elegivelAprovacaoEmLote() shouldBe true
+        formativa.podeAtribuir(alunoId) shouldBe true
+        val caaf = UUID.fromString("01800000-0000-7000-8000-0000000000c1")
+        formativa.atribuirResponsavel(caaf, agora.plusMinutes(2))
+        formativa.atribuidaA(caaf) shouldBe true
+        formativa.semResponsavel() shouldBe false
+        formativa.podeAtribuir(alunoId) shouldBe false
+        formativa.podeAtribuir(caaf) shouldBe true
+        shouldThrow<ConflitoEstadoException> {
+            formativa.atribuirResponsavel(caaf, agora.plusMinutes(3))
+        }
+    }
 })

@@ -79,6 +79,18 @@ describe('AppLayout', () => {
     expect(screen.queryByText('Revisão de TCCs')).toBeNull()
   })
 
+  it('nav do membro CAAF mostra Pool CAAF e Revisão CAAF', () => {
+    renderNav({
+      inicio: '/inicio',
+      'revisao-caaf': '/formativas?to=me',
+      'comissoes-caaf': '/comissoes/caaf',
+      contato: '/contato',
+    })
+    expect(screen.getByText('Pool CAAF')).toBeTruthy()
+    expect(screen.getByText('Revisão CAAF')).toBeTruthy()
+    expect(screen.queryByText('Pool COE')).toBeNull()
+  })
+
   it('nav do professor mostra Deliberar e Eventos prof. e não mostra Cursos', () => {
     renderNav({
       inicio: '/inicio',

@@ -104,6 +104,7 @@ export function Diplomas() {
 
   const itens = elegiveis.data?.content ?? []
   const elegiveisCount = useMemo(() => itens.filter((item) => item.elegivel).length, [itens])
+  const mensagemEscopo = detalheForbidden(elegiveis.error) ?? detalheForbidden(pendentes.error)
 
   function toggle(item: ElegivelColacao) {
     if (!item.elegivel) {
@@ -151,10 +152,6 @@ export function Diplomas() {
     entregar.mutate()
   }
 
-  const forbidden =
-    (elegiveis.isError && elegiveis.error instanceof ApiError && elegiveis.error.status === 403) ||
-    (pendentes.isError && pendentes.error instanceof ApiError && pendentes.error.status === 403)
-
   return (
     <section className="page wizard">
       <header className="page-head">
@@ -164,10 +161,10 @@ export function Diplomas() {
         </div>
       </header>
 
-      {forbidden && (
-        <p className="empty" role="alert">
-          Você não tem permissão para registrar diplomas.
-        </p>
+      {mensagemEscopo && (
+        <div className="banner danger" role="alert">
+          {mensagemEscopo}
+        </div>
       )}
 
       {erro && (
@@ -223,7 +220,7 @@ export function Diplomas() {
         )}
       </section>
 
-      {cursoId && periodoId && (
+      {cursoId && periodoId && !mensagemEscopo && (
         <>
           <ol className="stepper" aria-label="Passos do wizard de colação">
             <li aria-current={passo === 1 ? 'step' : undefined} className={passo === 1 ? 'atual' : undefined}>
@@ -238,7 +235,7 @@ export function Diplomas() {
             <section className="panel" aria-labelledby="elegiveis-titulo">
               <h2 id="elegiveis-titulo">Elegíveis ({elegiveisCount})</h2>
               {elegiveis.isLoading && <p className="muted">Carregando alunos…</p>}
-              {elegiveis.isError && !forbidden && (
+              {elegiveis.isError && (
                 <div className="banner danger" role="alert">
                   Não foi possível carregar a elegibilidade.{' '}
                   <button type="button" onClick={() => elegiveis.refetch()}>
@@ -344,11 +341,11 @@ export function Diplomas() {
         </>
       )}
 
-      {cursoId && (
+      {cursoId && !mensagemEscopo && (
         <section className="panel" aria-labelledby="pendentes-titulo">
           <h2 id="pendentes-titulo">Entrega física pendente</h2>
           {pendentes.isLoading && <p className="muted">Carregando diplomas…</p>}
-          {pendentes.isError && !forbidden && (
+          {pendentes.isError && (
             <div className="banner danger" role="alert">
               Não foi possível carregar diplomas pendentes.{' '}
               <button type="button" onClick={() => pendentes.refetch()}>
@@ -428,6 +425,13 @@ export function Diplomas() {
       )}
     </section>
   )
+}
+
+function detalheForbidden(error: unknown): string | null {
+  if (error instanceof ApiError && error.status === 403) {
+    return error.message
+  }
+  return null
 }
 
 function LinhaPendente({

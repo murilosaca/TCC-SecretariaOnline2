@@ -1,5 +1,6 @@
 package br.ufpr.sept.so2.modules.diplomas.application
 
+import br.ufpr.sept.so2.modules.academico.application.ports.CursoEscopoPort
 import br.ufpr.sept.so2.modules.arquivos.application.ports.ObjectStoragePort
 import br.ufpr.sept.so2.modules.arquivos.domain.StorageKey
 import br.ufpr.sept.so2.modules.diplomas.application.ports.DiplomaRepository
@@ -7,7 +8,6 @@ import br.ufpr.sept.so2.modules.diplomas.domain.Diploma
 import br.ufpr.sept.so2.modules.iam.application.ports.AuditLogPort
 import br.ufpr.sept.so2.modules.iam.application.ports.OutboxPort
 import br.ufpr.sept.so2.shared.domain.exception.DadoInvalidoException
-import br.ufpr.sept.so2.shared.domain.exception.RecursoNaoEncontradoException
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -16,6 +16,7 @@ import java.util.UUID
 
 @Service
 class EnviarPdfDiplomaUseCase(
+    private val cursoEscopoPort: CursoEscopoPort,
     private val diplomaRepository: DiplomaRepository,
     private val objectStoragePort: ObjectStoragePort,
     private val outboxPort: OutboxPort,
@@ -31,14 +32,17 @@ class EnviarPdfDiplomaUseCase(
         atorId: UUID,
         ip: String?,
     ): Diploma {
+        val diploma = DiplomaAcesso.exigirDiploma(
+            DiplomaAcesso.cursos(cursoEscopoPort, atorId),
+            diplomaRepository,
+            diplomaId,
+        )
         if (bytes.isEmpty()) {
             throw DadoInvalidoException("PDF do diploma é obrigatório.")
         }
         if (contentType != null && contentType.isNotBlank() && !contentType.contains("pdf", ignoreCase = true)) {
             throw DadoInvalidoException("Somente PDF é aceito para o diploma oficial.")
         }
-        val diploma = diplomaRepository.findById(diplomaId)
-            ?: throw RecursoNaoEncontradoException("Diploma não encontrado.")
         val storageKey = StorageKey.diploma(diploma.id).value
         DiplomaArquivo.nomeSeguro(nomeArquivo)
         objectStoragePort.putObject(storageKey, "application/pdf", bytes)

@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { ApiError } from '../../api/client'
 import { Diplomas } from './Diplomas'
 
 const elegiveis = vi.fn()
@@ -112,5 +113,22 @@ describe('Diplomas', () => {
     const check = await screen.findByRole('checkbox')
     fireEvent.click(check)
     expect((screen.getByRole('button', { name: /Continuar/ }) as HTMLButtonElement).disabled).toBe(true)
+  })
+
+  it('trata 403 de escopo como estado de erro e não libera o wizard', async () => {
+    elegiveis.mockRejectedValue(new ApiError(403, 'Curso fora do escopo da sua secretaria.'))
+    listar.mockRejectedValue(new ApiError(403, 'Curso fora do escopo da sua secretaria.'))
+    renderPage()
+
+    await screen.findByRole('option', { name: /TADS — TADS/ })
+    await screen.findByRole('option', { name: '2026/2' })
+    fireEvent.change(screen.getByLabelText('Curso'), { target: { value: 'c1' } })
+    fireEvent.change(screen.getByLabelText('Período letivo'), { target: { value: 'p1' } })
+
+    const alerta = await screen.findByRole('alert')
+    expect(alerta.textContent).toContain('Curso fora do escopo da sua secretaria.')
+    expect(screen.queryByRole('button', { name: 'Tentar de novo' })).toBeNull()
+    expect(screen.queryByRole('checkbox')).toBeNull()
+    expect(screen.queryByRole('heading', { name: 'Entrega física pendente' })).toBeNull()
   })
 })

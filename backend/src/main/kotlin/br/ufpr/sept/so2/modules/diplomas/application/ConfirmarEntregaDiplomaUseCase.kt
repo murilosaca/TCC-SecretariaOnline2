@@ -1,11 +1,11 @@
 package br.ufpr.sept.so2.modules.diplomas.application
 
+import br.ufpr.sept.so2.modules.academico.application.ports.CursoEscopoPort
 import br.ufpr.sept.so2.modules.diplomas.application.ports.DiplomaRepository
 import br.ufpr.sept.so2.modules.diplomas.domain.Diploma
 import br.ufpr.sept.so2.modules.diplomas.domain.MetodoEntregaDiploma
 import br.ufpr.sept.so2.modules.iam.application.ports.AuditLogPort
 import br.ufpr.sept.so2.modules.iam.application.ports.OutboxPort
-import br.ufpr.sept.so2.shared.domain.exception.RecursoNaoEncontradoException
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -14,6 +14,7 @@ import java.util.UUID
 
 @Service
 class ConfirmarEntregaDiplomaUseCase(
+    private val cursoEscopoPort: CursoEscopoPort,
     private val diplomaRepository: DiplomaRepository,
     private val outboxPort: OutboxPort,
     private val auditLogPort: AuditLogPort,
@@ -27,8 +28,11 @@ class ConfirmarEntregaDiplomaUseCase(
         atorId: UUID,
         ip: String?,
     ): Diploma {
-        val diploma = diplomaRepository.findById(diplomaId)
-            ?: throw RecursoNaoEncontradoException("Diploma não encontrado.")
+        val diploma = DiplomaAcesso.exigirDiploma(
+            DiplomaAcesso.cursos(cursoEscopoPort, atorId),
+            diplomaRepository,
+            diplomaId,
+        )
         val metodo = MetodoEntregaDiploma.from(metodoRaw)
         val quando = dataEntrega ?: OffsetDateTime.now()
         val agora = OffsetDateTime.now()

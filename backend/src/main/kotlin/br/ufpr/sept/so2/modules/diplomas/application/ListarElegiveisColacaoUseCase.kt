@@ -1,6 +1,7 @@
 package br.ufpr.sept.so2.modules.diplomas.application
 
 import br.ufpr.sept.so2.modules.academico.application.ports.AlunoRepository
+import br.ufpr.sept.so2.modules.academico.application.ports.CursoEscopoPort
 import br.ufpr.sept.so2.modules.academico.application.ports.CursoRepository
 import br.ufpr.sept.so2.modules.academico.application.ports.PeriodoLetivoRepository
 import br.ufpr.sept.so2.modules.academico.domain.Aluno
@@ -27,6 +28,7 @@ data class ListaElegiveisColacao(
 
 @Service
 class ListarElegiveisColacaoUseCase(
+    private val cursoEscopoPort: CursoEscopoPort,
     private val cursoRepository: CursoRepository,
     private val periodoLetivoRepository: PeriodoLetivoRepository,
     private val alunoRepository: AlunoRepository,
@@ -36,7 +38,8 @@ class ListarElegiveisColacaoUseCase(
     private val elegibilidadeHorasPort: ElegibilidadeHorasPort,
 ) {
     @Transactional(readOnly = true)
-    fun execute(cursoId: UUID, periodoId: UUID): ListaElegiveisColacao {
+    fun execute(cursoId: UUID, periodoId: UUID, atorId: UUID): ListaElegiveisColacao {
+        DiplomaAcesso.exigirCursoNoEscopo(cursoId, DiplomaAcesso.cursos(cursoEscopoPort, atorId))
         val curso = cursoRepository.findById(cursoId)
             .orElseThrow { RecursoNaoEncontradoException("Curso não encontrado.") }
         periodoLetivoRepository.findById(periodoId)

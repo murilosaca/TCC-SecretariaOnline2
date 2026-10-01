@@ -2,6 +2,7 @@ package br.ufpr.sept.so2.modules.diplomas.api
 
 import br.ufpr.sept.so2.modules.academico.application.ports.AlunoRepository
 import br.ufpr.sept.so2.modules.academico.application.ports.CursoRepository
+import br.ufpr.sept.so2.modules.academico.application.ports.CursoSecretarioRepository
 import br.ufpr.sept.so2.modules.academico.application.ports.PeriodoLetivoRepository
 import br.ufpr.sept.so2.modules.academico.domain.Aluno
 import br.ufpr.sept.so2.modules.academico.domain.AlunoSituacao
@@ -9,7 +10,9 @@ import br.ufpr.sept.so2.modules.academico.domain.Curso
 import br.ufpr.sept.so2.modules.academico.domain.PeriodoLetivo
 import br.ufpr.sept.so2.modules.arquivos.application.ports.ObjectStoragePort
 import br.ufpr.sept.so2.modules.arquivos.domain.StorageKey
+import br.ufpr.sept.so2.modules.diplomas.application.DiplomaAcesso
 import br.ufpr.sept.so2.modules.diplomas.application.ports.DiplomaRepository
+import br.ufpr.sept.so2.modules.diplomas.domain.DiplomaSituacao
 import br.ufpr.sept.so2.modules.formativas.application.ports.FormativaRepository
 import br.ufpr.sept.so2.modules.formativas.domain.Formativa
 import br.ufpr.sept.so2.modules.formativas.domain.FormativaEstado
@@ -22,12 +25,14 @@ import br.ufpr.sept.so2.modules.tcc.domain.PapelBancaTcc
 import br.ufpr.sept.so2.modules.tcc.domain.Tcc
 import br.ufpr.sept.so2.modules.tcc.domain.TccEstado
 import br.ufpr.sept.so2.modules.tcc.domain.TccSituacao
+import br.ufpr.sept.so2.shared.ItJson
 import br.ufpr.sept.so2.shared.ItUsuarioFixture
 import br.ufpr.sept.so2.shared.domain.valueobject.Email
 import br.ufpr.sept.so2.shared.domain.valueobject.Grr
 import br.ufpr.sept.so2.shared.infrastructure.Uuids
 import org.hamcrest.Matchers.hasSize
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -67,6 +72,9 @@ class DiplomaControllerIT {
     private lateinit var cursoRepository: CursoRepository
 
     @Autowired
+    private lateinit var cursoSecretarioRepository: CursoSecretarioRepository
+
+    @Autowired
     private lateinit var periodoLetivoRepository: PeriodoLetivoRepository
 
     @Autowired
@@ -91,6 +99,7 @@ class DiplomaControllerIT {
         get() = ItUsuarioFixture(usuarioRepository, passwordHasher, mockMvc)
 
     private lateinit var cursoId: UUID
+    private lateinit var cursoForaId: UUID
     private lateinit var periodoId: UUID
     private lateinit var alunoElegivelId: UUID
     private lateinit var alunoInelegivelId: UUID
@@ -100,8 +109,17 @@ class DiplomaControllerIT {
     fun seed() {
         val agora = OffsetDateTime.parse("2026-06-01T12:00:00Z")
         cursoId = garantirCurso(agora)
+        cursoForaId = garantirCursoFora(agora)
         periodoId = garantirPeriodo(agora)
-        usuariosIt.criarUsuario(EMAIL_SECRETARIA, GRR_SECRETARIA, listOf("diploma.register", "course.manage"))
+        val secretaria = usuariosIt.criarUsuario(
+            EMAIL_SECRETARIA,
+            GRR_SECRETARIA,
+            listOf("diploma.register", "course.manage"),
+        )
+        cursoSecretarioRepository.adicionarSeAusente(cursoId, secretaria.id)
+        val outra = usuariosIt.criarUsuario(EMAIL_OUTRA, GRR_OUTRA, listOf("diploma.register"))
+        cursoSecretarioRepository.adicionarSeAusente(cursoForaId, outra.id)
+        usuariosIt.criarUsuario(EMAIL_SEM_CURSO, GRR_SEM_CURSO, listOf("diploma.register"))
         usuariosIt.criarUsuario(EMAIL_SEM_CAP, GRR_SEM_CAP, listOf("course.manage"))
         orientadorId = usuariosIt.criarUsuario(EMAIL_ORIENTADOR, GRR_ORIENTADOR, listOf("tcc.review")).id
         usuariosIt.criarUsuario(EMAIL_ALUNO_OK, GRR_ALUNO_OK, listOf(
@@ -151,6 +169,13 @@ class DiplomaControllerIT {
                 jsonPath("$.content[?(@.alunoId=='$alunoInelegivelId')].bloqueio.razao")
                     .value("TCC não aprovado"),
             )
+
+        mockMvc.perform(
+            get("/diplomas")
+                .param("cursoId", cursoId.toString())
+                .header("Authorization", "Bearer $token"),
+        )
+            .andExpect(status().isOk)
     }
 
     @Test
@@ -182,6 +207,10 @@ class DiplomaControllerIT {
             .andExpect(jsonPath("$[0]._links['upload-pdf']").exists())
 
         val diplomaId = diplomaRepository.findByAluno(alunoElegivelId)!!.id
+
+        mockMvc.perform(get("/diplomas/$diplomaId").header("Authorization", "Bearer $token"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.numero").value(diplomaRepository.findById(diplomaId)!!.numero))
 
         assertEquals(AlunoSituacao.EGRESSO, alunoRepository.findById(alunoElegivelId).get().situacao)
         val usuario = usuarioRepository.findByEmail(EMAIL_ALUNO_OK).get()
@@ -234,12 +263,204 @@ class DiplomaControllerIT {
     }
 
     @Test
+    fun secretariaDeOutroCursoRecebe403QuandoCursoIdEExplicito() {
+        val token = usuariosIt.login(EMAIL_OUTRA)
+        mockMvc.perform(
+            get("/diplomas/elegiveis")
+                .param("cursoId", cursoId.toString())
+                .param("periodoId", periodoId.toString())
+                .header("Authorization", "Bearer $token"),
+        )
+            .andExpect(status().isForbidden)
+            .andExpect(jsonPath("$.detail").value(DiplomaAcesso.MSG_FORA_ESCOPO))
+
+        mockMvc.perform(
+            get("/diplomas")
+                .param("cursoId", cursoId.toString())
+                .header("Authorization", "Bearer $token"),
+        )
+            .andExpect(status().isForbidden)
+            .andExpect(jsonPath("$.detail").value(DiplomaAcesso.MSG_FORA_ESCOPO))
+
+        mockMvc.perform(
+            post("/diplomas")
+                .header("Authorization", "Bearer $token")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(corpoColacao()),
+        )
+            .andExpect(status().isForbidden)
+            .andExpect(jsonPath("$.detail").value(DiplomaAcesso.MSG_FORA_ESCOPO))
+
+        assertEquals(AlunoSituacao.MATRICULADO, alunoRepository.findById(alunoElegivelId).get().situacao)
+        assertNull(diplomaRepository.findByAluno(alunoElegivelId))
+    }
+
+    @Test
+    fun secretariaDeOutroCursoRecebe404NoDiplomaPorId() {
+        val diplomaId = colar()
+        val token = usuariosIt.login(EMAIL_OUTRA)
+        val inexistente = Uuids.v7()
+
+        val getFora = detalhe(
+            mockMvc.perform(get("/diplomas/$diplomaId").header("Authorization", "Bearer $token"))
+                .andExpect(status().isNotFound)
+                .andReturn()
+                .response
+                .contentAsString,
+        )
+        val getSumido = detalhe(
+            mockMvc.perform(get("/diplomas/$inexistente").header("Authorization", "Bearer $token"))
+                .andExpect(status().isNotFound)
+                .andReturn()
+                .response
+                .contentAsString,
+        )
+        assertEquals(DiplomaAcesso.MSG_NAO_ENCONTRADO, getFora)
+        assertEquals(getSumido, getFora)
+
+        val patchFora = detalhe(
+            mockMvc.perform(
+                patch("/diplomas/$diplomaId/confirm-delivery")
+                    .header("Authorization", "Bearer $token")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"metodo":"PRESENCIAL","dataEntrega":"2026-11-20T14:00:00Z"}"""),
+            )
+                .andExpect(status().isNotFound)
+                .andReturn()
+                .response
+                .contentAsString,
+        )
+        val patchSumido = detalhe(
+            mockMvc.perform(
+                patch("/diplomas/$inexistente/confirm-delivery")
+                    .header("Authorization", "Bearer $token")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"metodo":"PRESENCIAL","dataEntrega":"2026-11-20T14:00:00Z"}"""),
+            )
+                .andExpect(status().isNotFound)
+                .andReturn()
+                .response
+                .contentAsString,
+        )
+        assertEquals(DiplomaAcesso.MSG_NAO_ENCONTRADO, patchFora)
+        assertEquals(patchSumido, patchFora)
+
+        val pdf = pdfDiploma()
+        val pdfFora = detalhe(
+            mockMvc.perform(
+                multipart("/diplomas/$diplomaId/pdf").file(pdf).header("Authorization", "Bearer $token"),
+            )
+                .andExpect(status().isNotFound)
+                .andReturn()
+                .response
+                .contentAsString,
+        )
+        val pdfSumido = detalhe(
+            mockMvc.perform(
+                multipart("/diplomas/$inexistente/pdf").file(pdfDiploma()).header("Authorization", "Bearer $token"),
+            )
+                .andExpect(status().isNotFound)
+                .andReturn()
+                .response
+                .contentAsString,
+        )
+        assertEquals(DiplomaAcesso.MSG_NAO_ENCONTRADO, pdfFora)
+        assertEquals(pdfSumido, pdfFora)
+
+        val diploma = diplomaRepository.findById(diplomaId)!!
+        assertEquals(DiplomaSituacao.PENDENTE, diploma.situacao)
+        assertNull(diploma.storageKey)
+    }
+
+    @Test
+    fun semCursoVinculadoRecebe403NosEndpointsComCursoId() {
+        val token = usuariosIt.login(EMAIL_SEM_CURSO)
+        mockMvc.perform(
+            get("/diplomas/elegiveis")
+                .param("cursoId", cursoId.toString())
+                .param("periodoId", periodoId.toString())
+                .header("Authorization", "Bearer $token"),
+        )
+            .andExpect(status().isForbidden)
+            .andExpect(jsonPath("$.detail").value(DiplomaAcesso.MSG_SEM_CURSO))
+
+        mockMvc.perform(
+            get("/diplomas")
+                .param("cursoId", cursoId.toString())
+                .header("Authorization", "Bearer $token"),
+        )
+            .andExpect(status().isForbidden)
+            .andExpect(jsonPath("$.detail").value(DiplomaAcesso.MSG_SEM_CURSO))
+
+        mockMvc.perform(
+            post("/diplomas")
+                .header("Authorization", "Bearer $token")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(corpoColacao()),
+        )
+            .andExpect(status().isForbidden)
+            .andExpect(jsonPath("$.detail").value(DiplomaAcesso.MSG_SEM_CURSO))
+
+        assertEquals(AlunoSituacao.MATRICULADO, alunoRepository.findById(alunoElegivelId).get().situacao)
+        assertNull(diplomaRepository.findByAluno(alunoElegivelId))
+    }
+
+    @Test
+    fun colacaoDuplicadaDoMesmoAlunoRetorna409() {
+        colar()
+        val token = usuariosIt.login(EMAIL_SECRETARIA)
+        mockMvc.perform(
+            post("/diplomas")
+                .header("Authorization", "Bearer $token")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(corpoColacao()),
+        )
+            .andExpect(status().isConflict)
+            .andExpect(jsonPath("$.detail").value("Aluno $GRR_ALUNO_OK já é egresso ou já possui diploma."))
+    }
+
+    @Test
     fun menuTemDiplomasComCapability() {
         val token = usuariosIt.login(EMAIL_SECRETARIA)
         mockMvc.perform(get("/auth/me").header("Authorization", "Bearer $token"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$._links.diplomas").value("/secretaria/diplomas"))
     }
+
+    private fun colar(): UUID {
+        val token = usuariosIt.login(EMAIL_SECRETARIA)
+        mockMvc.perform(
+            post("/diplomas")
+                .header("Authorization", "Bearer $token")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(corpoColacao()),
+        )
+            .andExpect(status().isOk)
+        return diplomaRepository.findByAluno(alunoElegivelId)!!.id
+    }
+
+    private fun corpoColacao(): String =
+        """
+        {
+          "cursoId":"$cursoId",
+          "periodoId":"$periodoId",
+          "alunoIds":["$alunoElegivelId"],
+          "dataColacao":"2026-11-15T15:00:00Z",
+          "livro":"12",
+          "folha":"3",
+          "turma":"2026/2"
+        }
+        """.trimIndent()
+
+    private fun pdfDiploma(): MockMultipartFile =
+        MockMultipartFile(
+            "file",
+            "diploma.pdf",
+            "application/pdf",
+            "%PDF-1.4 diploma-oficial\n".toByteArray(),
+        )
+
+    private fun detalhe(json: String): String = ItJson.text(json, "detail")
 
     private fun garantirCurso(agora: OffsetDateTime): UUID {
         val existente = cursoRepository.findByCodigo(CODIGO)
@@ -248,6 +469,16 @@ class DiplomaControllerIT {
         }
         return cursoRepository.save(
             Curso(Uuids.v7(), "TADS Diploma IT", "DIP", CODIGO, null, 120, true, agora, agora),
+        ).id
+    }
+
+    private fun garantirCursoFora(agora: OffsetDateTime): UUID {
+        val existente = cursoRepository.findByCodigo(CODIGO_FORA)
+        if (existente.isPresent) {
+            return existente.get().id
+        }
+        return cursoRepository.save(
+            Curso(Uuids.v7(), "Outro Diploma IT", "ODP", CODIGO_FORA, null, 120, true, agora, agora),
         ).id
     }
 
@@ -379,15 +610,20 @@ class DiplomaControllerIT {
 
     companion object {
         private const val EMAIL_SECRETARIA = "it.diploma.secretaria@ufpr.br"
+        private const val EMAIL_OUTRA = "it.diploma.outra@ufpr.br"
+        private const val EMAIL_SEM_CURSO = "it.diploma.semcurso@ufpr.br"
         private const val EMAIL_SEM_CAP = "it.diploma.semcap@ufpr.br"
         private const val EMAIL_ORIENTADOR = "it.diploma.orientador@ufpr.br"
         private const val EMAIL_ALUNO_OK = "it.diploma.aluno.ok@ufpr.br"
         private const val EMAIL_ALUNO_NOK = "it.diploma.aluno.nok@ufpr.br"
         private const val GRR_SECRETARIA = "GRR20261601"
+        private const val GRR_OUTRA = "GRR20261606"
+        private const val GRR_SEM_CURSO = "GRR20261607"
         private const val GRR_SEM_CAP = "GRR20261602"
         private const val GRR_ORIENTADOR = "GRR20261603"
         private const val GRR_ALUNO_OK = "GRR20261604"
         private const val GRR_ALUNO_NOK = "GRR20261605"
         private const val CODIGO = "TADS-DIPLOMA-IT"
+        private const val CODIGO_FORA = "TADS-DIPLOMA-FORA"
     }
 }

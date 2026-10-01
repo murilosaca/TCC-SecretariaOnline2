@@ -1,6 +1,7 @@
 package br.ufpr.sept.so2.modules.diplomas.application
 
 import br.ufpr.sept.so2.modules.academico.application.ports.AlunoRepository
+import br.ufpr.sept.so2.modules.academico.application.ports.CursoEscopoPort
 import br.ufpr.sept.so2.modules.academico.application.ports.CursoRepository
 import br.ufpr.sept.so2.modules.academico.application.ports.PeriodoLetivoRepository
 import br.ufpr.sept.so2.modules.academico.domain.Aluno
@@ -40,6 +41,7 @@ data class ConfirmarColacaoComando(
 
 @Service
 class ConfirmarColacaoUseCase(
+    private val cursoEscopoPort: CursoEscopoPort,
     private val cursoRepository: CursoRepository,
     private val periodoLetivoRepository: PeriodoLetivoRepository,
     private val alunoRepository: AlunoRepository,
@@ -54,6 +56,7 @@ class ConfirmarColacaoUseCase(
 ) {
     @Transactional
     fun execute(comando: ConfirmarColacaoComando, atorId: UUID, ip: String?): List<Diploma> {
+        DiplomaAcesso.exigirCursoNoEscopo(comando.cursoId, DiplomaAcesso.cursos(cursoEscopoPort, atorId))
         if (comando.alunoIds.isEmpty()) {
             throw DadoInvalidoException("Selecione ao menos um aluno elegível.")
         }

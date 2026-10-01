@@ -56,7 +56,8 @@ class DiplomaController(
         @RequestParam periodoId: UUID,
         authentication: Authentication,
     ): ElegiveisColacaoResponse {
-        val lista = listarElegiveisColacaoUseCase.execute(cursoId, periodoId)
+        val principal = principal(authentication)
+        val lista = listarElegiveisColacaoUseCase.execute(cursoId, periodoId, principal.userId)
         return assembler.elegiveis(lista, podeRegistrar(authentication))
     }
 
@@ -94,9 +95,10 @@ class DiplomaController(
         @PageableDefault(size = 20) pageable: Pageable,
         authentication: Authentication,
     ): PageResponse<DiplomaResponse> {
+        val principal = principal(authentication)
         val pode = podeRegistrar(authentication)
         return PageResponse.ofWithLinks(
-            listarDiplomasUseCase.execute(cursoId, situacao, pageable),
+            listarDiplomasUseCase.execute(cursoId, situacao, pageable, principal.userId),
             Function { assembler.from(it, pode) },
         )
     }
@@ -104,8 +106,13 @@ class DiplomaController(
     @GetMapping("/{id}")
     @PreAuthorize("hasAuthority('diploma.register')")
     @Operation(summary = "Detalhe do diploma")
-    fun obter(@PathVariable id: UUID, authentication: Authentication): DiplomaResponse =
-        assembler.from(obterDiplomaUseCase.execute(id), podeRegistrar(authentication))
+    fun obter(@PathVariable id: UUID, authentication: Authentication): DiplomaResponse {
+        val principal = principal(authentication)
+        return assembler.from(
+            obterDiplomaUseCase.execute(id, principal.userId),
+            podeRegistrar(authentication),
+        )
+    }
 
     @PatchMapping("/{id}/confirm-delivery")
     @PreAuthorize("hasAuthority('diploma.register')")

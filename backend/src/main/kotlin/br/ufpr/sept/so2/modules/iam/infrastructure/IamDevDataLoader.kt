@@ -207,6 +207,7 @@ class IamDevDataLoader(
                 "request.triage",
                 "request.deliberate",
                 "report.view_secretary",
+                "dashboard.view_secretary",
             )
 
         private fun authoritiesEgresso(): List<String> = listOf("alumni.view_own")

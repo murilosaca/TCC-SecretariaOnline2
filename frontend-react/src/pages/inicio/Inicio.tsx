@@ -5,7 +5,8 @@ import { bffApi } from '../../api/bff'
 import { useAuth } from '../../auth/AuthContext'
 import { useActions } from '../../hooks/useActions'
 import { blocoKpi, blocoLista } from '../../lib/dashboardBlocks'
-import { ePainelAluno, ePainelProfessor } from '../../lib/dashboardPortal'
+import { painelDe } from '../../lib/dashboardPortal'
+import { InicioSecretaria } from './InicioSecretaria'
 import type {
   FilaSolicitacaoProfessor,
   KpisDashboard,
@@ -17,14 +18,16 @@ import type {
 } from '../../models/dashboard'
 
 export function Inicio() {
-  const { authorities } = useAuth()
-  const painelAluno = ePainelAluno(authorities)
-  const painelProfessor = ePainelProfessor(authorities)
+  const { links } = useAuth()
+  const painel = painelDe(links)
 
-  if (painelProfessor) {
+  if (painel === 'secretaria') {
+    return <InicioSecretaria />
+  }
+  if (painel === 'professor') {
     return <InicioProfessor />
   }
-  if (painelAluno) {
+  if (painel === 'aluno') {
     return <InicioAluno />
   }
   return (

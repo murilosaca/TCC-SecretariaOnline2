@@ -63,6 +63,42 @@ export type AlunoDashboard = {
   _links?: HateoasLinks
 }
 
+export type KpisSecretariaDashboard = {
+  abertas: number | null
+  atrasadas: number | null
+  concluidasHoje: number | null
+  eventosDia: number | null
+}
+
+export type FilaSecretariaDashboard = {
+  id: string
+  protocolo: string
+  tipoNome: string
+  estado: string
+  prazoEm: string | null
+  slaStatus: 'danger' | 'warning' | null
+  href: string
+}
+
+export type AgendaDiaDashboard = {
+  id: string
+  titulo: string
+  inicioEm: string
+  fimEm: string
+  estado: string
+}
+
+export type SecretaryDashboard = {
+  saudacao: SaudacaoDashboard
+  periodoVigente: PeriodoVigenteDashboard | null
+  alertaPeriodoAusente: boolean | null
+  kpis: KpisSecretariaDashboard
+  alertasSla: number | null
+  filaPriorizada: FilaSecretariaDashboard[] | null
+  agendaDia: AgendaDiaDashboard[] | null
+  _links?: HateoasLinks
+}
+
 export type KpisProfessorDashboard = {
   pendentesDeliberar: number | null
   formativasRevisao: number | null

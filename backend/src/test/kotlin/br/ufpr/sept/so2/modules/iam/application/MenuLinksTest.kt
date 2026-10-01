@@ -183,6 +183,21 @@ class MenuLinksTest : StringSpec({
         MenuLinks.from(listOf("report.view_coordinator")).shouldNotContainKey("estatisticas")
     }
 
+    "painel aponta o BFF do perfil e egresso nao ganha painel" {
+        MenuLinks.from(
+            listOf("dashboard.view_secretary", "course.manage"),
+        )["painel"] shouldBe "/bff/dashboard/secretary"
+        MenuLinks.from(
+            listOf("dashboard.view_own", "request.view_own", "attendance.view_open"),
+        )["painel"] shouldBe "/bff/dashboard/aluno"
+        MenuLinks.from(
+            listOf("dashboard.view_self_professor", "event.manage"),
+        )["painel"] shouldBe "/bff/dashboard/professor"
+        MenuLinks.from(listOf("course.manage")).shouldNotContainKey("painel")
+        MenuLinks.from(listOf("alumni.view_own")).shouldNotContainKey("painel")
+        MenuLinks.from(listOf("request.view_own")).shouldNotContainKey("painel")
+    }
+
     "secretaria com diploma.register ganha diplomas" {
         val links = MenuLinks.from(listOf("diploma.register", "course.manage"))
         links["diplomas"] shouldBe "/secretaria/diplomas"

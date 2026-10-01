@@ -1,26 +1,30 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { ApiError } from '../../api/client'
+import type { HateoasLinks } from '../../models/academico'
 import { Inicio } from './Inicio'
 
 const dashboardAluno = vi.fn()
 const dashboardProfessor = vi.fn()
-let authorities: string[] = []
+const dashboardSecretaria = vi.fn()
+let links: HateoasLinks = { inicio: '/inicio' }
 
 vi.mock('../../api/bff', () => ({
   bffApi: {
     dashboardAluno: (...args: unknown[]) => dashboardAluno(...args),
     dashboardProfessor: (...args: unknown[]) => dashboardProfessor(...args),
+    dashboardSecretaria: (...args: unknown[]) => dashboardSecretaria(...args),
   },
 }))
 
 vi.mock('../../auth/AuthContext', () => ({
   useAuth: () => ({
-    authorities,
+    authorities: [],
     status: 'authenticated',
     mustChangePassword: false,
-    links: { inicio: '/inicio' },
+    links,
     login: vi.fn(),
     logout: vi.fn(),
     completeFirstAccess: vi.fn(),
@@ -104,11 +108,12 @@ describe('Inicio', () => {
   beforeEach(() => {
     dashboardAluno.mockReset()
     dashboardProfessor.mockReset()
-    authorities = []
+    dashboardSecretaria.mockReset()
+    links = { inicio: '/inicio' }
   })
 
   it('aluno carrega o BFF do aluno', async () => {
-    authorities = ['dashboard.view_own', 'request.view_own', 'request.open']
+    links = { inicio: '/inicio', painel: '/bff/dashboard/aluno' }
     dashboardAluno.mockResolvedValue(alunoDash)
     renderPage()
     await waitFor(() => {
@@ -116,17 +121,12 @@ describe('Inicio', () => {
     })
     expect(dashboardAluno).toHaveBeenCalled()
     expect(dashboardProfessor).not.toHaveBeenCalled()
+    expect(dashboardSecretaria).not.toHaveBeenCalled()
     expect(screen.getByRole('link', { name: 'Nova solicitação' })).toBeTruthy()
   })
 
   it('professor puro carrega o BFF do professor com filas e operar', async () => {
-    authorities = [
-      'dashboard.view_self_professor',
-      'event.manage',
-      'request.deliberate',
-      'internship.review',
-      'tcc.review',
-    ]
+    links = { inicio: '/inicio', painel: '/bff/dashboard/professor' }
     dashboardProfessor.mockResolvedValue(professorDash)
     renderPage()
     await waitFor(() => {
@@ -134,6 +134,7 @@ describe('Inicio', () => {
     })
     expect(dashboardProfessor).toHaveBeenCalled()
     expect(dashboardAluno).not.toHaveBeenCalled()
+    expect(dashboardSecretaria).not.toHaveBeenCalled()
     expect(screen.getByRole('heading', { level: 2, name: 'Fila de solicitações' })).toBeTruthy()
     expect(screen.getByRole('heading', { level: 2, name: 'Meus eventos hoje' })).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Operar evento' })).toBeTruthy()
@@ -142,7 +143,7 @@ describe('Inicio', () => {
   })
 
   it('bloco CAAF só aparece com _links.formativasCaaf', async () => {
-    authorities = ['dashboard.view_self_professor', 'formative.review', 'event.manage']
+    links = { inicio: '/inicio', painel: '/bff/dashboard/professor' }
     dashboardProfessor.mockResolvedValue({
       ...professorDash,
       kpis: { ...professorDash.kpis, formativasRevisao: 1 },
@@ -167,11 +168,59 @@ describe('Inicio', () => {
     expect(screen.getByText('Oficina')).toBeTruthy()
   })
 
-  it('sessão sem painel aluno nem professor mostra empty', () => {
-    authorities = ['course.manage', 'request.triage']
+  it('sessão sem rel painel mostra empty', () => {
+    links = { inicio: '/inicio', cursos: '/secretaria/cursos' }
     renderPage()
     expect(screen.getByText('Dashboard indisponível para esta sessão.')).toBeTruthy()
     expect(dashboardAluno).not.toHaveBeenCalled()
     expect(dashboardProfessor).not.toHaveBeenCalled()
+    expect(dashboardSecretaria).not.toHaveBeenCalled()
+  })
+
+  it('secretaria carrega o BFF da secretaria e os atalhos só com _links', async () => {
+    links = { inicio: '/inicio', painel: '/bff/dashboard/secretary' }
+    dashboardSecretaria.mockResolvedValue({
+      saudacao: { nome: 'Secretaria Dev' },
+      periodoVigente: null,
+      alertaPeriodoAusente: true,
+      kpis: { abertas: 0, atrasadas: 0, concluidasHoje: 1, eventosDia: 0 },
+      alertasSla: 0,
+      filaPriorizada: [],
+      agendaDia: [],
+      _links: {
+        self: '/bff/dashboard/secretary',
+        cursos: '/secretaria/cursos',
+        alunos: '/secretaria/alunos',
+      },
+    })
+    renderPage()
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 1, name: 'Olá, Secretaria Dev' })).toBeTruthy()
+    })
+    expect(dashboardSecretaria).toHaveBeenCalled()
+    expect(dashboardAluno).not.toHaveBeenCalled()
+    expect(dashboardProfessor).not.toHaveBeenCalled()
+    expect(screen.getByText('Nenhuma solicitação aberta nos seus cursos.')).toBeTruthy()
+    expect(screen.getAllByText('0').length).toBeGreaterThanOrEqual(2)
+    expect(screen.getByRole('link', { name: 'Cursos' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Alunos' })).toBeTruthy()
+    expect(screen.queryByRole('link', { name: 'Importações' })).toBeNull()
+    expect(screen.getByText(/Não há período letivo vigente/)).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Atualizar' }))
+    await waitFor(() => expect(dashboardSecretaria.mock.calls.length).toBeGreaterThan(1))
+  })
+
+  it('403 de escopo é estado de erro e não monta os KPIs', async () => {
+    links = { inicio: '/inicio', painel: '/bff/dashboard/secretary' }
+    dashboardSecretaria.mockRejectedValue(
+      new ApiError(403, 'Nenhum curso vinculado à sua secretaria foi encontrado.'),
+    )
+    renderPage()
+    await waitFor(() => {
+      expect(
+        screen.getByText('Nenhum curso vinculado à sua secretaria foi encontrado.'),
+      ).toBeTruthy()
+    })
+    expect(screen.queryByText('Abertas')).toBeNull()
   })
 })

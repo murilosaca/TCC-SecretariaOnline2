@@ -67,4 +67,21 @@ interface SolicitacaoJpaRepository : JpaRepository<SolicitacaoJpaEntity, UUID> {
         @Param("agora") agora: OffsetDateTime,
         pageable: Pageable,
     ): Page<SolicitacaoJpaEntity>
+
+    @Query(
+        """
+            SELECT COUNT(DISTINCT s.id) FROM SolicitacaoJpaEntity s, SolicitacaoEventoJpaEntity e
+            WHERE e.solicitacaoId = s.id
+              AND s.solicitanteId IN :solicitanteIds
+              AND e.estadoPara = :estadoPara
+              AND e.createdAt >= :desde
+              AND e.createdAt < :ate
+            """,
+    )
+    fun contarComEventoPara(
+        @Param("solicitanteIds") solicitanteIds: Collection<UUID>,
+        @Param("estadoPara") estadoPara: String,
+        @Param("desde") desde: OffsetDateTime,
+        @Param("ate") ate: OffsetDateTime,
+    ): Long
 }

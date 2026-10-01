@@ -29,6 +29,9 @@ class EventoJpaAdapter(
     override fun findEmAndamentoComJanelaNoDia(inicioDia: OffsetDateTime, fimDia: OffsetDateTime): List<Evento> =
         jpaRepository.findEmAndamentoComJanelaNoDia(inicioDia, fimDia).map { it.toDomain() }
 
+    override fun findSobrepondoIntervalo(inicio: OffsetDateTime, fim: OffsetDateTime): List<Evento> =
+        jpaRepository.findSobrepondoIntervalo(inicio, fim).map { it.toDomain() }
+
     override fun findByAnfitriao(anfitriaoId: UUID, pageable: Pageable): Page<Evento> =
         jpaRepository.findByIdAnfitriao(anfitriaoId, pageable).map { it.toDomain() }
 

@@ -1,9 +1,18 @@
-/** Painel do aluno = attendance.view_open ou request.view_own (mesmo critério do BFF). */
-export function ePainelAluno(authorities: string[]): boolean {
-  return authorities.includes('attendance.view_open') || authorities.includes('request.view_own')
+import type { HateoasLinks } from '../models/academico'
+
+export type PainelInicio = 'aluno' | 'professor' | 'secretaria'
+
+const PAINEIS: Record<string, PainelInicio> = {
+  '/bff/dashboard/aluno': 'aluno',
+  '/bff/dashboard/professor': 'professor',
+  '/bff/dashboard/secretary': 'secretaria',
 }
 
-/** Painel do professor = dashboard.view_self_professor e sem painel do aluno. */
-export function ePainelProfessor(authorities: string[]): boolean {
-  return authorities.includes('dashboard.view_self_professor') && !ePainelAluno(authorities)
+/** O rel `painel` de GET /auth/me aponta o BFF. A UI não lê authorities. */
+export function painelDe(links?: HateoasLinks | null): PainelInicio | null {
+  const href = links?.painel
+  if (!href) {
+    return null
+  }
+  return PAINEIS[href] ?? null
 }

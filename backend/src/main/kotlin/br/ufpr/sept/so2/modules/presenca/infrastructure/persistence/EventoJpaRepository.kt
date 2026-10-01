@@ -43,4 +43,17 @@ interface EventoJpaRepository : JpaRepository<EventoJpaEntity, UUID> {
         @Param("inicioDia") inicioDia: OffsetDateTime,
         @Param("fimDia") fimDia: OffsetDateTime,
     ): List<EventoJpaEntity>
+
+    @Query(
+        """
+            SELECT e FROM EventoJpaEntity e
+            WHERE e.inicioEm < :fim
+              AND e.fimEm > :inicio
+            ORDER BY e.inicioEm ASC
+            """,
+    )
+    fun findSobrepondoIntervalo(
+        @Param("inicio") inicio: OffsetDateTime,
+        @Param("fim") fim: OffsetDateTime,
+    ): List<EventoJpaEntity>
 }

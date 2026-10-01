@@ -43,6 +43,7 @@ class AuthMeLinksIT {
                 "request.view_curso",
                 "request.triage",
                 "request.deliberate",
+                "dashboard.view_secretary",
             ),
         )
         usuariosIt.criarUsuario(
@@ -65,6 +66,7 @@ class AuthMeLinksIT {
         mockMvc.perform(get("/auth/me").header("Authorization", "Bearer $token"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$._links.inicio").value("/inicio"))
+            .andExpect(jsonPath("$._links.painel").value("/bff/dashboard/secretary"))
             .andExpect(jsonPath("$._links.cursos").value("/secretaria/cursos"))
             .andExpect(jsonPath("$._links.alunos").value("/secretaria/alunos"))
             .andExpect(jsonPath("$._links.deliberar").value("/solicitacoes?to=me"))
@@ -81,6 +83,7 @@ class AuthMeLinksIT {
         val token = usuariosIt.login(EMAIL_ALUNO)
         mockMvc.perform(get("/auth/me").header("Authorization", "Bearer $token"))
             .andExpect(status().isOk)
+            .andExpect(jsonPath("$._links.painel").value("/bff/dashboard/aluno"))
             .andExpect(jsonPath("$._links.formativas").value("/formativas"))
             .andExpect(jsonPath("$._links.certificados").value("/certificados"))
             .andExpect(jsonPath("$._links.cursos").doesNotExist())

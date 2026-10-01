@@ -15,6 +15,10 @@ object MenuLinks {
             links["egresso-inicio"] = "/egresso/inicio"
         } else {
             links["inicio"] = "/inicio"
+            val painel = painel(caps)
+            if (painel != null) {
+                links["painel"] = painel
+            }
         }
         if (caps.contains("request.view_own")) {
             links["solicitacoes"] = "/solicitacoes"
@@ -90,6 +94,21 @@ object MenuLinks {
         }
         links["contato"] = "/contato"
         return links
+    }
+
+    private fun painel(caps: Set<String>): String? {
+        if (caps.contains("dashboard.view_secretary")) {
+            return "/bff/dashboard/secretary"
+        }
+        val aluno = caps.contains("dashboard.view_own") &&
+            (caps.contains("attendance.view_open") || caps.contains("request.view_own"))
+        if (aluno) {
+            return "/bff/dashboard/aluno"
+        }
+        if (caps.contains("dashboard.view_self_professor")) {
+            return "/bff/dashboard/professor"
+        }
+        return null
     }
 
     private fun Set<String>.containsAny(vararg values: String): Boolean = values.any { contains(it) }

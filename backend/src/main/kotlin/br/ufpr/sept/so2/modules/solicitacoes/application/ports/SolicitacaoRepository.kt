@@ -40,4 +40,11 @@ interface SolicitacaoRepository {
         agora: OffsetDateTime,
         pageable: Pageable,
     ): Page<Solicitacao>
+
+    fun contarComEventoPara(
+        solicitanteIds: Collection<UUID>,
+        estadoPara: String,
+        desde: OffsetDateTime,
+        ate: OffsetDateTime,
+    ): Int
 }

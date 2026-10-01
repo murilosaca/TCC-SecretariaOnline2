@@ -97,6 +97,18 @@ class SolicitacaoJpaAdapter(
         ).map(SolicitacaoJpaEntity::toDomainSemEventos)
     }
 
+    override fun contarComEventoPara(
+        solicitanteIds: Collection<UUID>,
+        estadoPara: String,
+        desde: OffsetDateTime,
+        ate: OffsetDateTime,
+    ): Int {
+        if (solicitanteIds.isEmpty()) {
+            return 0
+        }
+        return jpaRepository.contarComEventoPara(solicitanteIds.toList(), estadoPara, desde, ate).toInt()
+    }
+
     private fun carregar(id: UUID): Optional<Solicitacao> =
         jpaRepository.findById(id).map { entity -> entity.toDomain(eventosDe(id)) }
 

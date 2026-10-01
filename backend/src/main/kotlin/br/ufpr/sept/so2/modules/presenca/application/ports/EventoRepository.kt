@@ -16,6 +16,8 @@ interface EventoRepository {
 
     fun findEmAndamentoComJanelaNoDia(inicioDia: OffsetDateTime, fimDia: OffsetDateTime): List<Evento>
 
+    fun findSobrepondoIntervalo(inicio: OffsetDateTime, fim: OffsetDateTime): List<Evento>
+
     fun findByAnfitriao(anfitriaoId: UUID, pageable: Pageable): Page<Evento>
 
     fun existsByTitulo(titulo: String): Boolean

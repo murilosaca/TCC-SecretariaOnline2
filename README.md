@@ -475,26 +475,25 @@ Neste ambiente o Postgres do SO2 é o container **`so2_postgres_iam` na porta 54
 
 O `docker compose` deste repositório sobe **outro** Postgres em **:5432**, com outro histórico Flyway. **Não aponte a API para 5432.** O mesmo compose sobe o **Mailpit** (SMTP `:1025`, UI `:8025`) e o **MinIO** (API `:9000`, console `:9001`, bucket `so2`) — estes **são** do SO2.
 
-```bash
-# 1. Banco SO2: so2_postgres_iam :5433 / secretaria_dev
-#    Mailpit + MinIO: docker compose up -d mailpit minio minio-init
+Três abas no terminal do Cursor, na raiz do repositório. O `application.yml` já aponta para o banco da **5433**, Mailpit e MinIO. Não precisa exportar variável para o uso local.
 
-# 2. API :8080 (PowerShell — sobrescreve o default :5432 do application.yml)
-cd backend
-$env:SPRING_DATASOURCE_URL="jdbc:postgresql://localhost:5433/secretaria_dev"
-$env:MAIL_HOST="localhost"; $env:MAIL_PORT="1025"; $env:MAIL_FROM="so2@localhost"
-$env:STORAGE_ENDPOINT="http://localhost:9000"; $env:STORAGE_PUBLIC_ENDPOINT="http://localhost:9000"
-mvn spring-boot:run
+```powershell
+# Aba 1 — banco, Mailpit e MinIO (volta ao prompt)
+.\dev.ps1 up
 
-# 3. Web :5174 (vite.config.ts; 5173 não é o default deste repo)
-cd frontend-react && npm install && npm run dev
+# Aba 2 — API :8080 (ocupa o terminal; parar com Ctrl+C)
+.\dev.ps1 api
 
-# 4. Mobile P0 (Expo Go / emulador)
-cd frontend-react-native && npm install && npx expo start
-# Aparelho físico: EXPO_PUBLIC_API_URL=http://<IP-LAN>:8080
+# Aba 3 — site :5174 (ocupa o terminal; parar com Ctrl+C)
+.\dev.ps1 web
+
+# Parar banco, Mailpit e MinIO
+.\dev.ps1 down
 ```
 
-Copie `.env.example` para o shell. Ele já aponta JDBC `:5433` e `FRONTEND_BASE_URL=http://localhost:5174`. O `application.yml` default ainda é JDBC `:5432` e `frontend-base-url` `:5173` — **sobrescreva**.
+`npm install` roda sozinho na primeira vez do `web`. Mobile, se for usar: `cd frontend-react-native; npm install; npx expo start`. Aparelho físico: `EXPO_PUBLIC_API_URL=http://<IP-LAN>:8080`.
+
+O Postgres do `docker compose` na **5432** continua sendo outro banco. A API não usa essa porta.
 
 Proxies Vite → `http://localhost:8080`: `/auth`, `/me`, `/academico`, `/publico`, `/requests`, `/request-types`, `/bff`, `/events`, `/formativas` (HTML → `index.html`), `/estagios` (HTML → `index.html`), `/tccs` (HTML → `index.html`), `/comissoes` (HTML → `index.html`), `/certificates`, `/.well-known`, `/v3`, `/swagger-ui`, `/actuator`. CORS: `http://localhost:5173` e `http://localhost:5174`. Nativo não passa por CORS. Expo web **não** entrou nesta fatia (sem origem extra e sem `*`).
 

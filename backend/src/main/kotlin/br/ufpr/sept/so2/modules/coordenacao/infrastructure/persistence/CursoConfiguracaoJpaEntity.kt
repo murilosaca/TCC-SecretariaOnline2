@@ -4,13 +4,17 @@ import br.ufpr.sept.so2.shared.infrastructure.persistence.BaseEntity
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Table
+import org.hibernate.annotations.JdbcTypeCode
+import org.hibernate.type.SqlTypes
 
 @Entity
 @Table(name = "curso_configuracao")
 class CursoConfiguracaoJpaEntity : BaseEntity() {
+    @JdbcTypeCode(SqlTypes.SMALLINT)
     @Column(name = "duracao_calendario", nullable = false)
     var duracaoCalendario: Int = 15
 
+    @JdbcTypeCode(SqlTypes.SMALLINT)
     @Column(name = "banca_membros_externos", nullable = false)
     var bancaMembrosExternos: Int = 1
 

@@ -43,6 +43,7 @@ class SolicitanteResumoAdapter(
             cursoId,
             curso?.nome,
             curso?.sigla,
+            usuario.fotoStorageKey,
         )
     }
 }

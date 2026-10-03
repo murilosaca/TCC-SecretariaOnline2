@@ -3,17 +3,20 @@ import { authSession } from '../auth/session'
 export class ApiError extends Error {
   readonly status: number
   readonly retryAfterSeconds?: number
+  readonly failedIds?: string[]
 
-  constructor(status: number, message: string, retryAfterSeconds?: number) {
+  constructor(status: number, message: string, retryAfterSeconds?: number, failedIds?: string[]) {
     super(message)
     this.status = status
     this.retryAfterSeconds = retryAfterSeconds
+    this.failedIds = failedIds
   }
 }
 
 type ProblemBody = {
   detail?: string
   retryAfterSeconds?: number
+  failedIds?: string[]
 }
 
 const PUBLIC_AUTH = ['/auth/login', '/auth/recuperar-senha', '/auth/redefinir-senha', '/auth/refresh']
@@ -24,6 +27,7 @@ async function parse<T>(response: Response): Promise<T> {
   if (!response.ok) {
     let message = `Falha HTTP ${response.status}`
     let retryAfterSeconds: number | undefined
+    let failedIds: string[] | undefined
     try {
       const body = (await response.json()) as ProblemBody
       if (typeof body.detail === 'string' && body.detail) {
@@ -32,10 +36,13 @@ async function parse<T>(response: Response): Promise<T> {
       if (typeof body.retryAfterSeconds === 'number') {
         retryAfterSeconds = body.retryAfterSeconds
       }
+      if (Array.isArray(body.failedIds)) {
+        failedIds = body.failedIds.map(String)
+      }
     } catch {
       /* corpo vazio ou não JSON */
     }
-    throw new ApiError(response.status, message, retryAfterSeconds)
+    throw new ApiError(response.status, message, retryAfterSeconds, failedIds)
   }
   if (response.status === 204 || response.status === 202) {
     const text = await response.text()

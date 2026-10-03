@@ -13,6 +13,8 @@ interface SolicitacaoRepository {
 
     fun findById(id: UUID): Optional<Solicitacao>
 
+    fun findByIdsForUpdate(ids: Collection<UUID>): List<Solicitacao>
+
     fun findByProtocolo(protocolo: String): Optional<Solicitacao>
 
     fun findMinhas(

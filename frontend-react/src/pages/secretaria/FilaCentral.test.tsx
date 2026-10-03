@@ -89,4 +89,26 @@ describe('FilaCentral', () => {
       expect(atribuirEmMassa).toHaveBeenCalledWith(['s1'], 'p1')
     })
   })
+
+  it('mostra Nova interna somente com o link da coleção', async () => {
+    listarFilaCurso.mockResolvedValue({
+      content: [],
+      page: { number: 0, size: 20, totalElements: 0, totalPages: 0 },
+      deliberadores: [],
+      _links: {},
+    })
+    const primeira = renderFila()
+    await screen.findByRole('heading', { name: 'Fila de solicitações' })
+    expect(screen.queryByRole('link', { name: 'Nova interna' })).toBeNull()
+    primeira.unmount()
+
+    listarFilaCurso.mockResolvedValue({
+      content: [],
+      page: { number: 0, size: 20, totalElements: 0, totalPages: 0 },
+      deliberadores: [],
+      _links: { novaInterna: '/solicitacoes/nova' },
+    })
+    renderFila()
+    expect(await screen.findByRole('link', { name: 'Nova interna' })).toBeTruthy()
+  })
 })

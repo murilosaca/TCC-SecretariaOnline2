@@ -16,6 +16,8 @@ const TILES: { rel: string; label: string }[] = [
   { rel: 'atrasados', label: 'Atrasados' },
   { rel: 'diplomas', label: 'Diplomas' },
   { rel: 'estatisticas', label: 'Estatísticas' },
+  { rel: 'importacoes', label: 'Importações' },
+  { rel: 'exportacoes', label: 'Exportações' },
 ]
 
 export function InicioSecretaria() {

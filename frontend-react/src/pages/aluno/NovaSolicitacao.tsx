@@ -1,18 +1,28 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useMutation, useQuery } from '@tanstack/react-query'
+import { academicoApi } from '../../api/academico'
 import { ApiError } from '../../api/client'
 import { solicitacoesApi } from '../../api/solicitacoes'
+import { useAuth } from '../../auth/AuthContext'
 import { DynamicForm } from '../../components/DynamicForm'
+import { useActions } from '../../hooks/useActions'
 import { fieldsFromSchema, validateAgainstSchema } from '../../lib/formSchema'
+import type { Aluno } from '../../models/academico'
 import type { RequestType } from '../../models/solicitacao'
 
 export function NovaSolicitacao() {
   const navigate = useNavigate()
+  const { links } = useAuth()
+  const menu = useActions(links)
+  const interna = menu.can('nova-interna')
   const [passo, setPasso] = useState(1)
   const [tipoCodigo, setTipoCodigo] = useState<string | null>(null)
   const [values, setValues] = useState<Record<string, unknown>>({})
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [termoAluno, setTermoAluno] = useState('')
+  const [termoDebounced, setTermoDebounced] = useState('')
+  const [aluno, setAluno] = useState<Aluno | null>(null)
 
   const tipos = useQuery({
     queryKey: ['request-types'],
@@ -25,8 +35,20 @@ export function NovaSolicitacao() {
   )
   const fields = fieldsFromSchema(tipoSelecionado?.formSchema)
 
+  useEffect(() => {
+    const timer = window.setTimeout(() => setTermoDebounced(termoAluno.trim()), 300)
+    return () => window.clearTimeout(timer)
+  }, [termoAluno])
+
+  const buscaAluno = useQuery({
+    queryKey: ['alunos', 'interna', termoDebounced],
+    queryFn: () => academicoApi.listarAlunos(undefined, termoDebounced, 0, 8),
+    enabled: interna && termoDebounced.length >= 2 && aluno == null,
+  })
+
   const criar = useMutation({
-    mutationFn: () => solicitacoesApi.criar(tipoCodigo as string, values),
+    mutationFn: () =>
+      solicitacoesApi.criar(tipoCodigo as string, values, interna ? aluno?.id : undefined),
     onSuccess: (criada) => navigate(`/solicitacoes/${criada.id}`, { replace: true }),
   })
 
@@ -88,6 +110,33 @@ export function NovaSolicitacao() {
 
       {passo === 1 && (
         <div>
+          {interna && (
+            <div className="panel">
+              <label htmlFor="em-nome-de">Em nome de</label>
+              <input
+                id="em-nome-de"
+                role="combobox"
+                aria-autocomplete="list"
+                aria-expanded={Boolean(buscaAluno.data && buscaAluno.data.content.length > 0 && !aluno)}
+                aria-controls="em-nome-de-lista"
+                value={aluno ? `${aluno.nome} — ${aluno.grr}` : termoAluno}
+                onChange={(event) => {
+                  setAluno(null)
+                  setTermoAluno(event.target.value)
+                }}
+              />
+              <ul id="em-nome-de-lista" role="listbox">
+                {(buscaAluno.data?.content ?? []).map((item) => (
+                  <li key={item.id}>
+                    <button type="button" onClick={() => setAluno(item)}>
+                      {item.nome} — {item.grr}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              {aluno == null && <p className="muted">Busque o aluno por GRR ou nome.</p>}
+            </div>
+          )}
           {tipos.isLoading && <p className="muted">Carregando tipos…</p>}
           {tipos.data && tipos.data.content.length === 0 && (
             <p className="empty">Nenhum tipo de solicitação disponível para você.</p>
@@ -147,7 +196,11 @@ export function NovaSolicitacao() {
             <button type="button" className="ghost" onClick={() => setPasso(2)}>
               Voltar
             </button>
-            <button type="button" disabled={criar.isPending} onClick={() => criar.mutate()}>
+            <button
+              type="button"
+              disabled={criar.isPending || (interna && aluno == null)}
+              onClick={() => criar.mutate()}
+            >
               {criar.isPending ? 'Confirmando…' : 'Confirmar'}
             </button>
           </div>

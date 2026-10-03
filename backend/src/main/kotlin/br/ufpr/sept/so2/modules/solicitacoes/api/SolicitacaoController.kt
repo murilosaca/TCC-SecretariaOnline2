@@ -3,6 +3,7 @@ package br.ufpr.sept.so2.modules.solicitacoes.api
 import br.ufpr.sept.so2.modules.iam.application.ports.UsuarioRepository
 import br.ufpr.sept.so2.modules.iam.infrastructure.security.IamPrincipal
 import br.ufpr.sept.so2.modules.solicitacoes.api.dto.BulkAtribuirRequest
+import br.ufpr.sept.so2.modules.solicitacoes.api.dto.BulkDeliberarRequest
 import br.ufpr.sept.so2.modules.solicitacoes.api.dto.CriarSolicitacaoRequest
 import br.ufpr.sept.so2.modules.solicitacoes.api.dto.DeliberadorOpcaoResponse
 import br.ufpr.sept.so2.modules.solicitacoes.api.dto.SolicitacaoFilaPageResponse
@@ -10,7 +11,9 @@ import br.ufpr.sept.so2.modules.solicitacoes.api.dto.SolicitacaoResponse
 import br.ufpr.sept.so2.modules.solicitacoes.api.dto.TransicionarSolicitacaoRequest
 import br.ufpr.sept.so2.modules.solicitacoes.application.AtribuirDeliberadoresBulkUseCase
 import br.ufpr.sept.so2.modules.solicitacoes.application.CriarSolicitacaoUseCase
+import br.ufpr.sept.so2.modules.solicitacoes.application.DeliberarImagemLoteUseCase
 import br.ufpr.sept.so2.modules.solicitacoes.application.DeliberarSolicitacaoUseCase
+import br.ufpr.sept.so2.modules.solicitacoes.application.ListarAutorizacoesImagemUseCase
 import br.ufpr.sept.so2.modules.solicitacoes.application.ListarFilaCursoUseCase
 import br.ufpr.sept.so2.modules.solicitacoes.application.ListarFilaDeliberacaoUseCase
 import br.ufpr.sept.so2.modules.solicitacoes.application.ListarMinhasSolicitacoesUseCase
@@ -54,13 +57,17 @@ class SolicitacaoController(
     private val obterSolicitacaoUseCase: ObterSolicitacaoUseCase,
     private val deliberarSolicitacaoUseCase: DeliberarSolicitacaoUseCase,
     private val atribuirDeliberadoresBulkUseCase: AtribuirDeliberadoresBulkUseCase,
+    private val deliberarImagemLoteUseCase: DeliberarImagemLoteUseCase,
+    private val listarAutorizacoesImagemUseCase: ListarAutorizacoesImagemUseCase,
     private val solicitacaoCursoEscopo: SolicitacaoCursoEscopo,
     private val usuarioRepository: UsuarioRepository,
     private val assembler: SolicitacaoAssembler,
 ) {
 
     @GetMapping
-    @PreAuthorize("hasAnyAuthority('request.view_own','request.deliberate','request.view_curso')")
+    @PreAuthorize(
+        "hasAnyAuthority('request.view_own','request.deliberate','request.view_curso','image_authorization.review')",
+    )
     @Operation(summary = "Listar minhas, fila de deliberação ou fila central do curso")
     fun listar(
         @RequestParam(name = "canDeliberate", defaultValue = "false") canDeliberate: Boolean,
@@ -77,6 +84,24 @@ class SolicitacaoController(
     ): Any {
         val principal = principal(authentication)
         val somenteAtraso = slaBreached == true || atraso == true
+
+        if ("AUTORIZACAO_IMAGEM".equals(tipo, ignoreCase = true)) {
+            if (!principal.authorities.contains("image_authorization.review")) {
+                throw AcessoNegadoException("Você não tem permissão para esta operação.")
+            }
+            val pagina = listarAutorizacoesImagemUseCase.execute(principal.userId, estado, pageable)
+            val selecionavel = pagina.content.any { it.estado == "ABERTA" }
+            val extras = if (selecionavel) {
+                mapOf("bulkDeliberate" to "/requests/bulk-deliberate")
+            } else {
+                emptyMap()
+            }
+            return PageResponse.ofWithLinks(
+                pagina,
+                Function { item -> assembler.from(item, principal.authorities, false) },
+                extras,
+            )
+        }
 
         if (canDeliberate) {
             val deliberante = principal.authorities.contains("request.deliberate")
@@ -151,10 +176,14 @@ class SolicitacaoController(
                 .body(SolicitacaoCsvMarshaller.atrasados(content))
         }
 
+        val extrasFila = linkedMapOf("bulk" to "/requests/bulk")
+        if (principal.authorities.contains("request.internal_open")) {
+            extrasFila["novaInterna"] = "/solicitacoes/nova"
+        }
         val pageResponse = PageResponse.ofWithLinks(
             pagina,
             Function { item -> assembler.from(item, principal.authorities, false) },
-            mapOf("bulk" to "/requests/bulk"),
+            extrasFila,
         )
         val deliberadores = usuarioRepository.findAtivosByAuthority("request.deliberate")
             .map { u ->
@@ -194,9 +223,27 @@ class SolicitacaoController(
         ).map { assembler.from(it, principal.authorities, false) }
     }
 
+    @PatchMapping("/bulk-deliberate")
+    @PreAuthorize("hasAuthority('image_authorization.review')")
+    @Operation(summary = "Aprovar ou rejeitar autorizações de imagem em lote")
+    fun bulkDeliberar(
+        @Valid @RequestBody request: BulkDeliberarRequest,
+        authentication: Authentication,
+        http: HttpServletRequest,
+    ): List<SolicitacaoResponse> {
+        val principal = principal(authentication)
+        return deliberarImagemLoteUseCase.execute(
+            principal.userId,
+            request.ids,
+            request.decisao,
+            request.justificativa,
+            clientIp(http),
+        ).map { assembler.from(it, principal.authorities, false) }
+    }
+
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("hasAuthority('request.open')")
+    @PreAuthorize("hasAnyAuthority('request.open','request.internal_open')")
     @Operation(summary = "Abrir solicitação a partir do form_schema")
     fun criar(
         @Valid @RequestBody request: CriarSolicitacaoRequest,
@@ -204,12 +251,20 @@ class SolicitacaoController(
         http: HttpServletRequest,
     ): SolicitacaoResponse {
         val principal = principal(authentication)
+        if (request.onBehalfOf == null) {
+            if (!principal.authorities.contains("request.open")) {
+                throw AcessoNegadoException("Você não tem permissão para esta operação.")
+            }
+        } else if (!principal.authorities.contains("request.internal_open")) {
+            throw AcessoNegadoException("Você não tem permissão para esta operação.")
+        }
         return assembler.from(
             criarSolicitacaoUseCase.execute(
                 principal.userId,
                 request.tipoCodigo,
                 request.payload,
                 clientIp(http),
+                request.onBehalfOf,
             ),
             principal.authorities,
             true,

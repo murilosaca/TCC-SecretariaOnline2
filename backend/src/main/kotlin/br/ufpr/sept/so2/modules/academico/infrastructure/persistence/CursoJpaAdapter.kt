@@ -36,6 +36,9 @@ class CursoJpaAdapter(
     override fun findByCodigo(codigo: String): Optional<Curso> =
         jpaRepository.findByCodigoIgnoreCase(codigo).map { it.toDomain() }
 
+    override fun findBySigla(sigla: String): Optional<Curso> =
+        jpaRepository.findBySiglaIgnoreCase(sigla).map { it.toDomain() }
+
     override fun findAllByIds(ids: Collection<UUID>, pageable: Pageable): Page<Curso> {
         if (ids.isEmpty()) {
             return Page.empty(pageable)

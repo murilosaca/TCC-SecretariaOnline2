@@ -6,6 +6,7 @@ import br.ufpr.sept.so2.shared.domain.exception.AcessoNegadoException
 import br.ufpr.sept.so2.shared.domain.exception.ConflitoEstadoException
 import br.ufpr.sept.so2.shared.domain.exception.CredenciaisInvalidasException
 import br.ufpr.sept.so2.shared.domain.exception.DadoInvalidoException
+import br.ufpr.sept.so2.shared.domain.exception.LoteConflitoException
 import br.ufpr.sept.so2.shared.domain.exception.RateLimitExcedidoException
 import br.ufpr.sept.so2.shared.domain.exception.RecursoNaoEncontradoException
 import br.ufpr.sept.so2.shared.domain.exception.TokenAcaoInvalidoException
@@ -19,6 +20,7 @@ import org.springframework.security.access.AccessDeniedException
 import org.springframework.security.core.AuthenticationException
 import org.springframework.validation.FieldError
 import org.springframework.web.bind.MethodArgumentNotValidException
+import org.springframework.web.HttpRequestMethodNotSupportedException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.context.request.WebRequest
@@ -126,9 +128,25 @@ class GlobalExceptionHandler {
     fun handleAcessoNegado(ex: AcessoNegadoException): ProblemDetail =
         problemDetail(HttpStatus.FORBIDDEN, "Acesso negado", ex.message, "access-denied")
 
+    @ExceptionHandler(LoteConflitoException::class)
+    fun handleLote(ex: LoteConflitoException): ProblemDetail {
+        val detail = problemDetail(HttpStatus.CONFLICT, "Conflito de lote", ex.message, "bulk-conflict")
+        detail.setProperty("failedIds", ex.failedIds.map { it.toString() })
+        return detail
+    }
+
     @ExceptionHandler(ConflitoEstadoException::class)
     fun handleConflict(ex: ConflitoEstadoException): ProblemDetail =
         problemDetail(HttpStatus.CONFLICT, "Conflito de estado", ex.message, "conflict")
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException::class)
+    fun handleMethod(ex: HttpRequestMethodNotSupportedException): ProblemDetail =
+        problemDetail(
+            HttpStatus.METHOD_NOT_ALLOWED,
+            "Método não permitido",
+            "Esta operação não existe.",
+            "method-not-allowed",
+        )
 
     @ExceptionHandler(DataIntegrityViolationException::class)
     fun handleDataIntegrity(ex: DataIntegrityViolationException): ProblemDetail {

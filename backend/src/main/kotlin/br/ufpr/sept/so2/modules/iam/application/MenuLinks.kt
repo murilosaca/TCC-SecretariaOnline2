@@ -27,6 +27,12 @@ object MenuLinks {
             links["fila-solicitacoes"] = "/solicitacoes"
             links["atrasados"] = "/secretaria/atrasados"
         }
+        if (caps.contains("request.internal_open")) {
+            links["nova-interna"] = "/solicitacoes/nova"
+        }
+        if (caps.contains("image_authorization.review")) {
+            links["autorizacoes-imagem"] = "/secretaria/autorizacoes-imagem"
+        }
         if (caps.containsAny("request.deliberate", "request.view_curso")) {
             links["deliberar"] = "/solicitacoes?to=me"
         }
@@ -44,6 +50,12 @@ object MenuLinks {
         }
         if (caps.contains("alumni.list")) {
             links["egressos"] = "/secretaria/egressos"
+        }
+        if (caps.contains("import.run")) {
+            links["importacoes"] = "/secretaria/importacoes"
+        }
+        if (caps.contains("export.run")) {
+            links["exportacoes"] = "/secretaria/exportacoes"
         }
         if (caps.contains("certificate.view_own")) {
             links["certificados"] = "/certificados"
@@ -93,6 +105,9 @@ object MenuLinks {
         }
         if (caps.contains("user.manage_all")) {
             links["usuarios"] = "/admin/usuarios"
+        }
+        if (caps.contains("audit.read")) {
+            links["audit-log"] = "/admin/audit-log"
         }
         if (caps.contains("course.config") && cursoConfigurarId != null) {
             links["configurar-curso"] = "/coordenacao/cursos/$cursoConfigurarId/configurar"

@@ -29,6 +29,9 @@ export default defineConfig({
         },
       },
       '/egressos': { target: 'http://localhost:8080', changeOrigin: true },
+      '/importacoes': { target: 'http://localhost:8080', changeOrigin: true },
+      '/exportacoes': { target: 'http://localhost:8080', changeOrigin: true },
+      '/audit-log': { target: 'http://localhost:8080', changeOrigin: true },
       '/diplomas': { target: 'http://localhost:8080', changeOrigin: true },
       '/formativas': {
         target: 'http://localhost:8080',

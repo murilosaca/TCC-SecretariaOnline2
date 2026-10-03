@@ -30,6 +30,15 @@ class SolicitacaoJpaAdapter(
 
     override fun findById(id: UUID): Optional<Solicitacao> = carregar(id)
 
+    override fun findByIdsForUpdate(ids: Collection<UUID>): List<Solicitacao> {
+        if (ids.isEmpty()) {
+            return emptyList()
+        }
+        return jpaRepository.findByIdInForUpdate(ids.toList()).map { entity ->
+            entity.toDomain(eventosDe(entity.id!!))
+        }
+    }
+
     override fun findByProtocolo(protocolo: String): Optional<Solicitacao> =
         jpaRepository.findByProtocolo(protocolo)
             .map { entity -> entity.toDomain(eventosDe(entity.id!!)) }

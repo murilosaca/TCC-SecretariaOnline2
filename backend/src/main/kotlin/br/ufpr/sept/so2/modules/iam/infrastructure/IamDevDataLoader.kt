@@ -221,6 +221,10 @@ class IamDevDataLoader(
                 "event.manage",
                 "event.host",
                 "event.view_curso",
+                "request.internal_open",
+                "image_authorization.review",
+                "import.run",
+                "export.run",
             ),
         )
 
@@ -231,6 +235,7 @@ class IamDevDataLoader(
                 "dashboard.view_own",
                 "user.manage_all",
                 "user.reset_password",
+                "audit.read",
             ),
         )
 

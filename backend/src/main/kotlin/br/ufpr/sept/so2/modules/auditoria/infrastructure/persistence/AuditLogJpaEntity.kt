@@ -1,4 +1,4 @@
-package br.ufpr.sept.so2.modules.iam.infrastructure.persistence
+package br.ufpr.sept.so2.modules.auditoria.infrastructure.persistence
 
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
@@ -23,4 +23,8 @@ class AuditLogJpaEntity(
     var ip: String? = null,
     @Column(name = "created_at", nullable = false, updatable = false)
     var createdAt: OffsetDateTime? = null,
+    @Column(name = "payload_antes", columnDefinition = "TEXT")
+    var payloadAntes: String? = null,
+    @Column(name = "payload_depois", columnDefinition = "TEXT")
+    var payloadDepois: String? = null,
 )

@@ -12,4 +12,6 @@ interface DisciplinaJpaRepository : JpaRepository<DisciplinaJpaEntity, UUID>, Jp
     fun findByIdCursoIn(cursoIds: Collection<UUID>, pageable: Pageable): Page<DisciplinaJpaEntity>
 
     fun existsByIdCursoAndCodigoIgnoreCase(idCurso: UUID, codigo: String): Boolean
+
+    fun findFirstByIdCursoAndCodigoIgnoreCase(idCurso: UUID, codigo: String): java.util.Optional<DisciplinaJpaEntity>
 }

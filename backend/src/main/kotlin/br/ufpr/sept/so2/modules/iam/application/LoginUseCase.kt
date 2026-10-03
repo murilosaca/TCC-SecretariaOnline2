@@ -27,7 +27,8 @@ class LoginUseCase(
     private val settings: IamSettings,
 ) {
     @Transactional
-    fun execute(identificador: String?, senha: String?, ip: String?): LoginResult {
+    @JvmOverloads
+    fun execute(identificador: String?, senha: String?, ip: String?, userAgent: String? = null): LoginResult {
         val parsed = IdentificadorLogin.tryParse(identificador)
         val encontrado = parsed?.let { usuarioRepository.findByIdentificador(it) }?.orElse(null)
         if (encontrado == null) {
@@ -64,11 +65,12 @@ class LoginUseCase(
             false,
             agora,
             agora,
+            AgenteCliente.truncar(userAgent),
         )
         refreshTokenRepository.save(sessao)
         auditLogPort.append("iam.login_success", encontrado.id, mascarar(encontrado), ip)
         return LoginResult(
-            jwtTokenService.emitAccessToken(encontrado),
+            jwtTokenService.emitAccessToken(encontrado, sessao.id),
             refreshRaw,
             encontrado.precisaPrimeiroAcesso(),
             settings.accessTtlSeconds,

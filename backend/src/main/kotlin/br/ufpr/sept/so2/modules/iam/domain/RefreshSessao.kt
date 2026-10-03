@@ -3,7 +3,7 @@ package br.ufpr.sept.so2.modules.iam.domain
 import java.time.OffsetDateTime
 import java.util.UUID
 
-class RefreshSessao(
+class RefreshSessao @JvmOverloads constructor(
     val id: UUID,
     val usuarioId: UUID,
     val tokenHash: String,
@@ -12,6 +12,7 @@ class RefreshSessao(
     var revoked: Boolean,
     val createdAt: OffsetDateTime,
     var updatedAt: OffsetDateTime,
+    val userAgent: String? = null,
 ) {
     fun expirada(agora: OffsetDateTime): Boolean = !expiresAt.isAfter(agora)
 

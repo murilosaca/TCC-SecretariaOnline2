@@ -4,7 +4,9 @@ import br.ufpr.sept.so2.modules.iam.domain.Usuario
 import java.util.UUID
 
 interface JwtTokenService {
-    fun emitAccessToken(usuario: Usuario): String
+    fun emitAccessToken(usuario: Usuario): String = emitAccessToken(usuario, null)
+
+    fun emitAccessToken(usuario: Usuario, sessionId: UUID?): String
 
     fun emitResetToken(usuario: Usuario): String
 
@@ -21,6 +23,7 @@ interface JwtTokenService {
         val authorities: List<String>,
         val mustChangePassword: Boolean,
         val jti: String,
+        val sessionId: UUID? = null,
     )
 
     data class ResetTokenClaims(

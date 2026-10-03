@@ -73,6 +73,25 @@ class RefreshTokenUseCaseTest : StringSpec({
         result.refreshToken shouldNotBe raw
     }
 
+    "token só revogado não derruba as outras sessões" {
+        val agora = OffsetDateTime.now()
+        val irma = RefreshSessao(
+            Uuids.v7(),
+            UUID.fromString("01800000-0000-7000-8000-0000000000cc"),
+            "th:outra",
+            agora.plusDays(7),
+            false,
+            false,
+            agora,
+            agora,
+        )
+        tokens.save(irma)
+        tokens.byHash.values.first { it.tokenHash == "th:$raw" }.revogar(agora)
+        shouldThrow<CredenciaisInvalidasException> { useCase.execute(raw, "127.0.0.1") }
+        irma.revoked shouldBe false
+        audit.tipos.contains("iam.suspicious_token_reuse") shouldBe false
+    }
+
     "reuse revoga todas as sessões" {
         useCase.execute(raw, "127.0.0.1")
         shouldThrow<CredenciaisInvalidasException> { useCase.execute(raw, "127.0.0.1") }

@@ -1,6 +1,7 @@
 package br.ufpr.sept.so2.modules.iam.application.ports
 
 import br.ufpr.sept.so2.modules.iam.domain.RefreshSessao
+import java.time.OffsetDateTime
 import java.util.Optional
 import java.util.UUID
 
@@ -9,5 +10,13 @@ interface RefreshTokenRepository {
 
     fun lockByTokenHash(tokenHash: String): Optional<RefreshSessao>
 
+    fun findByTokenHash(tokenHash: String): Optional<RefreshSessao>
+
+    fun findById(id: UUID): Optional<RefreshSessao>
+
+    fun findAtivas(usuarioId: UUID, agora: OffsetDateTime): List<RefreshSessao>
+
     fun revokeAllByUsuarioId(usuarioId: UUID)
+
+    fun revokeOthers(usuarioId: UUID, manterId: UUID)
 }

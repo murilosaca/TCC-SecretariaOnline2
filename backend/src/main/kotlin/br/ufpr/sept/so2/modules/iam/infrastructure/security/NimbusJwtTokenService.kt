@@ -31,9 +31,9 @@ class NimbusJwtTokenService(
         publicKey = pair.public as RSAPublicKey
     }
 
-    override fun emitAccessToken(usuario: Usuario): String {
+    override fun emitAccessToken(usuario: Usuario, sessionId: UUID?): String {
         val agora = Instant.now()
-        val claims = JWTClaimsSet.Builder()
+        val builder = JWTClaimsSet.Builder()
             .subject(usuario.id.toString())
             .issuer(properties.issuer)
             .audience(properties.audience)
@@ -42,8 +42,10 @@ class NimbusJwtTokenService(
             .expirationTime(Date.from(agora.plusSeconds(properties.accessTtlSeconds)))
             .claim("authorities", usuario.authorities)
             .claim("mustChangePassword", usuario.precisaPrimeiroAcesso())
-            .build()
-        return sign(claims)
+        if (sessionId != null) {
+            builder.claim("sid", sessionId.toString())
+        }
+        return sign(builder.build())
     }
 
     override fun emitResetToken(usuario: Usuario): String {
@@ -77,11 +79,13 @@ class NimbusJwtTokenService(
         val claims = parse(token, properties.audience)
         val authorities = readAuthorities(claims)
         val mustChange = claims.getClaim("mustChangePassword") == true
+        val sid = claims.getClaim("sid")?.toString()?.takeIf { it.isNotBlank() }
         return JwtTokenService.AccessTokenClaims(
             UUID.fromString(claims.subject),
             authorities,
             mustChange,
             claims.jwtid,
+            if (sid == null) null else UUID.fromString(sid),
         )
     }
 

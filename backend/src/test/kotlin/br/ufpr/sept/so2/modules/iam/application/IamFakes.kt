@@ -47,8 +47,8 @@ object IamFakes {
     class Jwt : JwtTokenService {
         var lastReset: String = "reset.jwt"
 
-        override fun emitAccessToken(usuario: Usuario): String =
-            "access:${usuario.id}:${usuario.precisaPrimeiroAcesso()}"
+        override fun emitAccessToken(usuario: Usuario, sessionId: java.util.UUID?): String =
+            "access:${usuario.id}:${usuario.precisaPrimeiroAcesso()}:${sessionId}"
 
         override fun emitResetToken(usuario: Usuario): String {
             lastReset = "reset:${usuario.id}"
@@ -144,9 +144,26 @@ object IamFakes {
         override fun lockByTokenHash(tokenHash: String): Optional<RefreshSessao> =
             Optional.ofNullable(byHash[tokenHash])
 
+        override fun findByTokenHash(tokenHash: String): Optional<RefreshSessao> =
+            lockByTokenHash(tokenHash)
+
+        override fun findById(id: UUID): Optional<RefreshSessao> =
+            Optional.ofNullable(byHash.values.firstOrNull { it.id == id })
+
+        override fun findAtivas(usuarioId: UUID, agora: OffsetDateTime): List<RefreshSessao> =
+            byHash.values
+                .filter { it.usuarioId == usuarioId && !it.revoked && !it.used && !it.expirada(agora) }
+                .sortedByDescending { it.createdAt }
+
         override fun revokeAllByUsuarioId(usuarioId: UUID) {
             byHash.values
                 .filter { it.usuarioId == usuarioId }
+                .forEach { it.revogar(OffsetDateTime.now()) }
+        }
+
+        override fun revokeOthers(usuarioId: UUID, manterId: UUID) {
+            byHash.values
+                .filter { it.usuarioId == usuarioId && it.id != manterId }
                 .forEach { it.revogar(OffsetDateTime.now()) }
         }
     }

@@ -31,6 +31,9 @@ const NAV_ITENS: { rel: string; label: string }[] = [
   { rel: 'tccs-secretaria', label: 'Cadastro de TCCs' },
   { rel: 'diplomas', label: 'Diplomas' },
   { rel: 'usuarios', label: 'Usuários' },
+  { rel: 'perfil', label: 'Perfil' },
+  { rel: 'perfil-seguranca', label: 'Segurança' },
+  { rel: 'perfil-notificacoes', label: 'Notificações' },
   { rel: 'contato', label: 'Contato' },
 ]
 

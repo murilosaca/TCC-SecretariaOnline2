@@ -162,7 +162,7 @@ class IamDevDataLoader(
     companion object {
         private val LOG = LoggerFactory.getLogger(IamDevDataLoader::class.java)
 
-        private fun authoritiesAluno(): List<String> =
+        private fun authoritiesAluno(): List<String> = comPerfil(
             listOf(
                 "dashboard.view_own",
                 "request.view_own",
@@ -174,9 +174,10 @@ class IamDevDataLoader(
                 "certificate.view_own",
                 "internship.view_own",
                 "tcc.view_own",
-            )
+            ),
+        )
 
-        private fun authoritiesProfessor(): List<String> =
+        private fun authoritiesProfessor(): List<String> = comPerfil(
             listOf(
                 "dashboard.view_self_professor",
                 "event.manage",
@@ -186,15 +187,17 @@ class IamDevDataLoader(
                 "tcc.review",
                 "course.config",
                 "report.view_coordinator",
-            )
+            ),
+        )
 
-        private fun authoritiesCaaf(): List<String> =
+        private fun authoritiesCaaf(): List<String> = comPerfil(
             listOf(
                 "dashboard.view_own",
                 "formative.review",
-            )
+            ),
+        )
 
-        private fun authoritiesSecretaria(): List<String> =
+        private fun authoritiesSecretaria(): List<String> = comPerfil(
             listOf(
                 "course.manage",
                 "subject.manage",
@@ -208,15 +211,22 @@ class IamDevDataLoader(
                 "request.deliberate",
                 "report.view_secretary",
                 "dashboard.view_secretary",
-            )
+            ),
+        )
 
-        private fun authoritiesEgresso(): List<String> = listOf("alumni.view_own")
+        private fun authoritiesEgresso(): List<String> = comPerfil(listOf("alumni.view_own"))
 
-        private fun authoritiesAdmin(): List<String> =
+        private fun authoritiesAdmin(): List<String> = comPerfil(
             listOf(
                 "dashboard.view_own",
                 "user.manage_all",
                 "user.reset_password",
-            )
+            ),
+        )
+
+        private fun comPerfil(authorities: List<String>): List<String> =
+            if (authorities.contains(PERFIL)) authorities else authorities + PERFIL
+
+        private const val PERFIL = "user.update_own_profile"
     }
 }

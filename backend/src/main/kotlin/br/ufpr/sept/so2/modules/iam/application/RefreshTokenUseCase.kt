@@ -23,7 +23,8 @@ class RefreshTokenUseCase(
     private val settings: IamSettings,
 ) {
     @Transactional
-    fun execute(refreshRaw: String?, ip: String?): LoginResult {
+    @JvmOverloads
+    fun execute(refreshRaw: String?, ip: String?, userAgent: String? = null): LoginResult {
         if (refreshRaw.isNullOrBlank()) {
             throw CredenciaisInvalidasException()
         }
@@ -31,9 +32,12 @@ class RefreshTokenUseCase(
         val sessao = refreshTokenRepository.lockByTokenHash(opaqueTokenHasher.hash(refreshRaw))
             .orElseThrow { CredenciaisInvalidasException() }
 
-        if (sessao.reutilizadaOuRevogada()) {
+        if (sessao.used) {
             refreshTokenRepository.revokeAllByUsuarioId(sessao.usuarioId)
             auditLogPort.append("iam.suspicious_token_reuse", sessao.usuarioId, "reuse", ip)
+            throw CredenciaisInvalidasException()
+        }
+        if (sessao.revoked) {
             throw CredenciaisInvalidasException()
         }
         if (sessao.expirada(agora)) {
@@ -61,10 +65,11 @@ class RefreshTokenUseCase(
             false,
             agora,
             agora,
+            AgenteCliente.truncar(userAgent),
         )
         refreshTokenRepository.save(nova)
         return LoginResult(
-            jwtTokenService.emitAccessToken(usuario),
+            jwtTokenService.emitAccessToken(usuario, nova.id),
             novoRaw,
             usuario.precisaPrimeiroAcesso(),
             settings.accessTtlSeconds,

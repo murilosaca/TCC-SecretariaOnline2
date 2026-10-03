@@ -53,7 +53,12 @@ class AuthController(
         @Valid @RequestBody request: LoginRequest,
         http: HttpServletRequest,
     ): ResponseEntity<LoginResponse> {
-        val result = loginUseCase.execute(request.identificador, request.senha, clientIp(http))
+        val result = loginUseCase.execute(
+            request.identificador,
+            request.senha,
+            clientIp(http),
+            http.getHeader(HttpHeaders.USER_AGENT),
+        )
         return withRefreshCookie(result, NativeClient.requested(http))
     }
 
@@ -65,7 +70,7 @@ class AuthController(
         http: HttpServletRequest,
     ): ResponseEntity<LoginResponse> {
         val raw = NativeClient.resolveRefreshToken(refreshCookie, body?.refreshToken)
-        val result = refreshTokenUseCase.execute(raw, clientIp(http))
+        val result = refreshTokenUseCase.execute(raw, clientIp(http), http.getHeader(HttpHeaders.USER_AGENT))
         val includeRefresh = NativeClient.requested(http) || !body?.refreshToken.isNullOrBlank()
         return withRefreshCookie(result, includeRefresh)
     }

@@ -1015,6 +1015,86 @@ textarea:focus {
   margin-top: 0.8rem;
 }
 
+.subnav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin: 0.4rem 0 1rem;
+}
+
+.subnav a {
+  color: var(--brand);
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.subnav a.active {
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.perfil-layout {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.perfil-foto {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+
+.avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--line);
+}
+
+.avatar-fallback {
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+}
+
+.settings-stack {
+  display: grid;
+  gap: 1rem;
+}
+
+.form-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  margin-top: 0.8rem;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.modal-backdrop .avatar {
+  width: 160px;
+  height: 160px;
+  margin: 0.6rem 0;
+}
+
+@media (max-width: 720px) {
+  .perfil-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 900px) {
   .chart-grid {
     grid-template-columns: 1fr;

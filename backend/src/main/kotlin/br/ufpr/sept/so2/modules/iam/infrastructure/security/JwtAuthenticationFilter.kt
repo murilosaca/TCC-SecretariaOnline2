@@ -32,6 +32,7 @@ class JwtAuthenticationFilter(
                 claims.userId,
                 claims.mustChangePassword,
                 claims.authorities,
+                claims.sessionId,
             )
             val authentication = UsernamePasswordAuthenticationToken(
                 principal,

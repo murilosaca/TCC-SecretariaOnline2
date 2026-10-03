@@ -21,11 +21,11 @@ class AuthRateLimitFilter(
     private val janelas = ConcurrentHashMap<String, Deque<Long>>()
 
     override fun shouldNotFilter(request: HttpServletRequest): Boolean {
-        if (request.method != "POST") {
-            return true
-        }
         val path = request.requestURI
-        return path != "/auth/login" && path != "/auth/recuperar-senha"
+        if (request.method == "POST" && (path == "/auth/login" || path == "/auth/recuperar-senha")) {
+            return false
+        }
+        return !(request.method == "PATCH" && path == "/me/password")
     }
 
     override fun doFilterInternal(
@@ -44,6 +44,10 @@ class AuthRateLimitFilter(
             limite = properties.loginPorMinuto
             janelaMs = 60_000L
             chave = "login:$ip:${campo(body, "identificador")}"
+        } else if (path == "/me/password") {
+            limite = 5
+            janelaMs = 60_000L
+            chave = "senha:$ip"
         } else {
             limite = properties.recuperarPorHora
             janelaMs = 3_600_000L

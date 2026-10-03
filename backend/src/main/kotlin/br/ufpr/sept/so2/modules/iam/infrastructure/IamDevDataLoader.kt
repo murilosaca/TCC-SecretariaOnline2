@@ -88,8 +88,10 @@ class IamDevDataLoader(
         if (existente.isPresent) {
             val usuario = existente.get()
             val extras = usuario.authorities.filter { it !in authorities }
-            if (usuario.substituirAuthorities(authorities, agora)) {
-                val salvo = usuarioRepository.save(usuario)
+            val authoritiesMudaram = usuario.substituirAuthorities(authorities, agora)
+            alinharCredencialDev(usuario, hash, senhaAlterada, agora)
+            val salvo = usuarioRepository.save(usuario)
+            if (authoritiesMudaram) {
                 if (extras.isNotEmpty()) {
                     LOG.info(
                         "Seed IAM (profile=dev) revogou authorities extras de {}: {}",
@@ -99,9 +101,9 @@ class IamDevDataLoader(
                 } else {
                     LOG.info("Seed IAM (profile=dev) alinhou authorities de {}.", EmailMascarado.de(email))
                 }
-                return salvo
             }
-            return usuario
+            LOG.info("Seed IAM (profile=dev) realinhou a senha de desenvolvimento de {}.", EmailMascarado.de(email))
+            return salvo
         }
         val usuario = Usuario(
             Uuids.v7(),
@@ -122,6 +124,29 @@ class IamDevDataLoader(
             agora,
         )
         return usuarioRepository.save(usuario)
+    }
+
+    /**
+     * No profile dev, a senha de bootstrap e o gate de primeiro acesso voltam
+     * ao valor do seed a cada subida. Contas que já trocaram a senha no
+     * Postgres deixariam o smoke sem /primeiro-acesso.
+     */
+    private fun alinharCredencialDev(
+        usuario: Usuario,
+        hash: String,
+        senhaAlterada: Boolean,
+        agora: OffsetDateTime,
+    ) {
+        usuario.senhaHash = hash
+        usuario.senhaAlterada = senhaAlterada
+        if (!senhaAlterada) {
+            usuario.lgpdAceiteEm = null
+            usuario.lgpdAceiteIp = null
+            usuario.lgpdAceiteUserAgent = null
+        }
+        usuario.falhasConsecutivas = 0
+        usuario.bloqueadoAte = null
+        usuario.updatedAt = agora
     }
 
     companion object {

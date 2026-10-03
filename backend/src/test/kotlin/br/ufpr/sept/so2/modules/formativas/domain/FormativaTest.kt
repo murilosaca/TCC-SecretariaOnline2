@@ -79,8 +79,33 @@ class FormativaTest : StringSpec({
         formativa.estado shouldBe FormativaEstado.AGUARDANDO_CAAF
     }
 
-    "origem comprovante não é aceita" {
-        shouldThrow<ConflitoEstadoException> { Formativa.viaComprovante() }
+    "comprovante nasce aguardando CAAF, sem evento, e não entra no lote" {
+        val tipoId = UUID.fromString("01800000-0000-7000-8000-0000000000b1")
+        val formativa = Formativa.viaComprovante(
+            UUID.fromString("01800000-0000-7000-8000-0000000000f9"),
+            alunoId,
+            tipoId,
+            "Curso de extensão",
+            8,
+            "formativas/comp.pdf",
+            agora,
+        )
+        formativa.origem shouldBe FormativaOrigem.COMPROVANTE
+        formativa.estado shouldBe FormativaEstado.AGUARDANDO_CAAF
+        formativa.idEvento shouldBe null
+        formativa.idTipoAtividade shouldBe tipoId
+        formativa.elegivelAprovacaoEmLote() shouldBe false
+        shouldThrow<DadoInvalidoException> {
+            Formativa.viaComprovante(
+                UUID.fromString("01800000-0000-7000-8000-0000000000fa"),
+                alunoId,
+                tipoId,
+                "Curso de extensão",
+                0,
+                "formativas/comp.pdf",
+                agora,
+            )
+        }
     }
 
     "aprovar a partir de AGUARDANDO_CAAF guarda parecer e não muda cargaHoraria" {

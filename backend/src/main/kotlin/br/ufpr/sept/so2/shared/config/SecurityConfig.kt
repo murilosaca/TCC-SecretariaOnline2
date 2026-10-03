@@ -147,6 +147,7 @@ class SecurityConfig(
                     .requestMatchers("/coordenacao", "/coordenacao/**").authenticated()
                     .requestMatchers("/reports", "/reports/**").authenticated()
                     .requestMatchers("/comissoes", "/comissoes/**").authenticated()
+                    .requestMatchers("/communications", "/communications/**").authenticated()
                     // Matchers .authenticated() acima documentam a superfície; o default já é authenticated().
                     .anyRequest().authenticated()
             }

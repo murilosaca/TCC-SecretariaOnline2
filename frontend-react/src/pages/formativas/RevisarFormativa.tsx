@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ApiError } from '../../api/client'
 import { formativasApi } from '../../api/formativas'
 import { PainelRevisaoFormativa } from '../../components/PainelRevisaoFormativa'
+import { useActions } from '../../hooks/useActions'
 import { rotuloEstadoFormativa, rotuloOrigemFormativa } from '../../lib/formativa'
 
 export function RevisarFormativa() {
@@ -33,6 +34,7 @@ export function RevisarFormativa() {
   })
 
   const item = detalhe.data
+  const acoes = useActions(item?._links)
   const forbidden = detalhe.isError && detalhe.error instanceof ApiError && detalhe.error.status === 403
 
   return (
@@ -106,6 +108,26 @@ export function RevisarFormativa() {
               </div>
             </dl>
           </article>
+
+          {acoes.can('comprovante') && (
+            <p>
+              <button
+                type="button"
+                className="ghost"
+                onClick={() => {
+                  const href = acoes.href('comprovante')
+                  if (!href) {
+                    return
+                  }
+                  void formativasApi.comprovante(href).then((resposta) => {
+                    window.open(resposta.downloadUrl, '_blank', 'noopener')
+                  })
+                }}
+              >
+                Ver comprovante
+              </button>
+            </p>
+          )}
 
           {item.parecer && (
             <article className="panel">

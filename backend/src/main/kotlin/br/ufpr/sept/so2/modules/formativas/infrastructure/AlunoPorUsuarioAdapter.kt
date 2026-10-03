@@ -27,6 +27,6 @@ class AlunoPorUsuarioAdapter(
         val horas = cursoRepository.findById(aluno.idCurso)
             .map { it.horasFormativasMinimas }
             .orElse(0)
-        return AlunoRef(aluno.id, aluno.situacao == AlunoSituacao.EGRESSO, horas)
+        return AlunoRef(aluno.id, aluno.situacao == AlunoSituacao.EGRESSO, horas, aluno.idCurso)
     }
 }

@@ -34,6 +34,9 @@ class FormativaAssembler(
             links["aprovar"] = "$self/aprovar"
             links["indeferir"] = "$self/indeferir"
         }
+        if (!formativa.storageKey.isNullOrBlank() && (dono || AUTHORITY_REVIEW in authorities)) {
+            links["comprovante"] = "$self/comprovante"
+        }
         return FormativaResponse(
             formativa.id,
             formativa.idAluno,

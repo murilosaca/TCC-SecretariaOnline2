@@ -22,6 +22,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.context.request.WebRequest
+import org.springframework.web.multipart.MaxUploadSizeExceededException
 import org.springframework.web.servlet.resource.NoResourceFoundException
 import java.net.URI
 import java.time.OffsetDateTime
@@ -77,6 +78,15 @@ class GlobalExceptionHandler {
     @ExceptionHandler(DadoInvalidoException::class)
     fun handleInvalid(ex: DadoInvalidoException): ProblemDetail =
         problemDetail(HttpStatus.UNPROCESSABLE_ENTITY, "Dados inválidos", ex.message, "validation-error")
+
+    @ExceptionHandler(MaxUploadSizeExceededException::class)
+    fun handleUpload(ex: MaxUploadSizeExceededException): ProblemDetail =
+        problemDetail(
+            HttpStatus.UNPROCESSABLE_ENTITY,
+            "Dados inválidos",
+            "Envie um PDF, JPEG ou PNG de até 5 MB.",
+            "validation-error",
+        )
 
     @ExceptionHandler(SenhaAtualIncorretaException::class)
     fun handleSenhaAtual(ex: SenhaAtualIncorretaException): ProblemDetail =

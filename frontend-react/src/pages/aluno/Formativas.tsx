@@ -10,14 +10,20 @@ export function Formativas() {
     queryKey: ['formativas', 'me'],
     queryFn: () => formativasApi.listarMinhas(),
   })
+  const acoes = useActions(lista.data?._links)
 
   return (
     <section className="page">
       <header className="page-head">
         <div>
           <h1>Atividades formativas</h1>
-          <p className="muted">Confirme horas geradas a partir de presença validada (RF-F1-006).</p>
+          <p className="muted">Confirme horas de presença ou envie um comprovante (RF-F1-006).</p>
         </div>
+        {acoes.can('nova') && (
+          <Link to={acoes.href('nova') ?? '/formativas'} className="button-link">
+            Nova atividade
+          </Link>
+        )}
       </header>
 
       {lista.isError && (

@@ -171,9 +171,11 @@ class IamDevDataLoader(
                 "attendance.check_in",
                 "formative.view_own",
                 "formative.confirm_own",
+                "formative.submit",
                 "certificate.view_own",
                 "internship.view_own",
                 "tcc.view_own",
+                "communication.read",
             ),
         )
 
@@ -187,6 +189,8 @@ class IamDevDataLoader(
                 "tcc.review",
                 "course.config",
                 "report.view_coordinator",
+                "communication.read",
+                "communication.publish_class",
             ),
         )
 

@@ -27,7 +27,7 @@ export const egressosApi = {
         ano: filtros.ano,
         situacao: filtros.situacao,
         page: filtros.page ?? 0,
-        size: filtros.size ?? 20,
+        size: filtros.size ?? 100,
       })}`,
       'text/csv',
     ),

@@ -58,7 +58,7 @@ export const solicitacoesApi = {
         slaBreached: true,
         format: 'csv',
         page: filtros.page ?? 0,
-        size: filtros.size ?? 20,
+        size: filtros.size ?? 100,
       })}`,
       'text/csv',
     ),

@@ -28,7 +28,7 @@ export function Atrasados() {
     setExportando(true)
     setErroExport(null)
     try {
-      const blob = await solicitacoesApi.exportarAtrasadosCsv({ page, size: 20 })
+      const blob = await solicitacoesApi.exportarAtrasadosCsv({ page: 0, size: 100 })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
@@ -71,6 +71,9 @@ export function Atrasados() {
         <div className="banner danger" role="alert">
           {erroExport}
         </div>
+      )}
+      {lista.data && lista.data.page.totalElements > 100 && (
+        <p className="muted">O CSV traz só os 100 primeiros do filtro.</p>
       )}
 
       {lista.isLoading && (

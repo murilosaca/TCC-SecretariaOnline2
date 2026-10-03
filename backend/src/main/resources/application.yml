@@ -7,7 +7,7 @@ spring:
     exclude:
       - org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/secretaria_dev}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5433/secretaria_dev}
     username: ${SPRING_DATASOURCE_USERNAME:secretaria}
     password: ${SPRING_DATASOURCE_PASSWORD:localdev}
     hikari:
@@ -65,7 +65,7 @@ app:
     reset-audience: password-reset
     deliberation-audience: request-action
     deliberation-ttl-seconds: 259200
-    frontend-base-url: ${FRONTEND_BASE_URL:http://localhost:5173}
+    frontend-base-url: ${FRONTEND_BASE_URL:http://localhost:5174}
     jwt-private-key-pem: ${JWT_RSA_PRIVATE_KEY:}
     jwt-public-key-pem: ${JWT_RSA_PUBLIC_KEY:}
     max-falhas-consecutivas: 10

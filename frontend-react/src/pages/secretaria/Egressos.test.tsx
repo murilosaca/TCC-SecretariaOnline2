@@ -68,10 +68,45 @@ describe('Egressos', () => {
     expect(await screen.findByText('Ana Colada')).toBeTruthy()
     expect(screen.queryByRole('link', { name: 'Novo' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Novo egresso' })).toBeNull()
+    expect(screen.queryByText(/100 primeiros/)).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'Exportar CSV' }))
     await waitFor(() => {
-      expect(egressosApi.exportarCsv).toHaveBeenCalled()
+      expect(egressosApi.exportarCsv).toHaveBeenCalledWith({
+        cursoId: undefined,
+        ano: undefined,
+        situacao: undefined,
+        page: 0,
+        size: 100,
+      })
     })
+    expect(egressosApi.listar).toHaveBeenCalledWith(
+      expect.objectContaining({ page: 0, size: 20 }),
+    )
     expect(screen.queryByText(/job/i)).toBeNull()
+  })
+
+  it('avisa que o CSV traz só os 100 primeiros quando o total passa de 100', async () => {
+    vi.mocked(egressosApi.listar).mockResolvedValue({
+      content: [
+        {
+          alunoId: 'a1',
+          nome: 'Ana Colada',
+          cursoId: 'c1',
+          cursoSigla: 'TADS',
+          dataColacao: '2026-07-15T12:00:00Z',
+          anoColacao: 2026,
+          situacaoDiploma: 'PENDENTE',
+          numeroDiploma: 'UFPR-1',
+          _links: {},
+        },
+      ],
+      page: { number: 0, size: 20, totalElements: 101, totalPages: 6 },
+      _links: {},
+    })
+    renderPage()
+    expect(await screen.findByText('O CSV traz só os 100 primeiros do filtro.')).toBeTruthy()
+    expect(screen.getByText('Há mais nesta lista.')).toBeTruthy()
+    expect(screen.getByText('Página 1 de 6')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Novo egresso' })).toBeNull()
   })
 })

@@ -84,7 +84,8 @@ class ResetSenhaAdminUseCaseTest : StringSpec({
         useCase.execute(UUID.randomUUID(), alvo.id, "127.0.0.1")
         outbox.tipos shouldBe listOf("PASSWORD_RESET")
         outbox.payloads[0].shouldContain("/nova-senha?token=")
-        outbox.payloads[0].contains("senha") shouldBe false
+        val json = ObjectMapper().readTree(outbox.payloads[0])
+        json.fieldNames().asSequence().filter { it.contains("senha") }.toList() shouldBe emptyList()
         audit.tipos shouldBe listOf("iam.password_reset_admin")
     }
 })

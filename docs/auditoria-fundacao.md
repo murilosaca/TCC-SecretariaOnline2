@@ -1,6 +1,6 @@
 # Auditoria de fundação — SO2
 
-Data: 2026-09-20. Fontes: `docs/tcc-docs.md`, `docs/telas-figma.md`, código e `.cursorrules`.
+Data: 2026-10-03. Fontes: `docs/tcc-docs.md`, `docs/telas-figma.md`, código e `.cursorrules`.
 
 ## Correções aplicadas nesta auditoria
 
@@ -48,7 +48,7 @@ O P0 oficial (`docs/telas-figma.md`) mais o hospedeiro F3.2 (único jeito de pro
 | Hospedeiro F3.2 | SECRET_SINGLE (`V006`), PIN em claro só na host-session (`HostPinPort` / `HostPinStore` em memória) |
 | F0.6 | `GET /publico/protocolos/{protocolo}` + UI loading / not-found / ok (hash truncado, sem PDF) |
 
-Sessão JWT que não é aluno: BFF devolve 403; `/inicio` mostra empty honesto, sem “Olá, aluno”. Deep link: login respeita `state.from` se a rota for interna segura. Refresh falho após 401 limpa o access token e vai para `/erro/401` (CTA “Fazer login”), não para `/inicio` anônimo.
+Sessão sem rel `painel`: `/inicio` mostra empty honesto, sem “Olá, aluno”. Professor com `dashboard.view_self_professor` carrega `GET /bff/dashboard/professor`. Deep link: login respeita `state.from` se a rota for interna segura. Refresh falho após 401 limpa o access token e vai para `/erro/401` (CTA “Fazer login”), não para `/inicio` anônimo.
 
 A ordem das fatias **depois** do P0 (deliberação → CAAF individual → QR, com COE só junto de estágio) está no README. Este arquivo lista dívida; não redefine o cronograma.
 
@@ -64,59 +64,60 @@ Quem ler a tabela de dívida **abaixo** não deve achar que `/academico/**` aind
 |---|---|
 | FGAC em `/academico/**` | Item 7: JWT + capability da tela (`course.manage` / `subject.manage` / `user.manage_students` / `calendar.manage`); anônimo 401; sem cap 403; fora do escopo 404. **Não** está `permitAll`. POST inclui o criador na mesma TX; PUT re-adiciona quem edita (anti-lockout). `_links.criar` da coleção é incondicional (o GET já passou no `@PreAuthorize`). |
 | Nav HATEOAS | Item 7: `GET /auth/me`._links + `useActions`. `MenuLinks` é o único ponto que olha caps para o menu. |
-| Dispatcher SMTP | Item 6: Outbox → Mailpit at-least-once. Hub F1.6 / F3.8 / F7.5 / push / FORWARD continuam na dívida. |
+| Dispatcher SMTP | Item 6: Outbox → Mailpit at-least-once. Hub F1.6 / F3.8 e templates F7.5 estão nas linhas abaixo. Push/FCM continua fora. |
 | F0.7 verificação pública | Item 5: `GET /publico/certificados/{hash}/verificacao` + JWKS + SubtleCrypto. CA-04 (upload) e `REVOGADO` continuam dívida. |
 | KPIs horas / certificados no `/inicio` | Itens 3 e 5: soma `APROVADA` e contagem do módulo; deixam de ser “Indisponível” após a CAAF. Falha/sem cadastro → `null` (HTTP 200). |
 | Presença QR \| SECRET × SINGLE \| DUAL | Item 4: motor v4.1 com os quatro modos. Janelas pré-agendadas e lista ao vivo de inelegíveis continuam dívida. |
 | V011 `curso_secretario` | Item 7: N:N + seed TADS + `CursoEscopoPort`. Claim JWT `cursoIds` **não** entrou (dívida abaixo). |
 | P0 Expo aluno | Item 8: login / primeiro acesso / BFF `/inicio` / nova solicitação / presença SECRET+QR. Refresh **(A)** body + Keychain. Web cookie intacto. |
-| Egresso F2 | Item 9.3: `alumni.view_own`, menu `egresso-inicio`, `GET /egressos/me`, reemissão do PDF já gravado (mesmo `hash_sha256` e mesma assinatura, 404 se não for o dono). Sem migration. Diploma, lista F1.19 e Expo ficaram de fora (linhas abertas). |
+| Egresso F2 | Item 9.3: `alumni.view_own`, menu `egresso-inicio`, `GET /egressos/me`, reemissão do PDF já gravado (mesmo `hash_sha256` e mesma assinatura, 404 se não for o dono). Sem migration. Diploma e a whitelist Expo estão nas linhas abaixo. A lista F1.19 do aluno continua fora. |
+| F3.1 dashboard professor | `GET /bff/dashboard/professor` (`dashboard.view_self_professor` em `CatalogoPapeis.professor`; `MenuLinks.painel` aponta o rel). `/inicio` do professor carrega esse BFF; não é 403. |
+| F5.2 fila central | Fila em `/solicitacoes` com `request.view_curso`, CSV de atrasados e V020. |
+| F6.2 relatórios | `GET /reports/coordinator`. |
+| F7.1–F7.8 admin | `/admin/usuarios`, `/admin/perfis`, `/admin/autoridades`, `/admin/tipos-solicitacao`, `/admin/templates-comunicacao`, `/admin/jobs`, `/admin/audit-log`. F7.9 continua fora. |
+| Picker F5.7 | `GET /iam/usuarios`. Id inexistente → 422 em `CursoApplicationService.exigirUsuariosExistentes`. |
+| Hub F1.6 / F3.8 e templates F7.5 | `/communications` e `/admin/templates-comunicacao`. Push/FCM continua fora. |
+| Diploma F5.11 | V019 e `/diplomas`. |
+| Cadastro F5 de TCC | `POST`/`PUT /tccs` e `/secretaria/tccs`. |
+| V017 `comissao_membro` | Pool CAAF. Lote só com presença já validada. |
+| Expo whitelist | `frontend-react-native/src/lib/navMenu.ts` inclui `egresso-inicio`, formativas, certificados, estágios e TCCs. Deliberação, CAAF, COE, F5, F6 e F7 no app continuam de fora de propósito. |
+| F4.2 pool COE | `GET /comissoes/coe` e `POST /comissoes/coe/atribuicoes`. Parecer continua individual. |
+| Cadastro F5 de estágio | `POST`/`PUT /estagios` e `/secretaria/estagios`. |
+| MinIO / arquivos | Compose, `modules/arquivos`, V018 `storage_key`, URL pré-assinada. Antivírus e versionamento continuam fora. |
 
 ## Ainda aberto (dívida consciente — não é P0)
 
-Só o que **ainda** está aberto. Não reabrir FGAC, nav, dispatcher, F0.7, KPIs, QR nem V011.
+Só o que **ainda** está aberto, como decisão — não como esquecimento. Não reabrir o que está em “Já fechado”.
 
 | Item | Spec | Situação | Ação |
 |---|---|---|---|
-| F3.1 dashboard professor | BFF próprio | Ausente; `/inicio` 403 honesto | BFF professor |
-| HostPin em memória | PIN na host-session | Some no restart da API | Persistência ou reabertura de janela |
-| Claim JWT `cursoIds` | spec JwtFilter | Escopo só no use case (`CursoEscopoPort`). Sem `user.manage_all` | Incluir no token sem confiar só no claim |
+| F7.9 saúde + Grafana | RF-F7-007, P3 na spec | Actuator no ar (`health`, `info`, `metrics`; só `health` é `permitAll`). Sem a tela | Decisão: fora. Não implementar Grafana |
+| Kanban F5.19 | tela P3 opcional, flag `tasks.enabled` | RF-F5-012 não bloqueia o MVP | Decisão: fora. Não implementar kanban |
+| HostPin em memória | PIN na host-session | `HostPinStore` em memória; some no restart da API | Decisão: sem persistência |
+| Claim JWT `cursoIds` | spec JwtFilter | Escopo só no use case (`CursoEscopoPort`). O token não leva `cursoIds` | Decisão: não incluir o claim |
 | JWT vs `/auth/me` | capabilities | Enforcement (`@PreAuthorize`, assembler) lê authorities do JWT (TTL 15 min). `GET /auth/me` monta o menu com `ConsultarSessaoUseCase` → `usuario.authorities` do banco. Depois de conceder/revogar (inclusive `substituirAuthorities` no seed) o menu pode mudar até 15 min antes da API. Não é explorável: o JWT nunca concede mais do que foi assinado | Mesmo assunto do claim `cursoIds` ausente; não encurtar o TTL só por isso |
-| Fila F5.2 da secretaria | `/solicitacoes` com `request.view_curso` | Menu não emite o rel `solicitacoes` sem `request.view_own`; secretaria usa `deliberar` (`/solicitacoes?to=me`) | F5.2 é fatia futura — não implementar a fila central nesta correção |
-| Relatórios F6.2 | KPIs e gráficos da coordenação | F6.1 entregue em `/coordenacao/cursos/{id}/config`; F6.2 não nasceu | Fatia própria |
-| Portal admin F7.1–F7.9 | usuários, papéis, jobs, saúde | Fora desta fatia | Não misturar com o FGAC acadêmico (já fechado) |
-| Seletor de usuários em F5.7 | Nome, Sigla, Coordenador, Horas, Secretários (`docs/tcc-docs.md`:3180 — `coordenadorId` e `secretariosIds[]` são usuários existentes) | Form web pede UUID cru de secretário e não envia `idCoordenador` (coordenador do TADS vem do seed). A API também **não** valida existência: os UUIDs entram direto em `Curso.idCoordenador` e em `curso_secretario` (V011 declara "sem FK cross-módulo"). Sem escalada de privilégio — só se grava vínculo em curso já no escopo do chamador | Picker da F7.1 resolve na origem; não adicionar validação de existência nesta fatia |
-| `request.triage` | nome `dominio.acao` | Não aparece em `docs/`. É decisão de implementação derivada de RF-F5-002 (triagem da secretaria) para o dispatcher **não** mandar deep-link a quem só faz fila | Não alterar o item 6 (dispatcher/deep-link fechados) |
+| `request.triage` | nome `dominio.acao` | Não aparece em `docs/`. Decisão de implementação (RF-F5-002): o dispatcher não manda deep-link a quem só faz fila | Não alterar o dispatcher |
 | `SolicitacaoCursoEscopo` | join aluno ↔ IAM | Duas queries por aluno (`findByIdentificador` + `findByEmail`); importa `IdentificadorLogin` (VO do IAM). Acoplamento por PORT (`CursoEscopoPort`, `UsuarioRepository`) é o padrão aceito do repo — **não** é violação de dependência (é o "só ports" da regra 3) | Escala é limite consciente; não duplicar dados entre módulos |
-| ArchUnit / travessias de módulo | regra 2 de dependência | Três famílias, não só o loader de dev: (1) `modules.iam.infrastructure.security.IamPrincipal` é importado em **produção** por `CursoController`, `AlunoController`, `DisciplinaController`, `SolicitacaoController`, `EventoController`, `FormativaController`, `CertificadoController` e `AlunoDashboardController` — padrão aceito do repo hoje; candidato a `shared/` quando o ArchUnit entrar. (2) `IamDevDataLoader` importa `comunicacao.application.EmailMascarado`. (3) `DespacharOutboxUseCase` (application) importa `comunicacao.infrastructure.ComunicacaoProperties` (application → infrastructure). O caso `@Profile("dev")` `AcademicoDevDataLoader` → `IamProperties` continua. `Solicitacoes` via `CursoEscopoPort` + `UsuarioRepository` **não** entra nesta lista (linha acima) | Não mover `IamPrincipal` nesta fatia; extrair porta de seed / properties quando o ArchUnit entrar |
-| Nomes de endpoint | `docs/tcc-docs.md` / F5.6 / F5.7 / F5.8 | Spec fala `/students`, `/secretaria/cursos`, `/calendars`, `POST /calendars/periods`, `?slaBreached=true`. Código: `/academico/alunos`, `/academico/cursos`, `/academico/periodos`, parâmetro `atraso`. F5.9 já apontava `/academico/periodos`; F5.6, F5.7 e F5.8 foram alinhados à API real | **Não** renomear a API — quebraria o P0 e o frontend |
+| ArchUnit / Testcontainers | regra 2 e ITs | Travessias esperam o ArchUnit: `IamPrincipal` importado por controllers de outros módulos; `IamDevDataLoader` importa `EmailMascarado`; `DespacharOutboxUseCase` importa `ComunicacaoProperties`. `Solicitacoes` via port não entra. Testcontainers não entra | Decisão: não mover `IamPrincipal` e não subir Testcontainers |
+| Nomes de endpoint | `docs/tcc-docs.md` / F5.6 / F5.7 / F5.8 | Spec fala `/students`, `/secretaria/cursos`, `/calendars`, `POST /calendars/periods`. Código: `/academico/alunos`, `/academico/cursos`, `/academico/periodos`. Atrasados usa `slaBreached`; a fila também aceita `atraso`. F5.9 já apontava `/academico/periodos`; F5.6, F5.7 e F5.8 foram alinhados à API real | **Não** renomear a API — quebraria o P0 e o frontend |
 | Desativar curso | spec `PATCH /secretaria/cursos/{id} {ativo:false}` + RN-F5-004-04 (histórico preservado) | Código: `DELETE` com guarda de vínculos (`CursoApplicationService` → 409 "Curso possui alunos ou disciplinas vinculados", coberto por IT) e `ativo` só chega via PUT. Sem PATCH. A intenção da RN (não apagar histórico) está no 409 | Não implementar o PATCH nesta fatia |
 | Unicidade de GRR/e-mail em `aluno` | V002 UNIQUE global | `POST /academico/alunos` com GRR ou e-mail institucional já usado (mesmo de outro curso) devolve 409. GRR é identificador público da UFPR, não segredo — o 409 não é enumeração de dado sensível | Manter UNIQUE global; não scoped por curso |
 | Ports com `Pageable` | domain/application puros | Ports importam Spring Data | Extrair paginações próprias numa fatia seguinte |
-| Bucket4j + Redis | RNF-SEC-04 | Janela em memória no processo | Trocar quando houver Redis |
+| Rate limit em memória | RNF-SEC-04 | Janela em memória no processo. Sem Bucket4j e sem Redis | Decisão: não trocar nesta etapa |
 | Cobertura 85/70/75 | RNF de testes | Ampliar por módulo | Continuar nas fatias seguintes |
-| Combo Alunos/Disciplinas × `course.manage` | seletor de curso nas telas F5.8 / alunos | As quatro `*.manage` andam juntas no seed; o combo reusa `GET /academico/cursos` (exige `course.manage`). Sem ela o form fica desabilitado | Dívida honesta até F7.1 — sem endpoint novo de busca nesta fatia |
-| Flyway nas ITs | migrations imutáveis (última **V015** = pool COE; V014 = F6.1) | `application-test.yml` usa H2 `ddl-auto: create-drop` e `flyway.enabled: false`. Toda IT é `@ActiveProfiles("test")`, então a V015 nunca é exercitada pelo Flyway; divergência DDL × entidade passa verde e só explode no boot contra o Postgres `:5433`. Em dev/prod o `ddl-auto` segue `validate` | Testcontainers + Postgres num perfil `it` numa fatia futura. **Não** implementar Testcontainers nesta correção |
-| Paginação da UI acadêmica | F5.7 pede `Pagination footer`; API emite `_links.first/last/next/prev` | `Cursos.tsx`, `Disciplinas.tsx`, `Alunos.tsx` e `Calendarios.tsx` fixam a primeira página e não renderizam controle. Acima de 20 registros os dados ficam invisíveis sem aviso | Componente `Paginacao` dirigido por `_links` numa fatia de limpeza. **Não** implementar a paginação nesta correção |
-| Fila CAAF por curso | F4.1 / comissão | Nasceu `coe_membro` (só COE). Sem tabela genérica `commission_member` | Filtro CAAF por comissão continua dívida |
-| F4.2 pool COE | RF-F4-002 | Item 9.5: `GET /comissoes/coe` + `POST /comissoes/coe/atribuicoes`. Parecer continua individual no 9.1. Sem “Aprovar selecionados” | Fechado nesta fatia |
-| Cadastro F5 de TCC | secretaria registra o TCC | Seed `@Profile("dev")`. Sem CRUD | Fatia F5 futura |
-| Certificado de conclusão de TCC | RF-F3-006 / F3.7-D02 | F6.1 grava banca e limiar de horas. A consolidação das avaliações e a colação (F5.11) continuam “a definir”. **Não** houve emissão | Quando a colação ou a consolidação da banca definirem o gatilho |
-| TCC (módulo) | RF-F1-008 / RF-F3-006 | Item 9.2 entregou acompanhamento, upload `bytea` e parecer individual em `/tccs`. Sem lote | Certificado e cadastro F5 seguem abertos |
-| Diploma e colação | RF-F2-001 / F5.11 | O painel do egresso devolve `diploma`, `colacao`, `concluidoEm` e `kpis.situacaoDiploma` nulos. A UI diz que o registro ainda não está disponível. Não nasceu tabela `diploma` nem wizard de colação | F5.11 |
-| Lista F1.19 do egresso | HU 19 critério 5 | `/certificados` segue `certificate.view_own` e `CertificadoAcesso` continua recusando situação EGRESSO. A reemissão do dono é `GET /egressos/me/certificados/{id}/reemissao` | Não abrir a lista de aluno nesta fatia |
-| Expo F2 | RF-F2-001 | O app nativo não tem `/egresso/inicio`. O menu ignora o rel `egresso-inicio` (whitelist P0) e o egresso cai no `/inicio` com 403 do BFF | mobile-2 |
-| Cadastro F5 de estágio | secretaria registra o estágio | Fatia 10: `POST`/`PUT /estagios` (`internship.manage`), UI `/secretaria/estagios`, orientador nulo. PDF no MinIO desde a 15 | Lote, TCC |
-| MinIO / `arquivos` | upload/download presigned | Fatia 15: MinIO no compose, `modules/arquivos`, `storage_key` (V018), download TTL 15 min. PDF deixa de trafegar pelo backend | Antivírus, versionamento, anexos de solicitação |
-| Períodos por curso / F5.9 tipos | calendário semântico | F6.1 gravou só a duração 15/18 em `curso_configuracao`. `periodo_letivo` continua global | Schema por curso + tipos na F5.9 |
+| Combo Alunos/Disciplinas × `course.manage` | seletor de curso nas telas F5.8 / alunos | O combo reusa `GET /academico/cursos` (exige `course.manage`). Sem ela o form fica desabilitado | Decisão: sem endpoint novo de busca |
+| H2 sem Flyway | migrations imutáveis; a última no código é a **V034** | `application-test.yml`: H2, `ddl-auto: create-drop`, `flyway.enabled: false`. Nenhuma migration passa pelo Flyway no perfil `test`. `mvn test` não executa classes `*IT` (Surefire sem `includes`). Em dev/prod o `ddl-auto` segue `validate` | Decisão. Não mudar o `pom` para rodar `*IT` e não subir Testcontainers |
+| Paginação da UI acadêmica | F5.7 pede `Pagination footer`; API emite `_links.first/last/next/prev` | `Cursos.tsx`, `Disciplinas.tsx`, `Alunos.tsx` e `Calendarios.tsx` ficam na primeira página, sem controle. Acima de 20 registros os dados ficam invisíveis sem aviso | Decisão: não implementar agora |
+| Certificado de conclusão de TCC | RF-F3-006 / F3.7-D02 | Acompanhamento e parecer existem em `/tccs`. Não há emissão de certificado de conclusão | Decisão: fora até a banca definir o gatilho |
+| Lista F1.19 do egresso | HU 19 critério 5 | `/certificados` segue `certificate.view_own` e `CertificadoAcesso.exigirAlunoAtivo` recusa situação EGRESSO. A reemissão do dono é `GET /egressos/me/certificados/{id}/reemissao` | Não abrir a lista de aluno |
+| Períodos por curso / F5.9 tipos | calendário semântico | F6.1 gravou só a duração 15/18 em `curso_configuracao`. `periodo_letivo` continua global | Schema por curso fica fora |
 | Janelas pré-agendadas / inelegíveis | CA-02 / CA-06 | Motor v4.1 já tem os quatro modos; janelas desta fatia são ao vivo (15 min) | Pré-agendar e lista ao vivo quando a tela de criação pedir |
-| CA-04 / `REVOGADO` | upload na F0.7; revogação | F0.7 verifica hash; sem upload de PDF; sem estado `REVOGADO` | Fora desta fatia |
-| Hub / templates / push / FORWARD | F1.6, F3.8, F7.5, F3.4-D04 | Dispatcher SMTP já entrega F0.2 e deep-link | Não reabrir o item 6. FCM/push no Expo continua fora |
-| Expo web | RNF-POR-01 | Item 8 cobre Expo Go / emulador / aparelho. Sem origem CORS extra, sem `X-SO2-Client` no `allowedHeaders` | Só se o Expo web for fatia; não usar `*` |
-| Cookie nativo (B) | RN-F0.1-03 | Item 8 foi **(A)**: RN não persiste `so2_refresh` httpOnly de forma confiável. Body `{ refreshToken }` + SecureStore. Cookie da web permanece | Não reabrir o cookie da web; (B) só se alguém provar jar nativo ponta a ponta |
-| Deliberação / CAAF / F5 no app | F3.4 / F4.1 / F5 | Menu nativo só rels P0 do aluno (`inicio`, `solicitacoes`, `eventos`, `contato`). Professor/secretaria: 403 honesto / item ausente | Fatia mobile-2; não misturar com o item 9 de módulos novos |
-| Formativas / certificados no Expo | F1.10 / F1.19 | BFF mostra KPIs e pendências com href web; o app não implementa as telas | mobile-2 |
-| Desvincular coordenador | F5.7 / F6.1 | F6.1 não zera `idCoordenador`. `Curso.atualizar` continua tratando `null` como "manter" | Picker da F7.1; não misturar com config curricular |
+| CA-04 / `REVOGADO` | upload na F0.7; revogação | F0.7 verifica hash. Sem upload de PDF e sem estado `REVOGADO` | Decisão: fora |
+| FCM / push | canal adicional | O hub entrega in-app e e-mail. Sem FCM no Expo | Decisão: fora |
+| Expo web | RNF-POR-01 | O item 8 cobre Expo Go, emulador e aparelho. Sem origem CORS extra e sem `X-SO2-Client` em `allowedHeaders` | Decisão: fora. Sem `*` |
+| Cookie nativo (B) | RN-F0.1-03 | O item 8 ficou em **(A)**: body `{ refreshToken }` + SecureStore. O cookie da web permanece | Decisão: (B) só se alguém provar jar nativo |
+| `Curso.atualizar` e coordenador nulo | F5.7 / F6.1 | `Curso.atualizar` trata `idCoordenador` nulo como manter | Decisão: não zerar o coordenador por omissão |
+| FORWARD | F3.4-D04 | O motor não tem transição FORWARD | Decisão: fora |
 | Eventos de calendário | tipos semânticos em F5.9 | Só período letivo | Segunda aba quando o schema existir |
 | Angular em `frontend/` | React oficial | Não é stack deste repo | Não recriar nem commitar |
 

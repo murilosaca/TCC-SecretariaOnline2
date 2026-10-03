@@ -11,6 +11,21 @@ class AuditLogJpaAdapter(
     private val jpaRepository: AuditLogJpaRepository,
 ) : AuditLogPort {
     override fun append(tipo: String, atorId: UUID?, payload: String?, ip: String?) {
+        gravar(tipo, atorId, payload, null, payload, ip)
+    }
+
+    override fun appendDiff(tipo: String, atorId: UUID?, antes: String?, depois: String?, ip: String?) {
+        gravar(tipo, atorId, depois ?: antes, antes, depois, ip)
+    }
+
+    private fun gravar(
+        tipo: String,
+        atorId: UUID?,
+        payload: String?,
+        antes: String?,
+        depois: String?,
+        ip: String?,
+    ) {
         val corpo = payload ?: ""
         jpaRepository.save(
             AuditLogJpaEntity(
@@ -20,8 +35,8 @@ class AuditLogJpaAdapter(
                 payload = corpo,
                 ip = ip,
                 createdAt = OffsetDateTime.now(),
-                payloadAntes = null,
-                payloadDepois = corpo,
+                payloadAntes = antes,
+                payloadDepois = depois ?: corpo,
             ),
         )
     }

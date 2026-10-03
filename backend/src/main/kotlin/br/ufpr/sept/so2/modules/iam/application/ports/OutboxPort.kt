@@ -12,5 +12,7 @@ interface OutboxPort {
 
     fun markFailed(id: UUID, tentativas: Int, lastError: String?)
 
+    fun markDead(id: UUID, tentativas: Int, lastError: String?)
+
     fun markPendingRetry(id: UUID, tentativas: Int, lastError: String?)
 }

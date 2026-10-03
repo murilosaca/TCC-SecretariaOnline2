@@ -1,6 +1,7 @@
 package br.ufpr.sept.so2.modules.iam.application
 
 import br.ufpr.sept.so2.modules.iam.application.ports.AuditLogPort
+import br.ufpr.sept.so2.modules.iam.application.ports.AuthoritiesDePerfilPort
 import br.ufpr.sept.so2.modules.iam.application.ports.JwtTokenService
 import br.ufpr.sept.so2.modules.iam.application.ports.OpaqueTokenHasher
 import br.ufpr.sept.so2.modules.iam.application.ports.PasswordHasher
@@ -25,6 +26,8 @@ class LoginUseCase(
     private val opaqueTokenHasher: OpaqueTokenHasher,
     private val auditLogPort: AuditLogPort,
     private val settings: IamSettings,
+    private val authoritiesDePerfilPort: AuthoritiesDePerfilPort,
+    private val capabilityCache: CapabilityCache,
 ) {
     @Transactional
     @JvmOverloads
@@ -54,6 +57,7 @@ class LoginUseCase(
         }
 
         encontrado.registrarLoginOk(agora)
+        aplicarPerfis(encontrado, agora)
         usuarioRepository.save(encontrado)
         val refreshRaw = UUID.randomUUID().toString()
         val sessao = RefreshSessao(
@@ -69,12 +73,18 @@ class LoginUseCase(
         )
         refreshTokenRepository.save(sessao)
         auditLogPort.append("iam.login_success", encontrado.id, mascarar(encontrado), ip)
+        capabilityCache.evict(encontrado.id)
         return LoginResult(
             jwtTokenService.emitAccessToken(encontrado, sessao.id),
             refreshRaw,
             encontrado.precisaPrimeiroAcesso(),
             settings.accessTtlSeconds,
         )
+    }
+
+    private fun aplicarPerfis(usuario: Usuario, agora: OffsetDateTime) {
+        val efetivas = authoritiesDePerfilPort.uniao(usuario.id) ?: return
+        usuario.substituirAuthorities(efetivas, agora)
     }
 
     private fun recusar(atorId: UUID?, payload: String, ip: String?): Nothing {

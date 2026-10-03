@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { adminApi } from '../../api/admin'
 import { ApiError } from '../../api/client'
+import { perfisApi } from '../../api/perfis'
 import { useActions } from '../../hooks/useActions'
 import type { AdminUsuario } from '../../models/iam'
 
@@ -306,7 +307,62 @@ function UsuarioLinha({
             Reset senha
           </button>
         )}
+        {actions.can('gerenciar-perfis') && <PerfisDoUsuario usuarioId={usuario.id} />}
       </td>
     </tr>
+  )
+}
+
+function PerfisDoUsuario({ usuarioId }: { usuarioId: string }) {
+  const [aberto, setAberto] = useState(false)
+  const client = useQueryClient()
+  const atribuicao = useQuery({
+    queryKey: ['admin-usuario-perfis', usuarioId],
+    queryFn: () => perfisApi.atribuicao(usuarioId),
+    enabled: aberto,
+  })
+  const [marcados, setMarcados] = useState<string[] | null>(null)
+  const selecionados = marcados ?? atribuicao.data?.selecionados ?? []
+  const salvar = useMutation({
+    mutationFn: () => perfisApi.substituir(usuarioId, selecionados),
+    onSuccess: () => {
+      setAberto(false)
+      setMarcados(null)
+      client.invalidateQueries({ queryKey: ['admin-usuarios'] })
+    },
+  })
+
+  return (
+    <>
+      <button type="button" className="ghost" onClick={() => setAberto(true)}>
+        Gerenciar perfis
+      </button>
+      {aberto && (
+        <div className="panel" role="dialog" aria-label="Gerenciar perfis">
+          {atribuicao.isLoading && <p className="muted">Carregando perfis…</p>}
+          {(atribuicao.data?.perfis ?? []).map((perfil) => (
+            <label key={perfil.id}>
+              <input
+                type="checkbox"
+                checked={selecionados.includes(perfil.id)}
+                onChange={() => {
+                  const atual = new Set(selecionados)
+                  if (atual.has(perfil.id)) atual.delete(perfil.id)
+                  else atual.add(perfil.id)
+                  setMarcados([...atual])
+                }}
+              />
+              {perfil.nome}
+            </label>
+          ))}
+          <button type="button" onClick={() => salvar.mutate()}>
+            Salvar perfis
+          </button>
+          <button type="button" className="ghost" onClick={() => setAberto(false)}>
+            Fechar
+          </button>
+        </div>
+      )}
+    </>
   )
 }

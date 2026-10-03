@@ -7,8 +7,11 @@ import br.ufpr.sept.so2.shared.domain.exception.ConflitoEstadoException
 import br.ufpr.sept.so2.shared.domain.exception.CredenciaisInvalidasException
 import br.ufpr.sept.so2.shared.domain.exception.DadoInvalidoException
 import br.ufpr.sept.so2.shared.domain.exception.LoteConflitoException
+import br.ufpr.sept.so2.shared.domain.exception.PerfilEmUsoException
 import br.ufpr.sept.so2.shared.domain.exception.RateLimitExcedidoException
 import br.ufpr.sept.so2.shared.domain.exception.RecursoNaoEncontradoException
+import br.ufpr.sept.so2.shared.domain.exception.SchemaInvalidoException
+import br.ufpr.sept.so2.shared.domain.exception.TipoSolicitacaoEmUsoException
 import br.ufpr.sept.so2.shared.domain.exception.TokenAcaoInvalidoException
 import br.ufpr.sept.so2.shared.domain.exception.TokenResetInvalidoException
 import org.slf4j.LoggerFactory
@@ -80,6 +83,18 @@ class GlobalExceptionHandler {
     @ExceptionHandler(DadoInvalidoException::class)
     fun handleInvalid(ex: DadoInvalidoException): ProblemDetail =
         problemDetail(HttpStatus.UNPROCESSABLE_ENTITY, "Dados inválidos", ex.message, "validation-error")
+
+    @ExceptionHandler(PerfilEmUsoException::class)
+    fun handlePerfilEmUso(ex: PerfilEmUsoException): ProblemDetail =
+        problemDetail(HttpStatus.UNPROCESSABLE_ENTITY, "Perfil em uso", ex.message, "role-in-use")
+
+    @ExceptionHandler(TipoSolicitacaoEmUsoException::class)
+    fun handleTipoEmUso(ex: TipoSolicitacaoEmUsoException): ProblemDetail =
+        problemDetail(HttpStatus.UNPROCESSABLE_ENTITY, "Tipo em uso", ex.message, "request-type-in-use")
+
+    @ExceptionHandler(SchemaInvalidoException::class)
+    fun handleSchema(ex: SchemaInvalidoException): ProblemDetail =
+        problemDetail(HttpStatus.UNPROCESSABLE_ENTITY, "Schema inválido", ex.message, ex.tipo)
 
     @ExceptionHandler(MaxUploadSizeExceededException::class)
     fun handleUpload(ex: MaxUploadSizeExceededException): ProblemDetail =

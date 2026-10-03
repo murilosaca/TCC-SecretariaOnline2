@@ -1288,3 +1288,39 @@ textarea:focus {
     grid-template-columns: 1fr;
   }
 }
+
+tr.danger td {
+  background: #fde8e8;
+}
+
+.badge.danger {
+  background: #fde8e8;
+  color: var(--danger);
+}
+
+.badge.warning {
+  background: #fff4e5;
+  color: #9a6700;
+}
+
+.badge.neutral {
+  background: #eee;
+  color: #333;
+}
+
+.editor-3 {
+  display: grid;
+  grid-template-columns: minmax(12rem, 0.8fr) minmax(16rem, 1.2fr) minmax(12rem, 0.9fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+textarea.invalid {
+  border-color: var(--danger);
+}
+
+@media (max-width: 900px) {
+  .editor-3 {
+    grid-template-columns: 1fr;
+  }
+}

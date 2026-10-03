@@ -56,6 +56,10 @@ import { EventoSecretariaFormulario } from './pages/secretaria/EventoSecretariaN
 import { EventoSecretariaOperacao } from './pages/secretaria/EventoSecretariaOperacao'
 import { MeusAtendimentos } from './pages/aluno/MeusAtendimentos'
 import { AuditLog } from './pages/admin/AuditLog'
+import { Autoridades } from './pages/admin/Autoridades'
+import { Jobs } from './pages/admin/Jobs'
+import { Perfis } from './pages/admin/Perfis'
+import { TiposSolicitacao } from './pages/admin/TiposSolicitacao'
 import { Usuarios } from './pages/admin/Usuarios'
 import { Comunicacao } from './pages/comunicacao/Comunicacao'
 import { PublicarComunicado } from './pages/comunicacao/PublicarComunicado'
@@ -130,6 +134,10 @@ export default function App() {
           <Route path="secretaria/exportacoes" element={<Exportacoes />} />
           <Route path="admin/usuarios" element={<Usuarios />} />
           <Route path="admin/audit-log" element={<AuditLog />} />
+          <Route path="admin/jobs" element={<Jobs />} />
+          <Route path="admin/perfis" element={<Perfis />} />
+          <Route path="admin/autoridades" element={<Autoridades />} />
+          <Route path="admin/tipos-solicitacao" element={<TiposSolicitacao />} />
           <Route path="coordenacao/cursos/:id/configurar" element={<ConfigurarCurso />} />
           <Route path="coordenacao/relatorios" element={<Relatorios />} />
           <Route path="comissoes/coe" element={<PoolCoe />} />

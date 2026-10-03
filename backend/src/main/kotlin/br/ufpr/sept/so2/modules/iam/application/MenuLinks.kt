@@ -106,6 +106,18 @@ object MenuLinks {
         if (caps.contains("user.manage_all")) {
             links["usuarios"] = "/admin/usuarios"
         }
+        if (caps.contains("iam.manage_roles")) {
+            links["perfis"] = "/admin/perfis"
+        }
+        if (caps.contains("iam.manage_authorities")) {
+            links["autoridades"] = "/admin/autoridades"
+        }
+        if (caps.contains("request_type.manage")) {
+            links["tipos-solicitacao"] = "/admin/tipos-solicitacao"
+        }
+        if (caps.contains("system.observe")) {
+            links["jobs"] = "/admin/jobs"
+        }
         if (caps.contains("audit.read")) {
             links["audit-log"] = "/admin/audit-log"
         }

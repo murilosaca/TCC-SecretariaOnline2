@@ -105,5 +105,7 @@ private class MemoriaOutbox : OutboxPort {
 
     override fun markFailed(id: UUID, tentativas: Int, lastError: String?) = Unit
 
+    override fun markDead(id: UUID, tentativas: Int, lastError: String?) = Unit
+
     override fun markPendingRetry(id: UUID, tentativas: Int, lastError: String?) = Unit
 }

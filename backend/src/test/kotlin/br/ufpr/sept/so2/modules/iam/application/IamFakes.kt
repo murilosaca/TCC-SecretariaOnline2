@@ -218,6 +218,11 @@ object IamFakes {
             claims.removeIf { it.id == id }
         }
 
+        override fun markDead(id: UUID, tentativas: Int, lastError: String?) {
+            failed.add(id)
+            claims.removeIf { it.id == id }
+        }
+
         override fun markPendingRetry(id: UUID, tentativas: Int, lastError: String?) {
             retried.add(id)
         }

@@ -129,7 +129,7 @@ Módulos previstos no mapa e ainda sem pasta própria: jobs/Outbox admin (31), p
 | Pasta | Uso |
 |---|---|
 | `pages/secretaria/` | CRUD F5.6–F5.9 + cadastro F5 de estágio/TCC + diplomas, estatísticas, atrasados, atendimentos, egressos, eventos, autorizações de imagem, importações e exportações |
-| `pages/admin/` | F7.1 usuários e F7.7 audit-log |
+| `pages/admin/` | F7.1 usuários, F7.7 audit-log, F7.6 jobs, F7.2 perfis, F7.3 autoridades e F7.4 tipos de solicitação |
 | `pages/aluno/`, `pages/inicio/`, `pages/professor/` | Aluno, BFF `/inicio`, hospedeiro |
 | `pages/perfil/` | F1.3–F1.5 perfil, segurança e notificações |
 | `pages/solicitacoes/`, `pages/formativas/`, `pages/estagios/`, `pages/tccs/`, `pages/publico/` | Fila/deliberar, CAAF, estágio, TCC, F0 |
@@ -182,7 +182,11 @@ Login: `@ufpr.br`, e-mail pessoal ou GRR (`GRR` + 8 dígitos). `senhaAlterada = 
 | `/coordenacao/cursos/{id}/config` | JWT + `course.config` **e** `idCoordenador = usuarioId` | GET/PATCH F6.1. Sem `course.manage`. Outro curso → 403. Anônimo → 401. Sem `/courses/{id}/config` |
 | `/reports/coordinator` | JWT + `report.view_coordinator` | F6.2 do coordenador. Outro curso ou nenhum curso coordenado → 403. Sem cap → 403 |
 | `/reports/secretary` | JWT + `report.view_secretary` | F5.18 da secretaria (`curso_secretario`). Fora do escopo ou sem curso vinculado → 403. Sem cap → 403 |
-| `/admin/usuarios` | JWT + `user.manage_all` | F7.1 CRUD. `POST /{id}/reset-senha` exige `user.reset_password`. Sem cap → 403 |
+| `/admin/usuarios` | JWT + `user.manage_all` | F7.1 CRUD. `POST /{id}/reset-senha` exige `user.reset_password`. `GET`/`PUT /{id}/perfis` exige `iam.manage_roles`. Sem cap → 403 |
+| `/admin/outbox` | JWT + `system.observe` | F7.6. `GET` (status, tipo) + `POST /{id}/reentrega`. UI em `/admin/jobs`. Sem cap → 403. Anônimo → 401. SENT → 409 |
+| `/admin/perfis` | JWT + `iam.manage_roles` | F7.2 CRUD. Perfil de sistema sem `_links.excluir`. Com usuário ativo → 422 `role-in-use`. Nome duplicado → 409. Sem cap → 403. Anônimo → 401 |
+| `/admin/autoridades` | JWT + `iam.manage_authorities` | F7.3. `GET`, `PATCH /{nome}` (só descrição), `PUT /matriz` (substitui o conjunto numa TX). Sem cap → 403. Anônimo → 401 |
+| `/admin/tipos-solicitacao` | JWT + `request_type.manage` | F7.4. `POST`, `PATCH /{id}`, `POST /{id}/publicar`, `DELETE /{id}` só DRAFT sem histórico. JSON inválido → 422 antes da TX. Sem cap → 403. Anônimo → 401 |
 | `/importacoes` | JWT + `import.run` | F5.16. `GET /modelos/{kind}` devolve o CSV na hora. `POST /{kind}` multipart cria o job (201). `GET /{id}` faz o preview. `POST /{id}/confirmar` só com `errorCount = 0`. Arquivo > 20 MB → 422. Sem cap → 403. Anônimo → 401. Sem `/imports` |
 | `/exportacoes` | JWT + `export.run` | F5.17. `POST /{kind}` devolve **202** com status `PROCESSANDO` (o arquivo não vem no corpo). `GET /{id}/download` só com `_links.download` (URL pré-assinada, TTL 15 min). Sem cap → 403. Anônimo → 401. Sem `/exports` |
 | `/audit-log` | JWT + `audit.read` | F7.7. `GET` com ator, ação, de e até. Página 50, `timestamp DESC`. `payloadAntes` e `payloadDepois` na lista. Sem PATCH/DELETE (405). Sem cap → 403. Anônimo → 401 |
@@ -235,9 +239,9 @@ Ordem de dependência real — um bounded context por fatia. O mapa F0–F8 do F
 | 28 | F5.3 + F5.12 solicitação interna e autorização de imagem | 20, 15 | **Feito** — `POST /requests` com `onBehalfOf`; `GET /requests?tipo=AUTORIZACAO_IMAGEM`; `PATCH /requests/bulk-deliberate` | RequestType pelo editor (33), FORWARD, kanban F5.19 |
 | 29 | F5.16 + F5.17 importações e exportações | 15, 11 | **Feito** — V026/V027; `/importacoes` e `/exportacoes` (job 202 + URL pré-assinada) | RabbitMQ, agendamento recorrente, CSV síncrono de atrasados/egressos |
 | 30 | F7.7 audit-log + módulo `auditoria` | 11 | **Feito** — V028; `GET /audit-log` (`audit.read`); append segue na porta do `iam` | Retenção/export; DELETE/PATCH na trilha; saúde/Grafana; jobs (31) |
-| 31 | F7.6 Outbox e jobs | 30 | `/admin/jobs` (`system.observe`): reentrega e alerta de latência | Grafana (P3), fila externa |
-| 32 | F7.2 + F7.3 perfis e matriz FGAC | 11, 30 | `role` + `role_authority`, CRUD de perfil e matriz | Editor de workflow (33), claim `cursoIds` |
-| 33 | F7.4 editor de RequestType | 32 | Editor de `form_schema` + `workflow_json` com versionamento e publicação | Migrar solicitação em voo, FORWARD automático |
+| 31 | F7.6 Outbox e jobs | 30 | **Feito** — `GET /admin/outbox` + `POST /{id}/reentrega` (`system.observe`); UI `/admin/jobs`; V029 | Grafana (P3), fila externa, SlaBreachChecker |
+| 32 | F7.2 + F7.3 perfis e matriz FGAC | 11, 30 | **Feito** — V030 `authority` + `perfil` + `perfil_authority` + `usuario_perfil`; `/admin/perfis` e `/admin/autoridades` | Claim `cursoIds` no JWT, editor de workflow (já na 33) |
+| 33 | F7.4 editor de RequestType | 32 | **Feito** — V031 `tipo_solicitacao_versao`; `/admin/tipos-solicitacao`; publicação imutável | Migrar solicitação em voo, FORWARD, templates (34) |
 | 34 | F7.5 templates de comunicação | 23, 33 | CRUD de template Markdown versionado; dispatcher renderiza template | Push, A/B de mensagem |
 | 35 | F8.1 busca global | 11, 30 | `GET /search?q=` filtrada por capabilities + paleta `Ctrl+K` | Índice externo, ranking semântico |
 | 36 | F8.2 suporte e FAQ | 33 | FAQ + ticket via `RequestType=SUPORTE_TECNICO` | Chat, base de conhecimento editável |
@@ -545,6 +549,37 @@ V028 acrescenta `payload_antes` e `payload_depois`. A tabela da V003 e as regras
 - UI `/admin/audit-log`. Nenhuma linha tem Excluir ou Editar. Menu: rel `audit-log` via `MenuLinks` + `useActions`.
 - Fora: retenção/export da trilha, saúde/Grafana (RF-F7-007), jobs/reentrega (31), Expo desta tela.
 
+**31. F7.6 Outbox e jobs** — feito
+
+V029 só acrescenta `outbox_event.retried_by`. A tabela da V003/V010 não é recriada. Status reais: `PENDING`, `PROCESSING`, `SENT`, `FAILED` e `DEAD` (quando as tentativas do dispatcher esgotam). `system.observe` só no `admin.dev`. `secretaria.dev` e `aluno.dev` não ganham a tela.
+
+- `GET /admin/outbox` (`system.observe`): abas por status, filtro `tipo`. Linha com id, tipo, payload resumido, tentativas e criado em. `FAILED` vai com `danger`. O card é só o `OutboxDispatcher` (OK / ATRASADO / FALHOU calculados na leitura). PENDING mais antigo há mais de 30 s devolve o banner “Dispatcher com latência > 30s verificar OutboxDispatcher”. Sem poller novo. Sem cap → 403. Anônimo → 401.
+- `POST /admin/outbox/{id}/reentrega`: `SELECT FOR UPDATE`, volta a `PENDING`, zera tentativas e grava quem reentregou. A resposta 200 não traz `_links.retry`. SENT, PENDING e PROCESSING → 409. Dois cliques concorrentes não duplicam (o segundo já vê PENDING). A UI `/admin/jobs` só mostra Reentregar com `_links.retry` (FAILED ou DEAD).
+- O proxy de `/admin` já devolve `index.html` para `Accept: text/html`. A API não usa o path da SPA.
+- Menu: rel `jobs` via `MenuLinks` + `useActions`.
+- Fora: Grafana, RabbitMQ, arquivar SENT, `SlaBreachChecker`, `ExportJobCleaner`, `EventAutoCloser`, Expo desta tela.
+
+**32. F7.2 + F7.3 perfis e matriz FGAC** — feito
+
+V030 cria `authority`, `perfil`, `perfil_authority` e `usuario_perfil`. O JWT continua `hasAuthority` (a união dos perfis é materializada em `usuario_authority` no login, no refresh e ao gravar a matriz ou a atribuição). Sem `cursoIds` no token. `iam.manage_roles` e `iam.manage_authorities` só no `admin.dev`. `secretaria.dev` não ganha as telas.
+
+- `GET`/`POST /admin/perfis`, `GET`/`PUT`/`DELETE /admin/perfis/{id}` (`iam.manage_roles`). Perfis de sistema `ALUNO`, `PROFESSOR`, `SECRETARIA`, `COORDENADOR`, `EGRESSO` e `ADMIN` não trazem `_links.excluir`. Perfil com usuário ativo → 422 `role-in-use` e a linha permanece. Nome duplicado → 409. Sem cap → 403. Anônimo → 401.
+- `GET /admin/autoridades`, `PATCH /admin/autoridades/{nome}` (só a descrição; o nome de sistema não muda) e `PUT /admin/autoridades/matriz` (substitui o conjunto de cada perfil numa TX).
+- `GET`/`PUT /admin/usuarios/{id}/perfis` substitui a lista numa TX, invalida o cache de capabilities e grava `audit_log` com quem entrou e quem saiu. Na F7.1, “Gerenciar perfis” só existe com `_links.gerenciar-perfis`.
+- O seed de dev continua: quem tem perfil recebe a união (`professor.dev` = `PROFESSOR` + `COORDENADOR`). `caaf.dev` segue sem perfil, com a lista direta. `aluno.dev`, `secretaria.dev` e `admin.dev` não perdem as caps das fatias 1–30; o admin ganha as quatro novas.
+- UI `/admin/perfis` e `/admin/autoridades`. Menu: rels `perfis` e `autoridades` via `MenuLinks` + `useActions`.
+- Fora: claim `cursoIds`, editor de workflow (já na 33), Expo destas telas.
+
+**33. F7.4 editor de RequestType** — feito
+
+V031 cria `tipo_solicitacao_versao`. `tipo_solicitacao` (V004) e os snapshots em `solicitacao` não são recriados. `AUTORIZACAO_IMAGEM` e `DECLARACAO_SIMPLES` continuam `PUBLISHED` pelo seed da fatia 28. `request_type.manage` só no `admin.dev`. `secretaria.dev` não ganha o editor. `GET /request-types` continua só o publicado.
+
+- `GET`/`POST /admin/tipos-solicitacao`, `GET`/`PATCH /admin/tipos-solicitacao/{id}`, `POST /{id}/publicar`, `DELETE /{id}`. Publicar grava a versão N+1 imutável e passa o tipo a `PUBLISHED`. JSON inválido → 422 `invalid-schema` ou `invalid-workflow` antes de abrir a TX; a versão anterior permanece. DRAFT não entra em `GET /request-types` nem no wizard `/solicitacoes/nova`.
+- Excluir só com `_links.delete`, e só DRAFT sem versão e sem solicitação. PUBLISHED não tem o botão. Com histórico → 422 `request-type-in-use`. Sem cap → 403. Anônimo → 401.
+- Solicitação já aberta permanece no `form_schema_snapshot` e no `tipo_versao` em que nasceu. Sem migração em voo e sem FORWARD.
+- UI `/admin/tipos-solicitacao`: lista, editores, preview e grafo no cliente (sem segundo GET a cada tecla). Publicar fica desabilitado com JSON inválido. Menu: rel `tipos-solicitacao` via `MenuLinks` + `useActions`.
+- Fora: templates de comunicação (34), FORWARD, migrar solicitação em voo, Expo desta tela.
+
 ### Fora do escopo de banca / P3
 
 Não conta como “falta para o TCC fechar”. Entra depois, ou nunca.
@@ -614,9 +649,9 @@ Senha de todos: `TroqueEstaSenha1!` (só local; override `IAM_DEV_SEED_PASSWORD`
 | `novo.dev@ufpr.br` | `GRR20240002` | Primeiro acesso (`senhaAlterada=false`); também tem cadastro acadêmico. Tem `internship.view_own` e `tcc.view_own` e listas vazias |
 | `professor.dev@ufpr.br` | `GRR20240003` | Hospedeiro (`event.manage`, `event.host`), deliberante (`request.deliberate`), orientador do estágio (`internship.review`) e da banca do TCC (`tcc.review`). **Membro COE do TADS** e **coordenador do TADS** com `course.config` e **sem** `course.manage` — configura F6.1 e não vê o CRUD `/secretaria/cursos`. `communication.publish_class` publica em `/comunicacao/publicar` (turma ADS 2026/1 e curso TADS). Sem `formative.*` — `GET /formativas?canReview=true` é 403. Sem `internship.view_own` / `tcc.view_own` — `GET /estagios?aluno=me` e `GET /tccs?aluno=me` são 403 |
 | `caaf.dev@ufpr.br` | `GRR20240004` | Revisor CAAF (`formative.review`). Sem `event.manage` / `request.deliberate` |
-| `secretaria.dev@ufpr.br` | `GRR20240005` | CRUD TADS (`course.manage`, `subject.manage`, `user.manage_students`, `calendar.manage`) + `internship.manage` + `tcc.manage` + `diploma.register` + `report.view_secretary` + `dashboard.view_secretary` + `request.view_curso` + `request.triage` + `request.deliberate` + `service_record.create` + `alumni.list` + `event.manage` / `event.host` / `event.view_curso` + `request.internal_open` + `image_authorization.review` + `import.run` + `export.run`. Sem `course.config` / `formative.review` / `internship.view_own` / `internship.review` / `user.manage_all` / `report.view_coordinator` / `audit.read`. Não recebe deep-link. Nav **sem** o item “Solicitações” do aluno (só Deliberar), **sem** Configurar curso / Usuários / Auditoria / Relatórios da coordenação / Eventos (prof.) e **com** Cadastro de estágios, TCCs, Diplomas, Egressos, Atendimentos, Eventos (`/secretaria/eventos`), Estatísticas, Fila central, Atrasados, Nova interna, Autorizações de imagem, Importações e Exportações. Sem o item Estágios/TCCs do aluno, a fila de revisão e o pool COE |
+| `secretaria.dev@ufpr.br` | `GRR20240005` | CRUD TADS (`course.manage`, `subject.manage`, `user.manage_students`, `calendar.manage`) + `internship.manage` + `tcc.manage` + `diploma.register` + `report.view_secretary` + `dashboard.view_secretary` + `request.view_curso` + `request.triage` + `request.deliberate` + `service_record.create` + `alumni.list` + `event.manage` / `event.host` / `event.view_curso` + `request.internal_open` + `image_authorization.review` + `import.run` + `export.run`. Sem `course.config` / `formative.review` / `internship.view_own` / `internship.review` / `user.manage_all` / `report.view_coordinator` / `audit.read` / `system.observe` / `iam.manage_roles` / `iam.manage_authorities` / `request_type.manage`. Não recebe deep-link. Nav **sem** o item “Solicitações” do aluno (só Deliberar), **sem** Configurar curso / Usuários / Auditoria / Jobs / Perfis / Autoridades / Tipos de solicitação / Relatórios da coordenação / Eventos (prof.) e **com** Cadastro de estágios, TCCs, Diplomas, Egressos, Atendimentos, Eventos (`/secretaria/eventos`), Estatísticas, Fila central, Atrasados, Nova interna, Autorizações de imagem, Importações e Exportações. Sem o item Estágios/TCCs do aluno, a fila de revisão e o pool COE |
 | `egresso.dev@ufpr.br` | `GRR20240006` | Portal egresso (`alumni.view_own`) |
-| `admin.dev@ufpr.br` | `GRR20240007` | F7.1/F7.8 (`user.manage_all`, `user.reset_password`) + F7.7 (`audit.read`). Nav **com** Usuários (`/admin/usuarios`) e Auditoria (`/admin/audit-log`). Sem caps de secretaria/aluno |
+| `admin.dev@ufpr.br` | `GRR20240007` | F7.1/F7.8 (`user.manage_all`, `user.reset_password`) + F7.7 (`audit.read`) + F7.6 (`system.observe`) + F7.2/F7.3 (`iam.manage_roles`, `iam.manage_authorities`) + F7.4 (`request_type.manage`). Nav **com** Usuários, Auditoria, Jobs (`/admin/jobs`), Perfis, Autoridades e Tipos de solicitação. Sem caps de secretaria/aluno |
 
 O seed IAM (`@Profile("dev")`, `iam.seed.enabled`) **substitui** o conjunto de authorities (revoga extras) e registra no log. O seed acadêmico respeita o mesmo flag e **não** apaga secretários extras de TADS (só adiciona `secretaria.dev` se ausente). O PUT de curso **não** é `replaceAll` da lista enviada: re-adiciona o `usuarioId` de quem edita (anti-lockout). Coordenador e secretários saem do picker (`GET /iam/usuarios`); id inexistente → 422.
 
@@ -656,5 +691,8 @@ A oficina seed `"Oficina Proof of Stay (dev)"` pode já estar `COMPLETA` para `a
 28. **Solicitação interna e imagem** — `secretaria.dev` em `/solicitacoes/nova` vê “Em nome de” (`nova-interna`) e abre a solicitação em nome do aluno do TADS. `aluno.dev` não vê o combobox. Aluno de outro curso → 403. Em `/secretaria/autorizacoes-imagem`, aprovar/rejeitar só com `_links`. Um item fora de `ABERTA` no `PATCH /requests/bulk-deliberate` → 409 e o lote inteiro permanece como estava.
 29. **Importações e exportações** — `secretaria.dev` em `/secretaria/importacoes` baixa o modelo, envia a planilha e só confirma com zero erros. Arquivo acima de 20 MB não é enviado. Em `/secretaria/exportacoes`, Gerar devolve o job (202, status processando); Baixar só aparece com `_links.download`. Sem cap → 403.
 30. **Audit-log** — `admin.dev` em `/admin/audit-log` (`audit.read`) filtra ator, ação e período. O diff abre na própria linha, sem segundo GET. Não há Excluir nem Editar. `secretaria.dev` não vê o item. `GET /audit-log` sem a cap → 403. `DELETE /audit-log` → 405.
+31. **Jobs** — `admin.dev` em `/admin/jobs` (`system.observe`). Reentregar só com `_links.retry` (FAILED ou DEAD). `POST /admin/outbox/{id}/reentrega` de SENT → 409; de FAILED volta a PENDING e zera tentativas. Sem a cap → 403. `secretaria.dev` e `aluno.dev` não veem o item.
+32. **Perfis e autoridades** — `admin.dev` em `/admin/perfis` e `/admin/autoridades`. Perfil de sistema não tem Excluir. Excluir perfil com usuário ativo → 422 `role-in-use` e a linha permanece. “Gerenciar perfis” na F7.1 só com `_links.gerenciar-perfis`. `secretaria.dev` não vê os itens.
+33. **Tipos de solicitação** — `admin.dev` em `/admin/tipos-solicitacao` (`request_type.manage`). JSON inválido desabilita Publicar e a API responde 422 sem avançar a versão. DRAFT não aparece em `/solicitacoes/nova`. Publicar não altera o snapshot de solicitação já aberta. `secretaria.dev` não vê o item.
 
 F0.7 não aceita upload de PDF (CA-04). Encerrar evento continua sem PDF. Egresso não acessa `/formativas` nem `/certificados`.

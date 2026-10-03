@@ -1,6 +1,8 @@
 package br.ufpr.sept.so2.modules.iam.infrastructure
 
 import br.ufpr.sept.so2.modules.comunicacao.application.EmailMascarado
+import br.ufpr.sept.so2.modules.iam.application.CatalogoPapeis
+import br.ufpr.sept.so2.modules.iam.application.ports.PerfilAcessoPort
 import br.ufpr.sept.so2.modules.iam.application.ports.PasswordHasher
 import br.ufpr.sept.so2.modules.iam.application.ports.UsuarioRepository
 import br.ufpr.sept.so2.modules.iam.domain.Usuario
@@ -22,6 +24,7 @@ class IamDevDataLoader(
     private val properties: IamProperties,
     private val usuarioRepository: UsuarioRepository,
     private val passwordHasher: PasswordHasher,
+    private val perfilAcessoPort: PerfilAcessoPort,
 ) : ApplicationRunner {
     override fun run(args: ApplicationArguments) {
         if (!properties.seed.enabled) {
@@ -34,81 +37,42 @@ class IamDevDataLoader(
         }
         val hash = passwordHasher.hash(senha)
         val agora = OffsetDateTime.now()
-        criarSeAusente(
-            "aluno.dev@ufpr.br",
-            "GRR20240001",
-            hash,
-            true,
-            agora,
-            agora,
-            authoritiesAluno(),
-        )
-        criarSeAusente(
-            "novo.dev@ufpr.br",
-            "GRR20240002",
-            hash,
-            false,
-            null,
-            agora,
-            authoritiesAluno(),
-        )
-        criarSeAusente(
+        semear("aluno.dev@ufpr.br", "GRR20240001", hash, true, agora, agora, CatalogoPapeis.aluno, listOf(CatalogoPapeis.ALUNO))
+        semear("novo.dev@ufpr.br", "GRR20240002", hash, false, null, agora, CatalogoPapeis.aluno, listOf(CatalogoPapeis.ALUNO))
+        semear(
             "professor.dev@ufpr.br",
             "GRR20240003",
             hash,
             true,
             agora,
             agora,
-            authoritiesProfessor(),
+            CatalogoPapeis.uniao(CatalogoPapeis.professor, CatalogoPapeis.coordenador),
+            listOf(CatalogoPapeis.PROFESSOR, CatalogoPapeis.COORDENADOR),
         )
-        criarSeAusente(
-            "caaf.dev@ufpr.br",
-            "GRR20240004",
-            hash,
-            true,
-            agora,
-            agora,
-            authoritiesCaaf(),
-        )
-        criarSeAusente(
-            "caaf.colegadev@ufpr.br",
-            "GRR20240008",
-            hash,
-            true,
-            agora,
-            agora,
-            authoritiesCaaf(),
-        )
-        criarSeAusente(
-            "secretaria.dev@ufpr.br",
-            "GRR20240005",
-            hash,
-            true,
-            agora,
-            agora,
-            authoritiesSecretaria(),
-        )
-        criarSeAusente(
-            "egresso.dev@ufpr.br",
-            "GRR20240006",
-            hash,
-            true,
-            agora,
-            agora,
-            authoritiesEgresso(),
-        )
-        criarSeAusente(
-            "admin.dev@ufpr.br",
-            "GRR20240007",
-            hash,
-            true,
-            agora,
-            agora,
-            authoritiesAdmin(),
-        )
+        semear("caaf.dev@ufpr.br", "GRR20240004", hash, true, agora, agora, CatalogoPapeis.caaf, emptyList())
+        semear("caaf.colegadev@ufpr.br", "GRR20240008", hash, true, agora, agora, CatalogoPapeis.caaf, emptyList())
+        semear("secretaria.dev@ufpr.br", "GRR20240005", hash, true, agora, agora, CatalogoPapeis.secretaria, listOf(CatalogoPapeis.SECRETARIA))
+        semear("egresso.dev@ufpr.br", "GRR20240006", hash, true, agora, agora, CatalogoPapeis.egresso, listOf(CatalogoPapeis.EGRESSO))
+        semear("admin.dev@ufpr.br", "GRR20240007", hash, true, agora, agora, CatalogoPapeis.admin, listOf(CatalogoPapeis.ADMIN))
         LOG.info(
             "Usuários de desenvolvimento IAM prontos (aluno.dev / novo.dev / professor.dev / caaf.dev / caaf.colegadev / secretaria.dev / egresso.dev / admin.dev).",
         )
+    }
+
+    private fun semear(
+        email: String,
+        grr: String,
+        hash: String,
+        senhaAlterada: Boolean,
+        lgpd: OffsetDateTime?,
+        agora: OffsetDateTime,
+        authorities: List<String>,
+        perfis: List<String>,
+    ) {
+        val usuario = criarSeAusente(email, grr, hash, senhaAlterada, lgpd, agora, authorities)
+        if (perfis.isNotEmpty()) {
+            perfilAcessoPort.garantirVinculo(usuario.id, perfis)
+        }
     }
 
     private fun criarSeAusente(
@@ -119,13 +83,13 @@ class IamDevDataLoader(
         lgpd: OffsetDateTime?,
         agora: OffsetDateTime,
         authorities: List<String>,
-    ) {
+    ): Usuario {
         val existente = usuarioRepository.findByEmail(email)
         if (existente.isPresent) {
             val usuario = existente.get()
             val extras = usuario.authorities.filter { it !in authorities }
             if (usuario.substituirAuthorities(authorities, agora)) {
-                usuarioRepository.save(usuario)
+                val salvo = usuarioRepository.save(usuario)
                 if (extras.isNotEmpty()) {
                     LOG.info(
                         "Seed IAM (profile=dev) revogou authorities extras de {}: {}",
@@ -135,8 +99,9 @@ class IamDevDataLoader(
                 } else {
                     LOG.info("Seed IAM (profile=dev) alinhou authorities de {}.", EmailMascarado.de(email))
                 }
+                return salvo
             }
-            return
+            return usuario
         }
         val usuario = Usuario(
             Uuids.v7(),
@@ -156,92 +121,10 @@ class IamDevDataLoader(
             agora,
             agora,
         )
-        usuarioRepository.save(usuario)
+        return usuarioRepository.save(usuario)
     }
 
     companion object {
         private val LOG = LoggerFactory.getLogger(IamDevDataLoader::class.java)
-
-        private fun authoritiesAluno(): List<String> = comPerfil(
-            listOf(
-                "dashboard.view_own",
-                "request.view_own",
-                "request.open",
-                "attendance.view_open",
-                "attendance.check_in",
-                "formative.view_own",
-                "formative.confirm_own",
-                "formative.submit",
-                "certificate.view_own",
-                "internship.view_own",
-                "tcc.view_own",
-                "communication.read",
-                "service_record.view_own",
-            ),
-        )
-
-        private fun authoritiesProfessor(): List<String> = comPerfil(
-            listOf(
-                "dashboard.view_self_professor",
-                "event.manage",
-                "event.host",
-                "request.deliberate",
-                "internship.review",
-                "tcc.review",
-                "course.config",
-                "report.view_coordinator",
-                "communication.read",
-                "communication.publish_class",
-            ),
-        )
-
-        private fun authoritiesCaaf(): List<String> = comPerfil(
-            listOf(
-                "dashboard.view_own",
-                "formative.review",
-            ),
-        )
-
-        private fun authoritiesSecretaria(): List<String> = comPerfil(
-            listOf(
-                "course.manage",
-                "subject.manage",
-                "user.manage_students",
-                "calendar.manage",
-                "internship.manage",
-                "tcc.manage",
-                "diploma.register",
-                "request.view_curso",
-                "request.triage",
-                "request.deliberate",
-                "report.view_secretary",
-                "dashboard.view_secretary",
-                "service_record.create",
-                "alumni.list",
-                "event.manage",
-                "event.host",
-                "event.view_curso",
-                "request.internal_open",
-                "image_authorization.review",
-                "import.run",
-                "export.run",
-            ),
-        )
-
-        private fun authoritiesEgresso(): List<String> = comPerfil(listOf("alumni.view_own"))
-
-        private fun authoritiesAdmin(): List<String> = comPerfil(
-            listOf(
-                "dashboard.view_own",
-                "user.manage_all",
-                "user.reset_password",
-                "audit.read",
-            ),
-        )
-
-        private fun comPerfil(authorities: List<String>): List<String> =
-            if (authorities.contains(PERFIL)) authorities else authorities + PERFIL
-
-        private const val PERFIL = "user.update_own_profile"
     }
 }

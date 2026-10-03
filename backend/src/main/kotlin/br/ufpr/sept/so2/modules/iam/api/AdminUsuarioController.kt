@@ -50,9 +50,10 @@ class AdminUsuarioController(
     ): PageResponse<AdminUsuarioResponse> {
         val principal = principal(authentication)
         val podeReset = "user.reset_password" in principal.authorities
+        val podePerfis = "iam.manage_roles" in principal.authorities
         return PageResponse.ofWithLinks(
             adminUsuarioApplicationService.listar(q, pageable),
-            Function { usuario -> AdminUsuarioResponse.from(usuario, true, podeReset) },
+            Function { usuario -> AdminUsuarioResponse.from(usuario, true, podeReset, podePerfis) },
             mapOf("criar" to "/admin/usuarios"),
         )
     }
@@ -63,7 +64,12 @@ class AdminUsuarioController(
     fun buscar(@PathVariable id: UUID, authentication: Authentication): AdminUsuarioResponse {
         val principal = principal(authentication)
         val usuario = adminUsuarioApplicationService.buscar(id)
-        return AdminUsuarioResponse.from(usuario, true, "user.reset_password" in principal.authorities)
+        return AdminUsuarioResponse.from(
+            usuario,
+            true,
+            "user.reset_password" in principal.authorities,
+            "iam.manage_roles" in principal.authorities,
+        )
     }
 
     @PostMapping
@@ -84,7 +90,12 @@ class AdminUsuarioController(
             request.grr,
             http.remoteAddr,
         )
-        return AdminUsuarioResponse.from(criado, true, "user.reset_password" in principal.authorities)
+        return AdminUsuarioResponse.from(
+            criado,
+            true,
+            "user.reset_password" in principal.authorities,
+            "iam.manage_roles" in principal.authorities,
+        )
     }
 
     @PutMapping("/{id}")
@@ -106,7 +117,12 @@ class AdminUsuarioController(
             request.grr,
             http.remoteAddr,
         )
-        return AdminUsuarioResponse.from(atualizado, true, "user.reset_password" in principal.authorities)
+        return AdminUsuarioResponse.from(
+            atualizado,
+            true,
+            "user.reset_password" in principal.authorities,
+            "iam.manage_roles" in principal.authorities,
+        )
     }
 
     @PostMapping("/{id}/desativar")
@@ -119,7 +135,12 @@ class AdminUsuarioController(
     ): AdminUsuarioResponse {
         val principal = principal(authentication)
         val desativado = desativarUsuarioAdminUseCase.execute(principal.userId, id, http.remoteAddr)
-        return AdminUsuarioResponse.from(desativado, true, "user.reset_password" in principal.authorities)
+        return AdminUsuarioResponse.from(
+            desativado,
+            true,
+            "user.reset_password" in principal.authorities,
+            "iam.manage_roles" in principal.authorities,
+        )
     }
 
     @PostMapping("/{id}/reset-senha")

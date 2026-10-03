@@ -37,14 +37,14 @@ class DespacharOutboxUseCase(
         val tentativas = evento.tentativas + 1
         val erro = EmailMascarado.sanitizarErro(ex.message)
         if (tentativas >= properties.maxTentativas) {
-            outboxPort.markFailed(evento.id, tentativas, erro)
+            outboxPort.markDead(evento.id, tentativas, erro)
             auditLogPort.append(
                 "outbox.failed",
                 null,
                 "{\"id\":\"${evento.id}\",\"tipo\":\"${evento.tipo}\"}",
                 null,
             )
-            LOG.warn("Outbox {} id={} FAILED após {} tentativas", evento.tipo, evento.id, tentativas)
+            LOG.warn("Outbox {} id={} DEAD após {} tentativas", evento.tipo, evento.id, tentativas)
             return
         }
         outboxPort.markPendingRetry(evento.id, tentativas, erro)

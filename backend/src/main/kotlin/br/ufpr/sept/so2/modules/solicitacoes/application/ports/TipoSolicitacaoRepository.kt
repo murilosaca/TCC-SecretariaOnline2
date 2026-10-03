@@ -17,4 +17,8 @@ interface TipoSolicitacaoRepository {
     fun findPublished(pageable: Pageable): Page<TipoSolicitacao>
 
     fun findPublishedAll(): List<TipoSolicitacao>
+
+    fun findAll(pageable: Pageable): Page<TipoSolicitacao>
+
+    fun deleteById(id: UUID)
 }

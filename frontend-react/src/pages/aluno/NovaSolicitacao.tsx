@@ -29,9 +29,13 @@ export function NovaSolicitacao() {
     queryFn: () => solicitacoesApi.listarTipos(),
   })
 
+  const publicados = useMemo(
+    () => (tipos.data?.content ?? []).filter((tipo) => tipo.status !== 'DRAFT'),
+    [tipos.data],
+  )
   const tipoSelecionado = useMemo(
-    () => tipos.data?.content.find((tipo) => tipo.codigo === tipoCodigo) ?? null,
-    [tipos.data, tipoCodigo],
+    () => publicados.find((tipo) => tipo.codigo === tipoCodigo) ?? null,
+    [publicados, tipoCodigo],
   )
   const fields = fieldsFromSchema(tipoSelecionado?.formSchema)
 
@@ -138,11 +142,11 @@ export function NovaSolicitacao() {
             </div>
           )}
           {tipos.isLoading && <p className="muted">Carregando tipos…</p>}
-          {tipos.data && tipos.data.content.length === 0 && (
+          {tipos.data && publicados.length === 0 && (
             <p className="empty">Nenhum tipo de solicitação disponível para você.</p>
           )}
           <div className="cards">
-            {tipos.data?.content.map((tipo) => (
+            {publicados.map((tipo) => (
               <button
                 key={tipo.id}
                 type="button"

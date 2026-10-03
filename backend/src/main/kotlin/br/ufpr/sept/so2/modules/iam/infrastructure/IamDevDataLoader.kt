@@ -176,6 +176,7 @@ class IamDevDataLoader(
                 "internship.view_own",
                 "tcc.view_own",
                 "communication.read",
+                "service_record.view_own",
             ),
         )
 
@@ -215,6 +216,11 @@ class IamDevDataLoader(
                 "request.deliberate",
                 "report.view_secretary",
                 "dashboard.view_secretary",
+                "service_record.create",
+                "alumni.list",
+                "event.manage",
+                "event.host",
+                "event.view_curso",
             ),
         )
 

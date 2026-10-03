@@ -56,4 +56,17 @@ interface EventoJpaRepository : JpaRepository<EventoJpaEntity, UUID> {
         @Param("inicio") inicio: OffsetDateTime,
         @Param("fim") fim: OffsetDateTime,
     ): List<EventoJpaEntity>
+
+    @Query(
+        """
+            SELECT e FROM EventoJpaEntity e
+            WHERE e.idCurso IN :cursoIds
+              AND (:estado IS NULL OR e.estado = :estado)
+            """,
+    )
+    fun findByCursos(
+        @Param("cursoIds") cursoIds: Collection<UUID>,
+        @Param("estado") estado: String?,
+        pageable: Pageable,
+    ): Page<EventoJpaEntity>
 }

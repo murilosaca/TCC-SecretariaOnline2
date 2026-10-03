@@ -1,4 +1,4 @@
-import type { HateoasLinks } from './academico'
+import type { HateoasLinks, PageResponse } from './academico'
 
 export interface EgressoCertificado {
   id: string
@@ -19,6 +19,22 @@ export interface EgressoColacao {
   data: string | null
   turma: string | null
 }
+
+export interface EgressoItem {
+  alunoId: string
+  nome: string
+  grr?: string | null
+  cursoId: string
+  cursoSigla: string
+  cursoNome?: string | null
+  dataColacao: string
+  anoColacao: number
+  situacaoDiploma: string
+  numeroDiploma: string
+  _links?: HateoasLinks
+}
+
+export type EgressoPage = PageResponse<EgressoItem>
 
 export interface EgressoPainel {
   nome: string

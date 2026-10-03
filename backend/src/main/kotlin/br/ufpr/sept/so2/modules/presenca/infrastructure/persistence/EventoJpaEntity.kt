@@ -50,8 +50,12 @@ class EventoJpaEntity : BaseEntity() {
     @Column(name = "janela_saida_fim")
     var janelaSaidaFim: OffsetDateTime? = null
 
+    @Column(name = "id_curso")
+    var idCurso: UUID? = null
+
     fun merge(evento: Evento) {
         idAnfitriao = evento.idAnfitriao
+        idCurso = evento.idCurso
         titulo = evento.titulo
         inicioEm = evento.inicioEm
         fimEm = evento.fimEm
@@ -81,6 +85,7 @@ class EventoJpaEntity : BaseEntity() {
         janelaSaidaFim,
         createdAt!!,
         updatedAt!!,
+        idCurso,
     )
 
     companion object {

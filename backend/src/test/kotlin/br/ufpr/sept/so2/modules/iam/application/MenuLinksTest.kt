@@ -159,8 +159,28 @@ class MenuLinksTest : StringSpec({
         val links = MenuLinks.from(listOf("request.deliberate", "event.manage", "event.host"))
         links["deliberar"] shouldBe "/solicitacoes?to=me"
         links["eventos-professor"] shouldBe "/professor/eventos"
+        links.shouldNotContainKey("eventos-secretaria")
         links.shouldNotContainKey("cursos")
         links.shouldNotContainKey("configurar-curso")
+    }
+
+    "secretaria com event.view_curso ganha eventos-secretaria e nao eventos-professor" {
+        val links = MenuLinks.from(listOf("event.manage", "event.host", "event.view_curso"))
+        links["eventos-secretaria"] shouldBe "/secretaria/eventos"
+        links.shouldNotContainKey("eventos-professor")
+    }
+
+    "atendimentos e meus-atendimentos so com a cap da tela" {
+        MenuLinks.from(listOf("service_record.create"))["atendimentos"] shouldBe "/secretaria/atendimentos"
+        MenuLinks.from(listOf("service_record.view_own"))["meus-atendimentos"] shouldBe "/meus-atendimentos"
+        MenuLinks.from(listOf("course.manage")).shouldNotContainKey("atendimentos")
+        MenuLinks.from(listOf("alumni.view_own")).shouldNotContainKey("meus-atendimentos")
+    }
+
+    "alumni.list ganha egressos e alumni.view_own nao" {
+        MenuLinks.from(listOf("alumni.list"))["egressos"] shouldBe "/secretaria/egressos"
+        MenuLinks.from(listOf("alumni.view_own")).shouldNotContainKey("egressos")
+        MenuLinks.from(listOf("diploma.register")).shouldNotContainKey("egressos")
     }
 
     "coordenador com course.config e um curso ganha configurar-curso" {

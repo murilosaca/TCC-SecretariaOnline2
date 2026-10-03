@@ -25,4 +25,19 @@ interface DiplomaJpaRepository : JpaRepository<DiplomaJpaEntity, UUID> {
         @Param("situacao") situacao: String?,
         pageable: Pageable,
     ): Page<DiplomaJpaEntity>
+
+    @Query(
+        """
+        SELECT d FROM DiplomaJpaEntity d
+        WHERE d.idCurso IN :cursoIds
+          AND (:ano IS NULL OR EXTRACT(YEAR FROM d.dataColacao) = :ano)
+          AND (:situacao IS NULL OR d.situacao = :situacao)
+        """,
+    )
+    fun findByCursos(
+        @Param("cursoIds") cursoIds: Collection<UUID>,
+        @Param("ano") ano: Int?,
+        @Param("situacao") situacao: String?,
+        pageable: Pageable,
+    ): Page<DiplomaJpaEntity>
 }

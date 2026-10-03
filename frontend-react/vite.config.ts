@@ -19,6 +19,17 @@ export default defineConfig({
       '/requests': { target: 'http://localhost:8080', changeOrigin: true },
       '/request-types': { target: 'http://localhost:8080', changeOrigin: true },
       '/events': { target: 'http://localhost:8080', changeOrigin: true },
+      '/atendimentos': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        bypass(req) {
+          if (req.headers.accept?.includes('text/html')) {
+            return '/index.html'
+          }
+        },
+      },
+      '/egressos': { target: 'http://localhost:8080', changeOrigin: true },
+      '/diplomas': { target: 'http://localhost:8080', changeOrigin: true },
       '/formativas': {
         target: 'http://localhost:8080',
         changeOrigin: true,

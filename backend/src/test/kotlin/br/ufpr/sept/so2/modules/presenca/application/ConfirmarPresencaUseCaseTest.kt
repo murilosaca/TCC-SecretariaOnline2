@@ -49,6 +49,7 @@ class ConfirmarPresencaUseCaseTest : StringSpec({
             if (saida) fim else null,
             agora,
             agora,
+            null,
         )
     }
 

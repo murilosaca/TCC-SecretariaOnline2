@@ -21,6 +21,8 @@ export interface Evento {
   estado: string
   situacaoPresenca: string
   janelaAtiva: boolean
+  idCurso?: string | null
+  cursoSigla?: string | null
   _links?: HateoasLinks
 }
 
@@ -30,6 +32,16 @@ export interface CriarEventoRequest {
   fimEm: string
   cargaHoraria: number
   attendanceMode: AttendanceMode
+  cursoId?: string
+}
+
+export interface AtualizarEventoRequest {
+  titulo?: string
+  inicioEm?: string
+  fimEm?: string
+  cargaHoraria?: number
+  attendanceMode?: AttendanceMode
+  cursoId?: string
 }
 
 export interface HostSessao {

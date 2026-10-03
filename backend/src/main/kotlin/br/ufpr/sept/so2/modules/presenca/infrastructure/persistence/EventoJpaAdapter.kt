@@ -35,8 +35,17 @@ class EventoJpaAdapter(
     override fun findByAnfitriao(anfitriaoId: UUID, pageable: Pageable): Page<Evento> =
         jpaRepository.findByIdAnfitriao(anfitriaoId, pageable).map { it.toDomain() }
 
+    override fun findByCursos(cursoIds: Collection<UUID>, estado: String?, pageable: Pageable): Page<Evento> {
+        if (cursoIds.isEmpty()) {
+            return Page.empty(pageable)
+        }
+        return jpaRepository.findByCursos(cursoIds, estado, pageable).map { it.toDomain() }
+    }
+
     override fun existsByTitulo(titulo: String): Boolean = jpaRepository.existsByTituloIgnoreCase(titulo)
 
     override fun findByTitulo(titulo: String): Optional<Evento> =
         jpaRepository.findByTituloIgnoreCase(titulo).map { it.toDomain() }
+
+    override fun deleteById(id: UUID) = jpaRepository.deleteById(id)
 }

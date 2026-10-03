@@ -15,6 +15,8 @@ data class EventoResponse(
     val estado: String,
     val situacaoPresenca: String,
     val janelaAtiva: Boolean,
+    val idCurso: UUID? = null,
+    val cursoSigla: String? = null,
     @get:JsonProperty("_links")
-    val links: Map<String, String>,
+    val links: Map<String, String> = emptyMap(),
 )

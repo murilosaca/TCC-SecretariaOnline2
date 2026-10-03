@@ -118,6 +118,8 @@ class SolicitacaoJpaAdapter(
         return jpaRepository.contarComEventoPara(solicitanteIds.toList(), estadoPara, desde, ate).toInt()
     }
 
+    override fun countByTipoId(tipoId: UUID): Long = jpaRepository.countByTipoId(tipoId)
+
     private fun carregar(id: UUID): Optional<Solicitacao> =
         jpaRepository.findById(id).map { entity -> entity.toDomain(eventosDe(id)) }
 

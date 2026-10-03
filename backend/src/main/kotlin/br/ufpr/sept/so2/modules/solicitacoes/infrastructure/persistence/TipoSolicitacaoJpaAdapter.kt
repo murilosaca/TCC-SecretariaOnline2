@@ -32,4 +32,11 @@ class TipoSolicitacaoJpaAdapter(
 
     override fun findPublishedAll(): List<TipoSolicitacao> =
         jpaRepository.findByStatus(TipoSolicitacao.PUBLISHED).map(TipoSolicitacaoJpaEntity::toDomain)
+
+    override fun findAll(pageable: Pageable): Page<TipoSolicitacao> =
+        jpaRepository.findAll(pageable).map(TipoSolicitacaoJpaEntity::toDomain)
+
+    override fun deleteById(id: UUID) {
+        jpaRepository.deleteById(id)
+    }
 }

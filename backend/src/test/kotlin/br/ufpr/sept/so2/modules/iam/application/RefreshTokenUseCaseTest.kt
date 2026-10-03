@@ -1,5 +1,6 @@
 package br.ufpr.sept.so2.modules.iam.application
 
+import br.ufpr.sept.so2.modules.iam.application.ports.AuthoritiesDePerfilPort
 import br.ufpr.sept.so2.modules.iam.domain.RefreshSessao
 import br.ufpr.sept.so2.modules.iam.domain.Usuario
 import br.ufpr.sept.so2.shared.domain.exception.CredenciaisInvalidasException
@@ -64,6 +65,10 @@ class RefreshTokenUseCaseTest : StringSpec({
             IamFakes.TokenHasher(),
             audit,
             IamFakes.Settings(),
+            object : AuthoritiesDePerfilPort {
+                override fun uniao(usuarioId: UUID): List<String>? = null
+            },
+            CapabilityCache(),
         )
     }
 

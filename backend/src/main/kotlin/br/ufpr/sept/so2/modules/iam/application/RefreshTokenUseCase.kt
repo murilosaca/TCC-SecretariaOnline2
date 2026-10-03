@@ -1,6 +1,7 @@
 package br.ufpr.sept.so2.modules.iam.application
 
 import br.ufpr.sept.so2.modules.iam.application.ports.AuditLogPort
+import br.ufpr.sept.so2.modules.iam.application.ports.AuthoritiesDePerfilPort
 import br.ufpr.sept.so2.modules.iam.application.ports.JwtTokenService
 import br.ufpr.sept.so2.modules.iam.application.ports.OpaqueTokenHasher
 import br.ufpr.sept.so2.modules.iam.application.ports.RefreshTokenRepository
@@ -21,6 +22,8 @@ class RefreshTokenUseCase(
     private val opaqueTokenHasher: OpaqueTokenHasher,
     private val auditLogPort: AuditLogPort,
     private val settings: IamSettings,
+    private val authoritiesDePerfilPort: AuthoritiesDePerfilPort,
+    private val capabilityCache: CapabilityCache,
 ) {
     @Transactional
     @JvmOverloads
@@ -51,6 +54,12 @@ class RefreshTokenUseCase(
         if (!usuario.ativo) {
             throw CredenciaisInvalidasException()
         }
+        val efetivas = authoritiesDePerfilPort.uniao(usuario.id)
+        if (efetivas != null) {
+            usuario.substituirAuthorities(efetivas, agora)
+            usuarioRepository.save(usuario)
+        }
+        capabilityCache.evict(usuario.id)
 
         sessao.marcarUsada(agora)
         refreshTokenRepository.save(sessao)

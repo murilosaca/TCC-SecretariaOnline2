@@ -49,4 +49,6 @@ interface SolicitacaoRepository {
         desde: OffsetDateTime,
         ate: OffsetDateTime,
     ): Int
+
+    fun countByTipoId(tipoId: UUID): Long
 }

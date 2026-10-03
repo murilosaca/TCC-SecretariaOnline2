@@ -1,5 +1,6 @@
 package br.ufpr.sept.so2.modules.iam.application
 
+import br.ufpr.sept.so2.modules.iam.application.ports.AuthoritiesDePerfilPort
 import br.ufpr.sept.so2.modules.iam.application.ports.CoordenadorCursosPort
 import br.ufpr.sept.so2.modules.iam.application.ports.UsuarioRepository
 import br.ufpr.sept.so2.shared.domain.exception.RecursoNaoEncontradoException
@@ -11,12 +12,14 @@ import java.util.UUID
 class ConsultarSessaoUseCase(
     private val usuarioRepository: UsuarioRepository,
     private val coordenadorCursosPort: CoordenadorCursosPort,
+    private val authoritiesDePerfilPort: AuthoritiesDePerfilPort,
 ) {
     @Transactional(readOnly = true)
     fun execute(usuarioId: UUID): SessaoAtual {
         val usuario = usuarioRepository.findById(usuarioId)
             .orElseThrow { RecursoNaoEncontradoException("Usuário não encontrado.") }
-        val cursoConfigurarId = if (usuario.authorities.contains("course.config")) {
+        val authorities = authoritiesDePerfilPort.uniao(usuario.id) ?: usuario.authorities
+        val cursoConfigurarId = if (authorities.contains("course.config")) {
             coordenadorCursosPort.ids(usuario.id).singleOrNull()
         } else {
             null
@@ -24,7 +27,7 @@ class ConsultarSessaoUseCase(
         return SessaoAtual(
             usuario.id,
             usuario.precisaPrimeiroAcesso(),
-            usuario.authorities,
+            authorities,
             cursoConfigurarId,
         )
     }

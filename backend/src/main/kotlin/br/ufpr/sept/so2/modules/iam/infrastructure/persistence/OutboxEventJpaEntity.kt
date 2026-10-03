@@ -5,6 +5,7 @@ import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Table
 import java.time.OffsetDateTime
+import java.util.UUID
 
 @Entity
 @Table(name = "outbox_event")
@@ -26,6 +27,9 @@ class OutboxEventJpaEntity() : BaseEntity() {
 
     @Column(name = "processed_at")
     var processedAt: OffsetDateTime? = null
+
+    @Column(name = "retried_by")
+    var retriedBy: UUID? = null
 
     constructor(tipo: String, payload: String) : this() {
         this.tipo = tipo
@@ -51,6 +55,21 @@ class OutboxEventJpaEntity() : BaseEntity() {
         processedAt = OffsetDateTime.now()
     }
 
+    fun marcarEsgotado(proximaTentativa: Int, erro: String?) {
+        tentativas = proximaTentativa
+        lastError = erro
+        status = STATUS_DEAD
+        processedAt = OffsetDateTime.now()
+    }
+
+    fun reentregar(operadorId: UUID) {
+        status = STATUS_PENDING
+        tentativas = 0
+        lastError = null
+        processedAt = null
+        retriedBy = operadorId
+    }
+
     fun marcarRetry(proximaTentativa: Int, erro: String?) {
         tentativas = proximaTentativa
         lastError = erro
@@ -62,5 +81,6 @@ class OutboxEventJpaEntity() : BaseEntity() {
         const val STATUS_PROCESSING = "PROCESSING"
         const val STATUS_SENT = "SENT"
         const val STATUS_FAILED = "FAILED"
+        const val STATUS_DEAD = "DEAD"
     }
 }

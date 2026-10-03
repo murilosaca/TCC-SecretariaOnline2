@@ -1,5 +1,6 @@
 package br.ufpr.sept.so2.shared.config
 
+import br.ufpr.sept.so2.modules.iam.application.CapabilityCache
 import br.ufpr.sept.so2.modules.iam.application.ports.JwtTokenService
 import br.ufpr.sept.so2.modules.iam.application.ports.UsuarioRepository
 import br.ufpr.sept.so2.modules.iam.infrastructure.IamProperties
@@ -40,8 +41,11 @@ class SecurityConfig(
 ) {
 
     @Bean
-    fun jwtAuthenticationFilter(jwtTokenService: JwtTokenService): JwtAuthenticationFilter =
-        JwtAuthenticationFilter(jwtTokenService, problemResponses)
+    fun jwtAuthenticationFilter(
+        jwtTokenService: JwtTokenService,
+        capabilityCache: CapabilityCache,
+    ): JwtAuthenticationFilter =
+        JwtAuthenticationFilter(jwtTokenService, problemResponses, capabilityCache)
 
     @Bean
     fun firstAccessGateFilter(usuarioRepository: UsuarioRepository): FirstAccessGateFilter =

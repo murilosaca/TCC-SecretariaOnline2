@@ -275,4 +275,20 @@ class MenuLinksTest : StringSpec({
         MenuLinks.from(listOf("audit.read"))["audit-log"] shouldBe "/admin/audit-log"
         MenuLinks.from(listOf("request.view_curso", "import.run")).shouldNotContainKey("audit-log")
     }
+
+    "admin ganha jobs, perfis, autoridades e tipos; secretaria e aluno nao" {
+        val admin = MenuLinks.from(
+            listOf("system.observe", "iam.manage_roles", "iam.manage_authorities", "request_type.manage"),
+        )
+        admin["jobs"] shouldBe "/admin/jobs"
+        admin["perfis"] shouldBe "/admin/perfis"
+        admin["autoridades"] shouldBe "/admin/autoridades"
+        admin["tipos-solicitacao"] shouldBe "/admin/tipos-solicitacao"
+        val secretaria = MenuLinks.from(listOf("course.manage", "request.view_curso", "import.run"))
+        secretaria.shouldNotContainKey("jobs")
+        secretaria.shouldNotContainKey("perfis")
+        secretaria.shouldNotContainKey("autoridades")
+        secretaria.shouldNotContainKey("tipos-solicitacao")
+        MenuLinks.from(listOf("request.open", "request.view_own")).shouldNotContainKey("jobs")
+    }
 })

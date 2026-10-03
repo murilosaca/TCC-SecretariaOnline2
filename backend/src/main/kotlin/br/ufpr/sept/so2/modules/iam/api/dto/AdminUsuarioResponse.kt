@@ -24,6 +24,7 @@ data class AdminUsuarioResponse(
             usuario: Usuario,
             podeGerenciar: Boolean,
             podeReset: Boolean,
+            podePerfis: Boolean = false,
         ): AdminUsuarioResponse {
             val base = "/admin/usuarios/${usuario.id}"
             val links = linkedMapOf<String, String>()
@@ -36,6 +37,9 @@ data class AdminUsuarioResponse(
             }
             if (podeReset && usuario.ativo) {
                 links["reset-senha"] = "$base/reset-senha"
+            }
+            if (podePerfis) {
+                links["gerenciar-perfis"] = "$base/perfis"
             }
             return AdminUsuarioResponse(
                 id = usuario.id,

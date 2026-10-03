@@ -206,6 +206,7 @@ private class FakeOutbox : OutboxPort {
     override fun claimPending(limit: Int, staleBefore: OffsetDateTime) = emptyList<br.ufpr.sept.so2.modules.iam.application.ports.OutboxClaim>()
     override fun markSent(id: UUID) = Unit
     override fun markFailed(id: UUID, tentativas: Int, lastError: String?) = Unit
+    override fun markDead(id: UUID, tentativas: Int, lastError: String?) = Unit
     override fun markPendingRetry(id: UUID, tentativas: Int, lastError: String?) = Unit
 }
 

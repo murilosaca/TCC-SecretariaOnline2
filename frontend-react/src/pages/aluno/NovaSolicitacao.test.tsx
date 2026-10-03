@@ -25,6 +25,16 @@ vi.mock('../../api/solicitacoes', () => ({
             formSchema: { type: 'object', properties: {} },
             workflowJson: {},
           },
+          {
+            id: 't-draft',
+            codigo: 'RASCUNHO_SECRETO',
+            nome: 'Rascunho secreto',
+            status: 'DRAFT',
+            prazoDias: 5,
+            versao: 0,
+            formSchema: { type: 'object', properties: {} },
+            workflowJson: {},
+          },
         ],
         page: { number: 0, size: 20, totalElements: 1, totalPages: 1 },
       }),
@@ -55,6 +65,7 @@ describe('NovaSolicitacao interna', () => {
   it('não mostra o combobox sem o link nova-interna', async () => {
     renderNova()
     await screen.findByRole('heading', { name: 'Declaração simples' })
+    expect(screen.queryByRole('heading', { name: 'Rascunho secreto' })).toBeNull()
     expect(screen.queryByRole('combobox', { name: 'Em nome de' })).toBeNull()
   })
 

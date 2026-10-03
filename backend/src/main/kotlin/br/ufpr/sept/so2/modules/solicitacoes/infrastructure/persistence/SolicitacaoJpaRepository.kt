@@ -15,6 +15,8 @@ interface SolicitacaoJpaRepository : JpaRepository<SolicitacaoJpaEntity, UUID> {
 
     fun findByProtocolo(protocolo: String): Optional<SolicitacaoJpaEntity>
 
+    fun countByTipoId(tipoId: UUID): Long
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT s FROM SolicitacaoJpaEntity s WHERE s.id IN :ids")
     fun findByIdInForUpdate(@Param("ids") ids: Collection<UUID>): List<SolicitacaoJpaEntity>

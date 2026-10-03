@@ -1,5 +1,6 @@
 package br.ufpr.sept.so2.modules.iam.infrastructure.security
 
+import br.ufpr.sept.so2.modules.iam.application.CapabilityCache
 import br.ufpr.sept.so2.modules.iam.application.ports.JwtTokenService
 import br.ufpr.sept.so2.shared.api.ProblemResponses
 import jakarta.servlet.FilterChain
@@ -15,6 +16,7 @@ import org.springframework.web.filter.OncePerRequestFilter
 class JwtAuthenticationFilter(
     private val jwtTokenService: JwtTokenService,
     private val problemResponses: ProblemResponses,
+    private val capabilityCache: CapabilityCache,
 ) : OncePerRequestFilter() {
     override fun doFilterInternal(
         request: HttpServletRequest,
@@ -28,16 +30,17 @@ class JwtAuthenticationFilter(
         }
         try {
             val claims = jwtTokenService.parseAccessToken(header.substring(7))
+            val authorities = capabilityCache.atual(claims.userId) ?: claims.authorities
             val principal = IamPrincipal(
                 claims.userId,
                 claims.mustChangePassword,
-                claims.authorities,
+                authorities,
                 claims.sessionId,
             )
             val authentication = UsernamePasswordAuthenticationToken(
                 principal,
                 null,
-                claims.authorities.map { SimpleGrantedAuthority(it) },
+                authorities.map { SimpleGrantedAuthority(it) },
             )
             SecurityContextHolder.getContext().authentication = authentication
             filterChain.doFilter(request, response)

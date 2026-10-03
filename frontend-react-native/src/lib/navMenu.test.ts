@@ -12,6 +12,7 @@ describe('navMenu', () => {
     expect(rels).not.toContain('deliberar');
     expect(rels).not.toContain('comissoes-caaf');
     expect(rels).not.toContain('alunos');
+    expect(rels).not.toContain('comunicacao');
   });
 
   it('renderiza só itens cujo _link existe (UI cega a perfil)', () => {

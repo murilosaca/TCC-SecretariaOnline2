@@ -213,6 +213,15 @@ class MenuLinksTest : StringSpec({
         MenuLinks.from(listOf("alumni.view_own")).shouldNotContainKey("perfil-seguranca")
     }
 
+    "communication.read abre o hub e publish_class abre publicar" {
+        val leitura = MenuLinks.from(listOf("communication.read"))
+        leitura["comunicacao"] shouldBe "/comunicacao"
+        leitura.shouldNotContainKey("publicar-comunicado")
+        val publicar = MenuLinks.from(listOf("communication.publish_class", "communication.read"))
+        publicar["publicar-comunicado"] shouldBe "/comunicacao/publicar"
+        MenuLinks.from(listOf("dashboard.view_own")).shouldNotContainKey("comunicacao")
+    }
+
     "admin ganha usuarios e secretaria nao" {
         val admin = MenuLinks.from(listOf("user.manage_all", "user.reset_password"))
         admin["usuarios"] shouldBe "/admin/usuarios"

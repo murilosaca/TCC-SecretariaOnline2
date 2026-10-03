@@ -21,5 +21,8 @@ export function rotuloOrigemFormativa(origem: string): string {
   if (origem === 'PRESENCA_VALIDADA') {
     return 'Presença validada'
   }
+  if (origem === 'COMPROVANTE') {
+    return 'Comprovante'
+  }
   return origem
 }

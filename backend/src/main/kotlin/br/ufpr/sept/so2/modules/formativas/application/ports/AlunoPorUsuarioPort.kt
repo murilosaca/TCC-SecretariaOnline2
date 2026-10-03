@@ -9,5 +9,6 @@ interface AlunoPorUsuarioPort {
         val id: UUID,
         val egresso: Boolean,
         val horasFormativasMinimas: Int,
+        val cursoId: UUID,
     )
 }

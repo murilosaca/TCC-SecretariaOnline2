@@ -97,6 +97,12 @@ object MenuLinks {
             links["perfil-seguranca"] = "/perfil/seguranca"
             links["perfil-notificacoes"] = "/perfil/notificacoes"
         }
+        if (caps.contains("communication.read")) {
+            links["comunicacao"] = "/comunicacao"
+        }
+        if (caps.contains("communication.publish_class")) {
+            links["publicar-comunicado"] = "/comunicacao/publicar"
+        }
         links["contato"] = "/contato"
         return links
     }

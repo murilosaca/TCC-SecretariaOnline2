@@ -153,6 +153,7 @@ Login: `@ufpr.br`, e-mail pessoal ou GRR (`GRR` + 8 dígitos). `senhaAlterada = 
 |---|---|---|
 | `/auth/*` | Misto (login anônimo; `me` autenticado) | IAM. `GET /auth/me`._links = rotas de **UI** (menu). Sem `/bff/menu` |
 | `/me` | JWT + `user.update_own_profile` | F1.3–F1.5. `GET`/`PATCH /me` (merge parcial; GRR e e-mail institucional ignorados). `POST /me/foto` multipart (server-side, URL pré-assinada). `PATCH /me/password` (senha atual; 401 não troca o hash). `GET /me/sessions` + `DELETE` só com `_links.encerrar`. `GET`/`PATCH /me/notifications` (e-mail e in-app, DND, digest). Sem cap → 403. Anônimo → 401 |
+| `/communications` | JWT + `communication.read` / `communication.publish_class` | F1.6 + F3.8. `GET /communications` (aba, `lido`, `tipo`). `POST /{id}/read` só do destinatário. `GET /communications/audiencias` + `POST /communications` (turma ou curso; Outbox na mesma TX). Sem cap → 403. Audiência fora do escopo → 422. Anônimo → 401. Sem `system.broadcast` |
 | `/publico/**` | Anônimo | Contato; protocolo; verificação de certificado |
 | `/academico/**` | JWT + capability da tela | CRUD. Anônimo → 401. Sem cap → 403. Fora do escopo (curso) → 404. GRR/e-mail malformado → 422 `validation-error`. `_links.disciplinas` só com `subject.manage`. Períodos: `calendar.manage` all-or-nothing |
 | `/request-types`, `/requests/**` | JWT + `request.*` (**não** anônimo) | Motor. Inbox `?canDeliberate=true`. Fila do curso (`request.view_curso`) com `?slaBreached` e `slaStatus`. CSV `?format=csv`. `PATCH /requests/bulk`. `POST /{id}/transitions` |
@@ -160,7 +161,7 @@ Login: `@ufpr.br`, e-mail pessoal ou GRR (`GRR` + 8 dígitos). `senhaAlterada = 
 | `/bff/dashboard/aluno` | JWT + `dashboard.view_own` + (`attendance.view_open` **ou** `request.view_own`) | Dashboard agregado (HTTP 200; degrada por bloco) |
 | `/bff/dashboard/professor` | JWT + `dashboard.view_self_professor` | Dashboard agregado do professor (HTTP 200; degrada por bloco; CAAF só com `formative.review`) |
 | `/bff/dashboard/secretary` | JWT + `dashboard.view_secretary` | F5.1 da secretaria. KPIs, fila ≤ 10, SLA e agenda do dia, só cursos de `curso_secretario`. Sem curso → 403. Sem cap → 403. QuickTiles só por `_links` (sem importações) |
-| `/formativas` | JWT + `formative.view_own` / `confirm_own` / `review` | Sem POST avulso. Lote só em `/comissoes/caaf`. Aprovar emite certificado |
+| `/formativas` | JWT + `formative.view_own` / `confirm_own` / `submit` / `review` | Lista do aluno. `POST` multipart (`formative.submit`) nasce `AGUARDANDO_CAAF` origem `COMPROVANTE`. `_links.nova` só com `formative.submit`. Lote só em `/comissoes/caaf` e só `PRESENCA_VALIDADA`. Aprovar emite certificado |
 | `/certificates` | JWT + `certificate.view_own` | Lista/download do dono. Sem POST. Outro aluno → 404 |
 | `/estagios` | JWT + `internship.view_own` / `internship.review` / `internship.manage` | `?aluno=me`, fila `?canReview=true`, escopo `?escopo=cursos` + `POST`/`PUT` (`internship.manage`). Upload PDF, parecer individual, `POST /{id}/encerrar`. Sem lote. Outro aluno, orientador alheio ou fora do escopo → 404 |
 | `/tccs` | JWT + `tcc.view_own` / `tcc.review` / `tcc.manage` | `?aluno=me`, fila `?canReview=true`, escopo `?escopo=cursos` + `POST`/`PUT` (`tcc.manage`). Upload PDF, avaliação individual. Sem lote e sem certificado. Outro aluno ou banca alheia → 404 |
@@ -210,8 +211,8 @@ Ordem de dependência real — um bounded context por fatia. O mapa F0–F8 do F
 | 20 | F5.2 + F5.5 fila central e atrasados | 2, 7 | **Feito** — `GET /requests` (`view_curso`, `slaBreached`, `slaStatus`), `PATCH /requests/bulk`, CSV, menu `fila-solicitacoes` + `atrasados`, V020 | Solicitação interna (28), editor RequestType (33), FORWARD |
 | 21 | F5.1 dashboard da secretaria | 20, 13 | **Feito** — `GET /bff/dashboard/secretary` (`dashboard.view_secretary`); `/inicio` via rel `painel`; KPIs, fila, SLA e agenda | F6.2 já feito, kanban (P3), Redis, importações (29) |
 | 22 | F1.3–F1.5 perfil, segurança e notificações | 11, 15 | **Feito** — `GET`/`PATCH /me` (`user.update_own_profile`), senha, sessões e preferência de canal/DND/digest | Push, hub (23), job de digest, SSO, Expo destas telas |
-| 23 | F1.6 + F3.8 hub de comunicação | 6 | `GET`/`POST /communications` (inbox + comunicado Markdown via Outbox) | Templates (34), push/FCM, digest |
-| 24 | F1.11 formativa manual com comprovante | 15, 14 | `POST /formative-entries` (`formative.submit`) com upload; nasce em `AGUARDANDO_CAAF` sem presença | OCR, validação automática de CH |
+| 23 | F1.6 + F3.8 hub de comunicação | 6 | **Feito** — `GET`/`POST /communications` (inbox + comunicado Markdown via Outbox; V022) | Templates (34), push/FCM, digest |
+| 24 | F1.11 formativa manual com comprovante | 15, 14 | **Feito** — `POST /formativas` (`formative.submit`) com upload; nasce `AGUARDANDO_CAAF` origem `COMPROVANTE` | OCR, validação automática de CH |
 | 25 | F5.13 + F1.20 atendimentos | 11 | Módulo `atendimentos`: registro imutável + ciência do aluno | Fila/SLA de atendimento, agendamento |
 | 26 | F5.10 egressos (lista + CSV) | 16 | `/secretaria/egressos` (`alumni.list`) com filtros e CSV síncrono | Exportação assíncrona (29), colação (já na 16) |
 | 27 | F5.14 + F5.15 eventos da secretaria | 15 | `/secretaria/eventos` + operação sobre o motor v4.1; `PATCH`/`DELETE /events/{id}` | Janelas pré-agendadas, lista ao vivo de inelegíveis |
@@ -450,6 +451,26 @@ V021 (`nome_social`, `telefone`, `identidade_genero`, `foto_storage_key`, `refre
 - UI `/perfil`, `/perfil/seguranca`, `/perfil/notificacoes`. Cancelar descarta o formulário sem PATCH. Encerrar sessão só com `_links.encerrar`.
 - Fora: hub F1.6 (23), envio de digest, templates (34), push/FCM, SSO, telas Expo.
 
+**23. F1.6 + F3.8 hub de comunicação** — feito
+
+V022 (`turma`, `turma_aluno`, `comunicacao`, `comunicacao_entrega`). `communication.read` no aluno de desenvolvimento. `communication.read` e `communication.publish_class` no `professor.dev`. O menu (`comunicacao`, `publicar-comunicado`) sai de `MenuLinks` e a UI usa `useActions`. Sem `system.broadcast`.
+
+- `GET /communications` (`communication.read`). Abas Todos | Institucional | Turma | Inbox e filtros `lido` e `tipo` no backend, com badges de não lidas. `_links.marcar-lido` só enquanto `read_at` é nulo e o comunicado não expirou. `POST /communications/{id}/read` atualiza só a entrega do destinatário (idempotente). Outro aluno → 404. Inbox mostra CTA só com `_links.acao`.
+- `GET /communications/audiencias` e `POST /communications` (`communication.publish_class`). Corpo `{ titulo, corpo, audiencia: { tipo, id }, prioridade, expiraEm }`. Audiência = turmas do professor e cursos em que ele é coordenador. Curso ou turma de outro, ou tipo que não é `TURMA`/`CURSO`, → 422. A publicação grava `comunicacao` e enfileira `comunicacao.published` na mesma transação. O dispatcher já existente cria a entrega e manda e-mail.
+- Canal desta fatia: e-mail e in-app, lendo a preferência da fatia 22. DND e digest `RESUMO` seguram o e-mail (não há job de digest). O hub continua visível. CRITICAL ignora DND, digest e desligamento de canal. Sem push.
+- UI `/comunicacao` e `/comunicacao/publicar`. Publicar só habilita com título e corpo. Preview Markdown. A opção “todos os alunos da universidade” não existe. Seed dev: turma `ADS 2026/1` com `aluno.dev` e `novo.dev`, mais um item de inbox com CTA para `/perfil`.
+- Fora: templates Markdown versionados (34), push/FCM, job de digest, telas do hub no Expo, perfil/senha/sessões (já na 22).
+
+**24. F1.11 formativa manual com comprovante** — feito
+
+V023 (`formativa.storage_key`, `formativa.id_tipo_atividade`, `tipo_atividade_formativa`). `formative.submit` no `aluno.dev`. O botão “Nova atividade” é `_links.nova` na lista, consumido por `useActions`. O path é `/formativas`, não `/formative-entries`.
+
+- `GET /formativas/tipos` devolve só os tipos ativos do curso do aluno. `POST /formativas` multipart (`tipoId`, `cargaHoraria`, `arquivo`). PDF, JPEG ou PNG, até 5 MB, gravado no storage da fatia 15. Nasce `AGUARDANDO_CAAF`, origem `COMPROVANTE`, sem evento. Outbox `formativas.submitted` na mesma transação; o dispatcher fecha SENT sem SMTP.
+- Horas não positivas, arquivo inválido ou tipo de outro curso → 422. Sem cap → 403. Anônimo → 401. Outro aluno no id → 404.
+- A fila individual (`/formativas?to=me`) vê o comprovante (`_links.comprovante`) e aprova ou indefere como já fazia. O lote continua só `PRESENCA_VALIDADA`: este id toma 422.
+- UI `/formativas/nova`. Enviar só com atividade, horas e comprovante. Seed TADS: Curso de extensão, Publicação, Monitoria.
+- Fora: OCR, validação automática da carga horária, resubmissão, Expo desta tela, atendimentos (25).
+
 ### Fora do escopo de banca / P3
 
 Não conta como “falta para o TCC fechar”. Entra depois, ou nunca.
@@ -495,7 +516,7 @@ Três abas no terminal do Cursor, na raiz do repositório. O `application.yml` j
 
 O Postgres do `docker compose` na **5432** continua sendo outro banco. A API não usa essa porta.
 
-Proxies Vite → `http://localhost:8080`: `/auth`, `/me`, `/academico`, `/publico`, `/requests`, `/request-types`, `/bff`, `/events`, `/formativas` (HTML → `index.html`), `/estagios` (HTML → `index.html`), `/tccs` (HTML → `index.html`), `/comissoes` (HTML → `index.html`), `/certificates`, `/.well-known`, `/v3`, `/swagger-ui`, `/actuator`. CORS: `http://localhost:5173` e `http://localhost:5174`. Nativo não passa por CORS. Expo web **não** entrou nesta fatia (sem origem extra e sem `*`).
+Proxies Vite → `http://localhost:8080`: `/auth`, `/me`, `/academico`, `/publico`, `/requests`, `/request-types`, `/bff`, `/events`, `/formativas` (HTML → `index.html`), `/estagios` (HTML → `index.html`), `/tccs` (HTML → `index.html`), `/comissoes` (HTML → `index.html`), `/certificates`, `/communications`, `/.well-known`, `/v3`, `/swagger-ui`, `/actuator`. CORS: `http://localhost:5173` e `http://localhost:5174`. Nativo não passa por CORS. Expo web **não** entrou nesta fatia (sem origem extra e sem `*`).
 
 ```bash
 cd backend && mvn -q test
@@ -515,9 +536,9 @@ Senha de todos: `TroqueEstaSenha1!` (só local; override `IAM_DEV_SEED_PASSWORD`
 
 | Usuário | GRR | O que testa |
 |---|---|---|
-| `aluno.dev@ufpr.br` | `GRR20240001` | Aluno com senha já alterada + cadastro TADS (120 h) + `certificate.view_own` + `internship.view_own` + `tcc.view_own`. Estágio e TCC seed no TADS (não cria outro) |
+| `aluno.dev@ufpr.br` | `GRR20240001` | Aluno com senha já alterada + cadastro TADS (120 h) + `certificate.view_own` + `internship.view_own` + `tcc.view_own` + `communication.read` + `formative.submit`. Estágio e TCC seed no TADS (não cria outro). Hub em `/comunicacao`. Nova atividade em `/formativas/nova` |
 | `novo.dev@ufpr.br` | `GRR20240002` | Primeiro acesso (`senhaAlterada=false`); também tem cadastro acadêmico. Tem `internship.view_own` e `tcc.view_own` e listas vazias |
-| `professor.dev@ufpr.br` | `GRR20240003` | Hospedeiro (`event.manage`, `event.host`), deliberante (`request.deliberate`), orientador do estágio (`internship.review`) e da banca do TCC (`tcc.review`). **Membro COE do TADS** e **coordenador do TADS** com `course.config` e **sem** `course.manage` — configura F6.1 e não vê o CRUD `/secretaria/cursos`. Sem `formative.*` — `GET /formativas?canReview=true` é 403. Sem `internship.view_own` / `tcc.view_own` — `GET /estagios?aluno=me` e `GET /tccs?aluno=me` são 403 |
+| `professor.dev@ufpr.br` | `GRR20240003` | Hospedeiro (`event.manage`, `event.host`), deliberante (`request.deliberate`), orientador do estágio (`internship.review`) e da banca do TCC (`tcc.review`). **Membro COE do TADS** e **coordenador do TADS** com `course.config` e **sem** `course.manage` — configura F6.1 e não vê o CRUD `/secretaria/cursos`. `communication.publish_class` publica em `/comunicacao/publicar` (turma ADS 2026/1 e curso TADS). Sem `formative.*` — `GET /formativas?canReview=true` é 403. Sem `internship.view_own` / `tcc.view_own` — `GET /estagios?aluno=me` e `GET /tccs?aluno=me` são 403 |
 | `caaf.dev@ufpr.br` | `GRR20240004` | Revisor CAAF (`formative.review`). Sem `event.manage` / `request.deliberate` |
 | `secretaria.dev@ufpr.br` | `GRR20240005` | CRUD TADS (`course.manage`, `subject.manage`, `user.manage_students`, `calendar.manage`) + `internship.manage` + `tcc.manage` + `diploma.register` + `report.view_secretary` + `dashboard.view_secretary` + `request.view_curso` + `request.triage` + `request.deliberate`. Sem `course.config` / `formative.review` / `event.manage` / `internship.view_own` / `internship.review` / `user.manage_all` / `report.view_coordinator`. Não recebe deep-link. Nav **sem** o item “Solicitações” do aluno (só Deliberar), **sem** Configurar curso / Usuários / Relatórios da coordenação e **com** Cadastro de estágios (`/secretaria/estagios`), Cadastro de TCCs (`/secretaria/tccs`), Diplomas (`/secretaria/diplomas`), Estatísticas (`/secretaria/estatisticas`), Fila central e Atrasados. Sem o item Estágios/TCCs do aluno, a fila de revisão e o pool COE |
 | `egresso.dev@ufpr.br` | `GRR20240006` | Portal egresso (`alumni.view_own`) |
@@ -531,9 +552,9 @@ A oficina seed `"Oficina Proof of Stay (dev)"` pode já estar `COMPLETA` para `a
 
 ## Smoke (um usuário por papel)
 
-1. **Aluno** — `aluno.dev@ufpr.br` / `GRR20240001` → `/inicio`: saudação, período ou alerta, solicitações, eventos. Horas `N / 120` após CAAF (sem aprovação → `0 / 120`). `/certificados` baixa se `_links.download`. `/eventos` → presença (oficina seed = `SECRET_SINGLE`).
+1. **Aluno** — `aluno.dev@ufpr.br` / `GRR20240001` → `/inicio`: saudação, período ou alerta, solicitações, eventos. Horas `N / 120` após CAAF (sem aprovação → `0 / 120`). `/certificados` baixa se `_links.download`. `/eventos` → presença (oficina seed = `SECRET_SINGLE`). Nav **com** Comunicação (`communication.read`).
 2. **Primeiro acesso** — `novo.dev@ufpr.br` → `/primeiro-acesso`. O resto do sistema responde 403 no gate.
-3. **Professor** — `professor.dev@ufpr.br` → `/inicio` 403 honesto (não “Olá, aluno”). Nav **sem** Cursos da secretaria e **com** Configurar curso. `/professor/eventos` hospeda os 4 modos. Encerrar → `CONCLUIDO` sem PDF. `GET /formativas?canReview=true` → 403. Fila `/solicitacoes?to=me` **sem** filtro `view_curso`. Nav tem **Revisão de estágios** (`/estagios?to=me`), **Pool COE** (`/comissoes/coe`) e **Revisão de TCCs** (`/tccs?to=me`) e não tem os itens Estágios/TCCs do aluno.
+3. **Professor** — `professor.dev@ufpr.br` → `/inicio` 403 honesto (não “Olá, aluno”). Nav **sem** Cursos da secretaria e **com** Configurar curso, Comunicação e Publicar comunicado. `/professor/eventos` hospeda os 4 modos. Encerrar → `CONCLUIDO` sem PDF. `GET /formativas?canReview=true` → 403. Fila `/solicitacoes?to=me` **sem** filtro `view_curso`. Nav tem **Revisão de estágios** (`/estagios?to=me`), **Pool COE** (`/comissoes/coe`) e **Revisão de TCCs** (`/tccs?to=me`) e não tem os itens Estágios/TCCs do aluno.
 4. **Anônimo** — `/login`, `/contato`, protocolo 200. `/bff`, `/events` e **`/academico/**`** → 401. Número `PROT-…` sai de `/solicitacoes/nova`.
 5. **Aluno sem cap acadêmica** — `GET /academico/cursos` → 403. Nav **sem** Cursos / Eventos prof. / Revisão CAAF. Nav **com** Estágios e TCCs e **sem** as filas de revisão. `GET /events?mine=true` e host-session → 403.
 6. **Secretaria** — `secretaria.dev@ufpr.br` → CRUD TADS 200/201; curso de outro secretário → 404. Nav **sem** Revisão CAAF / Eventos prof. / item Solicitações do aluno (só Deliberar) / Configurar curso e **com** Cadastro de estágios. `GET /coordenacao/cursos/{id}/config` → 403. Fila `view_curso` não lista aluno de outro curso.
@@ -552,6 +573,8 @@ A oficina seed `"Oficina Proof of Stay (dev)"` pode já estar `COMPLETA` para `a
 19. **F5.18** — `secretaria.dev` abre `/secretaria/estatisticas` (`report.view_secretary`). Curso fora do escopo → 403. `professor.dev` não vê o item.
 20. **Fila central** — `secretaria.dev` em `/solicitacoes` vê a fila dos cursos dela (`request.view_curso`), com `slaStatus`. `/secretaria/atrasados` usa `?slaBreached=true` e exporta CSV (`?format=csv`). `PATCH /requests/bulk` atribui deliberador quando o `_links` existe. Aluno de outro curso não aparece. Quem não tem `request.view_curso` não ganha o filtro.
 21. **Dashboard da secretaria** — `secretaria.dev` em `/inicio` (`dashboard.view_secretary`, rel `painel`) vê KPIs, fila prioritária, banner de SLA e agenda do dia só dos cursos dela. Curso de outro secretário não entra na conta. Sem curso vinculado → 403. Aluno e professor não recebem esse payload (o `painel` deles aponta o BFF próprio; `GET /bff/dashboard/secretary` → 403). Atalhos só com `_links`; Importações não aparece. Atualizar recarrega com skeleton.
-22. **Perfil** — `aluno.dev` abre Perfil, Segurança e Notificações (`user.update_own_profile`). Em `/perfil`, telefone sujo habilita Salvar; Cancelar não chama a API; GRR e e-mail institucional não mudam. Em `/perfil/seguranca`, senha atual errada fica em 401 e a sessão continua; senha nova encerra os outros aparelhos. Encerrar só aparece com `_links.encerrar`. Em `/perfil/notificacoes`, CRITICAL fica bloqueado; o restante grava canal, DND e digest. Sem push e sem `/communications`.
+22. **Perfil** — `aluno.dev` abre Perfil, Segurança e Notificações (`user.update_own_profile`). Em `/perfil`, telefone sujo habilita Salvar; Cancelar não chama a API; GRR e e-mail institucional não mudam. Em `/perfil/seguranca`, senha atual errada fica em 401 e a sessão continua; senha nova encerra os outros aparelhos. Encerrar só aparece com `_links.encerrar`. Em `/perfil/notificacoes`, CRITICAL fica bloqueado; o restante grava canal, DND e digest. Sem push e sem job de digest.
+23. **Comunicação** — `aluno.dev` em `/comunicacao` vê a turma e o inbox (CTA só com `_links.acao`). Filtro vazio mostra “Nenhuma comunicação encontrada.” Marcar lido só dispara se `_links.marcar-lido` existir. `professor.dev` em `/comunicacao/publicar` escolhe turma ou curso (sem “todos os alunos da universidade”), publica com título e corpo e o Mailpit recebe o e-mail. Quem não tem a capability toma 403. Audiência de outro curso toma 422. Outro aluno não marca lido o aviso alheio.
+24. **Formativa manual** — `aluno.dev` em `/formativas` vê “Nova atividade” (`formative.submit`, `_links.nova`). Em `/formativas/nova` escolhe um tipo do TADS, informa as horas e anexa PDF, JPEG ou PNG. A entrada nasce `AGUARDANDO_CAAF` / `COMPROVANTE` e aparece na fila de `caaf.dev`. “Aprovar selecionados” no pool não cobre esse item. Sem o link, o botão não existe. Tipo de outro curso ou arquivo inválido → 422.
 
 F0.7 não aceita upload de PDF (CA-04). Encerrar evento continua sem PDF. Egresso não acessa `/formativas` nem `/certificados`.

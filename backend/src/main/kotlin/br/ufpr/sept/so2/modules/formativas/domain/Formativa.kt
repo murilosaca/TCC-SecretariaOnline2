@@ -19,6 +19,8 @@ class Formativa(
     idRevisor: UUID? = null,
     reviewedAt: OffsetDateTime? = null,
     idResponsavel: UUID? = null,
+    val storageKey: String? = null,
+    val idTipoAtividade: UUID? = null,
 ) {
     var estado: FormativaEstado = estado
         private set
@@ -39,7 +41,7 @@ class Formativa(
         private set
 
     init {
-        validar(titulo, cargaHoraria, origem, idEvento)
+        validar(titulo, cargaHoraria, origem, idEvento, storageKey)
     }
 
     fun chaveUnica(): Pair<UUID, UUID> {
@@ -151,9 +153,27 @@ class Formativa(
             return viaPresenca(id, idAluno, idEvento, titulo, cargaHoraria, agora)
         }
 
-        fun viaComprovante(): Formativa {
-            throw ConflitoEstadoException("Submissão por comprovante não está disponível.")
-        }
+        fun viaComprovante(
+            id: UUID,
+            idAluno: UUID,
+            idTipoAtividade: UUID,
+            titulo: String,
+            cargaHoraria: Int,
+            storageKey: String,
+            agora: OffsetDateTime,
+        ): Formativa = Formativa(
+            id,
+            idAluno,
+            null,
+            FormativaOrigem.COMPROVANTE,
+            titulo,
+            cargaHoraria,
+            FormativaEstado.AGUARDANDO_CAAF,
+            agora,
+            agora,
+            storageKey = storageKey,
+            idTipoAtividade = idTipoAtividade,
+        )
 
         const val PARECER_INDEFER_MIN = 20
 
@@ -175,6 +195,7 @@ class Formativa(
             cargaHoraria: Int,
             origem: FormativaOrigem,
             idEvento: UUID?,
+            storageKey: String?,
         ) {
             if (titulo.isNullOrBlank()) {
                 throw DadoInvalidoException("Título da formativa é obrigatório.")
@@ -186,7 +207,12 @@ class Formativa(
                 throw DadoInvalidoException("Formativa via presença exige evento.")
             }
             if (origem == FormativaOrigem.COMPROVANTE) {
-                throw ConflitoEstadoException("Submissão por comprovante não está disponível.")
+                if (idEvento != null) {
+                    throw DadoInvalidoException("Formativa por comprovante não vincula evento.")
+                }
+                if (storageKey.isNullOrBlank()) {
+                    throw DadoInvalidoException("Comprovante é obrigatório.")
+                }
             }
         }
     }

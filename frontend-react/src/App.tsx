@@ -12,6 +12,7 @@ import { EstagiosRota } from './pages/estagios/EstagiosRota'
 import { TccDetalhe } from './pages/tccs/TccDetalhe'
 import { TccsRota } from './pages/tccs/TccsRota'
 import { FormativasRota } from './pages/formativas/FormativasRota'
+import { NovaFormativa } from './pages/formativas/NovaFormativa'
 import { RevisarFormativa } from './pages/formativas/RevisarFormativa'
 import { ProfessorEventoDetalhe } from './pages/professor/ProfessorEventoDetalhe'
 import { ProfessorEventoNova } from './pages/professor/ProfessorEventoNova'
@@ -46,6 +47,8 @@ import { Disciplinas } from './pages/secretaria/Disciplinas'
 import { Estatisticas } from './pages/secretaria/Estatisticas'
 import { Atrasados } from './pages/secretaria/Atrasados'
 import { Usuarios } from './pages/admin/Usuarios'
+import { Comunicacao } from './pages/comunicacao/Comunicacao'
+import { PublicarComunicado } from './pages/comunicacao/PublicarComunicado'
 import { Notificacoes } from './pages/perfil/Notificacoes'
 import { Perfil } from './pages/perfil/Perfil'
 import { Seguranca } from './pages/perfil/Seguranca'
@@ -85,10 +88,13 @@ export default function App() {
           <Route path="estagios" element={<EstagiosRota />} />
           <Route path="tccs/:id" element={<TccDetalhe />} />
           <Route path="tccs" element={<TccsRota />} />
+          <Route path="formativas/nova" element={<NovaFormativa />} />
           <Route path="formativas/:id/revisar" element={<RevisarFormativa />} />
           <Route path="formativas/:id" element={<FormativaDetalhe />} />
           <Route path="formativas" element={<FormativasRota />} />
           <Route path="certificados" element={<Certificados />} />
+          <Route path="comunicacao/publicar" element={<PublicarComunicado />} />
+          <Route path="comunicacao" element={<Comunicacao />} />
           <Route path="professor/eventos/nova" element={<ProfessorEventoNova />} />
           <Route path="professor/eventos/:id/operacao" element={<ProfessorEventoOperacao />} />
           <Route path="professor/eventos/:id" element={<ProfessorEventoDetalhe />} />

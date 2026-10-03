@@ -2,7 +2,7 @@ import type { HateoasLinks } from '../models/hateoas';
 
 /**
  * Itens de menu com tela nativa nesta fatia (aluno/egresso + P0).
- * Deliberação, CAAF, COE e F5 ficam de fora do app (fatia 18).
+ * Deliberação, CAAF, COE, F5 e o hub de comunicação (fatia 23) ficam de fora do app.
  * Visibilidade só via `_links` de GET /auth/me.
  */
 export const NAV_ITENS: { rel: string; label: string }[] = [

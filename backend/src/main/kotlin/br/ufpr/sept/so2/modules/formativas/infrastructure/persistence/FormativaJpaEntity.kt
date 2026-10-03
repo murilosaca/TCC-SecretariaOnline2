@@ -50,6 +50,12 @@ class FormativaJpaEntity : BaseEntity() {
     @Column(name = "id_responsavel")
     var idResponsavel: UUID? = null
 
+    @Column(name = "storage_key", length = 512)
+    var storageKey: String? = null
+
+    @Column(name = "id_tipo_atividade")
+    var idTipoAtividade: UUID? = null
+
     fun merge(formativa: Formativa) {
         idAluno = formativa.idAluno
         idEvento = formativa.idEvento
@@ -61,6 +67,8 @@ class FormativaJpaEntity : BaseEntity() {
         idRevisor = formativa.idRevisor
         reviewedAt = formativa.reviewedAt
         idResponsavel = formativa.idResponsavel
+        storageKey = formativa.storageKey
+        idTipoAtividade = formativa.idTipoAtividade
     }
 
     fun toDomain(): Formativa = Formativa(
@@ -77,6 +85,8 @@ class FormativaJpaEntity : BaseEntity() {
         idRevisor,
         reviewedAt,
         idResponsavel,
+        storageKey,
+        idTipoAtividade,
     )
 
     companion object {

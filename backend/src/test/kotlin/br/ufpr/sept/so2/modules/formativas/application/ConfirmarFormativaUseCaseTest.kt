@@ -39,7 +39,7 @@ class ConfirmarFormativaUseCaseTest : StringSpec({
         val alunoPort = mockk<AlunoPorUsuarioPort>()
         val repo = mockk<FormativaRepository>()
         val outbox = mockk<OutboxPort>()
-        every { alunoPort.resolver(usuarioId) } returns AlunoRef(alunoId, false, 120)
+        every { alunoPort.resolver(usuarioId) } returns AlunoRef(alunoId, false, 120, UUID.randomUUID())
         every { repo.findById(formativaId) } returns formativa()
         every { repo.save(any()) } answers { firstArg() }
         every { outbox.enqueue(eq("formativa.confirmada"), any()) } just runs
@@ -54,13 +54,13 @@ class ConfirmarFormativaUseCaseTest : StringSpec({
     "egresso e transição ilegal são rejeitados" {
         val alunoPort = mockk<AlunoPorUsuarioPort>()
         val repo = mockk<FormativaRepository>()
-        every { alunoPort.resolver(usuarioId) } returns AlunoRef(alunoId, true, 120)
+        every { alunoPort.resolver(usuarioId) } returns AlunoRef(alunoId, true, 120, UUID.randomUUID())
         shouldThrow<AcessoNegadoException> {
             ConfirmarFormativaUseCase(alunoPort, repo, mockk(), ObjectMapper())
                 .execute(formativaId, usuarioId)
         }
 
-        every { alunoPort.resolver(usuarioId) } returns AlunoRef(alunoId, false, 120)
+        every { alunoPort.resolver(usuarioId) } returns AlunoRef(alunoId, false, 120, UUID.randomUUID())
         val jaConfirmada = formativa().also { it.confirmar(agora.plusMinutes(1)) }
         every { repo.findById(formativaId) } returns jaConfirmada
         shouldThrow<ConflitoEstadoException> {

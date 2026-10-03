@@ -12,6 +12,8 @@ const NAV_ITENS: { rel: string; label: string }[] = [
   { rel: 'eventos', label: 'Eventos' },
   { rel: 'formativas', label: 'Formativas' },
   { rel: 'certificados', label: 'Certificados' },
+  { rel: 'comunicacao', label: 'Comunicação' },
+  { rel: 'publicar-comunicado', label: 'Publicar comunicado' },
   { rel: 'estagios', label: 'Estágios' },
   { rel: 'estagios-revisao', label: 'Revisão de estágios' },
   { rel: 'comissoes-coe', label: 'Pool COE' },

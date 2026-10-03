@@ -47,6 +47,7 @@ export default defineConfig({
         },
       },
       '/certificates': { target: 'http://localhost:8080', changeOrigin: true },
+      '/communications': { target: 'http://localhost:8080', changeOrigin: true },
       '/comissoes': {
         target: 'http://localhost:8080',
         changeOrigin: true,

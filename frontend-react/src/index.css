@@ -1100,3 +1100,163 @@ textarea:focus {
     grid-template-columns: 1fr;
   }
 }
+
+.tabs-scroll {
+  overflow-x: auto;
+}
+
+.tabs-scroll button {
+  min-height: 44px;
+  flex: 0 0 auto;
+}
+
+.tab-badge {
+  display: inline-block;
+  margin-left: 0.4rem;
+  min-width: 1.2rem;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 25%);
+  font-size: 0.75rem;
+}
+
+.comunicacao-lista {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.comunicacao-item {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0.6rem 0.8rem;
+}
+
+.comunicacao-row {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+  text-align: left;
+  background: transparent;
+  color: var(--ink);
+  min-height: 44px;
+}
+
+.comunicacao-titulo {
+  font-weight: 650;
+  flex: 1;
+}
+
+.tipo-icone {
+  width: 1.8rem;
+  height: 1.8rem;
+  border-radius: 999px;
+  display: inline-grid;
+  place-items: center;
+  background: #e6f0fb;
+  color: var(--brand);
+  font-weight: 700;
+}
+
+.unread-dot {
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 50%;
+  background: var(--brand);
+}
+
+.badge.prioridade-critical,
+.badge.prioridade-high {
+  background: #fde8e8;
+  color: var(--danger);
+}
+
+.badge.prioridade-medium {
+  background: #fff4d6;
+  color: #7a4f01;
+}
+
+.badge.prioridade-low {
+  background: #e6f0fb;
+  color: var(--brand);
+}
+
+.cta-pulsante,
+.cta-acao {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-top: 0.4rem;
+  font-weight: 700;
+}
+
+.cta-pulsante {
+  animation: cta-pulso 1.2s ease-in-out infinite;
+}
+
+@keyframes cta-pulso {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cta-pulsante {
+    animation: none;
+  }
+}
+
+.editor-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin: 0.8rem 0;
+}
+
+.comunicacao-editor,
+.markdown-preview {
+  min-height: 12rem;
+  font: inherit;
+}
+
+.comunicacao-editor {
+  width: 100%;
+  padding: 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.markdown-preview {
+  padding: 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.markdown-preview h2 {
+  margin: 0 0 0.4rem;
+  font-size: 1.25rem;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 767px) {
+  .editor-split {
+    grid-template-columns: 1fr;
+  }
+}

@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ApiError } from '../../api/client'
 import { formativasApi } from '../../api/formativas'
 import { ConfirmacaoFormativaWidget } from '../../components/ConfirmacaoFormativaWidget'
+import { useActions } from '../../hooks/useActions'
 import { rotuloEstadoFormativa, rotuloOrigemFormativa } from '../../lib/formativa'
 
 export function FormativaDetalhe() {
@@ -34,6 +35,7 @@ export function FormativaDetalhe() {
   })
 
   const item = detalhe.data
+  const acoes = useActions(item?._links)
   const pending = confirmar.isPending || cancelar.isPending
   const erroAcao = confirmar.error ?? cancelar.error
 
@@ -72,6 +74,26 @@ export function FormativaDetalhe() {
               {rotuloEstadoFormativa(item.estado)}
             </span>
           </header>
+
+          {acoes.can('comprovante') && (
+            <p>
+              <button
+                type="button"
+                className="ghost"
+                onClick={() => {
+                  const href = acoes.href('comprovante')
+                  if (!href) {
+                    return
+                  }
+                  void formativasApi.comprovante(href).then((resposta) => {
+                    window.open(resposta.downloadUrl, '_blank', 'noopener')
+                  })
+                }}
+              >
+                Ver comprovante
+              </button>
+            </p>
+          )}
 
           {erroAcao && (
             <div className="banner danger" role="alert">

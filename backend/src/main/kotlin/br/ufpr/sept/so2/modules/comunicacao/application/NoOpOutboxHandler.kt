@@ -47,6 +47,7 @@ class NoOpOutboxHandler : OutboxEventoHandler {
         "solicitacao.imagem_deliberada",
         "importacao.concluida",
         "exportacao.pronta",
+        "suporte.ticket_aberto",
     )
 
     override fun handle(evento: OutboxClaim) {

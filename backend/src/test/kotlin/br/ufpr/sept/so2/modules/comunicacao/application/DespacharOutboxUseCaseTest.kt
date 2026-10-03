@@ -18,6 +18,7 @@ class DespacharOutboxUseCaseTest : StringSpec({
             listOf(handler),
             IamFakes.Audit(),
             ComunicacaoProperties(),
+            RenderizadorTemplatePort { _, _ -> null },
         )
 
         useCase.execute()
@@ -39,6 +40,7 @@ class DespacharOutboxUseCaseTest : StringSpec({
             listOf(handler),
             IamFakes.Audit(),
             ComunicacaoProperties(),
+            RenderizadorTemplatePort { _, _ -> null },
         )
 
         useCase.execute()
@@ -56,20 +58,40 @@ class DespacharOutboxUseCaseTest : StringSpec({
             emptyList(),
             IamFakes.Audit(),
             ComunicacaoProperties(),
+            RenderizadorTemplatePort { _, _ -> null },
         )
         useCase.execute()
         outbox.sent shouldBe listOf(id)
     }
+
+    "template corrente substitui o texto visto pelo handler" {
+        val outbox = IamFakes.Outbox()
+        val handler = CapturaHandler()
+        val id = UUID.fromString("01800000-0000-7000-8000-0000000000dd")
+        outbox.claims += OutboxClaim(id, "solicitacao.criada", """{"nome":"Ana"}""", 0)
+        val useCase = DespacharOutboxUseCase(
+            outbox,
+            listOf(handler),
+            IamFakes.Audit(),
+            ComunicacaoProperties(),
+            RenderizadorTemplatePort { _, _ -> MensagemTemplate("Assunto", "Olá Ana") },
+        )
+        useCase.execute()
+        handler.mensagem shouldBe "Olá Ana"
+        outbox.sent shouldBe listOf(id)
+    }
 }) {
     private class CapturaHandler : OutboxEventoHandler {
-        override val tipos: Set<String> = setOf("PASSWORD_RESET")
+        override val tipos: Set<String> = setOf("PASSWORD_RESET", "solicitacao.criada")
         val ids: MutableList<UUID> = ArrayList()
         var falhar: Boolean = false
+        var mensagem: String? = null
 
         override fun handle(evento: OutboxClaim) {
             if (falhar) {
                 throw IllegalStateException("smtp")
             }
+            mensagem = TemplateMensagemAtual.atual()?.corpo
             ids.add(evento.id)
         }
     }

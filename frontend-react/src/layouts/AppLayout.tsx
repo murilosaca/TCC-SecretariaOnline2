@@ -1,5 +1,7 @@
+import { useEffect, useRef, useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
+import { CommandPalette } from '../components/CommandPalette'
 import { useActions } from '../hooks/useActions'
 
 const NAV_ITENS: { rel: string; label: string }[] = [
@@ -46,6 +48,8 @@ const NAV_ITENS: { rel: string; label: string }[] = [
   { rel: 'perfis', label: 'Perfis' },
   { rel: 'autoridades', label: 'Autoridades' },
   { rel: 'tipos-solicitacao', label: 'Tipos de solicitação' },
+  { rel: 'templates-comunicacao', label: 'Templates' },
+  { rel: 'suporte', label: 'Suporte' },
   { rel: 'perfil', label: 'Perfil' },
   { rel: 'perfil-seguranca', label: 'Segurança' },
   { rel: 'perfil-notificacoes', label: 'Notificações' },
@@ -56,6 +60,30 @@ export function AppLayout() {
   const { mustChangePassword, logout, status, links } = useAuth()
   const actions = useActions(links)
   const home = actions.href('egresso-inicio') ?? actions.href('inicio') ?? '/inicio'
+  const [paleta, setPaleta] = useState(false)
+  const focoAnterior = useRef<HTMLElement | null>(null)
+
+  useEffect(() => {
+    function atalho(event: KeyboardEvent) {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault()
+        focoAnterior.current = document.activeElement as HTMLElement
+        setPaleta(true)
+      }
+    }
+    window.addEventListener('keydown', atalho)
+    return () => window.removeEventListener('keydown', atalho)
+  }, [])
+
+  function abrirPaleta() {
+    focoAnterior.current = document.activeElement as HTMLElement
+    setPaleta(true)
+  }
+
+  function fecharPaleta() {
+    setPaleta(false)
+    focoAnterior.current?.focus()
+  }
 
   return (
     <div className="shell">
@@ -63,6 +91,16 @@ export function AppLayout() {
         <NavLink to={mustChangePassword ? '/primeiro-acesso' : home} className="brand">
           SO2 · SEPT/UFPR
         </NavLink>
+        {!mustChangePassword && status === 'authenticated' && (
+          <input
+            type="search"
+            className="topbar-busca"
+            placeholder="Buscar"
+            aria-label="Abrir busca global"
+            readOnly
+            onFocus={abrirPaleta}
+          />
+        )}
         {!mustChangePassword && (
           <nav>
             {NAV_ITENS.filter((item) => actions.can(item.rel)).map((item) => (
@@ -81,6 +119,7 @@ export function AppLayout() {
       <main className="content">
         <Outlet />
       </main>
+      {!mustChangePassword && <CommandPalette aberto={paleta} onFechar={fecharPaleta} />}
     </div>
   )
 }

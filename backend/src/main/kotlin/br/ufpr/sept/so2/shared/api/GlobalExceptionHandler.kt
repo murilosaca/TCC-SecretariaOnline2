@@ -16,8 +16,11 @@ import br.ufpr.sept.so2.shared.domain.exception.TokenAcaoInvalidoException
 import br.ufpr.sept.so2.shared.domain.exception.TokenResetInvalidoException
 import org.slf4j.LoggerFactory
 import org.springframework.dao.DataIntegrityViolationException
+import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.ProblemDetail
+import org.springframework.http.ResponseEntity
+import kotlin.math.ceil
 import org.springframework.http.converter.HttpMessageNotReadableException
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.security.core.AuthenticationException
@@ -128,7 +131,7 @@ class GlobalExceptionHandler {
         )
 
     @ExceptionHandler(RateLimitExcedidoException::class)
-    fun handleRateLimit(ex: RateLimitExcedidoException): ProblemDetail {
+    fun handleRateLimit(ex: RateLimitExcedidoException): ResponseEntity<ProblemDetail> {
         val detail = problemDetail(
             HttpStatus.TOO_MANY_REQUESTS,
             "Muitas tentativas",
@@ -136,7 +139,11 @@ class GlobalExceptionHandler {
             "rate-limit",
         )
         detail.setProperty("retryAfterSeconds", ex.retryAfterSeconds)
-        return detail
+        val minutos = maxOf(1, ceil(ex.retryAfterSeconds / 60.0).toInt())
+        detail.setProperty("retryAfterMinutes", minutos)
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+            .header(HttpHeaders.RETRY_AFTER, ex.retryAfterSeconds.toString())
+            .body(detail)
     }
 
     @ExceptionHandler(AcessoNegadoException::class)

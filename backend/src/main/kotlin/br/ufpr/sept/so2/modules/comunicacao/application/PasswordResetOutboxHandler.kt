@@ -30,20 +30,18 @@ class PasswordResetOutboxHandler(
             LOG.info("PASSWORD_RESET sem destinatário ativo; despacho sem SMTP.")
             return
         }
-        mailPort.send(
-            MailMessage(
-                usuario.emailInstitucional.value,
-                "Redefinição de senha — Secretaria Online 2",
-                """
-                Recebemos um pedido para redefinir a senha desta conta.
+        val (assunto, corpo) = MailComTemplate(
+            "Redefinição de senha — Secretaria Online 2",
+            """
+            Recebemos um pedido para redefinir a senha desta conta.
 
-                Se foi você, use o link abaixo (válido por 24 horas):
-                $resetUrl
+            Se foi você, use o link abaixo (válido por 24 horas):
+            $resetUrl
 
-                Se você não pediu esta redefinição, ignore esta mensagem.
-                """.trimIndent(),
-            ),
+            Se você não pediu esta redefinição, ignore esta mensagem.
+            """.trimIndent(),
         )
+        mailPort.send(MailMessage(usuario.emailInstitucional.value, assunto, corpo))
         LOG.info("PASSWORD_RESET despachado para {}", EmailMascarado.de(usuario.emailInstitucional.value))
     }
 

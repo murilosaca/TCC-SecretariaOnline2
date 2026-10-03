@@ -14,6 +14,7 @@ class DespacharOutboxUseCase(
     private val handlers: List<OutboxEventoHandler>,
     private val auditLogPort: AuditLogPort,
     private val properties: ComunicacaoProperties,
+    private val renderizador: RenderizadorTemplatePort,
 ) {
     fun execute() {
         val staleBefore = OffsetDateTime.now().minusSeconds(properties.staleProcessingSeconds)
@@ -22,13 +23,25 @@ class DespacharOutboxUseCase(
     }
 
     private fun despacharUm(evento: OutboxClaim) {
+        val mensagem = renderizar(evento)
         try {
+            TemplateMensagemAtual.definir(mensagem)
             handlerPara(evento.tipo).handle(evento)
             outboxPort.markSent(evento.id)
         } catch (ex: Exception) {
             registrarFalha(evento, ex)
+        } finally {
+            TemplateMensagemAtual.limpar()
         }
     }
+
+    private fun renderizar(evento: OutboxClaim): MensagemTemplate? =
+        try {
+            renderizador.renderizar(evento.tipo, evento.payload)
+        } catch (ex: Exception) {
+            LOG.warn("Template de {} não renderizado: {}", evento.tipo, ex.message)
+            null
+        }
 
     private fun handlerPara(tipo: String): OutboxEventoHandler =
         handlers.firstOrNull { tipo in it.tipos } ?: FALLBACK_NOOP

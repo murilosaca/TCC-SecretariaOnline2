@@ -60,12 +60,14 @@ import { Autoridades } from './pages/admin/Autoridades'
 import { Jobs } from './pages/admin/Jobs'
 import { Perfis } from './pages/admin/Perfis'
 import { TiposSolicitacao } from './pages/admin/TiposSolicitacao'
+import { TemplatesComunicacao } from './pages/admin/TemplatesComunicacao'
 import { Usuarios } from './pages/admin/Usuarios'
 import { Comunicacao } from './pages/comunicacao/Comunicacao'
 import { PublicarComunicado } from './pages/comunicacao/PublicarComunicado'
 import { Notificacoes } from './pages/perfil/Notificacoes'
 import { Perfil } from './pages/perfil/Perfil'
 import { Seguranca } from './pages/perfil/Seguranca'
+import { Suporte } from './pages/suporte/Suporte'
 
 export default function App() {
   return (
@@ -138,6 +140,8 @@ export default function App() {
           <Route path="admin/perfis" element={<Perfis />} />
           <Route path="admin/autoridades" element={<Autoridades />} />
           <Route path="admin/tipos-solicitacao" element={<TiposSolicitacao />} />
+          <Route path="admin/templates-comunicacao" element={<TemplatesComunicacao />} />
+          <Route path="suporte" element={<Suporte />} />
           <Route path="coordenacao/cursos/:id/configurar" element={<ConfigurarCurso />} />
           <Route path="coordenacao/relatorios" element={<Relatorios />} />
           <Route path="comissoes/coe" element={<PoolCoe />} />

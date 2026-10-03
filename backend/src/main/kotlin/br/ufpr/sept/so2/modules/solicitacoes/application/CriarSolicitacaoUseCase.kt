@@ -10,6 +10,7 @@ import br.ufpr.sept.so2.modules.solicitacoes.application.ports.ProtocoloSequenci
 import br.ufpr.sept.so2.modules.solicitacoes.application.ports.SolicitacaoRepository
 import br.ufpr.sept.so2.modules.solicitacoes.application.ports.TipoSolicitacaoRepository
 import br.ufpr.sept.so2.modules.solicitacoes.domain.Solicitacao
+import br.ufpr.sept.so2.modules.solicitacoes.infrastructure.SuporteTecnicoSeed
 import br.ufpr.sept.so2.shared.domain.exception.AcessoNegadoException
 import br.ufpr.sept.so2.shared.domain.exception.DadoInvalidoException
 import br.ufpr.sept.so2.shared.domain.exception.RecursoNaoEncontradoException
@@ -77,7 +78,11 @@ class CriarSolicitacaoUseCase(
                 "onBehalfOf" to onBehalfOf?.toString(),
             ),
         )
-        val tipoEvento = if (onBehalfOf == null) "solicitacao.criada" else "solicitacao.aberta_interna"
+        val tipoEvento = when {
+            persistida.tipoCodigo == SuporteTecnicoSeed.CODIGO -> "suporte.ticket_aberto"
+            onBehalfOf == null -> "solicitacao.criada"
+            else -> "solicitacao.aberta_interna"
+        }
         outboxPort.enqueue(tipoEvento, evento)
         auditLogPort.append(tipoEvento, atorId, evento, ip)
         return persistida

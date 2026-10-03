@@ -43,6 +43,10 @@ class NoOpOutboxHandler : OutboxEventoHandler {
         "evento.janela_aberta",
         "evento.qr_renovado",
         "evento.encerrado",
+        "solicitacao.aberta_interna",
+        "solicitacao.imagem_deliberada",
+        "importacao.concluida",
+        "exportacao.pronta",
     )
 
     override fun handle(evento: OutboxClaim) {

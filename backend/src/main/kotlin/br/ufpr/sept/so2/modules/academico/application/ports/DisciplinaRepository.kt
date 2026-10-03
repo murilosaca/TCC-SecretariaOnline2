@@ -14,5 +14,7 @@ interface DisciplinaRepository {
 
     fun existsByCursoAndCodigo(idCurso: UUID, codigo: String): Boolean
 
+    fun findByCursoAndCodigo(idCurso: UUID, codigo: String): Disciplina?
+
     fun deleteById(id: UUID)
 }

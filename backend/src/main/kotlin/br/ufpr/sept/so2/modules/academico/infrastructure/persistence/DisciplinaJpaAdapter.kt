@@ -43,6 +43,9 @@ class DisciplinaJpaAdapter(
     override fun existsByCursoAndCodigo(idCurso: UUID, codigo: String): Boolean =
         jpaRepository.existsByIdCursoAndCodigoIgnoreCase(idCurso, codigo)
 
+    override fun findByCursoAndCodigo(idCurso: UUID, codigo: String): Disciplina? =
+        jpaRepository.findFirstByIdCursoAndCodigoIgnoreCase(idCurso, codigo).map { it.toDomain() }.orElse(null)
+
     override fun deleteById(id: UUID) {
         jpaRepository.deleteById(id)
     }

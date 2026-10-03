@@ -1,4 +1,4 @@
-package br.ufpr.sept.so2.modules.iam.infrastructure.persistence
+package br.ufpr.sept.so2.modules.auditoria.infrastructure.persistence
 
 import br.ufpr.sept.so2.modules.iam.application.ports.AuditLogPort
 import br.ufpr.sept.so2.shared.infrastructure.Uuids
@@ -11,14 +11,17 @@ class AuditLogJpaAdapter(
     private val jpaRepository: AuditLogJpaRepository,
 ) : AuditLogPort {
     override fun append(tipo: String, atorId: UUID?, payload: String?, ip: String?) {
+        val corpo = payload ?: ""
         jpaRepository.save(
             AuditLogJpaEntity(
-                Uuids.v7(),
-                tipo,
-                atorId,
-                payload ?: "",
-                ip,
-                OffsetDateTime.now(),
+                id = Uuids.v7(),
+                tipo = tipo,
+                atorId = atorId,
+                payload = corpo,
+                ip = ip,
+                createdAt = OffsetDateTime.now(),
+                payloadAntes = null,
+                payloadDepois = corpo,
             ),
         )
     }

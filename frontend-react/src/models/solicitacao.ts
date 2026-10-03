@@ -66,6 +66,7 @@ export type Solicitacao = {
   diasAtraso?: number | null
   createdAt: string
   updatedAt: string
+  thumbnailUrl?: string | null
   eventos: SolicitacaoEvento[]
   _links?: HateoasLinks
 }

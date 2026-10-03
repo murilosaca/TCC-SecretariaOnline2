@@ -47,11 +47,15 @@ import { Disciplinas } from './pages/secretaria/Disciplinas'
 import { Estatisticas } from './pages/secretaria/Estatisticas'
 import { Atrasados } from './pages/secretaria/Atrasados'
 import { Atendimentos } from './pages/secretaria/Atendimentos'
+import { AutorizacoesImagem } from './pages/secretaria/AutorizacoesImagem'
+import { Exportacoes } from './pages/secretaria/Exportacoes'
+import { Importacoes } from './pages/secretaria/Importacoes'
 import { Egressos } from './pages/secretaria/Egressos'
 import { EventosSecretaria } from './pages/secretaria/EventosSecretaria'
 import { EventoSecretariaFormulario } from './pages/secretaria/EventoSecretariaNova'
 import { EventoSecretariaOperacao } from './pages/secretaria/EventoSecretariaOperacao'
 import { MeusAtendimentos } from './pages/aluno/MeusAtendimentos'
+import { AuditLog } from './pages/admin/AuditLog'
 import { Usuarios } from './pages/admin/Usuarios'
 import { Comunicacao } from './pages/comunicacao/Comunicacao'
 import { PublicarComunicado } from './pages/comunicacao/PublicarComunicado'
@@ -121,7 +125,11 @@ export default function App() {
           <Route path="secretaria/eventos/:id/operacao" element={<EventoSecretariaOperacao />} />
           <Route path="secretaria/eventos/:id" element={<EventoSecretariaFormulario />} />
           <Route path="secretaria/eventos" element={<EventosSecretaria />} />
+          <Route path="secretaria/autorizacoes-imagem" element={<AutorizacoesImagem />} />
+          <Route path="secretaria/importacoes" element={<Importacoes />} />
+          <Route path="secretaria/exportacoes" element={<Exportacoes />} />
           <Route path="admin/usuarios" element={<Usuarios />} />
+          <Route path="admin/audit-log" element={<AuditLog />} />
           <Route path="coordenacao/cursos/:id/configurar" element={<ConfigurarCurso />} />
           <Route path="coordenacao/relatorios" element={<Relatorios />} />
           <Route path="comissoes/coe" element={<PoolCoe />} />

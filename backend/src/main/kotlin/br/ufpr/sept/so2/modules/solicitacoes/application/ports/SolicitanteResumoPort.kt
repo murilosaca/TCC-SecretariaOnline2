@@ -8,6 +8,7 @@ data class SolicitanteResumo(
     val cursoId: UUID?,
     val cursoNome: String?,
     val cursoSigla: String?,
+    val fotoStorageKey: String? = null,
 )
 
 interface SolicitanteResumoPort {

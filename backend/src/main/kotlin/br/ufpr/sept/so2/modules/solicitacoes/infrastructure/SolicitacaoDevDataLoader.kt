@@ -17,11 +17,15 @@ class SolicitacaoDevDataLoader(
 ) : ApplicationRunner {
 
     override fun run(args: ApplicationArguments) {
-        if (tipoRepository.findByCodigo(DeclaracaoSimplesSeed.CODIGO).isPresent) {
-            return
+        val agora = OffsetDateTime.now()
+        if (tipoRepository.findByCodigo(DeclaracaoSimplesSeed.CODIGO).isEmpty) {
+            tipoRepository.save(DeclaracaoSimplesSeed.tipo(agora))
+            LOG.info("RequestType DECLARACAO_SIMPLES publicado para o wizard.")
         }
-        tipoRepository.save(DeclaracaoSimplesSeed.tipo(OffsetDateTime.now()))
-        LOG.info("RequestType DECLARACAO_SIMPLES publicado para o wizard.")
+        if (tipoRepository.findByCodigo(AutorizacaoImagemSeed.CODIGO).isEmpty) {
+            tipoRepository.save(AutorizacaoImagemSeed.tipo(agora))
+            LOG.info("RequestType AUTORIZACAO_IMAGEM publicado.")
+        }
     }
 
     companion object {

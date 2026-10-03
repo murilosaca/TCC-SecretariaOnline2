@@ -249,4 +249,30 @@ class MenuLinksTest : StringSpec({
             listOf("course.manage", "subject.manage", "user.manage_students", "calendar.manage"),
         ).shouldNotContainKey("usuarios")
     }
+
+    "secretaria ganha nova interna, imagem, importacao e exportacao; aluno nao" {
+        val sec = MenuLinks.from(
+            listOf(
+                "request.internal_open",
+                "image_authorization.review",
+                "import.run",
+                "export.run",
+            ),
+        )
+        sec["nova-interna"] shouldBe "/solicitacoes/nova"
+        sec["autorizacoes-imagem"] shouldBe "/secretaria/autorizacoes-imagem"
+        sec["importacoes"] shouldBe "/secretaria/importacoes"
+        sec["exportacoes"] shouldBe "/secretaria/exportacoes"
+        sec.shouldNotContainKey("audit-log")
+        val aluno = MenuLinks.from(listOf("request.open", "request.view_own"))
+        aluno.shouldNotContainKey("nova-interna")
+        aluno.shouldNotContainKey("autorizacoes-imagem")
+        aluno.shouldNotContainKey("importacoes")
+        aluno.shouldNotContainKey("exportacoes")
+    }
+
+    "admin ganha audit-log e secretaria nao" {
+        MenuLinks.from(listOf("audit.read"))["audit-log"] shouldBe "/admin/audit-log"
+        MenuLinks.from(listOf("request.view_curso", "import.run")).shouldNotContainKey("audit-log")
+    }
 })

@@ -173,6 +173,12 @@ class SecretaryDashboardApplicationService(
             if ("report.view_secretary" in caps) {
                 result["estatisticas"] = "/secretaria/estatisticas"
             }
+            if ("import.run" in caps) {
+                result["importacoes"] = "/secretaria/importacoes"
+            }
+            if ("export.run" in caps) {
+                result["exportacoes"] = "/secretaria/exportacoes"
+            }
             return result
         }
     }

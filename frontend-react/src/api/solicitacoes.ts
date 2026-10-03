@@ -64,8 +64,12 @@ export const solicitacoesApi = {
     ),
   atribuirEmMassa: (ids: string[], deliberadorId: string) =>
     api.patch<Solicitacao[]>('/requests/bulk', { ids, deliberadorId }),
-  criar: (tipoCodigo: string, payload: Record<string, unknown>) =>
-    api.post<Solicitacao>('/requests', { tipoCodigo, payload }),
+  criar: (tipoCodigo: string, payload: Record<string, unknown>, onBehalfOf?: string) =>
+    api.post<Solicitacao>('/requests', { tipoCodigo, payload, onBehalfOf }),
+  deliberarImagemLote: (ids: string[], decisao: 'DEFERIDA' | 'INDEFERIDA', justificativa?: string) =>
+    api.patch<Solicitacao[]>('/requests/bulk-deliberate', { ids, decisao, justificativa }),
+  listarAutorizacoesImagem: (page = 0, size = 50) =>
+    api.get<SolicitacaoPage>('/requests', { tipo: 'AUTORIZACAO_IMAGEM', estado: 'TODOS', page, size }),
   obter: (id: string, token?: string) =>
     api.get<Solicitacao>(`/requests/${id}`, { token }),
   listarParaDeliberar: (

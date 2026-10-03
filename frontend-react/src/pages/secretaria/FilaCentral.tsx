@@ -81,6 +81,8 @@ export function FilaCentral() {
     setSelecionados(marcado ? atribuiveis : [])
   }
 
+  const colecao = useActions(lista.data?._links)
+
   return (
     <section className="page" aria-labelledby="fila-titulo">
       <header className="page-head">
@@ -88,6 +90,11 @@ export function FilaCentral() {
           <h1 id="fila-titulo">Fila de solicitações</h1>
           <p className="muted">Consulta central dos cursos vinculados (F5.2).</p>
         </div>
+        {colecao.can('novaInterna') && (
+          <Link to={colecao.href('novaInterna') ?? '/solicitacoes/nova'} className="button-link">
+            Nova interna
+          </Link>
+        )}
       </header>
 
       {forbidden && (

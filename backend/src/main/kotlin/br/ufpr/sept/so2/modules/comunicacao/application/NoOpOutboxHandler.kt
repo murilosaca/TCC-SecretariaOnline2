@@ -24,6 +24,7 @@ class NoOpOutboxHandler : OutboxEventoHandler {
         "formativas.assigned",
         "formativas.batch_approved",
         "formativas.submitted",
+        "atendimento.registrado",
         "certificado.emitido",
         "estagio.documento_enviado",
         "estagio.parecer_emitido",

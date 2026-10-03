@@ -33,4 +33,16 @@ class DiplomaJpaAdapter(
         pageable: Pageable,
     ): Page<Diploma> =
         jpaRepository.findByCurso(cursoId, situacao?.name, pageable).map { it.toDomain() }
+
+    override fun findByCursos(
+        cursoIds: Collection<UUID>,
+        ano: Int?,
+        situacao: DiplomaSituacao?,
+        pageable: Pageable,
+    ): Page<Diploma> {
+        if (cursoIds.isEmpty()) {
+            return Page.empty(pageable)
+        }
+        return jpaRepository.findByCursos(cursoIds, ano, situacao?.name, pageable).map { it.toDomain() }
+    }
 }

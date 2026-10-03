@@ -20,7 +20,12 @@ interface EventoRepository {
 
     fun findByAnfitriao(anfitriaoId: UUID, pageable: Pageable): Page<Evento>
 
+    /** Lista da secretaria (F5.14): eventos dos cursos do escopo, filtro opcional de estado. */
+    fun findByCursos(cursoIds: Collection<UUID>, estado: String?, pageable: Pageable): Page<Evento>
+
     fun existsByTitulo(titulo: String): Boolean
 
     fun findByTitulo(titulo: String): Optional<Evento>
+
+    fun deleteById(id: UUID)
 }

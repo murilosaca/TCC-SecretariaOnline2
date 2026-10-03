@@ -4,7 +4,7 @@ Plataforma digital da secretaria acadêmica do **SEPT/UFPR**. Este é o reposit�
 
 O SO2 não substitui o juízo de docentes, comissões ou secretaria. Ele garante trilha de auditoria, integridade de dados e automação de trâmites repetitivos.
 
-**Onde estamos:** P0 fechado na web e no Expo (itens 1–**8**). **Item 9 neste recorte:** 9.1–9.4 no ar e **9.5 pool COE** (só atribuição). Fatias **10–22** no ar (cadastro F5 de estágio, F7.1 usuários/picker, cadastro F5 de TCC, BFF professor F3.1, pool/lote CAAF F4.1, MinIO + `modules/arquivos`, diploma/colação F5.11, F6.2 relatórios da coordenação, Mobile P2 no Expo, F5.18 estatísticas da secretaria, F5.2+F5.5 fila central e atrasados, F5.1 dashboard da secretaria, F1.3–F1.5 perfil). Esta fatia **não** é o portal admin F7 completo (sem F7.2–F7.9).
+**Onde estamos:** P0 fechado na web e no Expo (itens 1–**8**). **Item 9 neste recorte:** 9.1–9.4 no ar e **9.5 pool COE** (só atribuição). Fatias **10–27** no ar (cadastro F5 de estágio, F7.1 usuários/picker, cadastro F5 de TCC, BFF professor F3.1, pool/lote CAAF F4.1, MinIO + `modules/arquivos`, diploma/colação F5.11, F6.2 relatórios da coordenação, Mobile P2 no Expo, F5.18 estatísticas da secretaria, F5.2+F5.5 fila central e atrasados, F5.1 dashboard da secretaria, F1.3–F1.5 perfil, hub F1.6/F3.8, formativa com comprovante, atendimentos F5.13+F1.20, lista de egressos F5.10 e eventos da secretaria F5.14/F5.15). Esta fatia **não** é o portal admin F7 completo (sem F7.2–F7.9).
 
 Circuito demonstrável: login → primeiro acesso (senha + LGPD) → `/inicio` do aluno → solicitação + deep-link ao professor → presença **QR\|SECRET × SINGLE\|DUAL** → formativa (`PENDENTE_CONFIRMACAO` → aluno confirma → `AGUARDANDO_CAAF`) → CAAF aprova → certificado oficial (PDF + hash + ED25519) → `/certificados` + F0.7. Secretaria (`secretaria.dev`) opera o CRUD de TADS, estágios e TCCs; aluno/professor/CAAF não veem Cursos. Egresso (`egresso.dev`) entra em `/egresso/inicio` e reemite o PDF com o mesmo hash; `aluno.dev` não entra em `/egresso/**`.
 
@@ -77,16 +77,17 @@ Pacote `br.ufpr.sept.so2`. Clean Architecture; módulos conversam por ports.
 | `estagio` | Estágio do aluno + parecer **individual** do orientador (`internship.view_own` / `internship.review`) + pool COE (só atribuição). PDF no MinIO. Sem lote de parecer |
 | `tcc` | TCC do aluno + avaliação individual + cadastro F5 (`tcc.manage`). PDF no MinIO. Sem lote, sem certificado de conclusão |
 | `coordenacao` | F6.1 `GET`/`PATCH /coordenacao/cursos/{id}/config` (`course.config` + `idCoordenador`). F6.2 via `modules/reports` |
-| `egresso` | F2.1 `GET /egressos/me` + reemissão/download pré-assinados (`alumni.view_own`). Diploma/colação preenchidos após F5.11 |
+| `egresso` | F2.1 `GET /egressos/me` + reemissão (`alumni.view_own`). F5.10 `GET /egressos` (`alumni.list`) + CSV síncrono. Diploma/colação preenchidos após F5.11 |
 | `diplomas` | F5.11 colação em lote, entrega física e PDF no MinIO (`diploma.register`). Escopo `curso_secretario` no use case: `403` com `cursoId` explícito fora, `404` por id |
 | `reports` | F6.2 `GET /reports/coordinator` + F5.18 `GET /reports/secretary` |
 | `arquivos` | Porta S3-compatível (MinIO/dev). Upload server-side + download por URL pré-assinada (TTL 15 min). Sem antivírus/versionamento |
+| `atendimentos` | F5.13 + F1.20. Registro imutável (`service_record.create`) + ciência do aluno (`service_record.view_own`). Anexo PDF ≤ 10 MB no MinIO. Sem fila/SLA/agendamento |
 
 Módulos **previstos e ainda sem código**: `auditoria` (módulo dedicado; `audit_log` mora no `iam`).
 
 ### Flyway (imutável)
 
-`backend/src/main/resources/db/migration/`. **Não edite** migration já aplicada. **Próxima = V022.**
+`backend/src/main/resources/db/migration/`. **Não edite** migration já aplicada. **Próxima = V026.**
 
 | Versão | Conteúdo |
 |---|---|
@@ -111,6 +112,10 @@ Módulos **previstos e ainda sem código**: `auditoria` (módulo dedicado; `audi
 | V019 | `diploma` (colação, entrega, `storage_key`; UNIQUE por aluno e por número) |
 | V020 | `solicitacao.deliberador_id` (atribuição da fila F5.2) |
 | V021 | Perfil (`nome_social`, `telefone`, `identidade_genero`, `foto_storage_key`), `refresh_token.user_agent`, `notificacao_preferencia` |
+| V022 | Comunicação (`turma`, `turma_aluno`, `comunicacao`, `comunicacao_entrega`) |
+| V023 | `formativa.storage_key`, `formativa.id_tipo_atividade`, `tipo_atividade_formativa` |
+| V024 | Atendimento (`atendimento_categoria`, `atendimento`) |
+| V025 | `evento.id_curso` (nulo no evento do professor) |
 
 ### Frontend — pastas
 
@@ -118,7 +123,7 @@ Módulos **previstos e ainda sem código**: `auditoria` (módulo dedicado; `audi
 
 | Pasta | Uso |
 |---|---|
-| `pages/secretaria/` | CRUD F5.6–F5.9 + cadastro F5 de estágio/TCC + diplomas, estatísticas e atrasados |
+| `pages/secretaria/` | CRUD F5.6–F5.9 + cadastro F5 de estágio/TCC + diplomas, estatísticas, atrasados, atendimentos, egressos e eventos |
 | `pages/aluno/`, `pages/inicio/`, `pages/professor/` | Aluno, BFF `/inicio`, hospedeiro |
 | `pages/perfil/` | F1.3–F1.5 perfil, segurança e notificações |
 | `pages/solicitacoes/`, `pages/formativas/`, `pages/estagios/`, `pages/tccs/`, `pages/publico/` | Fila/deliberar, CAAF, estágio, TCC, F0 |
@@ -157,7 +162,7 @@ Login: `@ufpr.br`, e-mail pessoal ou GRR (`GRR` + 8 dígitos). `senhaAlterada = 
 | `/publico/**` | Anônimo | Contato; protocolo; verificação de certificado |
 | `/academico/**` | JWT + capability da tela | CRUD. Anônimo → 401. Sem cap → 403. Fora do escopo (curso) → 404. GRR/e-mail malformado → 422 `validation-error`. `_links.disciplinas` só com `subject.manage`. Períodos: `calendar.manage` all-or-nothing |
 | `/request-types`, `/requests/**` | JWT + `request.*` (**não** anônimo) | Motor. Inbox `?canDeliberate=true`. Fila do curso (`request.view_curso`) com `?slaBreached` e `slaStatus`. CSV `?format=csv`. `PATCH /requests/bulk`. `POST /{id}/transitions` |
-| `/events` | JWT + `attendance.*` / `event.*` | Presença v4.1 (QR\|SECRET × SINGLE\|DUAL) |
+| `/events` | JWT + `attendance.*` / `event.manage` / `event.host` / `event.view_curso` | Presença v4.1 (QR\|SECRET × SINGLE\|DUAL). `GET ?escopo=cursos`, `PATCH`/`DELETE /{id}` (secretaria). Professor: `?mine=true` sem curso |
 | `/bff/dashboard/aluno` | JWT + `dashboard.view_own` + (`attendance.view_open` **ou** `request.view_own`) | Dashboard agregado (HTTP 200; degrada por bloco) |
 | `/bff/dashboard/professor` | JWT + `dashboard.view_self_professor` | Dashboard agregado do professor (HTTP 200; degrada por bloco; CAAF só com `formative.review`) |
 | `/bff/dashboard/secretary` | JWT + `dashboard.view_secretary` | F5.1 da secretaria. KPIs, fila ≤ 10, SLA e agenda do dia, só cursos de `curso_secretario`. Sem curso → 403. Sem cap → 403. QuickTiles só por `_links` (sem importações) |
@@ -166,6 +171,8 @@ Login: `@ufpr.br`, e-mail pessoal ou GRR (`GRR` + 8 dígitos). `senhaAlterada = 
 | `/estagios` | JWT + `internship.view_own` / `internship.review` / `internship.manage` | `?aluno=me`, fila `?canReview=true`, escopo `?escopo=cursos` + `POST`/`PUT` (`internship.manage`). Upload PDF, parecer individual, `POST /{id}/encerrar`. Sem lote. Outro aluno, orientador alheio ou fora do escopo → 404 |
 | `/tccs` | JWT + `tcc.view_own` / `tcc.review` / `tcc.manage` | `?aluno=me`, fila `?canReview=true`, escopo `?escopo=cursos` + `POST`/`PUT` (`tcc.manage`). Upload PDF, avaliação individual. Sem lote e sem certificado. Outro aluno ou banca alheia → 404 |
 | `/diplomas` | JWT + `diploma.register` | Colação em lote, entrega física e PDF. `cursoId` explícito fora do escopo, ou ator sem curso vinculado → 403. Diploma por id fora do escopo ou inexistente → 404 (a mesma resposta). Sem cap → 403 |
+| `/atendimentos` | JWT + `service_record.create` / `service_record.view_own` | F5.13 + F1.20. `POST` multipart (PDF ≤ 10 MB). `GET ?aluno=me`. `POST /{id}/acknowledge`. Categorias em `GET /atendimentos/categorias`. Sem PATCH/DELETE do registro. Aluno fora do escopo → 404. Sem cap → 403. Anônimo → 401 |
+| `/egressos` | JWT + `alumni.list` / `alumni.view_own` | Lista F5.10 (`alumni.list`, filtros curso/ano/situação, `?format=csv` síncrono). Painel F2.1 em `/egressos/me`. Sem `_links.novo`. Fora do escopo → 403. Sem cap → 403. Anônimo → 401 |
 | `/coordenacao/cursos/{id}/config` | JWT + `course.config` **e** `idCoordenador = usuarioId` | GET/PATCH F6.1. Sem `course.manage`. Outro curso → 403. Anônimo → 401. Sem `/courses/{id}/config` |
 | `/reports/coordinator` | JWT + `report.view_coordinator` | F6.2 do coordenador. Outro curso ou nenhum curso coordenado → 403. Sem cap → 403 |
 | `/reports/secretary` | JWT + `report.view_secretary` | F5.18 da secretaria (`curso_secretario`). Fora do escopo ou sem curso vinculado → 403. Sem cap → 403 |
@@ -213,9 +220,9 @@ Ordem de dependência real — um bounded context por fatia. O mapa F0–F8 do F
 | 22 | F1.3–F1.5 perfil, segurança e notificações | 11, 15 | **Feito** — `GET`/`PATCH /me` (`user.update_own_profile`), senha, sessões e preferência de canal/DND/digest | Push, hub (23), job de digest, SSO, Expo destas telas |
 | 23 | F1.6 + F3.8 hub de comunicação | 6 | **Feito** — `GET`/`POST /communications` (inbox + comunicado Markdown via Outbox; V022) | Templates (34), push/FCM, digest |
 | 24 | F1.11 formativa manual com comprovante | 15, 14 | **Feito** — `POST /formativas` (`formative.submit`) com upload; nasce `AGUARDANDO_CAAF` origem `COMPROVANTE` | OCR, validação automática de CH |
-| 25 | F5.13 + F1.20 atendimentos | 11 | Módulo `atendimentos`: registro imutável + ciência do aluno | Fila/SLA de atendimento, agendamento |
-| 26 | F5.10 egressos (lista + CSV) | 16 | `/secretaria/egressos` (`alumni.list`) com filtros e CSV síncrono | Exportação assíncrona (29), colação (já na 16) |
-| 27 | F5.14 + F5.15 eventos da secretaria | 15 | `/secretaria/eventos` + operação sobre o motor v4.1; `PATCH`/`DELETE /events/{id}` | Janelas pré-agendadas, lista ao vivo de inelegíveis |
+| 25 | F5.13 + F1.20 atendimentos | 11 | **Feito** — V024; `POST`/`GET /atendimentos` + ciência | Fila/SLA de atendimento, agendamento |
+| 26 | F5.10 egressos (lista + CSV) | 16 | **Feito** — `GET /egressos` (`alumni.list`) + CSV síncrono | Exportação assíncrona (29), colação (já na 16) |
+| 27 | F5.14 + F5.15 eventos da secretaria | 15 | **Feito** — V025; `/secretaria/eventos` no motor `/events`; `PATCH`/`DELETE` | Janelas pré-agendadas, lista ao vivo de inelegíveis |
 | 28 | F5.3 + F5.12 solicitação interna e autorização de imagem | 20, 15 | `POST /requests { onBehalfOf }` + fila `AUTORIZACAO_IMAGEM` com lote | RequestType pelo editor (33), FORWARD |
 | 29 | F5.16 + F5.17 importações e exportações | 15, 11 | Wizard CSV/XLSX + export assíncrona com job e download pré-assinado | RabbitMQ, agendamento recorrente |
 | 30 | F7.7 audit-log + módulo `auditoria` | 11 | Extrai `audit_log` para `modules/auditoria`; busca imutável (`audit.read`) | Retenção/export; DELETE na trilha (proibido) |
@@ -471,6 +478,35 @@ V023 (`formativa.storage_key`, `formativa.id_tipo_atividade`, `tipo_atividade_fo
 - UI `/formativas/nova`. Enviar só com atividade, horas e comprovante. Seed TADS: Curso de extensão, Publicação, Monitoria.
 - Fora: OCR, validação automática da carga horária, resubmissão, Expo desta tela, atendimentos (25).
 
+**25. F5.13 + F1.20 atendimentos** — feito
+
+V024 (`atendimento_categoria`, `atendimento`). `service_record.create` no `secretaria.dev`. `service_record.view_own` no `aluno.dev`. Paths reais: `/atendimentos`, não `/service-records`.
+
+- Secretaria (`POST /atendimentos` multipart): aluno do escopo (`GET /academico/alunos`), categoria do seed, assunto e resposta. Anexo opcional, só PDF, até 10 MB, `ObjectStoragePort` server-side. Nasce `PENDENTE_CIENCIA`. Sem PATCH/DELETE. Aluno fora do escopo ou inexistente → 404 (a mesma resposta). Sem assunto/resposta ou arquivo inválido → 422. Sem cap → 403. Anônimo → 401. Outbox `atendimento.registrado` + `audit_log` na mesma TX; o dispatcher fecha SENT sem SMTP. Preview de notificação é só estado da tela.
+- Aluno (`GET /atendimentos?aluno=me`): colunas data, assunto, status, ação. Filtro `status=PENDENTE_CIENCIA`; vazio → “Nenhum atendimento pendente.” `POST /atendimentos/{id}/acknowledge` só com `_links.acknowledge`. Segunda ciência → 409. Outro aluno → 404. Sem link de criar nem de contestar.
+- Menu: rel `atendimentos` e `meus-atendimentos` via `MenuLinks` + `useActions`. Sem CRUD de categoria no admin. Sem fila, SLA ou agendamento.
+- Fora: e-mail síncrono, fila/SLA, Expo destas telas.
+
+**26. F5.10 egressos (lista + CSV)** — feito
+
+Sem migration nova: reusa `diploma` da fatia 16. `alumni.list` no `secretaria.dev`. Path real: `/egressos`, não `/graduations` nem `/secretaria/egressos` na API.
+
+- `GET /egressos` (`alumni.list`): nome, curso, ano de colação, situação do diploma. Filtros curso, ano e situação. Escopo `curso_secretario`. Fora do escopo ou secretaria sem curso → 403. Sem cap → 403. Anônimo → 401.
+- `?format=csv` devolve `text/csv` síncrono do mesmo filtro (o mesmo critério do CSV de atrasados). Sem job.
+- Sem `_links.novo`. `confirm-delivery` continua só no diploma (fatia 16). `egresso.dev` não ganha a tela.
+- UI `/secretaria/egressos`. Menu: rel `egressos` via `MenuLinks` + `useActions`.
+- Fora: exportação assíncrona (29), colação/entrega (já na 16), “Novo egresso”.
+
+**27. F5.14 + F5.15 eventos da secretaria** — feito
+
+V025 (`evento.id_curso`, nulo no evento do professor). O motor continua `/events`. `event.manage`, `event.host` e `event.view_curso` no `secretaria.dev`.
+
+- `/secretaria/eventos`: `GET /events?escopo=cursos` + o mesmo `POST /events`, só cursos da secretaria. Filtros estado e curso. Curso fora do escopo → 403. “Novo evento” só com `_links.novoEvento`.
+- `PATCH /events/{id}` e `DELETE /events/{id}`. `CONCLUIDO` não traz `_links.editar` nem `_links.excluir`. DELETE só em `AGENDADO` e sem presença. Com presença → 422 “Evento possui registros de presença”. `EM_ANDAMENTO` ou `CONCLUIDO` → 409. Sem cap → 403. Anônimo → 401.
+- `/secretaria/eventos/:id/operacao`: a mesma operação do professor (host-session, janela, encerrar) com `event.host`. `/professor/eventos` não muda. O item de menu da secretaria é `eventos-secretaria` → `/secretaria/eventos`; ela **não** recebe `/professor/eventos`.
+- Encerrar continua sem certificado (dívida). Sem janela pré-agendada e sem lista ao vivo de inelegíveis.
+- Fora: certificado ao encerrar, Expo destas telas.
+
 ### Fora do escopo de banca / P3
 
 Não conta como “falta para o TCC fechar”. Entra depois, ou nunca.
@@ -516,7 +552,7 @@ Três abas no terminal do Cursor, na raiz do repositório. O `application.yml` j
 
 O Postgres do `docker compose` na **5432** continua sendo outro banco. A API não usa essa porta.
 
-Proxies Vite → `http://localhost:8080`: `/auth`, `/me`, `/academico`, `/publico`, `/requests`, `/request-types`, `/bff`, `/events`, `/formativas` (HTML → `index.html`), `/estagios` (HTML → `index.html`), `/tccs` (HTML → `index.html`), `/comissoes` (HTML → `index.html`), `/certificates`, `/communications`, `/.well-known`, `/v3`, `/swagger-ui`, `/actuator`. CORS: `http://localhost:5173` e `http://localhost:5174`. Nativo não passa por CORS. Expo web **não** entrou nesta fatia (sem origem extra e sem `*`).
+Proxies Vite → `http://localhost:8080`: `/auth`, `/me`, `/academico`, `/publico`, `/requests`, `/request-types`, `/bff`, `/events`, `/atendimentos` (HTML → `index.html`), `/egressos`, `/diplomas`, `/formativas` (HTML → `index.html`), `/estagios` (HTML → `index.html`), `/tccs` (HTML → `index.html`), `/comissoes` (HTML → `index.html`), `/certificates`, `/communications`, `/.well-known`, `/v3`, `/swagger-ui`, `/actuator`. CORS: `http://localhost:5173` e `http://localhost:5174`. Nativo não passa por CORS. Expo web **não** entrou nesta fatia (sem origem extra e sem `*`).
 
 ```bash
 cd backend && mvn -q test
@@ -536,11 +572,11 @@ Senha de todos: `TroqueEstaSenha1!` (só local; override `IAM_DEV_SEED_PASSWORD`
 
 | Usuário | GRR | O que testa |
 |---|---|---|
-| `aluno.dev@ufpr.br` | `GRR20240001` | Aluno com senha já alterada + cadastro TADS (120 h) + `certificate.view_own` + `internship.view_own` + `tcc.view_own` + `communication.read` + `formative.submit`. Estágio e TCC seed no TADS (não cria outro). Hub em `/comunicacao`. Nova atividade em `/formativas/nova` |
+| `aluno.dev@ufpr.br` | `GRR20240001` | Aluno com senha já alterada + cadastro TADS (120 h) + `certificate.view_own` + `internship.view_own` + `tcc.view_own` + `communication.read` + `formative.submit` + `service_record.view_own`. Estágio e TCC seed no TADS (não cria outro). Hub em `/comunicacao`. Nova atividade em `/formativas/nova`. Meus atendimentos em `/meus-atendimentos` |
 | `novo.dev@ufpr.br` | `GRR20240002` | Primeiro acesso (`senhaAlterada=false`); também tem cadastro acadêmico. Tem `internship.view_own` e `tcc.view_own` e listas vazias |
 | `professor.dev@ufpr.br` | `GRR20240003` | Hospedeiro (`event.manage`, `event.host`), deliberante (`request.deliberate`), orientador do estágio (`internship.review`) e da banca do TCC (`tcc.review`). **Membro COE do TADS** e **coordenador do TADS** com `course.config` e **sem** `course.manage` — configura F6.1 e não vê o CRUD `/secretaria/cursos`. `communication.publish_class` publica em `/comunicacao/publicar` (turma ADS 2026/1 e curso TADS). Sem `formative.*` — `GET /formativas?canReview=true` é 403. Sem `internship.view_own` / `tcc.view_own` — `GET /estagios?aluno=me` e `GET /tccs?aluno=me` são 403 |
 | `caaf.dev@ufpr.br` | `GRR20240004` | Revisor CAAF (`formative.review`). Sem `event.manage` / `request.deliberate` |
-| `secretaria.dev@ufpr.br` | `GRR20240005` | CRUD TADS (`course.manage`, `subject.manage`, `user.manage_students`, `calendar.manage`) + `internship.manage` + `tcc.manage` + `diploma.register` + `report.view_secretary` + `dashboard.view_secretary` + `request.view_curso` + `request.triage` + `request.deliberate`. Sem `course.config` / `formative.review` / `event.manage` / `internship.view_own` / `internship.review` / `user.manage_all` / `report.view_coordinator`. Não recebe deep-link. Nav **sem** o item “Solicitações” do aluno (só Deliberar), **sem** Configurar curso / Usuários / Relatórios da coordenação e **com** Cadastro de estágios (`/secretaria/estagios`), Cadastro de TCCs (`/secretaria/tccs`), Diplomas (`/secretaria/diplomas`), Estatísticas (`/secretaria/estatisticas`), Fila central e Atrasados. Sem o item Estágios/TCCs do aluno, a fila de revisão e o pool COE |
+| `secretaria.dev@ufpr.br` | `GRR20240005` | CRUD TADS (`course.manage`, `subject.manage`, `user.manage_students`, `calendar.manage`) + `internship.manage` + `tcc.manage` + `diploma.register` + `report.view_secretary` + `dashboard.view_secretary` + `request.view_curso` + `request.triage` + `request.deliberate` + `service_record.create` + `alumni.list` + `event.manage` / `event.host` / `event.view_curso`. Sem `course.config` / `formative.review` / `internship.view_own` / `internship.review` / `user.manage_all` / `report.view_coordinator`. Não recebe deep-link. Nav **sem** o item “Solicitações” do aluno (só Deliberar), **sem** Configurar curso / Usuários / Relatórios da coordenação / Eventos (prof.) e **com** Cadastro de estágios, TCCs, Diplomas, Egressos, Atendimentos, Eventos (`/secretaria/eventos`), Estatísticas, Fila central e Atrasados. Sem o item Estágios/TCCs do aluno, a fila de revisão e o pool COE |
 | `egresso.dev@ufpr.br` | `GRR20240006` | Portal egresso (`alumni.view_own`) |
 | `admin.dev@ufpr.br` | `GRR20240007` | F7.1/F7.8 (`user.manage_all`, `user.reset_password`). Nav **com** Usuários (`/admin/usuarios`). Sem caps de secretaria/aluno |
 
@@ -576,5 +612,8 @@ A oficina seed `"Oficina Proof of Stay (dev)"` pode já estar `COMPLETA` para `a
 22. **Perfil** — `aluno.dev` abre Perfil, Segurança e Notificações (`user.update_own_profile`). Em `/perfil`, telefone sujo habilita Salvar; Cancelar não chama a API; GRR e e-mail institucional não mudam. Em `/perfil/seguranca`, senha atual errada fica em 401 e a sessão continua; senha nova encerra os outros aparelhos. Encerrar só aparece com `_links.encerrar`. Em `/perfil/notificacoes`, CRITICAL fica bloqueado; o restante grava canal, DND e digest. Sem push e sem job de digest.
 23. **Comunicação** — `aluno.dev` em `/comunicacao` vê a turma e o inbox (CTA só com `_links.acao`). Filtro vazio mostra “Nenhuma comunicação encontrada.” Marcar lido só dispara se `_links.marcar-lido` existir. `professor.dev` em `/comunicacao/publicar` escolhe turma ou curso (sem “todos os alunos da universidade”), publica com título e corpo e o Mailpit recebe o e-mail. Quem não tem a capability toma 403. Audiência de outro curso toma 422. Outro aluno não marca lido o aviso alheio.
 24. **Formativa manual** — `aluno.dev` em `/formativas` vê “Nova atividade” (`formative.submit`, `_links.nova`). Em `/formativas/nova` escolhe um tipo do TADS, informa as horas e anexa PDF, JPEG ou PNG. A entrada nasce `AGUARDANDO_CAAF` / `COMPROVANTE` e aparece na fila de `caaf.dev`. “Aprovar selecionados” no pool não cobre esse item. Sem o link, o botão não existe. Tipo de outro curso ou arquivo inválido → 422.
+25. **Atendimentos** — `secretaria.dev` em `/secretaria/atendimentos` registra aluno + categoria + assunto + resposta (PDF opcional ≤ 10 MB). O preview não chama HTTP. `aluno.dev` em `/meus-atendimentos` dá ciência só com `_links.acknowledge`. Filtro pendente vazio: “Nenhum atendimento pendente.” Segunda ciência → 409. Outro aluno → 404. Sem cap → 403.
+26. **Egressos** — `secretaria.dev` em `/secretaria/egressos` (`alumni.list`) lista nome/curso/ano/situação e exporta CSV síncrono (`?format=csv`). Sem “Novo egresso”. Curso fora do escopo → 403. `egresso.dev` não vê a tela. Colação continua em `/secretaria/diplomas`.
+27. **Eventos da secretaria** — `secretaria.dev` em `/secretaria/eventos` cria no mesmo `POST /events` com curso do escopo e opera em `/secretaria/eventos/:id/operacao`. Nav **sem** Eventos (prof.). `CONCLUIDO` sem Editar/Excluir. DELETE com presença → 422. DELETE de `CONCLUIDO` → 409. Encerrar continua sem PDF.
 
 F0.7 não aceita upload de PDF (CA-04). Encerrar evento continua sem PDF. Egresso não acessa `/formativas` nem `/certificados`.

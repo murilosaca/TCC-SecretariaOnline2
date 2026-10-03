@@ -23,6 +23,7 @@ class PresencaAssembler {
         authorities: List<String>,
         usuarioId: UUID,
         agora: OffsetDateTime,
+        cursoSigla: String? = null,
     ): EventoResponse {
         val faseAtiva = evento.faseDaJanelaAtiva(agora)
         val links = linkedMapOf<String, String>()
@@ -33,6 +34,7 @@ class PresencaAssembler {
         if (podeConfirmarEntrada(evento, fases, authorities, agora)) {
             links["confirmar-entrada"] = "/events/${evento.id}/attendance/confirm"
         }
+        acrescentarLinksCurso(links, evento, authorities)
         acrescentarLinksHospedeiro(links, evento, authorities, usuarioId, agora)
         return EventoResponse(
             evento.id,
@@ -45,6 +47,8 @@ class PresencaAssembler {
             evento.estado.name,
             situacao(evento, fases).name,
             faseAtiva != null,
+            evento.idCurso,
+            cursoSigla,
             links,
         )
     }
@@ -106,6 +110,27 @@ class PresencaAssembler {
         const val AUTHORITY_CHECK_IN = "attendance.check_in"
         const val AUTHORITY_MANAGE = "event.manage"
         const val AUTHORITY_HOST = "event.host"
+        const val AUTHORITY_VIEW_CURSO = "event.view_curso"
+
+        /**
+         * `editar` e `excluir` existem só para o recorte por curso da secretaria:
+         * a tela do professor segue com as mesmas ações de antes.
+         */
+        private fun acrescentarLinksCurso(
+            links: MutableMap<String, String>,
+            evento: Evento,
+            authorities: List<String>,
+        ) {
+            if (AUTHORITY_VIEW_CURSO !in authorities || AUTHORITY_MANAGE !in authorities) {
+                return
+            }
+            if (evento.editavel()) {
+                links["editar"] = "/events/${evento.id}"
+            }
+            if (evento.excluivel()) {
+                links["excluir"] = "/events/${evento.id}"
+            }
+        }
 
         private fun acrescentarLinksHospedeiro(
             links: MutableMap<String, String>,

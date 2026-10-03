@@ -1,4 +1,5 @@
 import type {
+  AtualizarEventoRequest,
   ConfirmarPresencaRequest,
   CriarEventoRequest,
   Evento,
@@ -13,7 +14,17 @@ export const eventosApi = {
     api.get<EventoPage>('/events', { audience: 'me', page, size }),
   listarDoAnfitriao: (page = 0, size = 20) =>
     api.get<EventoPage>('/events', { mine: 'true', page, size }),
+  listarDoEscopo: (filtros: { cursoId?: string; estado?: string; page?: number; size?: number } = {}) =>
+    api.get<EventoPage>('/events', {
+      escopo: 'cursos',
+      cursoId: filtros.cursoId,
+      estado: filtros.estado,
+      page: filtros.page ?? 0,
+      size: filtros.size ?? 20,
+    }),
   criar: (body: CriarEventoRequest) => api.post<Evento>('/events', body),
+  atualizar: (id: string, body: AtualizarEventoRequest) => api.patch<Evento>(`/events/${id}`, body),
+  excluir: (id: string) => api.delete(`/events/${id}`),
   obter: (id: string) => api.get<Evento>(`/events/${id}`),
   sessao: (id: string) => api.get<SessaoPresenca>(`/events/${id}/attendance/session`),
   sessaoHost: (id: string) => api.get<HostSessao>(`/events/${id}/attendance/host-session`),

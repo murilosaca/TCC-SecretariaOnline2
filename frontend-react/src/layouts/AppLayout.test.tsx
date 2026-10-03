@@ -70,6 +70,8 @@ describe('AppLayout', () => {
     expect(screen.queryByText('Solicitações')).toBeNull()
     expect(screen.queryByText('Revisão CAAF')).toBeNull()
     expect(screen.queryByText('Eventos (prof.)')).toBeNull()
+    expect(screen.queryByText('Atendimentos')).toBeNull()
+    expect(screen.queryByText('Egressos')).toBeNull()
     expect(screen.queryByText('Estágios')).toBeNull()
     expect(screen.queryByText('Cadastro de estágios')).toBeNull()
     expect(screen.queryByText('Cadastro de TCCs')).toBeNull()
@@ -128,6 +130,34 @@ describe('AppLayout', () => {
     expect(screen.queryByText('Revisão de estágios')).toBeNull()
     expect(screen.queryByText('Pool COE')).toBeNull()
     expect(screen.queryByText('Cadastro de TCCs')).toBeNull()
+  })
+
+  it('secretaria vê eventos próprios e não o item /professor/eventos', () => {
+    renderNav({
+      inicio: '/inicio',
+      'eventos-secretaria': '/secretaria/eventos',
+      atendimentos: '/secretaria/atendimentos',
+      egressos: '/secretaria/egressos',
+      contato: '/contato',
+    })
+    expect(screen.getByRole('link', { name: 'Eventos' }).getAttribute('href')).toBe('/secretaria/eventos')
+    expect(screen.getByRole('link', { name: 'Atendimentos' }).getAttribute('href')).toBe(
+      '/secretaria/atendimentos',
+    )
+    expect(screen.getByRole('link', { name: 'Egressos' }).getAttribute('href')).toBe('/secretaria/egressos')
+    expect(screen.queryByText('Eventos (prof.)')).toBeNull()
+  })
+
+  it('aluno vê meus atendimentos só com o rel', () => {
+    renderNav({
+      inicio: '/inicio',
+      'meus-atendimentos': '/meus-atendimentos',
+      contato: '/contato',
+    })
+    expect(screen.getByRole('link', { name: 'Meus atendimentos' }).getAttribute('href')).toBe(
+      '/meus-atendimentos',
+    )
+    expect(screen.queryByText('Atendimentos')).toBeNull()
   })
 
   it('mostra diplomas só quando o rel da secretaria existe', () => {

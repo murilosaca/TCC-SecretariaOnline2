@@ -20,4 +20,12 @@ interface DiplomaRepository {
         situacao: DiplomaSituacao?,
         pageable: Pageable,
     ): Page<Diploma>
+
+    /** Lista de egressos da secretaria (F5.10): cursos do escopo, ano de colação e situação. */
+    fun findByCursos(
+        cursoIds: Collection<UUID>,
+        ano: Int?,
+        situacao: DiplomaSituacao?,
+        pageable: Pageable,
+    ): Page<Diploma>
 }

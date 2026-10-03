@@ -46,6 +46,12 @@ import { Cursos } from './pages/secretaria/Cursos'
 import { Disciplinas } from './pages/secretaria/Disciplinas'
 import { Estatisticas } from './pages/secretaria/Estatisticas'
 import { Atrasados } from './pages/secretaria/Atrasados'
+import { Atendimentos } from './pages/secretaria/Atendimentos'
+import { Egressos } from './pages/secretaria/Egressos'
+import { EventosSecretaria } from './pages/secretaria/EventosSecretaria'
+import { EventoSecretariaFormulario } from './pages/secretaria/EventoSecretariaNova'
+import { EventoSecretariaOperacao } from './pages/secretaria/EventoSecretariaOperacao'
+import { MeusAtendimentos } from './pages/aluno/MeusAtendimentos'
 import { Usuarios } from './pages/admin/Usuarios'
 import { Comunicacao } from './pages/comunicacao/Comunicacao'
 import { PublicarComunicado } from './pages/comunicacao/PublicarComunicado'
@@ -93,6 +99,7 @@ export default function App() {
           <Route path="formativas/:id" element={<FormativaDetalhe />} />
           <Route path="formativas" element={<FormativasRota />} />
           <Route path="certificados" element={<Certificados />} />
+          <Route path="meus-atendimentos" element={<MeusAtendimentos />} />
           <Route path="comunicacao/publicar" element={<PublicarComunicado />} />
           <Route path="comunicacao" element={<Comunicacao />} />
           <Route path="professor/eventos/nova" element={<ProfessorEventoNova />} />
@@ -108,6 +115,12 @@ export default function App() {
           <Route path="secretaria/calendarios" element={<Calendarios />} />
           <Route path="secretaria/estatisticas" element={<Estatisticas />} />
           <Route path="secretaria/atrasados" element={<Atrasados />} />
+          <Route path="secretaria/atendimentos" element={<Atendimentos />} />
+          <Route path="secretaria/egressos" element={<Egressos />} />
+          <Route path="secretaria/eventos/nova" element={<EventoSecretariaFormulario />} />
+          <Route path="secretaria/eventos/:id/operacao" element={<EventoSecretariaOperacao />} />
+          <Route path="secretaria/eventos/:id" element={<EventoSecretariaFormulario />} />
+          <Route path="secretaria/eventos" element={<EventosSecretaria />} />
           <Route path="admin/usuarios" element={<Usuarios />} />
           <Route path="coordenacao/cursos/:id/configurar" element={<ConfigurarCurso />} />
           <Route path="coordenacao/relatorios" element={<Relatorios />} />

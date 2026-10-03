@@ -84,7 +84,7 @@ class GlobalExceptionHandler {
         problemDetail(
             HttpStatus.UNPROCESSABLE_ENTITY,
             "Dados inválidos",
-            "Envie um PDF, JPEG ou PNG de até 5 MB.",
+            "Arquivo acima do tamanho aceito.",
             "validation-error",
         )
 

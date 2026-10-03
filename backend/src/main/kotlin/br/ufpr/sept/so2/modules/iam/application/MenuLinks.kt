@@ -36,6 +36,15 @@ object MenuLinks {
         if (caps.contains("formative.view_own")) {
             links["formativas"] = "/formativas"
         }
+        if (caps.contains("service_record.view_own")) {
+            links["meus-atendimentos"] = "/meus-atendimentos"
+        }
+        if (caps.contains("service_record.create")) {
+            links["atendimentos"] = "/secretaria/atendimentos"
+        }
+        if (caps.contains("alumni.list")) {
+            links["egressos"] = "/secretaria/egressos"
+        }
         if (caps.contains("certificate.view_own")) {
             links["certificados"] = "/certificados"
         }
@@ -56,7 +65,9 @@ object MenuLinks {
             links["revisao-caaf"] = "/formativas?to=me"
             links["comissoes-caaf"] = "/comissoes/caaf"
         }
-        if (caps.containsAny("event.manage", "event.host")) {
+        if (caps.contains("event.view_curso")) {
+            links["eventos-secretaria"] = "/secretaria/eventos"
+        } else if (caps.containsAny("event.manage", "event.host")) {
             links["eventos-professor"] = "/professor/eventos"
         }
         if (caps.contains("course.manage")) {

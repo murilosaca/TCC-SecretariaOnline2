@@ -22,12 +22,61 @@ class Evento(
     var janelaSaidaFim: OffsetDateTime?,
     val createdAt: OffsetDateTime,
     var updatedAt: OffsetDateTime,
+    /** Nulo no evento criado pelo professor, que não escolhe curso (V025). */
+    var idCurso: UUID? = null,
 ) {
     init {
         validarIntervalo(inicioEm, fimEm, cargaHoraria, titulo)
     }
 
     fun eAnfitriao(usuarioId: UUID?): Boolean = idAnfitriao != null && idAnfitriao == usuarioId
+
+    fun editavel(): Boolean = estado != EventoEstado.CONCLUIDO
+
+    fun excluivel(): Boolean = estado == EventoEstado.AGENDADO
+
+    fun atualizar(
+        titulo: String?,
+        inicioEm: OffsetDateTime?,
+        fimEm: OffsetDateTime?,
+        cargaHoraria: Int?,
+        attendanceMode: AttendanceMode?,
+        idCurso: UUID?,
+        agora: OffsetDateTime,
+    ) {
+        if (!editavel()) {
+            throw ConflitoEstadoException(EDICAO_NEGADA)
+        }
+        val novoTitulo = titulo?.trim()?.takeIf { it.isNotEmpty() } ?: this.titulo
+        val novoInicio = inicioEm ?: this.inicioEm
+        val novoFim = fimEm ?: this.fimEm
+        val novaCarga = cargaHoraria ?: this.cargaHoraria
+        validarIntervalo(novoInicio, novoFim, novaCarga, novoTitulo)
+        if (attendanceMode != null && attendanceMode != this.attendanceMode && estado != EventoEstado.AGENDADO) {
+            throw ConflitoEstadoException(MODO_TRAVADO)
+        }
+        this.titulo = novoTitulo
+        this.inicioEm = novoInicio
+        this.fimEm = novoFim
+        this.cargaHoraria = novaCarga
+        if (attendanceMode != null) {
+            this.attendanceMode = attendanceMode
+        }
+        if (idCurso != null) {
+            this.idCurso = idCurso
+        }
+        updatedAt = agora
+    }
+
+    /** Exclusão só do que ainda não aconteceu e não gerou registro de presença. */
+    fun garantirExclusao(temPresenca: Boolean) {
+        if (!excluivel()) {
+            throw ConflitoEstadoException(EXCLUSAO_NEGADA)
+        }
+        if (temPresenca) {
+            throw DadoInvalidoException(EXCLUSAO_COM_PRESENCA)
+        }
+    }
 
     fun garantirHospedeiro(usuarioId: UUID?) {
         if (!eAnfitriao(usuarioId)) {
@@ -180,6 +229,10 @@ class Evento(
 
     companion object {
         const val CONFIRMACAO_NEGADA = "Não foi possível confirmar a presença."
+        const val EDICAO_NEGADA = "Evento concluído não pode ser editado."
+        const val EXCLUSAO_NEGADA = "Só é possível excluir evento AGENDADO."
+        const val EXCLUSAO_COM_PRESENCA = "Evento possui registros de presença"
+        const val MODO_TRAVADO = "Modo de presença não pode mudar depois do início do evento."
         const val JANELA_MINUTOS_PADRAO = 15
         const val QR_TTL_MINUTOS = 5L
 
@@ -192,6 +245,7 @@ class Evento(
             cargaHoraria: Int,
             attendanceMode: AttendanceMode,
             agora: OffsetDateTime,
+            idCurso: UUID? = null,
         ): Evento {
             if (idAnfitriao == null) {
                 throw DadoInvalidoException("Anfitrião do evento é obrigatório.")
@@ -212,6 +266,7 @@ class Evento(
                 null,
                 agora,
                 agora,
+                idCurso,
             )
         }
 

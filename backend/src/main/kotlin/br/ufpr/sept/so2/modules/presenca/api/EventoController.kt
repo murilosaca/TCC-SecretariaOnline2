@@ -1,20 +1,27 @@
 package br.ufpr.sept.so2.modules.presenca.api
 
+import br.ufpr.sept.so2.modules.academico.application.ports.CursoEscopoPort
 import br.ufpr.sept.so2.modules.iam.infrastructure.security.IamPrincipal
+import br.ufpr.sept.so2.modules.presenca.api.dto.AtualizarEventoRequest
 import br.ufpr.sept.so2.modules.presenca.api.dto.ConfirmarPresencaRequest
 import br.ufpr.sept.so2.modules.presenca.api.dto.CriarEventoRequest
 import br.ufpr.sept.so2.modules.presenca.api.dto.EventoResponse
 import br.ufpr.sept.so2.modules.presenca.api.dto.HostSessaoResponse
 import br.ufpr.sept.so2.modules.presenca.api.dto.SessaoPresencaResponse
 import br.ufpr.sept.so2.modules.presenca.application.AbrirJanelaUseCase
+import br.ufpr.sept.so2.modules.presenca.application.AtualizarEventoUseCase
 import br.ufpr.sept.so2.modules.presenca.application.ConfirmarPresencaUseCase
 import br.ufpr.sept.so2.modules.presenca.application.CriarEventoUseCase
 import br.ufpr.sept.so2.modules.presenca.application.EncerrarEventoUseCase
+import br.ufpr.sept.so2.modules.presenca.application.EventoAcesso
+import br.ufpr.sept.so2.modules.presenca.application.ExcluirEventoUseCase
+import br.ufpr.sept.so2.modules.presenca.application.ListarEventosDaSecretariaUseCase
 import br.ufpr.sept.so2.modules.presenca.application.ListarEventosDoAlunoUseCase
 import br.ufpr.sept.so2.modules.presenca.application.ListarEventosDoAnfitriaoUseCase
 import br.ufpr.sept.so2.modules.presenca.application.ObterEventoUseCase
 import br.ufpr.sept.so2.modules.presenca.application.ObterSessaoHostUseCase
 import br.ufpr.sept.so2.modules.presenca.application.ObterSessaoPresencaUseCase
+import br.ufpr.sept.so2.modules.presenca.application.ports.CursoSiglaPort
 import br.ufpr.sept.so2.modules.presenca.application.ports.PresencaRepository
 import br.ufpr.sept.so2.modules.presenca.domain.Evento
 import br.ufpr.sept.so2.modules.presenca.domain.FasePresenca
@@ -27,9 +34,12 @@ import jakarta.validation.Valid
 import org.springframework.data.domain.Pageable
 import org.springframework.data.web.PageableDefault
 import org.springframework.http.HttpStatus
+import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.security.core.Authentication
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -43,11 +53,14 @@ import java.util.function.Function
 
 @RestController
 @RequestMapping("/events")
-@Tag(name = "Eventos e presença", description = "Proof of Stay v4.1 (RF-F1-009 / RF-F3-002)")
+@Tag(name = "Eventos e presença", description = "Proof of Stay v4.1 (RF-F1-009 / RF-F3-002 / RF-F5-008)")
 class EventoController(
     private val listarEventosDoAlunoUseCase: ListarEventosDoAlunoUseCase,
     private val listarEventosDoAnfitriaoUseCase: ListarEventosDoAnfitriaoUseCase,
+    private val listarEventosDaSecretariaUseCase: ListarEventosDaSecretariaUseCase,
     private val criarEventoUseCase: CriarEventoUseCase,
+    private val atualizarEventoUseCase: AtualizarEventoUseCase,
+    private val excluirEventoUseCase: ExcluirEventoUseCase,
     private val obterEventoUseCase: ObterEventoUseCase,
     private val obterSessaoPresencaUseCase: ObterSessaoPresencaUseCase,
     private val obterSessaoHostUseCase: ObterSessaoHostUseCase,
@@ -55,6 +68,8 @@ class EventoController(
     private val encerrarEventoUseCase: EncerrarEventoUseCase,
     private val confirmarPresencaUseCase: ConfirmarPresencaUseCase,
     private val presencaRepository: PresencaRepository,
+    private val cursoSiglaPort: CursoSiglaPort,
+    private val cursoEscopoPort: CursoEscopoPort,
     private val assembler: PresencaAssembler,
 ) {
 
@@ -73,6 +88,44 @@ class EventoController(
                 assembler.fromEvento(evento, emptyList(), principal.authorities, principal.userId, agora)
             },
             mapOf("novoEvento" to "/events"),
+        )
+    }
+
+    /**
+     * F5.14: mesma coleção `/events`, recortada pelos cursos da secretaria.
+     * Não nasce outro recurso para o evento da secretaria.
+     */
+    @GetMapping(params = ["escopo=cursos"])
+    @PreAuthorize("hasAuthority('event.manage')")
+    @Operation(summary = "Listar eventos dos cursos da secretaria")
+    fun listarPorCurso(
+        @RequestParam(required = false) cursoId: UUID?,
+        @RequestParam(required = false) estado: String?,
+        @PageableDefault(size = 20) pageable: Pageable,
+        authentication: Authentication,
+    ): PageResponse<EventoResponse> {
+        val principal = principal(authentication)
+        val agora = OffsetDateTime.now()
+        val pagina = listarEventosDaSecretariaUseCase.execute(principal.userId, cursoId, estado, pageable)
+        val siglas = cursoSiglaPort.siglasPorId(pagina.content.mapNotNull { it.idCurso })
+        val novo = if (PresencaAssembler.AUTHORITY_MANAGE in principal.authorities) {
+            mapOf("novoEvento" to "/events")
+        } else {
+            emptyMap()
+        }
+        return PageResponse.ofWithLinks(
+            pagina,
+            Function { evento ->
+                assembler.fromEvento(
+                    evento,
+                    emptyList(),
+                    principal.authorities,
+                    principal.userId,
+                    agora,
+                    siglas[evento.idCurso],
+                )
+            },
+            novo,
         )
     }
 
@@ -113,12 +166,52 @@ class EventoController(
             request.fimEm,
             request.cargaHoraria,
             request.attendanceMode,
+            request.cursoId,
+            principal.authorities,
         )
         return assembler.fromEvento(criado, emptyList(), principal.authorities, principal.userId, OffsetDateTime.now())
     }
 
+    @PatchMapping("/{id}")
+    @PreAuthorize("hasAuthority('event.manage')")
+    @Operation(summary = "Atualizar evento AGENDADO ou EM_ANDAMENTO")
+    fun atualizar(
+        @PathVariable id: UUID,
+        @Valid @RequestBody request: AtualizarEventoRequest,
+        authentication: Authentication,
+    ): EventoResponse {
+        val principal = principal(authentication)
+        val atualizado = atualizarEventoUseCase.execute(
+            id,
+            principal.userId,
+            principal.authorities,
+            request.titulo,
+            request.inicioEm,
+            request.fimEm,
+            request.cargaHoraria,
+            request.attendanceMode,
+            request.cursoId,
+        )
+        return assembler.fromEvento(
+            atualizado,
+            emptyList(),
+            principal.authorities,
+            principal.userId,
+            OffsetDateTime.now(),
+        )
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('event.manage')")
+    @Operation(summary = "Excluir evento AGENDADO sem presença")
+    fun excluir(@PathVariable id: UUID, authentication: Authentication): ResponseEntity<Void> {
+        val principal = principal(authentication)
+        excluirEventoUseCase.execute(id, principal.userId, principal.authorities)
+        return ResponseEntity.noContent().build()
+    }
+
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('attendance.view_open','event.manage')")
+    @PreAuthorize("hasAnyAuthority('attendance.view_open','event.manage','event.host')")
     @Operation(summary = "Detalhe do evento")
     fun buscar(@PathVariable id: UUID, authentication: Authentication): EventoResponse {
         val principal = principal(authentication)
@@ -255,7 +348,7 @@ class EventoController(
         if (PresencaAssembler.AUTHORITY_VIEW in principal.authorities) {
             return
         }
-        if (PresencaAssembler.AUTHORITY_MANAGE in principal.authorities && evento.eAnfitriao(principal.userId)) {
+        if (EventoAcesso.alcanca(evento, principal.userId, principal.authorities, cursoEscopoPort)) {
             return
         }
         throw AcessoNegadoException("Você não pode acessar este evento.")

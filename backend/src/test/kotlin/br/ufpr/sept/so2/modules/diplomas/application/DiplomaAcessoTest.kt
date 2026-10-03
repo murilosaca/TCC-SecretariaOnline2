@@ -81,4 +81,11 @@ private class DiplomasMemoria(private val itens: Map<UUID, Diploma>) : DiplomaRe
         situacao: DiplomaSituacao?,
         pageable: Pageable,
     ): Page<Diploma> = Page.empty(pageable)
+
+    override fun findByCursos(
+        cursoIds: Collection<UUID>,
+        ano: Int?,
+        situacao: DiplomaSituacao?,
+        pageable: Pageable,
+    ): Page<Diploma> = Page.empty(pageable)
 }

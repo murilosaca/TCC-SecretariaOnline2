@@ -8,7 +8,13 @@ import { QrDisplay } from '../../components/QrDisplay'
 import { isQrMode } from '../../models/evento'
 import type { HostSessao } from '../../models/evento'
 
-export function ProfessorEventoOperacao() {
+export function ProfessorEventoOperacao({
+  basePath = '/professor/eventos',
+  voltarPara,
+}: {
+  basePath?: string
+  voltarPara?: string
+}) {
   const { id = '' } = useParams()
   const queryClient = useQueryClient()
   const [erro, setErro] = useState<string | null>(null)
@@ -73,7 +79,7 @@ export function ProfessorEventoOperacao() {
           <h1>{sessao.data?.titulo ?? 'Operação do evento'}</h1>
           <p className="muted">Painel ao vivo · {sessao.data?.attendanceMode ?? 'Proof of Stay'} (RF-F3-002-b).</p>
         </div>
-        <Link to={`/professor/eventos/${id}`} className="ghost-link">
+        <Link to={voltarPara ?? `${basePath}/${id}`} className="ghost-link">
           Voltar ao evento
         </Link>
       </header>

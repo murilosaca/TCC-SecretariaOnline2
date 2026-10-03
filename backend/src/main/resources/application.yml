@@ -28,8 +28,10 @@ spring:
     locations: classpath:db/migration
   servlet:
     multipart:
-      max-file-size: 5MB
-      max-request-size: 6MB
+      # Teto do servlet. Cada fluxo aplica o próprio limite no domínio:
+      # 5 MB em formativa/estágio/TCC, 10 MB no anexo de atendimento.
+      max-file-size: 10MB
+      max-request-size: 12MB
   jackson:
     serialization:
       write-dates-as-timestamps: false

@@ -168,4 +168,23 @@ class EventoTest : StringSpec({
         criado.estado shouldBe EventoEstado.AGENDADO
         criado.pinHash shouldBe null
     }
+
+    "CONCLUIDO nao e editavel nem excluivel" {
+        val concluido = evento(AttendanceMode.SECRET_SINGLE, estado = EventoEstado.CONCLUIDO)
+        concluido.editavel() shouldBe false
+        concluido.excluivel() shouldBe false
+        shouldThrow<ConflitoEstadoException> {
+            concluido.atualizar("Outro", null, null, null, null, null, agora)
+        }.message shouldBe Evento.EDICAO_NEGADA
+        shouldThrow<ConflitoEstadoException> {
+            concluido.garantirExclusao(false)
+        }.message shouldBe Evento.EXCLUSAO_NEGADA
+    }
+
+    "AGENDADO com presenca nao exclui" {
+        val agendado = evento(AttendanceMode.SECRET_SINGLE, estado = EventoEstado.AGENDADO)
+        shouldThrow<br.ufpr.sept.so2.shared.domain.exception.DadoInvalidoException> {
+            agendado.garantirExclusao(true)
+        }.message shouldBe "Evento possui registros de presença"
+    }
 })

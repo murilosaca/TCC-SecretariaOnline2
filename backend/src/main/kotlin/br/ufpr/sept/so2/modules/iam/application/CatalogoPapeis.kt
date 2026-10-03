@@ -88,6 +88,7 @@ object CatalogoPapeis {
         "iam.manage_roles",
         "iam.manage_authorities",
         "request_type.manage",
+        "communication.manage_templates",
         PERFIL,
     )
 
@@ -158,6 +159,7 @@ object CatalogoPapeis {
         "iam.manage_roles" to "Gerenciar perfis",
         "iam.manage_authorities" to "Gerenciar authorities e a matriz",
         "request_type.manage" to "Editar tipos de solicitação",
+        "communication.manage_templates" to "Editar templates de comunicação",
     )
 
     fun uniao(vararg grupos: List<String>): List<String> =

@@ -290,5 +290,17 @@ class MenuLinksTest : StringSpec({
         secretaria.shouldNotContainKey("autoridades")
         secretaria.shouldNotContainKey("tipos-solicitacao")
         MenuLinks.from(listOf("request.open", "request.view_own")).shouldNotContainKey("jobs")
+        MenuLinks.from(listOf("request.open", "request.view_own")).shouldNotContainKey("templates-comunicacao")
+    }
+
+    "sessao autenticada ganha suporte e o editor de template so com a cap" {
+        val aluno = MenuLinks.from(listOf("request.view_own"))
+        aluno["suporte"] shouldBe "/suporte"
+        aluno.shouldNotContainKey("templates-comunicacao")
+        val secretaria = MenuLinks.from(listOf("course.manage", "request.view_curso"))
+        secretaria["suporte"] shouldBe "/suporte"
+        secretaria.shouldNotContainKey("templates-comunicacao")
+        MenuLinks.from(listOf("communication.manage_templates"))["templates-comunicacao"] shouldBe
+            "/admin/templates-comunicacao"
     }
 })

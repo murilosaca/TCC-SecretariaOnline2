@@ -46,20 +46,18 @@ class SolicitacaoCriadaOutboxHandler(
     private fun enviar(professor: Usuario, solicitacaoId: UUID, protocolo: String, base: String) {
         val jwt = jwtTokenService.emitDeliberationToken(professor, solicitacaoId)
         val url = "$base/solicitacoes/$solicitacaoId/deliberar?token=$jwt"
-        mailPort.send(
-            MailMessage(
-                professor.emailInstitucional.value,
-                "Solicitação $protocolo aguarda deliberação",
-                """
-                Há uma solicitação aguardando sua deliberação ($protocolo).
+        val (assunto, corpo) = MailComTemplate(
+            "Solicitação $protocolo aguarda deliberação",
+            """
+            Há uma solicitação aguardando sua deliberação ($protocolo).
 
-                Acesse o link (válido por 72 horas, uso único após decidir):
-                $url
+            Acesse o link (válido por 72 horas, uso único após decidir):
+            $url
 
-                A secretaria delibera pela fila, sem este deep-link.
-                """.trimIndent(),
-            ),
+            A secretaria delibera pela fila, sem este deep-link.
+            """.trimIndent(),
         )
+        mailPort.send(MailMessage(professor.emailInstitucional.value, assunto, corpo))
         LOG.info(
             "Deep-link de deliberação enviado a {} protocolo={}",
             EmailMascarado.de(professor.emailInstitucional.value),

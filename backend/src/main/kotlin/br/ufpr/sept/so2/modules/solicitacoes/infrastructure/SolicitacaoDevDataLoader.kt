@@ -26,6 +26,10 @@ class SolicitacaoDevDataLoader(
             tipoRepository.save(AutorizacaoImagemSeed.tipo(agora))
             LOG.info("RequestType AUTORIZACAO_IMAGEM publicado.")
         }
+        if (tipoRepository.findByCodigo(SuporteTecnicoSeed.CODIGO).isEmpty) {
+            tipoRepository.save(SuporteTecnicoSeed.tipo(agora))
+            LOG.info("RequestType SUPORTE_TECNICO publicado.")
+        }
     }
 
     companion object {

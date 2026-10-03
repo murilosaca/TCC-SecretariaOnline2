@@ -38,22 +38,20 @@ class SolicitacaoDeliberadaOutboxHandler(
             LOG.info("{} sem destinatário ativo; despacho sem SMTP.", evento.tipo)
             return
         }
-        val assunto = if (evento.tipo == "solicitacao.ajuste_solicitado") {
+        val assuntoPadrao = if (evento.tipo == "solicitacao.ajuste_solicitado") {
             "Solicitação $protocolo: ajustes solicitados"
         } else {
             "Solicitação $protocolo: $estado"
         }
-        mailPort.send(
-            MailMessage(
-                aluno.emailInstitucional.value,
-                assunto,
-                """
-                Sua solicitação $protocolo foi atualizada para o estado $estado.
+        val (assunto, corpo) = MailComTemplate(
+            assuntoPadrao,
+            """
+            Sua solicitação $protocolo foi atualizada para o estado $estado.
 
-                Acompanhe o andamento em Minhas solicitações. Este e-mail não contém deep-link de deliberação.
-                """.trimIndent(),
-            ),
+            Acompanhe o andamento em Minhas solicitações. Este e-mail não contém deep-link de deliberação.
+            """.trimIndent(),
         )
+        mailPort.send(MailMessage(aluno.emailInstitucional.value, assunto, corpo))
         LOG.info(
             "{} notificado ao solicitante {}",
             evento.tipo,

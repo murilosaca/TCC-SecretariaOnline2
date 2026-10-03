@@ -187,6 +187,9 @@ Login: `@ufpr.br`, e-mail pessoal ou GRR (`GRR` + 8 dígitos). `senhaAlterada = 
 | `/admin/perfis` | JWT + `iam.manage_roles` | F7.2 CRUD. Perfil de sistema sem `_links.excluir`. Com usuário ativo → 422 `role-in-use`. Nome duplicado → 409. Sem cap → 403. Anônimo → 401 |
 | `/admin/autoridades` | JWT + `iam.manage_authorities` | F7.3. `GET`, `PATCH /{nome}` (só descrição), `PUT /matriz` (substitui o conjunto numa TX). Sem cap → 403. Anônimo → 401 |
 | `/admin/tipos-solicitacao` | JWT + `request_type.manage` | F7.4. `POST`, `PATCH /{id}`, `POST /{id}/publicar`, `DELETE /{id}` só DRAFT sem histórico. JSON inválido → 422 antes da TX. Sem cap → 403. Anônimo → 401 |
+| `/admin/templates-comunicacao` | JWT + `communication.manage_templates` | F7.5. A spec cita `/communication-templates`; o path real é este (a UI fica na mesma rota). `POST` cria cabeçalho + revisão 1 `CURRENT`. Nome duplicado → 409 antes da TX. `POST /{id}/revisoes` arquiva a anterior e grava N+1. `variaveis[]` e `revisoes[]` vêm no `GET /{id}`. Sem cap → 403. Anônimo → 401 |
+| `/search` | JWT válido | F8.1. `GET ?q=`. Grupos `alunos`, `solicitacoes`, `eventos`, `usuarios`. Sem `user.manage_all` a lista de usuários vem vazia e a tabela não é lida. Aluno (`request.view_own`) só vê o próprio cadastro e as próprias solicitações. Zero hits → 200. Anônimo → 401 |
+| `/suporte/faq` | JWT válido | F8.2. Leitura, sem filtro por perfil. O ticket não tem `POST /support/tickets`: nasce em `POST /requests` com `tipoCodigo=SUPORTE_TECNICO` e protocolo `PROT-…`. 4º ticket na hora → 429 `rate-limit` + `Retry-After`. Anônimo → 401 |
 | `/importacoes` | JWT + `import.run` | F5.16. `GET /modelos/{kind}` devolve o CSV na hora. `POST /{kind}` multipart cria o job (201). `GET /{id}` faz o preview. `POST /{id}/confirmar` só com `errorCount = 0`. Arquivo > 20 MB → 422. Sem cap → 403. Anônimo → 401. Sem `/imports` |
 | `/exportacoes` | JWT + `export.run` | F5.17. `POST /{kind}` devolve **202** com status `PROCESSANDO` (o arquivo não vem no corpo). `GET /{id}/download` só com `_links.download` (URL pré-assinada, TTL 15 min). Sem cap → 403. Anônimo → 401. Sem `/exports` |
 | `/audit-log` | JWT + `audit.read` | F7.7. `GET` com ator, ação, de e até. Página 50, `timestamp DESC`. `payloadAntes` e `payloadDepois` na lista. Sem PATCH/DELETE (405). Sem cap → 403. Anônimo → 401 |
@@ -242,11 +245,13 @@ Ordem de dependência real — um bounded context por fatia. O mapa F0–F8 do F
 | 31 | F7.6 Outbox e jobs | 30 | **Feito** — `GET /admin/outbox` + `POST /{id}/reentrega` (`system.observe`); UI `/admin/jobs`; V029 | Grafana (P3), fila externa, SlaBreachChecker |
 | 32 | F7.2 + F7.3 perfis e matriz FGAC | 11, 30 | **Feito** — V030 `authority` + `perfil` + `perfil_authority` + `usuario_perfil`; `/admin/perfis` e `/admin/autoridades` | Claim `cursoIds` no JWT, editor de workflow (já na 33) |
 | 33 | F7.4 editor de RequestType | 32 | **Feito** — V031 `tipo_solicitacao_versao`; `/admin/tipos-solicitacao`; publicação imutável | Migrar solicitação em voo, FORWARD, templates (34) |
-| 34 | F7.5 templates de comunicação | 23, 33 | CRUD de template Markdown versionado; dispatcher renderiza template | Push, A/B de mensagem |
-| 35 | F8.1 busca global | 11, 30 | `GET /search?q=` filtrada por capabilities + paleta `Ctrl+K` | Índice externo, ranking semântico |
-| 36 | F8.2 suporte e FAQ | 33 | FAQ + ticket via `RequestType=SUPORTE_TECNICO` | Chat, base de conhecimento editável |
+| 34 | F7.5 templates de comunicação | 23, 33 | **Feito** — V032 `template_comunicacao` + revisão; `/admin/templates-comunicacao` (`communication.manage_templates`); dispatcher renderiza a revisão CURRENT | Push, A/B de mensagem |
+| 35 | F8.1 busca global | 11, 30 | **Feito** — `GET /search?q=` por capability + paleta `Ctrl+K`; V033 índices `pg_trgm` | Índice externo, ranking semântico |
+| 36 | F8.2 suporte e FAQ | 33 | **Feito** — V034 FAQ + `SUPORTE_TECNICO`; ticket em `POST /requests`; UI `/suporte` | Chat, base de conhecimento editável |
 
 Duas observações sobre as fatias 10 e 12: a spec só diz que estágio e TCC são “registrados pela secretaria” (RF-F1-007 / RF-F1-008) e o mapa F0–F8 **não tem tela F5 para isso** — as rotas `/secretaria/estagios` e `/secretaria/tccs` são derivadas. São dois bounded contexts, por isso duas fatias; entre elas entra a 11 (banca de TCC precisa do picker de usuários).
+
+**O mapa 1–36 está fechado.**
 
 ### Detalhe das fatias feitas
 
@@ -578,7 +583,32 @@ V031 cria `tipo_solicitacao_versao`. `tipo_solicitacao` (V004) e os snapshots em
 - Excluir só com `_links.delete`, e só DRAFT sem versão e sem solicitação. PUBLISHED não tem o botão. Com histórico → 422 `request-type-in-use`. Sem cap → 403. Anônimo → 401.
 - Solicitação já aberta permanece no `form_schema_snapshot` e no `tipo_versao` em que nasceu. Sem migração em voo e sem FORWARD.
 - UI `/admin/tipos-solicitacao`: lista, editores, preview e grafo no cliente (sem segundo GET a cada tecla). Publicar fica desabilitado com JSON inválido. Menu: rel `tipos-solicitacao` via `MenuLinks` + `useActions`.
-- Fora: templates de comunicação (34), FORWARD, migrar solicitação em voo, Expo desta tela.
+- Fora: templates de comunicação (já na 34), FORWARD, migrar solicitação em voo, Expo desta tela.
+
+**34. F7.5 templates de comunicação** — feito
+
+V032 cria `template_comunicacao` e `template_comunicacao_revisao`. `pg_trgm` continua só na V001. `communication.manage_templates` entra só no `admin.dev`. `secretaria.dev` e `aluno.dev` não ganham a tela.
+
+- Path real: `GET`/`POST /admin/templates-comunicacao` e `POST /admin/templates-comunicacao/{id}/revisoes` (`communication.manage_templates`). A spec fala `/communication-templates`; a UI e a API ficam em `/admin/templates-comunicacao`. Nome em dot-notation (ex.: `boas-vindas.egresso`). Duplicado → 409 antes da TX e nada é gravado. Criar grava cabeçalho + revisão 1 `CURRENT` + `audit_log` na mesma TX. Salvar cria a revisão N+1 `CURRENT` e arquiva a anterior na mesma TX. Nunca dois `CURRENT`. Revisão `ARCHIVED` não se apaga. `GET /{id}` traz `variaveis[]` (`nome`, `protocolo`, `curso`, `link`, `data`) e `revisoes[]`. Sem cap → 403. Anônimo → 401.
+- O dispatcher, se o tipo do evento casa com o nome de um template, renderiza a revisão `CURRENT` com os placeholders do payload. Sem template, o handler atual permanece (tipos no-op, inclusive `suporte.ticket_aberto`, fecham `SENT` sem SMTP). Sem A/B e sem push.
+- UI `/admin/templates-comunicacao`: Markdown, preview no cliente (sem GET a cada tecla) e histórico. Revisão antiga mostra “Versão N — somente leitura” e desabilita Salvar. Menu: rel `templates-comunicacao` via `MenuLinks` + `useActions`. O proxy de `/admin` segue devolvendo `index.html` para `Accept: text/html`.
+- Fora: push, A/B, e-mail síncrono, Expo desta tela.
+
+**35. F8.1 busca global** — feito
+
+V033 cria índices GIN `pg_trgm` em aluno, evento, usuário e protocolo. O H2 dos testes usa `LIKE`. Sem Elasticsearch, Typesense ou job de indexação.
+
+- `GET /search?q=` para qualquer JWT. Quatro índices no mesmo caso de uso. `user.manage_all` é a única capability que lê `usuario`; sem ela o grupo `usuarios` volta `[]` e a tabela não é consultada. `request.view_own` restringe aluno e solicitações ao próprio usuário. `request.view_curso` e `event.view_curso` / `user.manage_students` seguem o escopo de curso já usado nas fatias anteriores. Sem a capability do índice, aquele grupo não vaza. Zero hits → 200. Anônimo → 401.
+- UI: paleta `Ctrl+K` / `⌘K` e o campo da topbar, em qualquer tela autenticada. Grupos Alunos, Solicitações, Eventos, Usuários. Menos de 2 caracteres não chama a API (debounce 200 ms). Timeout de 5 s com `AbortController`. ↑↓ Enter navega e fecha. Esc fecha sem navegar e devolve o foco. Em 375 px a busca ocupa a tela, com Cancelar. A paleta não depende de um rel de perfil. `secretaria.dev` não ganha tela de admin.
+- Fora: índice externo, ranking semântico, Expo desta paleta.
+
+**36. F8.2 suporte e FAQ** — feito
+
+V034 cria `faq_item` (redefinir senha e prazo de deliberação) e publica `SUPORTE_TECNICO` no motor, no mesmo estilo do seed da fatia 28. Sem `support_thread` e sem `POST /support/tickets`. Sem CRUD de FAQ e sem chat. O FAQ não filtra por claim `role`.
+
+- `GET /suporte/faq` para qualquer JWT. Anônimo → 401. O ticket é `POST /requests` com `tipoCodigo=SUPORTE_TECNICO`. O protocolo é o do motor (`PROT-…`). Outbox `suporte.ticket_aberto` na mesma TX; o dispatcher fecha `SENT` sem SMTP se não houver template com esse nome. Rate limit em memória, 3 por hora por `userId`, rejeitado antes da TX. O 4º → 429 `rate-limit` com `Retry-After`.
+- UI `/suporte`: accordion (o primeiro item abre por padrão; Enter/Tab alterna `aria-expanded`), formulário abaixo, em coluna única. Assunto vazio não chama a API (“Assunto é obrigatório”). Sucesso mostra o protocolo, limpa o formulário e não navega. O 429 diz “Limite de 3 tickets/hora atingido. Tente em N min.” Link `mailto:secretaria@ufpr.br`. Menu: rel `suporte` via `MenuLinks` + `useActions` para quem tem sessão, sem cap de admin. `secretaria.dev` não ganha o editor de templates.
+- Fora: chat, FAQ editável, prefixo `SUP-`, Expo desta tela.
 
 ### Fora do escopo de banca / P3
 
@@ -625,7 +655,7 @@ Três abas no terminal do Cursor, na raiz do repositório. O `application.yml` j
 
 O Postgres do `docker compose` na **5432** continua sendo outro banco. A API não usa essa porta.
 
-Proxies Vite → `http://localhost:8080`: `/auth`, `/me`, `/academico`, `/publico`, `/requests`, `/request-types`, `/bff`, `/events`, `/atendimentos` (HTML → `index.html`), `/egressos`, `/diplomas`, `/formativas` (HTML → `index.html`), `/estagios` (HTML → `index.html`), `/tccs` (HTML → `index.html`), `/comissoes` (HTML → `index.html`), `/certificates`, `/communications`, `/.well-known`, `/v3`, `/swagger-ui`, `/actuator`. CORS: `http://localhost:5173` e `http://localhost:5174`. Nativo não passa por CORS. Expo web **não** entrou nesta fatia (sem origem extra e sem `*`).
+Proxies Vite → `http://localhost:8080`: `/auth`, `/me`, `/academico`, `/publico`, `/requests`, `/request-types`, `/bff`, `/events`, `/atendimentos` (HTML → `index.html`), `/egressos`, `/diplomas`, `/formativas` (HTML → `index.html`), `/estagios` (HTML → `index.html`), `/tccs` (HTML → `index.html`), `/comissoes` (HTML → `index.html`), `/certificates`, `/communications`, `/search`, `/suporte` (HTML → `index.html`), `/.well-known`, `/v3`, `/swagger-ui`, `/actuator`. CORS: `http://localhost:5173` e `http://localhost:5174`. Nativo não passa por CORS. Expo web **não** entrou nesta fatia (sem origem extra e sem `*`).
 
 ```bash
 cd backend && mvn -q test
@@ -649,9 +679,9 @@ Senha de todos: `TroqueEstaSenha1!` (só local; override `IAM_DEV_SEED_PASSWORD`
 | `novo.dev@ufpr.br` | `GRR20240002` | Primeiro acesso (`senhaAlterada=false`); também tem cadastro acadêmico. Tem `internship.view_own` e `tcc.view_own` e listas vazias |
 | `professor.dev@ufpr.br` | `GRR20240003` | Hospedeiro (`event.manage`, `event.host`), deliberante (`request.deliberate`), orientador do estágio (`internship.review`) e da banca do TCC (`tcc.review`). **Membro COE do TADS** e **coordenador do TADS** com `course.config` e **sem** `course.manage` — configura F6.1 e não vê o CRUD `/secretaria/cursos`. `communication.publish_class` publica em `/comunicacao/publicar` (turma ADS 2026/1 e curso TADS). Sem `formative.*` — `GET /formativas?canReview=true` é 403. Sem `internship.view_own` / `tcc.view_own` — `GET /estagios?aluno=me` e `GET /tccs?aluno=me` são 403 |
 | `caaf.dev@ufpr.br` | `GRR20240004` | Revisor CAAF (`formative.review`). Sem `event.manage` / `request.deliberate` |
-| `secretaria.dev@ufpr.br` | `GRR20240005` | CRUD TADS (`course.manage`, `subject.manage`, `user.manage_students`, `calendar.manage`) + `internship.manage` + `tcc.manage` + `diploma.register` + `report.view_secretary` + `dashboard.view_secretary` + `request.view_curso` + `request.triage` + `request.deliberate` + `service_record.create` + `alumni.list` + `event.manage` / `event.host` / `event.view_curso` + `request.internal_open` + `image_authorization.review` + `import.run` + `export.run`. Sem `course.config` / `formative.review` / `internship.view_own` / `internship.review` / `user.manage_all` / `report.view_coordinator` / `audit.read` / `system.observe` / `iam.manage_roles` / `iam.manage_authorities` / `request_type.manage`. Não recebe deep-link. Nav **sem** o item “Solicitações” do aluno (só Deliberar), **sem** Configurar curso / Usuários / Auditoria / Jobs / Perfis / Autoridades / Tipos de solicitação / Relatórios da coordenação / Eventos (prof.) e **com** Cadastro de estágios, TCCs, Diplomas, Egressos, Atendimentos, Eventos (`/secretaria/eventos`), Estatísticas, Fila central, Atrasados, Nova interna, Autorizações de imagem, Importações e Exportações. Sem o item Estágios/TCCs do aluno, a fila de revisão e o pool COE |
+| `secretaria.dev@ufpr.br` | `GRR20240005` | CRUD TADS (`course.manage`, `subject.manage`, `user.manage_students`, `calendar.manage`) + `internship.manage` + `tcc.manage` + `diploma.register` + `report.view_secretary` + `dashboard.view_secretary` + `request.view_curso` + `request.triage` + `request.deliberate` + `service_record.create` + `alumni.list` + `event.manage` / `event.host` / `event.view_curso` + `request.internal_open` + `image_authorization.review` + `import.run` + `export.run`. Sem `course.config` / `formative.review` / `internship.view_own` / `internship.review` / `user.manage_all` / `report.view_coordinator` / `audit.read` / `system.observe` / `iam.manage_roles` / `iam.manage_authorities` / `request_type.manage` / `communication.manage_templates`. Não recebe deep-link. Nav **sem** o item “Solicitações” do aluno (só Deliberar), **sem** Configurar curso / Usuários / Auditoria / Jobs / Perfis / Autoridades / Tipos de solicitação / Templates / Relatórios da coordenação / Eventos (prof.) e **com** Cadastro de estágios, TCCs, Diplomas, Egressos, Atendimentos, Eventos (`/secretaria/eventos`), Estatísticas, Fila central, Atrasados, Nova interna, Autorizações de imagem, Importações, Exportações e Suporte. Sem o item Estágios/TCCs do aluno, a fila de revisão e o pool COE |
 | `egresso.dev@ufpr.br` | `GRR20240006` | Portal egresso (`alumni.view_own`) |
-| `admin.dev@ufpr.br` | `GRR20240007` | F7.1/F7.8 (`user.manage_all`, `user.reset_password`) + F7.7 (`audit.read`) + F7.6 (`system.observe`) + F7.2/F7.3 (`iam.manage_roles`, `iam.manage_authorities`) + F7.4 (`request_type.manage`). Nav **com** Usuários, Auditoria, Jobs (`/admin/jobs`), Perfis, Autoridades e Tipos de solicitação. Sem caps de secretaria/aluno |
+| `admin.dev@ufpr.br` | `GRR20240007` | F7.1/F7.8 (`user.manage_all`, `user.reset_password`) + F7.7 (`audit.read`) + F7.6 (`system.observe`) + F7.2/F7.3 (`iam.manage_roles`, `iam.manage_authorities`) + F7.4 (`request_type.manage`) + F7.5 (`communication.manage_templates`). Nav **com** Usuários, Auditoria, Jobs (`/admin/jobs`), Perfis, Autoridades, Tipos de solicitação, Templates e Suporte. Sem caps de secretaria/aluno |
 
 O seed IAM (`@Profile("dev")`, `iam.seed.enabled`) **substitui** o conjunto de authorities (revoga extras) e registra no log. O seed acadêmico respeita o mesmo flag e **não** apaga secretários extras de TADS (só adiciona `secretaria.dev` se ausente). O PUT de curso **não** é `replaceAll` da lista enviada: re-adiciona o `usuarioId` de quem edita (anti-lockout). Coordenador e secretários saem do picker (`GET /iam/usuarios`); id inexistente → 422.
 
@@ -694,5 +724,8 @@ A oficina seed `"Oficina Proof of Stay (dev)"` pode já estar `COMPLETA` para `a
 31. **Jobs** — `admin.dev` em `/admin/jobs` (`system.observe`). Reentregar só com `_links.retry` (FAILED ou DEAD). `POST /admin/outbox/{id}/reentrega` de SENT → 409; de FAILED volta a PENDING e zera tentativas. Sem a cap → 403. `secretaria.dev` e `aluno.dev` não veem o item.
 32. **Perfis e autoridades** — `admin.dev` em `/admin/perfis` e `/admin/autoridades`. Perfil de sistema não tem Excluir. Excluir perfil com usuário ativo → 422 `role-in-use` e a linha permanece. “Gerenciar perfis” na F7.1 só com `_links.gerenciar-perfis`. `secretaria.dev` não vê os itens.
 33. **Tipos de solicitação** — `admin.dev` em `/admin/tipos-solicitacao` (`request_type.manage`). JSON inválido desabilita Publicar e a API responde 422 sem avançar a versão. DRAFT não aparece em `/solicitacoes/nova`. Publicar não altera o snapshot de solicitação já aberta. `secretaria.dev` não vê o item.
+34. **Templates** — `admin.dev` em `/admin/templates-comunicacao` (`communication.manage_templates`). Preview troca `{{nome}}` e `{{protocolo}}` sem novo GET. `{{aluno_email}}` fica em danger. Revisão antiga deixa Salvar desabilitado. Nome duplicado → 409. `secretaria.dev` e `aluno.dev` não veem o item.
+35. **Busca** — em qualquer tela autenticada, `Ctrl+K` abre a paleta. Um caractere não chama `GET /search`. Aluno não vê o grupo Usuários nem solicitação de outro. Sem `user.manage_all` a lista de usuários vem vazia.
+36. **Suporte** — qualquer sessão abre `/suporte` (rel `suporte`). O primeiro item do FAQ começa aberto e não há Excluir. Assunto vazio não envia. Ticket válido nasce `SUPORTE_TECNICO` com protocolo `PROT-…` e o formulário permanece. O 4º na mesma hora responde 429.
 
 F0.7 não aceita upload de PDF (CA-04). Encerrar evento continua sem PDF. Egresso não acessa `/formativas` nem `/certificados`.

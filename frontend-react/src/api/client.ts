@@ -82,6 +82,7 @@ async function request<T>(path: string, init: RequestInit, retried = false): Pro
     ...init,
     credentials: 'include',
     headers: { ...headers(init.body), ...(init.headers ?? {}) },
+    signal: init.signal,
   })
   if (response.status === 401 && !retried && shouldRefresh(path)) {
     const ok = await refreshAccessToken()
@@ -168,8 +169,8 @@ async function requestBlob(path: string, retried = false, accept = '*/*'): Promi
 }
 
 export const api = {
-  get<T>(path: string, params: Record<string, string | number | undefined> = {}): Promise<T> {
-    return request<T>(`${path}${query(params)}`, { method: 'GET' })
+  get<T>(path: string, params: Record<string, string | number | undefined> = {}, signal?: AbortSignal): Promise<T> {
+    return request<T>(`${path}${query(params)}`, { method: 'GET', signal })
   },
   post<T>(path: string, body?: unknown): Promise<T> {
     return request<T>(path, {

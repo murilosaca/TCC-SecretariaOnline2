@@ -115,6 +115,9 @@ object MenuLinks {
         if (caps.contains("request_type.manage")) {
             links["tipos-solicitacao"] = "/admin/tipos-solicitacao"
         }
+        if (caps.contains("communication.manage_templates")) {
+            links["templates-comunicacao"] = "/admin/templates-comunicacao"
+        }
         if (caps.contains("system.observe")) {
             links["jobs"] = "/admin/jobs"
         }
@@ -141,6 +144,7 @@ object MenuLinks {
         if (caps.contains("communication.publish_class")) {
             links["publicar-comunicado"] = "/comunicacao/publicar"
         }
+        links["suporte"] = "/suporte"
         links["contato"] = "/contato"
         return links
     }

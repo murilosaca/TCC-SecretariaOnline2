@@ -19,6 +19,8 @@ import br.ufpr.sept.so2.modules.solicitacoes.application.ListarFilaDeliberacaoUs
 import br.ufpr.sept.so2.modules.solicitacoes.application.ListarMinhasSolicitacoesUseCase
 import br.ufpr.sept.so2.modules.solicitacoes.application.ObterSolicitacaoUseCase
 import br.ufpr.sept.so2.modules.solicitacoes.application.SolicitacaoCursoEscopo
+import br.ufpr.sept.so2.modules.solicitacoes.application.TicketSuporteRateLimit
+import br.ufpr.sept.so2.modules.solicitacoes.infrastructure.SuporteTecnicoSeed
 import br.ufpr.sept.so2.shared.api.PageResponse
 import br.ufpr.sept.so2.shared.domain.exception.AcessoNegadoException
 import io.swagger.v3.oas.annotations.Operation
@@ -62,6 +64,7 @@ class SolicitacaoController(
     private val solicitacaoCursoEscopo: SolicitacaoCursoEscopo,
     private val usuarioRepository: UsuarioRepository,
     private val assembler: SolicitacaoAssembler,
+    private val ticketSuporteRateLimit: TicketSuporteRateLimit,
 ) {
 
     @GetMapping
@@ -243,7 +246,7 @@ class SolicitacaoController(
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("hasAnyAuthority('request.open','request.internal_open')")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Abrir solicitação a partir do form_schema")
     fun criar(
         @Valid @RequestBody request: CriarSolicitacaoRequest,
@@ -251,7 +254,9 @@ class SolicitacaoController(
         http: HttpServletRequest,
     ): SolicitacaoResponse {
         val principal = principal(authentication)
-        if (request.onBehalfOf == null) {
+        if (request.tipoCodigo == SuporteTecnicoSeed.CODIGO && request.onBehalfOf == null) {
+            ticketSuporteRateLimit.verificar(principal.userId)
+        } else if (request.onBehalfOf == null) {
             if (!principal.authorities.contains("request.open")) {
                 throw AcessoNegadoException("Você não tem permissão para esta operação.")
             }

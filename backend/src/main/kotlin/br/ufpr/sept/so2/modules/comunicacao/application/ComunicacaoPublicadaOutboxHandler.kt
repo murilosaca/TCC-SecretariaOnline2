@@ -64,7 +64,8 @@ class ComunicacaoPublicadaOutboxHandler(
         }
         val entrega = garantir(comunicacao, destinatario.usuarioId, CanalEntrega.IN_APP in canais)
         if (CanalEntrega.EMAIL in canais && !entrega.emailEnviado) {
-            mailPort.send(MailMessage(destinatario.email, comunicacao.titulo, comunicacao.corpo))
+            val (assunto, corpo) = MailComTemplate(comunicacao.titulo, comunicacao.corpo)
+            mailPort.send(MailMessage(destinatario.email, assunto, corpo))
             entrega.emailEnviado = true
             entregaRepository.save(entrega)
             LOG.info("Comunicado enviado por e-mail a {}", EmailMascarado.de(destinatario.email))

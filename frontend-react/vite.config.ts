@@ -14,6 +14,7 @@ export default defineConfig({
       '/academico': { target: 'http://localhost:8080', changeOrigin: true },
       '/publico': { target: 'http://localhost:8080', changeOrigin: true },
       '/auth': { target: 'http://localhost:8080', changeOrigin: true },
+      '/me': { target: 'http://localhost:8080', changeOrigin: true },
       '/bff': { target: 'http://localhost:8080', changeOrigin: true },
       '/requests': { target: 'http://localhost:8080', changeOrigin: true },
       '/request-types': { target: 'http://localhost:8080', changeOrigin: true },

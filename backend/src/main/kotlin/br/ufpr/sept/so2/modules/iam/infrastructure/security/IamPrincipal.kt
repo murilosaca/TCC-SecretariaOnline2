@@ -7,4 +7,5 @@ data class IamPrincipal(
     val userId: UUID,
     val mustChangePassword: Boolean,
     val authorities: List<String>,
+    val sessionId: UUID? = null,
 )

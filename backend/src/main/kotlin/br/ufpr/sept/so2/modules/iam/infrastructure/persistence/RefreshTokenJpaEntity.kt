@@ -26,12 +26,16 @@ class RefreshTokenJpaEntity : BaseEntity() {
     @Column(nullable = false)
     var revoked: Boolean = false
 
+    @Column(name = "user_agent", length = 300)
+    var userAgent: String? = null
+
     fun merge(sessao: RefreshSessao) {
         usuarioId = sessao.usuarioId
         tokenHash = sessao.tokenHash
         expiresAt = sessao.expiresAt
         used = sessao.used
         revoked = sessao.revoked
+        userAgent = sessao.userAgent
     }
 
     fun toDomain(): RefreshSessao =
@@ -44,6 +48,7 @@ class RefreshTokenJpaEntity : BaseEntity() {
             revoked,
             createdAt!!,
             updatedAt!!,
+            userAgent,
         )
 
     companion object {

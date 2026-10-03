@@ -1,5 +1,6 @@
 package br.ufpr.sept.so2.shared.api
 
+import br.ufpr.sept.so2.modules.iam.domain.SenhaAtualIncorretaException
 import br.ufpr.sept.so2.modules.iam.domain.SenhaReutilizadaException
 import br.ufpr.sept.so2.shared.domain.exception.AcessoNegadoException
 import br.ufpr.sept.so2.shared.domain.exception.ConflitoEstadoException
@@ -76,6 +77,10 @@ class GlobalExceptionHandler {
     @ExceptionHandler(DadoInvalidoException::class)
     fun handleInvalid(ex: DadoInvalidoException): ProblemDetail =
         problemDetail(HttpStatus.UNPROCESSABLE_ENTITY, "Dados inválidos", ex.message, "validation-error")
+
+    @ExceptionHandler(SenhaAtualIncorretaException::class)
+    fun handleSenhaAtual(ex: SenhaAtualIncorretaException): ProblemDetail =
+        problemDetail(HttpStatus.UNAUTHORIZED, "Senha atual incorreta", ex.message, "senha-atual-incorreta")
 
     @ExceptionHandler(CredenciaisInvalidasException::class)
     fun handleCredenciais(ex: CredenciaisInvalidasException): ProblemDetail =

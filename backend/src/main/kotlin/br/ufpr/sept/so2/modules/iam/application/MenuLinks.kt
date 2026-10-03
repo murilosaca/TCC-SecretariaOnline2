@@ -92,6 +92,11 @@ object MenuLinks {
         if (caps.contains("report.view_secretary")) {
             links["estatisticas"] = "/secretaria/estatisticas"
         }
+        if (caps.contains("user.update_own_profile")) {
+            links["perfil"] = "/perfil"
+            links["perfil-seguranca"] = "/perfil/seguranca"
+            links["perfil-notificacoes"] = "/perfil/notificacoes"
+        }
         links["contato"] = "/contato"
         return links
     }

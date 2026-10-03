@@ -46,6 +46,9 @@ import { Disciplinas } from './pages/secretaria/Disciplinas'
 import { Estatisticas } from './pages/secretaria/Estatisticas'
 import { Atrasados } from './pages/secretaria/Atrasados'
 import { Usuarios } from './pages/admin/Usuarios'
+import { Notificacoes } from './pages/perfil/Notificacoes'
+import { Perfil } from './pages/perfil/Perfil'
+import { Seguranca } from './pages/perfil/Seguranca'
 
 export default function App() {
   return (
@@ -67,6 +70,9 @@ export default function App() {
         <Route element={<PortalGate />}>
           <Route element={<AppLayout />}>
           <Route path="inicio" element={<Inicio />} />
+          <Route path="perfil/seguranca" element={<Seguranca />} />
+          <Route path="perfil/notificacoes" element={<Notificacoes />} />
+          <Route path="perfil" element={<Perfil />} />
           <Route path="egresso/inicio" element={<EgressoInicio />} />
           <Route path="primeiro-acesso" element={<PrimeiroAcesso />} />
           <Route path="solicitacoes/nova" element={<NovaSolicitacao />} />

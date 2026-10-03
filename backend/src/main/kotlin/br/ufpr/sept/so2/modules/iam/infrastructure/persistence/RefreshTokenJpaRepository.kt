@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Lock
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
+import java.time.OffsetDateTime
 import java.util.Optional
 import java.util.UUID
 
@@ -14,7 +15,36 @@ interface RefreshTokenJpaRepository : JpaRepository<RefreshTokenJpaEntity, UUID>
     @Query("select r from RefreshTokenJpaEntity r where r.tokenHash = :hash")
     fun lockByTokenHash(@Param("hash") hash: String): Optional<RefreshTokenJpaEntity>
 
+    fun findByTokenHash(tokenHash: String): Optional<RefreshTokenJpaEntity>
+
+    @Query(
+        """
+        select r from RefreshTokenJpaEntity r
+        where r.usuarioId = :usuarioId
+          and r.revoked = false
+          and r.used = false
+          and r.expiresAt > :agora
+        """,
+    )
+    fun findAtivas(
+        @Param("usuarioId") usuarioId: UUID,
+        @Param("agora") agora: OffsetDateTime,
+    ): List<RefreshTokenJpaEntity>
+
     @Modifying
     @Query("update RefreshTokenJpaEntity r set r.revoked = true where r.usuarioId = :usuarioId and r.revoked = false")
     fun revokeAllByUsuarioId(@Param("usuarioId") usuarioId: UUID): Int
+
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query(
+        """
+        update RefreshTokenJpaEntity r
+        set r.revoked = true
+        where r.usuarioId = :usuarioId and r.id <> :manterId and r.revoked = false
+        """,
+    )
+    fun revokeOthers(
+        @Param("usuarioId") usuarioId: UUID,
+        @Param("manterId") manterId: UUID,
+    ): Int
 }

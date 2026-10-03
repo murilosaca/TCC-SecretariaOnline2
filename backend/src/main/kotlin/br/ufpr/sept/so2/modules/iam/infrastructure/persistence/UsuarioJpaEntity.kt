@@ -53,6 +53,18 @@ class UsuarioJpaEntity : BaseEntity() {
     @Column(name = "bloqueado_ate")
     var bloqueadoAte: OffsetDateTime? = null
 
+    @Column(name = "nome_social", length = 120)
+    var nomeSocial: String? = null
+
+    @Column(length = 20)
+    var telefone: String? = null
+
+    @Column(name = "identidade_genero", length = 40)
+    var identidadeGenero: String? = null
+
+    @Column(name = "foto_storage_key", length = 512)
+    var fotoStorageKey: String? = null
+
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "usuario_authority", joinColumns = [JoinColumn(name = "usuario_id")])
     @Column(name = "authority", nullable = false, length = 80)
@@ -71,6 +83,10 @@ class UsuarioJpaEntity : BaseEntity() {
         ativo = usuario.ativo
         falhasConsecutivas = usuario.falhasConsecutivas
         bloqueadoAte = usuario.bloqueadoAte
+        nomeSocial = usuario.nomeSocial
+        telefone = usuario.telefone
+        identidadeGenero = usuario.identidadeGenero
+        fotoStorageKey = usuario.fotoStorageKey
         authorities = HashSet(usuario.authorities)
     }
 
@@ -92,6 +108,10 @@ class UsuarioJpaEntity : BaseEntity() {
             authorities.sorted(),
             createdAt!!,
             updatedAt!!,
+            nomeSocial,
+            telefone,
+            identidadeGenero,
+            fotoStorageKey,
         )
 
     companion object {

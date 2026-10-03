@@ -1,6 +1,7 @@
 package br.ufpr.sept.so2.modules.iam.domain
 
 import br.ufpr.sept.so2.shared.domain.exception.ConflitoEstadoException
+import br.ufpr.sept.so2.shared.domain.exception.DadoInvalidoException
 import br.ufpr.sept.so2.shared.domain.valueobject.Email
 import br.ufpr.sept.so2.shared.domain.valueobject.Grr
 import io.kotest.assertions.throwables.shouldThrow
@@ -35,6 +36,22 @@ class UsuarioTest : StringSpec({
         shouldThrow<ConflitoEstadoException> {
             usuario.completarPrimeiroAcesso("outro", agora, "127.0.0.1", "Mozilla")
         }
+    }
+
+    "dados pessoais não alteram GRR nem e-mail institucional" {
+        val usuario = usuario(true)
+        val agora = OffsetDateTime.parse("2026-03-01T12:00:00Z")
+        val grr = usuario.grr
+        val institucional = usuario.emailInstitucional
+        usuario.definirNomeSocial("Ana", agora)
+        usuario.definirTelefone("(41) 98888-7777", agora)
+        usuario.definirEmailPessoal(Email.of("ana@example.com"), agora)
+        usuario.nomeSocial shouldBe "Ana"
+        usuario.telefone shouldBe "(41) 98888-7777"
+        usuario.emailPessoal?.value shouldBe "ana@example.com"
+        usuario.grr shouldBe grr
+        usuario.emailInstitucional shouldBe institucional
+        shouldThrow<DadoInvalidoException> { usuario.definirTelefone("abc", agora) }
     }
 
     "substituir authorities remove extras que o seed não lista" {

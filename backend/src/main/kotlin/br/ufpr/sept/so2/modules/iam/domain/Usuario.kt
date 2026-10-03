@@ -7,7 +7,7 @@ import br.ufpr.sept.so2.shared.domain.valueobject.Grr
 import java.time.OffsetDateTime
 import java.util.UUID
 
-class Usuario(
+class Usuario @JvmOverloads constructor(
     val id: UUID,
     var nome: String,
     var emailInstitucional: Email,
@@ -24,6 +24,10 @@ class Usuario(
     authorities: List<String>?,
     val createdAt: OffsetDateTime,
     var updatedAt: OffsetDateTime,
+    var nomeSocial: String? = null,
+    var telefone: String? = null,
+    var identidadeGenero: String? = null,
+    var fotoStorageKey: String? = null,
 ) {
     private val _authorities: MutableList<String> =
         if (authorities == null) ArrayList() else ArrayList(authorities)
@@ -101,6 +105,47 @@ class Usuario(
         updatedAt = agora
     }
 
+    fun definirNomeSocial(valor: String?, agora: OffsetDateTime) {
+        val limpo = valor?.trim()?.takeIf { it.isNotEmpty() }
+        if (limpo != null && limpo.length > NOME_SOCIAL_MAX) {
+            throw DadoInvalidoException("Nome social deve ter no máximo $NOME_SOCIAL_MAX caracteres.")
+        }
+        nomeSocial = limpo
+        updatedAt = agora
+    }
+
+    fun definirTelefone(valor: String?, agora: OffsetDateTime) {
+        val limpo = valor?.trim()?.takeIf { it.isNotEmpty() }
+        if (limpo != null && !TELEFONE.matches(limpo)) {
+            throw DadoInvalidoException("Telefone inválido.")
+        }
+        telefone = limpo
+        updatedAt = agora
+    }
+
+    fun definirEmailPessoal(email: Email?, agora: OffsetDateTime) {
+        emailPessoal = email
+        updatedAt = agora
+    }
+
+    fun definirIdentidadeGenero(valor: String?, agora: OffsetDateTime) {
+        val limpo = valor?.trim()?.takeIf { it.isNotEmpty() }
+        if (limpo != null && limpo !in IDENTIDADES_GENERO) {
+            throw DadoInvalidoException("Identidade de gênero inválida.")
+        }
+        identidadeGenero = limpo
+        updatedAt = agora
+    }
+
+    fun definirFoto(storageKey: String, agora: OffsetDateTime) {
+        val limpo = storageKey.trim()
+        if (limpo.isEmpty() || limpo.length > 512) {
+            throw DadoInvalidoException("Foto inválida.")
+        }
+        fotoStorageKey = limpo
+        updatedAt = agora
+    }
+
     fun desativar(agora: OffsetDateTime) {
         if (!ativo) {
             throw ConflitoEstadoException("O usuário já está inativo.")
@@ -135,6 +180,10 @@ class Usuario(
     }
 
     companion object {
+        const val NOME_SOCIAL_MAX: Int = 120
+        val IDENTIDADES_GENERO: Set<String> = setOf("FEMININO", "MASCULINO", "NAO_BINARIO", "OUTRO")
+        private val TELEFONE = Regex("^[0-9+()\\-\\s]{8,20}$")
+
         private fun truncar(valor: String?, max: Int): String? {
             if (valor == null) {
                 return null

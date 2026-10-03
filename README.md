@@ -4,7 +4,7 @@ Plataforma digital da secretaria acadêmica do **SEPT/UFPR**. Este é o reposit�
 
 O SO2 não substitui o juízo de docentes, comissões ou secretaria. Ele garante trilha de auditoria, integridade de dados e automação de trâmites repetitivos.
 
-**Onde estamos:** P0 fechado na web e no Expo (itens 1–**8**). **Item 9 neste recorte:** 9.1–9.4 no ar e **9.5 pool COE** (só atribuição). Fatias **10–21** no ar (cadastro F5 de estágio, F7.1 usuários/picker, cadastro F5 de TCC, BFF professor F3.1, pool/lote CAAF F4.1, MinIO + `modules/arquivos`, diploma/colação F5.11, F6.2 relatórios da coordenação, Mobile P2 no Expo, F5.18 estatísticas da secretaria, F5.2+F5.5 fila central e atrasados, F5.1 dashboard da secretaria). Esta fatia **não** é o portal admin F7 completo (sem F7.2–F7.9).
+**Onde estamos:** P0 fechado na web e no Expo (itens 1–**8**). **Item 9 neste recorte:** 9.1–9.4 no ar e **9.5 pool COE** (só atribuição). Fatias **10–22** no ar (cadastro F5 de estágio, F7.1 usuários/picker, cadastro F5 de TCC, BFF professor F3.1, pool/lote CAAF F4.1, MinIO + `modules/arquivos`, diploma/colação F5.11, F6.2 relatórios da coordenação, Mobile P2 no Expo, F5.18 estatísticas da secretaria, F5.2+F5.5 fila central e atrasados, F5.1 dashboard da secretaria, F1.3–F1.5 perfil). Esta fatia **não** é o portal admin F7 completo (sem F7.2–F7.9).
 
 Circuito demonstrável: login → primeiro acesso (senha + LGPD) → `/inicio` do aluno → solicitação + deep-link ao professor → presença **QR\|SECRET × SINGLE\|DUAL** → formativa (`PENDENTE_CONFIRMACAO` → aluno confirma → `AGUARDANDO_CAAF`) → CAAF aprova → certificado oficial (PDF + hash + ED25519) → `/certificados` + F0.7. Secretaria (`secretaria.dev`) opera o CRUD de TADS, estágios e TCCs; aluno/professor/CAAF não veem Cursos. Egresso (`egresso.dev`) entra em `/egresso/inicio` e reemite o PDF com o mesmo hash; `aluno.dev` não entra em `/egresso/**`.
 
@@ -67,7 +67,7 @@ Pacote `br.ufpr.sept.so2`. Clean Architecture; módulos conversam por ports.
 | `shared/` | RFC 7807, CORS, Security, `Grr`/`Email`/`Cpf`, `Uuids.v7()` |
 | `publico` | `GET /publico/contato` |
 | `academico` | CRUD curso, disciplina, aluno (GRR, sem `idade`), período letivo **global** (sem sobreposição, sem `id_curso`). FGAC (`course.manage` / `subject.manage` / `user.manage_students` / `calendar.manage`) + escopo `curso_secretario` ∪ `idCoordenador` (`CursoEscopoPort`). Seed TADS 120 h |
-| `iam` | Login, refresh, logout, primeiro acesso + LGPD, recuperação via Outbox despachada. JWT RS256 15 min; cookie `so2_refresh`; senha só Argon2id. JWT de deliberação (72 h) |
+| `iam` | Login, refresh, logout, primeiro acesso + LGPD, recuperação via Outbox despachada. JWT RS256 15 min; cookie `so2_refresh`; senha só Argon2id. JWT de deliberação (72 h). Autogestão `GET`/`PATCH /me`, senha, sessões e preferências (V021) |
 | `solicitacoes` | Motor `RequestType` + `form_schema` + `workflow_json`. Seed `DECLARACAO_SIMPLES`. Protocolo público. Fila e transições autenticadas (`request.*`) |
 | `presenca` | Evento + Proof of Stay **QR\|SECRET × SINGLE\|DUAL**. Segredo em claro só na host-session. Sem geofence |
 | `bff` | `GET /bff/dashboard/aluno`, `/professor` e `/secretary` (agrega; degrada por bloco). Escopo da secretaria em `CursoEscopoPort` |
@@ -86,7 +86,7 @@ Módulos **previstos e ainda sem código**: `auditoria` (módulo dedicado; `audi
 
 ### Flyway (imutável)
 
-`backend/src/main/resources/db/migration/`. **Não edite** migration já aplicada. **Próxima = V021.**
+`backend/src/main/resources/db/migration/`. **Não edite** migration já aplicada. **Próxima = V022.**
 
 | Versão | Conteúdo |
 |---|---|
@@ -110,6 +110,7 @@ Módulos **previstos e ainda sem código**: `auditoria` (módulo dedicado; `audi
 | V018 | `storage_key` em certificado/estágio_documento/tcc; bytea opcional (migração → MinIO) |
 | V019 | `diploma` (colação, entrega, `storage_key`; UNIQUE por aluno e por número) |
 | V020 | `solicitacao.deliberador_id` (atribuição da fila F5.2) |
+| V021 | Perfil (`nome_social`, `telefone`, `identidade_genero`, `foto_storage_key`), `refresh_token.user_agent`, `notificacao_preferencia` |
 
 ### Frontend — pastas
 
@@ -119,6 +120,7 @@ Módulos **previstos e ainda sem código**: `auditoria` (módulo dedicado; `audi
 |---|---|
 | `pages/secretaria/` | CRUD F5.6–F5.9 + cadastro F5 de estágio/TCC + diplomas, estatísticas e atrasados |
 | `pages/aluno/`, `pages/inicio/`, `pages/professor/` | Aluno, BFF `/inicio`, hospedeiro |
+| `pages/perfil/` | F1.3–F1.5 perfil, segurança e notificações |
 | `pages/solicitacoes/`, `pages/formativas/`, `pages/estagios/`, `pages/tccs/`, `pages/publico/` | Fila/deliberar, CAAF, estágio, TCC, F0 |
 | `pages/coordenacao/` | F6.1 `/coordenacao/cursos/:id/configurar` |
 | `pages/comissoes/` | F4.2 `/comissoes/coe` (só atribuição) + F4.1 `/comissoes/caaf` (atribuir + lote presença) |
@@ -150,6 +152,7 @@ Login: `@ufpr.br`, e-mail pessoal ou GRR (`GRR` + 8 dígitos). `senhaAlterada = 
 | Prefixo | Auth | Função |
 |---|---|---|
 | `/auth/*` | Misto (login anônimo; `me` autenticado) | IAM. `GET /auth/me`._links = rotas de **UI** (menu). Sem `/bff/menu` |
+| `/me` | JWT + `user.update_own_profile` | F1.3–F1.5. `GET`/`PATCH /me` (merge parcial; GRR e e-mail institucional ignorados). `POST /me/foto` multipart (server-side, URL pré-assinada). `PATCH /me/password` (senha atual; 401 não troca o hash). `GET /me/sessions` + `DELETE` só com `_links.encerrar`. `GET`/`PATCH /me/notifications` (e-mail e in-app, DND, digest). Sem cap → 403. Anônimo → 401 |
 | `/publico/**` | Anônimo | Contato; protocolo; verificação de certificado |
 | `/academico/**` | JWT + capability da tela | CRUD. Anônimo → 401. Sem cap → 403. Fora do escopo (curso) → 404. GRR/e-mail malformado → 422 `validation-error`. `_links.disciplinas` só com `subject.manage`. Períodos: `calendar.manage` all-or-nothing |
 | `/request-types`, `/requests/**` | JWT + `request.*` (**não** anônimo) | Motor. Inbox `?canDeliberate=true`. Fila do curso (`request.view_curso`) com `?slaBreached` e `slaStatus`. CSV `?format=csv`. `PATCH /requests/bulk`. `POST /{id}/transitions` |
@@ -206,7 +209,7 @@ Ordem de dependência real — um bounded context por fatia. O mapa F0–F8 do F
 | 19 | F5.18 estatísticas da secretaria | 17 | **Feito** — `GET /reports/secretary` + `/secretaria/estatisticas` | Export, materialização/cache de métrica |
 | 20 | F5.2 + F5.5 fila central e atrasados | 2, 7 | **Feito** — `GET /requests` (`view_curso`, `slaBreached`, `slaStatus`), `PATCH /requests/bulk`, CSV, menu `fila-solicitacoes` + `atrasados`, V020 | Solicitação interna (28), editor RequestType (33), FORWARD |
 | 21 | F5.1 dashboard da secretaria | 20, 13 | **Feito** — `GET /bff/dashboard/secretary` (`dashboard.view_secretary`); `/inicio` via rel `painel`; KPIs, fila, SLA e agenda | F6.2 já feito, kanban (P3), Redis, importações (29) |
-| 22 | F1.3–F1.5 perfil, segurança e notificações | 11, 15 | `GET`/`PATCH /me`, troca de senha, sessões e preferência de canal/DND/digest | Push, foto sem a 15, SSO |
+| 22 | F1.3–F1.5 perfil, segurança e notificações | 11, 15 | **Feito** — `GET`/`PATCH /me` (`user.update_own_profile`), senha, sessões e preferência de canal/DND/digest | Push, hub (23), job de digest, SSO, Expo destas telas |
 | 23 | F1.6 + F3.8 hub de comunicação | 6 | `GET`/`POST /communications` (inbox + comunicado Markdown via Outbox) | Templates (34), push/FCM, digest |
 | 24 | F1.11 formativa manual com comprovante | 15, 14 | `POST /formative-entries` (`formative.submit`) com upload; nasce em `AGUARDANDO_CAAF` sem presença | OCR, validação automática de CH |
 | 25 | F5.13 + F1.20 atendimentos | 11 | Módulo `atendimentos`: registro imutável + ciência do aluno | Fila/SLA de atendimento, agendamento |
@@ -436,6 +439,17 @@ Sem migration. `dashboard.view_secretary` entra no seed de `secretaria.dev`. O p
 - `GET /auth/me` ganha o rel `painel` (`/bff/dashboard/aluno` | `/professor` | `/secretary`). `/inicio` escolhe a variante por esse href. Egresso puro não recebe `painel` e segue em `/egresso/inicio`. Aluno e professor puro continuam nos painéis que já tinham.
 - Fora: kanban, Redis, outbox do lote (23), importações (29), Expo.
 
+**22. F1.3–F1.5 perfil, segurança e notificações** — feito
+
+V021 (`nome_social`, `telefone`, `identidade_genero`, `foto_storage_key`, `refresh_token.user_agent`, `notificacao_preferencia`). `user.update_own_profile` entra no seed de todas as contas de desenvolvimento. O menu (`perfil`, `perfil-seguranca`, `perfil-notificacoes`) sai de `MenuLinks` e a UI usa `useActions`.
+
+- `GET`/`PATCH /me`. O PATCH é merge parcial: só nome social, telefone, e-mail pessoal e identidade de gênero. GRR e e-mail institucional são ignorados mesmo se vierem no corpo. `POST /me/foto` grava no storage da fatia 15 (`storage_key`) e a leitura sai por URL pré-assinada. Sem PUT pré-assinado no browser. JPEG, PNG ou WebP, no máximo 2 MB.
+- `PATCH /me/password` exige a senha atual (Argon2id). Senha errada → 401 `senha-atual-incorreta`, o hash não muda e a sessão continua. Senha nova forte (a mesma regra do reset) e diferente da atual. Sucesso revoga os outros refresh tokens e mantém o da sessão atual. Access token já emitido expira em 15 min.
+- `GET /me/sessions` lista refresh tokens ativos. A sessão atual não recebe `_links.encerrar`. `DELETE /me/sessions/{id}` não encerra a sessão atual nem a de outro usuário.
+- `GET`/`PATCH /me/notifications` persiste a matriz prioridade × canal (e-mail e in-app), o horário de DND e o digest (`IMEDIATO` ou `RESUMO`). CRITICAL não pode ser desligado (422). Não dispara push, não roda job de digest e não cria `/communications`.
+- UI `/perfil`, `/perfil/seguranca`, `/perfil/notificacoes`. Cancelar descarta o formulário sem PATCH. Encerrar sessão só com `_links.encerrar`.
+- Fora: hub F1.6 (23), envio de digest, templates (34), push/FCM, SSO, telas Expo.
+
 ### Fora do escopo de banca / P3
 
 Não conta como “falta para o TCC fechar”. Entra depois, ou nunca.
@@ -482,7 +496,7 @@ cd frontend-react-native && npm install && npx expo start
 
 Copie `.env.example` para o shell. Ele já aponta JDBC `:5433` e `FRONTEND_BASE_URL=http://localhost:5174`. O `application.yml` default ainda é JDBC `:5432` e `frontend-base-url` `:5173` — **sobrescreva**.
 
-Proxies Vite → `http://localhost:8080`: `/auth`, `/academico`, `/publico`, `/requests`, `/request-types`, `/bff`, `/events`, `/formativas` (HTML → `index.html`), `/estagios` (HTML → `index.html`), `/tccs` (HTML → `index.html`), `/comissoes` (HTML → `index.html`), `/certificates`, `/.well-known`, `/v3`, `/swagger-ui`, `/actuator`. CORS: `http://localhost:5173` e `http://localhost:5174`. Nativo não passa por CORS. Expo web **não** entrou nesta fatia (sem origem extra e sem `*`).
+Proxies Vite → `http://localhost:8080`: `/auth`, `/me`, `/academico`, `/publico`, `/requests`, `/request-types`, `/bff`, `/events`, `/formativas` (HTML → `index.html`), `/estagios` (HTML → `index.html`), `/tccs` (HTML → `index.html`), `/comissoes` (HTML → `index.html`), `/certificates`, `/.well-known`, `/v3`, `/swagger-ui`, `/actuator`. CORS: `http://localhost:5173` e `http://localhost:5174`. Nativo não passa por CORS. Expo web **não** entrou nesta fatia (sem origem extra e sem `*`).
 
 ```bash
 cd backend && mvn -q test
@@ -539,5 +553,6 @@ A oficina seed `"Oficina Proof of Stay (dev)"` pode já estar `COMPLETA` para `a
 19. **F5.18** — `secretaria.dev` abre `/secretaria/estatisticas` (`report.view_secretary`). Curso fora do escopo → 403. `professor.dev` não vê o item.
 20. **Fila central** — `secretaria.dev` em `/solicitacoes` vê a fila dos cursos dela (`request.view_curso`), com `slaStatus`. `/secretaria/atrasados` usa `?slaBreached=true` e exporta CSV (`?format=csv`). `PATCH /requests/bulk` atribui deliberador quando o `_links` existe. Aluno de outro curso não aparece. Quem não tem `request.view_curso` não ganha o filtro.
 21. **Dashboard da secretaria** — `secretaria.dev` em `/inicio` (`dashboard.view_secretary`, rel `painel`) vê KPIs, fila prioritária, banner de SLA e agenda do dia só dos cursos dela. Curso de outro secretário não entra na conta. Sem curso vinculado → 403. Aluno e professor não recebem esse payload (o `painel` deles aponta o BFF próprio; `GET /bff/dashboard/secretary` → 403). Atalhos só com `_links`; Importações não aparece. Atualizar recarrega com skeleton.
+22. **Perfil** — `aluno.dev` abre Perfil, Segurança e Notificações (`user.update_own_profile`). Em `/perfil`, telefone sujo habilita Salvar; Cancelar não chama a API; GRR e e-mail institucional não mudam. Em `/perfil/seguranca`, senha atual errada fica em 401 e a sessão continua; senha nova encerra os outros aparelhos. Encerrar só aparece com `_links.encerrar`. Em `/perfil/notificacoes`, CRITICAL fica bloqueado; o restante grava canal, DND e digest. Sem push e sem `/communications`.
 
 F0.7 não aceita upload de PDF (CA-04). Encerrar evento continua sem PDF. Egresso não acessa `/formativas` nem `/certificados`.

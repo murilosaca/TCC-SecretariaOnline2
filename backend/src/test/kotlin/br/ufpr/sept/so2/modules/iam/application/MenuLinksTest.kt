@@ -204,6 +204,15 @@ class MenuLinksTest : StringSpec({
         MenuLinks.from(listOf("course.manage")).shouldNotContainKey("diplomas")
     }
 
+    "autogestao do perfil so com user.update_own_profile" {
+        val links = MenuLinks.from(listOf("user.update_own_profile", "alumni.view_own"))
+        links["perfil"] shouldBe "/perfil"
+        links["perfil-seguranca"] shouldBe "/perfil/seguranca"
+        links["perfil-notificacoes"] shouldBe "/perfil/notificacoes"
+        MenuLinks.from(listOf("dashboard.view_own", "request.view_own")).shouldNotContainKey("perfil")
+        MenuLinks.from(listOf("alumni.view_own")).shouldNotContainKey("perfil-seguranca")
+    }
+
     "admin ganha usuarios e secretaria nao" {
         val admin = MenuLinks.from(listOf("user.manage_all", "user.reset_password"))
         admin["usuarios"] shouldBe "/admin/usuarios"

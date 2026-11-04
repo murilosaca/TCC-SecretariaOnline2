@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { eventosApi } from '../../api/eventos'
 import { useActions } from '../../hooks/useActions'
+import { rotuloCodigo } from '../../lib/rotulos'
 import type { Evento } from '../../models/evento'
 
 export function Eventos() {
@@ -88,21 +89,9 @@ function Linha({ item }: { item: Evento }) {
 }
 
 function rotuloEstado(estado: string): string {
-  if (estado === 'EM_ANDAMENTO') {
-    return 'Em andamento'
-  }
-  if (estado === 'CONCLUIDO') {
-    return 'Concluído'
-  }
-  return 'Agendado'
+  return rotuloCodigo(estado)
 }
 
 function rotuloSituacao(situacao: string): string {
-  if (situacao === 'COMPLETA') {
-    return 'Completa'
-  }
-  if (situacao === 'PARCIAL') {
-    return 'Parcial'
-  }
-  return 'Pendente'
+  return rotuloCodigo(situacao)
 }

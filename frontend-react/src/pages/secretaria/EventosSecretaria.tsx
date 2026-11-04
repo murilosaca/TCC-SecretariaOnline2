@@ -4,6 +4,7 @@ import { academicoApi } from '../../api/academico'
 import { ApiError } from '../../api/client'
 import { eventosApi } from '../../api/eventos'
 import { useActions } from '../../hooks/useActions'
+import { rotuloCodigo } from '../../lib/rotulos'
 import type { Evento } from '../../models/evento'
 
 export function EventosSecretaria() {
@@ -57,9 +58,9 @@ export function EventosSecretaria() {
           Estado
           <select value={estado} onChange={(event) => atualizarFiltro('estado', event.target.value)}>
             <option value="">Todos</option>
-            <option value="AGENDADO">AGENDADO</option>
-            <option value="EM_ANDAMENTO">EM_ANDAMENTO</option>
-            <option value="CONCLUIDO">CONCLUIDO</option>
+            <option value="AGENDADO">{rotuloCodigo('AGENDADO')}</option>
+            <option value="EM_ANDAMENTO">{rotuloCodigo('EM_ANDAMENTO')}</option>
+            <option value="CONCLUIDO">{rotuloCodigo('CONCLUIDO')}</option>
           </select>
         </label>
         <label>
@@ -136,7 +137,7 @@ function Linha({ item, onExcluir, pending }: { item: Evento; onExcluir: () => vo
       </td>
       <td>{item.attendanceMode}</td>
       <td>
-        <span className={`badge estado-${item.estado.toLowerCase()}`}>{item.estado}</span>
+        <span className={`badge estado-${item.estado.toLowerCase()}`}>{rotuloCodigo(item.estado)}</span>
       </td>
       <td>{item.cursoSigla ?? '—'}</td>
       <td className="actions">

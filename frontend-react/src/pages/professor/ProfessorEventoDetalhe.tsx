@@ -2,6 +2,7 @@ import { Link, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { eventosApi } from '../../api/eventos'
 import { useActions } from '../../hooks/useActions'
+import { rotuloCodigo } from '../../lib/rotulos'
 
 export function ProfessorEventoDetalhe() {
   const { id = '' } = useParams()
@@ -42,7 +43,7 @@ export function ProfessorEventoDetalhe() {
           <dl className="resumo">
             <div>
               <dt>Estado</dt>
-              <dd>{detalhe.data.estado}</dd>
+              <dd>{rotuloCodigo(detalhe.data.estado)}</dd>
             </div>
             <div>
               <dt>Modo</dt>

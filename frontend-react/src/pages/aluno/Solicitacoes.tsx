@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { solicitacoesApi } from '../../api/solicitacoes'
 import { useActions } from '../../hooks/useActions'
+import { rotuloCodigo } from '../../lib/rotulos'
 import type { Solicitacao } from '../../models/solicitacao'
 
 export function Solicitacoes() {
@@ -113,7 +114,7 @@ function Linha({ item }: { item: Solicitacao }) {
       <td>{item.protocolo}</td>
       <td>{item.tipoNome}</td>
       <td>
-        <span className={`badge estado-${item.estado.toLowerCase()}`}>{item.estado}</span>
+        <span className={`badge estado-${item.estado.toLowerCase()}`}>{rotuloCodigo(item.estado)}</span>
       </td>
       <td className={item.prazoVencido ? 'sla-danger' : undefined}>{prazo}</td>
       <td className={item.sla === 'ATRASADO' ? 'sla-danger' : undefined}>{item.sla}</td>

@@ -1,20 +1,7 @@
+import { rotuloCodigo } from './rotulos'
+
 export function rotuloEstadoFormativa(estado: string): string {
-  if (estado === 'PENDENTE_CONFIRMACAO') {
-    return 'Aguardando confirmação'
-  }
-  if (estado === 'AGUARDANDO_CAAF') {
-    return 'Aguardando CAAF'
-  }
-  if (estado === 'APROVADA') {
-    return 'Aprovada'
-  }
-  if (estado === 'INDEFERIDA') {
-    return 'Indeferida'
-  }
-  if (estado === 'CANCELADA') {
-    return 'Cancelada'
-  }
-  return estado
+  return rotuloCodigo(estado)
 }
 
 export function rotuloOrigemFormativa(origem: string): string {
@@ -24,5 +11,5 @@ export function rotuloOrigemFormativa(origem: string): string {
   if (origem === 'COMPROVANTE') {
     return 'Comprovante'
   }
-  return origem
+  return rotuloCodigo(origem)
 }

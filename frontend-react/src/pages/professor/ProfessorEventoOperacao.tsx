@@ -5,6 +5,7 @@ import { ApiError } from '../../api/client'
 import { eventosApi } from '../../api/eventos'
 import { HostActionBar } from '../../components/HostActionBar'
 import { QrDisplay } from '../../components/QrDisplay'
+import { rotuloCodigo } from '../../lib/rotulos'
 import { isQrMode } from '../../models/evento'
 import type { HostSessao } from '../../models/evento'
 
@@ -134,7 +135,7 @@ function Painel({
   const qr = isQrMode(sessao.attendanceMode)
   return (
     <div className="attendance-card card">
-      <p className={`badge estado-${sessao.estado.toLowerCase()}`}>{sessao.estado}</p>
+      <p className={`badge estado-${sessao.estado.toLowerCase()}`}>{rotuloCodigo(sessao.estado)}</p>
       <p className="muted">{sessao.attendanceMode}</p>
       {sessao.janelaAtiva && sessao.janelaExpira && (
         <p className="countdown" aria-live="polite">

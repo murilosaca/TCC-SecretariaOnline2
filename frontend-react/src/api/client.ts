@@ -44,14 +44,16 @@ async function parse<T>(response: Response): Promise<T> {
     }
     throw new ApiError(response.status, message, retryAfterSeconds, failedIds)
   }
-  if (response.status === 204 || response.status === 202) {
-    const text = await response.text()
-    if (!text) {
-      return undefined as T
-    }
-    return JSON.parse(text) as T
+  // 200/201/202/204 sem corpo (ex.: POST /auth/redefinir-senha) não podem ir para response.json().
+  const text = await response.text()
+  if (!text) {
+    return undefined as T
   }
-  return (await response.json()) as T
+  try {
+    return JSON.parse(text) as T
+  } catch {
+    throw new ApiError(response.status, 'Resposta inválida do servidor.')
+  }
 }
 
 function query(params: Record<string, string | number | undefined>): string {

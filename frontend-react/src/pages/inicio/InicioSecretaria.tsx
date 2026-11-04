@@ -4,6 +4,7 @@ import { ApiError } from '../../api/client'
 import { bffApi } from '../../api/bff'
 import { useActions } from '../../hooks/useActions'
 import { blocoKpi, blocoLista } from '../../lib/dashboardBlocks'
+import { rotuloCodigo } from '../../lib/rotulos'
 import type { FilaSecretariaDashboard, KpisSecretariaDashboard } from '../../models/dashboard'
 
 const STALE_MS = 60_000
@@ -197,7 +198,7 @@ function FilaSecretaria({
                   <Link to={item.href}>{item.protocolo}</Link>
                 </td>
                 <td>{item.tipoNome}</td>
-                <td>{item.estado}</td>
+                <td>{rotuloCodigo(item.estado)}</td>
                 <td>
                   {item.slaStatus === 'danger' && <span className="sla-danger">SLA estourado</span>}
                   {item.slaStatus === 'warning' && <span className="sla-warning">Vence em 24 h</span>}

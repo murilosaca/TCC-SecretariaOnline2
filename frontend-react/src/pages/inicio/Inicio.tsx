@@ -6,6 +6,7 @@ import { useAuth } from '../../auth/AuthContext'
 import { useActions } from '../../hooks/useActions'
 import { blocoKpi, blocoLista } from '../../lib/dashboardBlocks'
 import { painelDe } from '../../lib/dashboardPortal'
+import { rotuloCodigo } from '../../lib/rotulos'
 import { InicioSecretaria } from './InicioSecretaria'
 import type {
   FilaSolicitacaoProfessor,
@@ -410,7 +411,7 @@ function PendenciasBloco({
           {itens.map((item) => (
             <li key={item.id}>
               <Link to={item.href}>
-                {item.titulo} <span className={`badge estado-${item.estado.toLowerCase()}`}>{item.estado}</span>
+                {item.titulo} <span className={`badge estado-${item.estado.toLowerCase()}`}>{rotuloCodigo(item.estado)}</span>
               </Link>
             </li>
           ))}
@@ -454,7 +455,7 @@ function FormativasPendenciasBloco({
           {itens.map((item) => (
             <li key={item.id}>
               <Link to={item.href}>
-                {item.titulo} <span className={`badge estado-${item.estado.toLowerCase()}`}>{item.estado}</span>
+                {item.titulo} <span className={`badge estado-${item.estado.toLowerCase()}`}>{rotuloCodigo(item.estado)}</span>
               </Link>
             </li>
           ))}
@@ -509,7 +510,7 @@ function SolicitacoesBloco({
                 </td>
                 <td>{item.tipoNome}</td>
                 <td>
-                  <span className={`badge estado-${item.estado.toLowerCase()}`}>{item.estado}</span>
+                  <span className={`badge estado-${item.estado.toLowerCase()}`}>{rotuloCodigo(item.estado)}</span>
                 </td>
                 <td className={item.slaVencido ? 'sla-danger' : undefined}>
                   {new Date(item.prazoEm).toLocaleDateString('pt-BR')}
@@ -620,7 +621,7 @@ function FilaDeliberacaoBloco({
                 </td>
                 <td>{item.tipoNome}</td>
                 <td>
-                  <span className={`badge estado-${item.estado.toLowerCase()}`}>{item.estado}</span>
+                  <span className={`badge estado-${item.estado.toLowerCase()}`}>{rotuloCodigo(item.estado)}</span>
                 </td>
                 <td className={item.slaVencido ? 'sla-danger' : undefined}>
                   {item.prazoEm ? new Date(item.prazoEm).toLocaleDateString('pt-BR') : '—'}
@@ -679,7 +680,7 @@ function MeusEventosBloco({
                         timeStyle: 'short',
                       })}
                     </time>
-                    <span className={`badge estado-${item.estado.toLowerCase()}`}>{item.estado}</span>
+                    <span className={`badge estado-${item.estado.toLowerCase()}`}>{rotuloCodigo(item.estado)}</span>
                     {item.estado === 'EM_ANDAMENTO' && (
                       <span className="badge estado-em_andamento">Em andamento</span>
                     )}
@@ -751,7 +752,7 @@ function FilaItensBloco({
           {itens.map((item) => (
             <li key={item.id}>
               <Link to={item.href}>
-                {item.titulo} <span className={`badge estado-${item.estado.toLowerCase()}`}>{item.estado}</span>
+                {item.titulo} <span className={`badge estado-${item.estado.toLowerCase()}`}>{rotuloCodigo(item.estado)}</span>
               </Link>
             </li>
           ))}

@@ -20,6 +20,8 @@ class CriarUsuarioAdminUseCaseTest : StringSpec({
             hasher,
             outbox,
             audit,
+            IamFakes.Jwt(),
+            IamFakes.Settings(),
             ObjectMapper(),
         )
         val operador = UUID.randomUUID()
@@ -34,9 +36,15 @@ class CriarUsuarioAdminUseCaseTest : StringSpec({
         criado.senhaAlterada shouldBe false
         criado.nome shouldBe "Maria Silva"
         criado.senhaHash shouldNotBe null
-        outbox.tipos shouldBe listOf("iam.user_created")
+        outbox.tipos shouldBe listOf("iam.user_created", "PASSWORD_RESET")
         outbox.payloads[0].shouldContain("maria.nova@ufpr.br")
-        outbox.payloads[0].contains("senha") shouldBe false
+        outbox.payloads[1].shouldContain("/nova-senha?token=")
+        outbox.payloads[1].shouldContain("\"kind\":\"welcome\"")
+        // Não pode vazar hash/senha temporária nos payloads (o path /nova-senha é ok).
+        outbox.payloads.forEach { payload ->
+            val json = ObjectMapper().readTree(payload)
+            json.fieldNames().asSequence().filter { it.contains("senha") }.toList() shouldBe emptyList()
+        }
         audit.tipos shouldBe listOf("iam.user_created")
     }
 

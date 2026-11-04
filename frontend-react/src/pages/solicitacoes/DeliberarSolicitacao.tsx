@@ -5,6 +5,7 @@ import { solicitacoesApi } from '../../api/solicitacoes'
 import { useAuth } from '../../auth/AuthContext'
 import { PainelDeliberacao } from '../../components/PainelDeliberacao'
 import { fieldsFromSchema } from '../../lib/formSchema'
+import { rotuloCodigo } from '../../lib/rotulos'
 
 export function DeliberarSolicitacao() {
   const { id = '' } = useParams()
@@ -106,7 +107,7 @@ export function DeliberarSolicitacao() {
                 {item.solicitanteNome ? ` · ${item.solicitanteNome}` : ''}
               </p>
             </div>
-            <span className={`badge estado-${item.estado.toLowerCase()}`}>{item.estado}</span>
+            <span className={`badge estado-${item.estado.toLowerCase()}`}>{rotuloCodigo(item.estado)}</span>
           </header>
 
           {transicionar.isError && (

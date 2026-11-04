@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { ApiError } from '../../api/client'
 import { eventosApi } from '../../api/eventos'
 import { useActions } from '../../hooks/useActions'
+import { rotuloCodigo } from '../../lib/rotulos'
 import type { Evento } from '../../models/evento'
 
 export function ProfessorEventos() {
@@ -84,7 +85,7 @@ function Linha({ item }: { item: Evento }) {
       </td>
       <td>{item.attendanceMode}</td>
       <td>
-        <span className={`badge estado-${item.estado.toLowerCase()}`}>{item.estado}</span>
+        <span className={`badge estado-${item.estado.toLowerCase()}`}>{rotuloCodigo(item.estado)}</span>
       </td>
       <td>{item.cargaHoraria}h</td>
       <td className="actions">

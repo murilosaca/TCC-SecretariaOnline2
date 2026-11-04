@@ -1,6 +1,7 @@
 package br.ufpr.sept.so2.modules.iam.application
 
 import br.ufpr.sept.so2.modules.iam.application.ports.AuditLogPort
+import br.ufpr.sept.so2.modules.iam.application.ports.JwtTokenService
 import br.ufpr.sept.so2.modules.iam.application.ports.OutboxPort
 import br.ufpr.sept.so2.modules.iam.application.ports.PasswordHasher
 import br.ufpr.sept.so2.modules.iam.application.ports.UsuarioRepository
@@ -24,6 +25,8 @@ class CriarUsuarioAdminUseCase(
     private val passwordHasher: PasswordHasher,
     private val outboxPort: OutboxPort,
     private val auditLogPort: AuditLogPort,
+    private val jwtTokenService: JwtTokenService,
+    private val settings: IamSettings,
     private val objectMapper: ObjectMapper,
 ) {
     @Transactional
@@ -76,7 +79,21 @@ class CriarUsuarioAdminUseCase(
             updatedAt = agora,
         )
         val persistido = usuarioRepository.save(usuario)
-        outboxPort.enqueue("iam.user_created", toJson(persistido))
+        outboxPort.enqueue("iam.user_created", toJsonCriacao(persistido))
+        // A senha temporária nunca é enviada por e-mail. O acesso inicial é um link
+        // de definição de senha (mesmo canal PASSWORD_RESET / Mailpit no dev).
+        val token = jwtTokenService.emitResetToken(persistido)
+        val resetUrl = settings.frontendBaseUrl.trimEnd('/') + "/nova-senha?token=" + token
+        outboxPort.enqueue(
+            "PASSWORD_RESET",
+            toJson(
+                mapOf(
+                    "usuarioId" to persistido.id.toString(),
+                    "resetUrl" to resetUrl,
+                    "kind" to "welcome",
+                ),
+            ),
+        )
         auditLogPort.append(
             "iam.user_created",
             operadorId,
@@ -86,7 +103,7 @@ class CriarUsuarioAdminUseCase(
         return persistido
     }
 
-    private fun toJson(usuario: Usuario): String {
+    private fun toJsonCriacao(usuario: Usuario): String {
         try {
             return objectMapper.writeValueAsString(
                 mapOf(
@@ -94,6 +111,14 @@ class CriarUsuarioAdminUseCase(
                     "emailInstitucional" to usuario.emailInstitucional.value,
                 ),
             )
+        } catch (_: JsonProcessingException) {
+            throw DadoInvalidoException("Não foi possível enfileirar o acesso inicial.")
+        }
+    }
+
+    private fun toJson(valor: Map<String, String>): String {
+        try {
+            return objectMapper.writeValueAsString(valor)
         } catch (_: JsonProcessingException) {
             throw DadoInvalidoException("Não foi possível enfileirar o acesso inicial.")
         }

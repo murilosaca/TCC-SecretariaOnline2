@@ -59,7 +59,7 @@ export function NovaSenha() {
 
   if (estado === 'checando') {
     return (
-      <section className="page">
+      <section className="page auth-page">
         <p className="muted">Validando o link…</p>
       </section>
     )
@@ -67,11 +67,13 @@ export function NovaSenha() {
 
   if (estado === 'invalido') {
     return (
-      <section className="page">
+      <section className="page auth-page">
         <h1>Link inválido ou expirado</h1>
         <p className="lead">Este link não é mais válido. Solicite um novo para redefinir sua senha.</p>
         <Link to="/recuperar-senha">
-          <button type="button">Solicitar novo link</button>
+          <button type="button" className="auth-submit">
+            Solicitar novo link
+          </button>
         </Link>
       </section>
     )
@@ -80,14 +82,14 @@ export function NovaSenha() {
   const score = passwordScore(novaSenha)
 
   return (
-    <section className="page">
+    <section className="page auth-page">
       <h1>Definir nova senha</h1>
       {aviso && (
         <div className="banner danger" role="alert" aria-live="assertive">
           {aviso}
         </div>
       )}
-      <form className="panel auth-form" onSubmit={onSubmit} noValidate>
+      <form className="auth-form" onSubmit={onSubmit} noValidate>
         <PasswordFields
           novaSenha={novaSenha}
           confirmacao={confirmacao}
@@ -96,7 +98,7 @@ export function NovaSenha() {
           onNovaSenha={setNovaSenha}
           onConfirmacao={setConfirmacao}
         />
-        <button type="submit" disabled={enviando}>
+        <button type="submit" className="auth-submit" disabled={enviando}>
           {enviando ? 'Salvando...' : 'Salvar senha'}
         </button>
       </form>

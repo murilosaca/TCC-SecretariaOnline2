@@ -51,7 +51,7 @@ export function Usuarios() {
       setInfo(
         editandoId
           ? 'Usuário atualizado.'
-          : 'Usuário criado. O acesso inicial será enviado por e-mail (Outbox); a senha não é exibida.',
+          : 'Usuário criado. Um link para definir a senha foi enfileirado (no dev, veja o Mailpit em :8025). A senha nunca aparece nesta tela.',
       )
       queryClient.invalidateQueries({ queryKey: ['admin-usuarios'] })
     },

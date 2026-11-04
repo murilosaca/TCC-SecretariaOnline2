@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ApiError } from '../../api/client'
 import { solicitacoesApi } from '../../api/solicitacoes'
 import { useActions } from '../../hooks/useActions'
+import { rotuloCodigo } from '../../lib/rotulos'
 import type { Solicitacao } from '../../models/solicitacao'
 
 export function FilaCentral() {
@@ -293,7 +294,7 @@ function Linha({
       <td>{item.protocolo}</td>
       <td>{item.solicitanteNome || '—'}</td>
       <td>{item.tipoNome}</td>
-      <td>{item.estado}</td>
+      <td>{rotuloCodigo(item.estado)}</td>
       <td>{item.deliberadorNome || '—'}</td>
       <td className={slaClass}>{item.slaStatus === 'danger' ? 'Atrasado' : item.slaStatus === 'warning' ? 'Alerta' : 'No prazo'}</td>
       <td className="actions">

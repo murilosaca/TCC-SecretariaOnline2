@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { solicitacoesApi } from '../../api/solicitacoes'
 import { useActions } from '../../hooks/useActions'
 import { fieldsFromSchema } from '../../lib/formSchema'
+import { rotuloCodigo } from '../../lib/rotulos'
 
 export function SolicitacaoDetalhe() {
   const { id } = useParams<{ id: string }>()
@@ -42,7 +43,7 @@ export function SolicitacaoDetalhe() {
               <p className="muted">{item.tipoNome}</p>
             </div>
             <div className="action-bar">
-              <span className={`badge estado-${item.estado.toLowerCase()}`}>{item.estado}</span>
+              <span className={`badge estado-${item.estado.toLowerCase()}`}>{rotuloCodigo(item.estado)}</span>
               {actions.can('editar') && (
                 <Link to="/solicitacoes/nova" className="button-link">
                   Editar

@@ -65,14 +65,7 @@ export function Estagios() {
           Carregando estágios…
         </p>
       )}
-      {lista.data && lista.data.content.length === 0 && (
-        <p className="empty" role="status">
-          {situacao
-            ? 'Nenhum estágio com essa situação.'
-            : 'Você não possui estágios registrados.'}
-        </p>
-      )}
-      {lista.data && lista.data.content.length > 0 && (
+      {lista.data && (
         <table>
           <thead>
             <tr>
@@ -84,9 +77,17 @@ export function Estagios() {
             </tr>
           </thead>
           <tbody>
-            {lista.data.content.map((item) => (
-              <Linha key={item.id} item={item} />
-            ))}
+            {lista.data.content.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="tabela-vazio" role="status">
+                  {situacao
+                    ? 'Nenhum estágio com essa situação.'
+                    : 'Você não possui estágios registrados.'}
+                </td>
+              </tr>
+            ) : (
+              lista.data.content.map((item) => <Linha key={item.id} item={item} />)
+            )}
           </tbody>
         </table>
       )}

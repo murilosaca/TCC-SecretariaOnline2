@@ -39,9 +39,10 @@ describe('Certificados', () => {
     await waitFor(() => {
       expect(screen.getByText('Você ainda não possui certificados emitidos.')).toBeTruthy()
     })
+    expect(screen.getByRole('columnheader', { name: 'Tipo' })).toBeTruthy()
   })
 
-  it('só mostra Download se _links.download existir', async () => {
+  it('só mostra Download se _links.download existir e erro vai para banner', async () => {
     listarMeus.mockResolvedValue({
       content: [
         {
@@ -65,12 +66,21 @@ describe('Certificados', () => {
       ],
       page: { number: 0, size: 20, totalElements: 2, totalPages: 1 },
     })
+    baixar.mockRejectedValue(new Error('falha'))
     renderPage()
     await waitFor(() => {
       expect(screen.getByText('Oficina')).toBeTruthy()
     })
+    expect(screen.getByRole('columnheader', { name: 'Verificar' })).toBeTruthy()
+    expect(screen.getByRole('columnheader', { name: 'Download' })).toBeTruthy()
     expect(screen.getAllByRole('button', { name: 'Download' })).toHaveLength(1)
     expect(screen.getByText('Sem download')).toBeTruthy()
+    expect(screen.getAllByRole('link', { name: 'Verificar' })).toHaveLength(2)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Download' }))
+    await waitFor(() => {
+      expect(screen.getByText('Não foi possível baixar o PDF.')).toBeTruthy()
+    })
   })
 
   it('mostra erro com retry', async () => {

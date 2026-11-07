@@ -6,6 +6,8 @@ type ConfirmacaoFormativaWidgetProps = {
   pending?: boolean
   onConfirm: () => void
   onCancel: () => void
+  onComprovante?: () => void
+  comprovantePending?: boolean
 }
 
 export function ConfirmacaoFormativaWidget({
@@ -13,12 +15,15 @@ export function ConfirmacaoFormativaWidget({
   pending = false,
   onConfirm,
   onCancel,
+  onComprovante,
+  comprovantePending = false,
 }: ConfirmacaoFormativaWidgetProps) {
   const actions = useActions(links)
   const podeConfirmar = actions.can('confirmar')
   const podeCancelar = actions.can('cancelar')
+  const podeComprovante = Boolean(onComprovante) && actions.can('comprovante')
 
-  if (!podeConfirmar && !podeCancelar) {
+  if (!podeConfirmar && !podeCancelar && !podeComprovante) {
     return (
       <p className="muted" role="status">
         Nenhuma ação disponível nesta formativa.
@@ -28,10 +33,15 @@ export function ConfirmacaoFormativaWidget({
 
   return (
     <div className="formativa-widget attendance-card card">
-      <p>
-        A presença neste evento já foi validada pelo sistema. Confirme para enviar à CAAF ou cancele
-        se não quiser registrar as horas.
-      </p>
+      {(podeConfirmar || podeCancelar) && (
+        <p>
+          A presença neste evento já foi validada pelo sistema. Confirme para enviar à CAAF ou cancele
+          se não quiser registrar as horas.
+        </p>
+      )}
+      {podeComprovante && !podeConfirmar && !podeCancelar && (
+        <p>Visualize o comprovante enviado nesta atividade.</p>
+      )}
       <div className="action-bar">
         {podeConfirmar && (
           <button type="button" onClick={onConfirm} disabled={pending}>
@@ -41,6 +51,11 @@ export function ConfirmacaoFormativaWidget({
         {podeCancelar && (
           <button type="button" className="ghost" onClick={onCancel} disabled={pending}>
             {pending ? 'Cancelando…' : 'Cancelar'}
+          </button>
+        )}
+        {podeComprovante && (
+          <button type="button" onClick={onComprovante} disabled={comprovantePending || pending}>
+            {comprovantePending ? 'Abrindo…' : 'Ver comprovante'}
           </button>
         )}
       </div>

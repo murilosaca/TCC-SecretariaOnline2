@@ -8,6 +8,8 @@ const ROTULOS: Record<string, string> = {
   DEFERIDA: 'Deferida',
   INDEFERIDA: 'Indeferida',
   CONCLUIDA: 'Concluída',
+  CRIADA: 'Criada',
+  TRANSICAO: 'Transição',
   // Eventos / presença
   AGENDADO: 'Agendado',
   EM_ANDAMENTO: 'Em andamento',

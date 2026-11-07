@@ -58,18 +58,27 @@ describe('Notificacoes', () => {
 
   it('bloqueia os canais CRITICAL e cancela sem PATCH', async () => {
     renderPage()
-    const critico = (await screen.findByRole('switch', {
+    const critico = await screen.findByRole('switch', {
       name: 'E-mail para prioridade CRITICAL',
-    })) as HTMLInputElement
-    expect(critico.disabled).toBe(true)
-    expect(critico.checked).toBe(true)
-    const medio = screen.getByRole('switch', { name: 'E-mail para prioridade MEDIUM' }) as HTMLInputElement
+    })
+    expect(critico).toHaveProperty('disabled', true)
+    expect(critico.getAttribute('aria-checked')).toBe('true')
+    const medio = screen.getByRole('switch', { name: 'E-mail para prioridade MEDIUM' })
     fireEvent.click(medio)
-    expect(medio.checked).toBe(false)
+    expect(medio.getAttribute('aria-checked')).toBe('false')
     fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
     expect(
-      (screen.getByRole('switch', { name: 'E-mail para prioridade MEDIUM' }) as HTMLInputElement).checked,
-    ).toBe(true)
+      screen.getByRole('switch', { name: 'E-mail para prioridade MEDIUM' }).getAttribute('aria-checked'),
+    ).toBe('true')
     expect(salvarNotificacoes).not.toHaveBeenCalled()
+  })
+
+  it('mostra horários de não perturbe só com o checkbox marcado', async () => {
+    renderPage()
+    expect(await screen.findByLabelText('Usar horário de não perturbe')).toBeTruthy()
+    expect(screen.queryByLabelText('Início')).toBeNull()
+    fireEvent.click(screen.getByLabelText('Usar horário de não perturbe'))
+    expect(screen.getByLabelText('Início')).toBeTruthy()
+    expect(screen.getByLabelText('Fim')).toBeTruthy()
   })
 })

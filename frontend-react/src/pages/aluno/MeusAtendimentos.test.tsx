@@ -23,10 +23,23 @@ function renderPage(entry = '/meus-atendimentos') {
   )
 }
 
+const paginaVazia = {
+  content: [],
+  page: { number: 0, size: 20, totalElements: 0, totalPages: 0 },
+}
+
 describe('MeusAtendimentos', () => {
   beforeEach(() => {
     vi.mocked(atendimentosApi.listarMeus).mockReset()
     vi.mocked(atendimentosApi.darCiencia).mockReset()
+  })
+
+  it('exibe a descrição institucional da tela', async () => {
+    vi.mocked(atendimentosApi.listarMeus).mockResolvedValue(paginaVazia)
+    renderPage()
+    expect(
+      await screen.findByText('Atendimentos feitos presencialmente, registrados pela secretaria.'),
+    ).toBeTruthy()
   })
 
   it('ciência só aparece com _links.acknowledge', async () => {
@@ -79,12 +92,28 @@ describe('MeusAtendimentos', () => {
   })
 
   it('filtro pendente vazio mostra a mensagem institucional', async () => {
-    vi.mocked(atendimentosApi.listarMeus).mockResolvedValue({
-      content: [],
-      page: { number: 0, size: 20, totalElements: 0, totalPages: 0 },
-    })
+    vi.mocked(atendimentosApi.listarMeus).mockResolvedValue(paginaVazia)
     renderPage('/meus-atendimentos?status=PENDENTE_CIENCIA')
     expect(await screen.findByText('Nenhum atendimento pendente.')).toBeTruthy()
     expect(atendimentosApi.listarMeus).toHaveBeenCalledWith('PENDENTE_CIENCIA')
+  })
+
+  it('dropdown filtra por status Ciente', async () => {
+    vi.mocked(atendimentosApi.listarMeus).mockResolvedValue(paginaVazia)
+    renderPage()
+    expect(await screen.findByLabelText('Filtrar por status')).toBeTruthy()
+    fireEvent.change(screen.getByLabelText('Filtrar por status'), {
+      target: { value: 'CIENCIA_DADA' },
+    })
+    await waitFor(() => {
+      expect(atendimentosApi.listarMeus).toHaveBeenCalledWith('CIENCIA_DADA')
+    })
+  })
+
+  it('lista vazia sem filtro mostra empty padrão', async () => {
+    vi.mocked(atendimentosApi.listarMeus).mockResolvedValue(paginaVazia)
+    renderPage()
+    expect(await screen.findByText('Nenhum atendimento registrado.')).toBeTruthy()
+    expect(atendimentosApi.listarMeus).toHaveBeenCalledWith(undefined)
   })
 })

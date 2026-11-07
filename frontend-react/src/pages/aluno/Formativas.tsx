@@ -17,7 +17,10 @@ export function Formativas() {
       <header className="page-head">
         <div>
           <h1>Atividades formativas</h1>
-          <p className="muted">Confirme horas de presença ou envie um comprovante (RF-F1-006).</p>
+          <p className="muted">
+            Atividades formativas do seu curso: confirme horas de eventos com presença validada,
+            envie comprovantes e acompanhe o parecer da CAAF.
+          </p>
         </div>
         {acoes.can('nova') && (
           <Link to={acoes.href('nova') ?? '/formativas'} className="button-link">
@@ -40,13 +43,7 @@ export function Formativas() {
           Carregando formativas…
         </p>
       )}
-      {lista.data && lista.data.content.length === 0 && (
-        <p className="empty" role="status">
-          Nenhuma atividade formativa no momento. Confirme presença em um evento para gerar uma
-          pendência.
-        </p>
-      )}
-      {lista.data && lista.data.content.length > 0 && (
+      {lista.data && (
         <table>
           <thead>
             <tr>
@@ -59,9 +56,16 @@ export function Formativas() {
             </tr>
           </thead>
           <tbody>
-            {lista.data.content.map((item) => (
-              <Linha key={item.id} item={item} />
-            ))}
+            {lista.data.content.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="tabela-vazio" role="status">
+                  Nenhuma atividade formativa no momento. Confirme presença em um evento para gerar
+                  uma pendência.
+                </td>
+              </tr>
+            ) : (
+              lista.data.content.map((item) => <Linha key={item.id} item={item} />)
+            )}
           </tbody>
         </table>
       )}

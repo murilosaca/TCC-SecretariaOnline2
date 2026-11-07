@@ -63,12 +63,7 @@ export function Tccs() {
           Carregando TCCs…
         </p>
       )}
-      {lista.data && lista.data.content.length === 0 && (
-        <p className="empty" role="status">
-          {estado ? 'Nenhum TCC com essa situação.' : 'Nenhum TCC registrado. Consulte a secretaria.'}
-        </p>
-      )}
-      {lista.data && lista.data.content.length > 0 && (
+      {lista.data && (
         <table>
           <thead>
             <tr>
@@ -80,9 +75,17 @@ export function Tccs() {
             </tr>
           </thead>
           <tbody>
-            {lista.data.content.map((item) => (
-              <Linha key={item.id} item={item} />
-            ))}
+            {lista.data.content.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="tabela-vazio" role="status">
+                  {estado
+                    ? 'Nenhum TCC com essa situação.'
+                    : 'Nenhum TCC registrado. Consulte a secretaria.'}
+                </td>
+              </tr>
+            ) : (
+              lista.data.content.map((item) => <Linha key={item.id} item={item} />)
+            )}
           </tbody>
         </table>
       )}

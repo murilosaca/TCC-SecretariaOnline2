@@ -1,4 +1,4 @@
-import { FormEvent, useState } from 'react'
+import { useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ApiError } from '../../api/client'
@@ -22,7 +22,7 @@ export function EstagioDetalhe() {
   const { links } = useAuth()
   const menu = useActions(links)
   const queryClient = useQueryClient()
-  const [aba, setAba] = useState<'documentos' | 'pareceres'>('documentos')
+  const [aviso, setAviso] = useState<string | null>(null)
 
   const detalhe = useQuery({
     queryKey: ['estagio', id],
@@ -34,8 +34,12 @@ export function EstagioDetalhe() {
     mutationFn: ({ tipo, arquivo }: { tipo: string; arquivo: File }) =>
       estagiosApi.enviarDocumento(id, tipo, arquivo),
     onSuccess: (atual) => {
+      setAviso(null)
       queryClient.setQueryData(['estagio', id], atual)
       void queryClient.invalidateQueries({ queryKey: ['estagios'] })
+    },
+    onError: (erro) => {
+      setAviso(erro instanceof ApiError ? erro.message : 'Não foi possível enviar o documento.')
     },
   })
 
@@ -50,25 +54,33 @@ export function EstagioDetalhe() {
       texto: string
     }) => estagiosApi.parecer(id, documentoId, acao, texto),
     onSuccess: (atual) => {
+      setAviso(null)
       queryClient.setQueryData(['estagio', id], atual)
       void queryClient.invalidateQueries({ queryKey: ['estagios'] })
+    },
+    onError: (erro) => {
+      setAviso(erro instanceof ApiError ? erro.message : 'Não foi possível registrar o parecer.')
     },
   })
 
   const encerrar = useMutation({
     mutationFn: () => estagiosApi.encerrar(id),
     onSuccess: (atual) => {
+      setAviso(null)
       queryClient.setQueryData(['estagio', id], atual)
       void queryClient.invalidateQueries({ queryKey: ['estagios'] })
+    },
+    onError: (erro) => {
+      setAviso(erro instanceof ApiError ? erro.message : 'Não foi possível arquivar o estágio.')
     },
   })
 
   const item = detalhe.data
   const actions = useActions(item?._links)
-  const voltar = menu.can('estagios-revisao') && !menu.can('estagios')
-    ? { href: '/estagios?to=me', label: '← Fila de revisão' }
-    : { href: '/estagios', label: '← Estágios' }
-  const erroAcao = enviar.error ?? parecer.error ?? encerrar.error
+  const voltar =
+    menu.can('estagios-revisao') && !menu.can('estagios')
+      ? { href: '/estagios?to=me', label: '← Fila de revisão' }
+      : { href: '/estagios', label: '← Estágios' }
   const pending = enviar.isPending || parecer.isPending || encerrar.isPending
 
   return (
@@ -93,16 +105,16 @@ export function EstagioDetalhe() {
         </div>
       )}
 
+      {aviso && (
+        <div className="banner danger" role="alert">
+          {aviso}
+        </div>
+      )}
+
       {item && (
         <>
           <header className="page-head">
-            <div>
-              <h1>{item.empresa}</h1>
-              <p className="muted">
-                {item.alunoNome ? `${item.alunoNome} · ` : ''}
-                {vigencia(item.inicio, item.fim)}
-              </p>
-            </div>
+            <h1>{item.empresa}</h1>
             <span className={`badge estado-${item.situacao.toLowerCase()}`}>
               {rotuloSituacaoEstagio(item.situacao)}
             </span>
@@ -116,113 +128,121 @@ export function EstagioDetalhe() {
             </div>
           )}
 
-          {erroAcao && (
-            <div className="banner danger" role="alert">
-              {erroAcao instanceof ApiError ? erroAcao.message : 'Não foi possível concluir a ação.'}
+          <article className="panel estagio-detalhes">
+            <h2>Detalhes</h2>
+            <dl className="resumo resumo-horizontal">
+              <div>
+                <dt>Empresa</dt>
+                <dd>{item.empresa}</dd>
+              </div>
+              <div>
+                <dt>Supervisor</dt>
+                <dd>{item.supervisor}</dd>
+              </div>
+              <div>
+                <dt>Vigência</dt>
+                <dd>{vigencia(item.inicio, item.fim)}</dd>
+              </div>
+              <div>
+                <dt>Orientador</dt>
+                <dd>{item.orientadorRotulo || '—'}</dd>
+              </div>
+              <div>
+                <dt>Situação</dt>
+                <dd>{rotuloSituacaoEstagio(item.situacao)}</dd>
+              </div>
+            </dl>
+          </article>
+
+          {item.documentos.length === 0 ? (
+            <p className="empty" role="status">
+              Nenhum documento exigido neste estágio.
+            </p>
+          ) : (
+            <div className="estagio-docs-grid">
+              {item.documentos.map((documento) => (
+                <DocumentoCard
+                  key={documento.id}
+                  documento={documento}
+                  pending={pending}
+                  onEnviar={(arquivo) => enviar.mutate({ tipo: documento.tipo, arquivo })}
+                  onParecer={(acao, texto) =>
+                    parecer.mutate({ documentoId: documento.id, acao, texto })
+                  }
+                  onErro={(mensagem) => setAviso(mensagem)}
+                />
+              ))}
             </div>
           )}
 
-          <div className="detalhe-grid">
-            <div>
-              <div className="tabs" role="tablist" aria-label="Estágio">
-                <button
-                  type="button"
-                  role="tab"
-                  id="tab-documentos"
-                  aria-selected={aba === 'documentos'}
-                  aria-controls="painel-documentos"
-                  onClick={() => setAba('documentos')}
-                >
-                  Documentos
-                </button>
-                <button
-                  type="button"
-                  role="tab"
-                  id="tab-pareceres"
-                  aria-selected={aba === 'pareceres'}
-                  aria-controls="painel-pareceres"
-                  onClick={() => setAba('pareceres')}
-                >
-                  Pareceres
-                </button>
-              </div>
-
-              {aba === 'documentos' && (
-                <div role="tabpanel" id="painel-documentos" aria-labelledby="tab-documentos">
-                  {item.documentos.map((documento) => (
-                    <DocumentoCard
-                      key={documento.id}
-                      documento={documento}
-                      pending={pending}
-                      onEnviar={(arquivo) => enviar.mutate({ tipo: documento.tipo, arquivo })}
-                      onParecer={(acao, texto) =>
-                        parecer.mutate({ documentoId: documento.id, acao, texto })
-                      }
-                    />
-                  ))}
-                </div>
-              )}
-
-              {aba === 'pareceres' && (
-                <div role="tabpanel" id="painel-pareceres" aria-labelledby="tab-pareceres">
-                  {item.pareceres.length === 0 && (
-                    <p className="empty" role="status">
-                      Nenhum parecer registrado.
-                    </p>
-                  )}
-                  {item.pareceres.length > 0 && (
-                    <ol className="timeline">
-                      {item.pareceres.map((registro) => (
-                        <li key={registro.id}>
+          <section className="estagio-secao estagio-secao-pareceres" aria-labelledby="pareceres-titulo">
+            <h2 id="pareceres-titulo">Pareceres</h2>
+            <div className="estagio-tabela-wrap estagio-tabela-wrap-scroll">
+              <table className="estagio-tabela estagio-tabela-pareceres">
+                <thead>
+                  <tr>
+                    <th scope="col">Documento</th>
+                    <th scope="col">Decisão</th>
+                    <th scope="col">Autor</th>
+                    <th scope="col">Data</th>
+                    <th scope="col">Parecer</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {item.pareceres.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="tabela-vazio">
+                        Nenhum parecer registrado ainda.
+                      </td>
+                    </tr>
+                  ) : (
+                    item.pareceres.map((registro) => (
+                      <tr key={registro.id}>
+                        <td>{rotuloTipoDocumento(registro.tipoDocumento)}</td>
+                        <td>
                           <span className={`badge estado-${registro.acao.toLowerCase()}`}>
                             {rotuloAcaoParecer(registro.acao)}
                           </span>
-                          <p>
-                            <strong>{registro.autorRotulo || 'Orientador'}</strong>
-                            {' · '}
-                            {dataBr(registro.createdAt)}
-                            {' · '}
-                            {rotuloTipoDocumento(registro.tipoDocumento)}
-                          </p>
-                          <p>{registro.texto}</p>
-                        </li>
-                      ))}
-                    </ol>
+                        </td>
+                        <td>{registro.autorRotulo || 'Orientador'}</td>
+                        <td>{dataBr(registro.createdAt)}</td>
+                        <td>{registro.texto}</td>
+                      </tr>
+                    ))
                   )}
-                </div>
-              )}
+                </tbody>
+              </table>
             </div>
-
-            <aside className="panel">
-              <h2>Metadados</h2>
-              <dl className="resumo">
-                <div>
-                  <dt>Empresa</dt>
-                  <dd>{item.empresa}</dd>
-                </div>
-                <div>
-                  <dt>Supervisor</dt>
-                  <dd>{item.supervisor}</dd>
-                </div>
-                <div>
-                  <dt>Vigência</dt>
-                  <dd>{vigencia(item.inicio, item.fim)}</dd>
-                </div>
-                <div>
-                  <dt>Orientador</dt>
-                  <dd>{item.orientadorRotulo || '—'}</dd>
-                </div>
-                <div>
-                  <dt>Situação</dt>
-                  <dd>{rotuloSituacaoEstagio(item.situacao)}</dd>
-                </div>
-              </dl>
-            </aside>
-          </div>
+          </section>
         </>
       )}
     </section>
   )
+}
+
+function descricaoAcaoDocumento(podeEnviar: boolean, podeVisualizar: boolean, estado: string): string {
+  if (podeEnviar && estado === 'REPROVADO') {
+    return 'Documento reprovado. Envie uma nova versão em PDF.'
+  }
+  if (podeEnviar) {
+    return 'Envie o PDF deste documento para análise.'
+  }
+  if (podeVisualizar && estado === 'AGUARDANDO_PARECER') {
+    return 'Documento enviado. Aguarde o parecer do orientador.'
+  }
+  if (podeVisualizar && estado === 'APROVADO') {
+    return 'Documento aprovado. Você pode visualizar o arquivo.'
+  }
+  if (podeVisualizar) {
+    return 'Você pode visualizar o arquivo enviado.'
+  }
+  if (estado === 'AGUARDANDO_PARECER') {
+    return 'Documento enviado. Aguarde o parecer do orientador.'
+  }
+  if (estado === 'APROVADO') {
+    return 'Documento aprovado. Nenhuma ação necessária no momento.'
+  }
+  return 'Aguarde. Nenhuma ação disponível no momento.'
 }
 
 function DocumentoCard({
@@ -230,99 +250,89 @@ function DocumentoCard({
   pending,
   onEnviar,
   onParecer,
+  onErro,
 }: {
   documento: DocumentoEstagio
   pending: boolean
   onEnviar: (arquivo: File) => void
   onParecer: (acao: 'APROVAR' | 'REPROVAR', texto: string) => void
+  onErro: (mensagem: string) => void
 }) {
   const actions = useActions(documento._links)
-  const [arquivo, setArquivo] = useState<File | null>(null)
-  const [erroArquivo, setErroArquivo] = useState<string | null>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
   const [baixando, setBaixando] = useState(false)
-  const [erroDownload, setErroDownload] = useState<string | null>(null)
-  const inputId = `upload-${documento.id}`
+  const podeEnviar = actions.can('upload')
+  const podeVisualizar = actions.can('download')
+  const podeAprovar = actions.can('aprovar')
+  const podeReprovar = actions.can('reprovar')
+  const titulo = rotuloTipoDocumento(documento.tipo)
+  const descricao = descricaoAcaoDocumento(podeEnviar, podeVisualizar, documento.estado)
 
-  function onSubmit(event: FormEvent) {
-    event.preventDefault()
-    if (!arquivo) {
-      setErroArquivo('Selecione um PDF.')
-      document.getElementById(inputId)?.focus()
-      return
-    }
-    setErroArquivo(null)
-    onEnviar(arquivo)
-  }
-
-  async function baixar() {
+  async function visualizar() {
     const href = actions.href('download')
     if (!href) {
       return
     }
-    setErroDownload(null)
     setBaixando(true)
     try {
       await estagiosApi.baixar(href, documento.nomeArquivo || `${documento.tipo.toLowerCase()}.pdf`)
     } catch {
-      setErroDownload('Não foi possível baixar o PDF.')
+      onErro('Não foi possível abrir o documento.')
     } finally {
       setBaixando(false)
     }
   }
 
   return (
-    <article className="panel">
-      <header className="page-head">
-        <h2>{rotuloTipoDocumento(documento.tipo)}</h2>
+    <article className="panel estagio-doc-card">
+      <header className="estagio-doc-card-head">
+        <h2>{titulo}</h2>
         <span className={`badge estado-${documento.estado.toLowerCase()}`}>
           {rotuloEstadoDocumento(documento.estado)}
         </span>
       </header>
-      {documento.nomeArquivo && <p className="muted">{documento.nomeArquivo}</p>}
-      {actions.can('download') && (
-        <p>
-          <button type="button" className="ghost" onClick={() => void baixar()} disabled={baixando}>
-            {baixando ? 'Baixando…' : 'Baixar PDF'}
-          </button>
-          {erroDownload && (
-            <span className="field-error" role="alert">
-              {erroDownload}
-            </span>
+
+      <div className="estagio-doc-card-corpo">
+        <p className="muted estagio-doc-card-desc">{descricao}</p>
+        <div className="estagio-doc-card-acao">
+          {podeEnviar && (
+            <>
+              <input
+                ref={inputRef}
+                type="file"
+                accept="application/pdf,.pdf"
+                className="sr-only"
+                aria-label={`Selecionar PDF de ${titulo}`}
+                onChange={(event) => {
+                  const arquivo = event.target.files?.[0]
+                  event.target.value = ''
+                  if (arquivo) {
+                    onEnviar(arquivo)
+                  }
+                }}
+              />
+              <button
+                type="button"
+                className="ghost"
+                disabled={pending}
+                onClick={() => inputRef.current?.click()}
+              >
+                {pending ? 'Enviando…' : 'Enviar'}
+              </button>
+            </>
           )}
-        </p>
-      )}
-      {actions.can('upload') && (
-        <form onSubmit={onSubmit}>
-          <label htmlFor={inputId}>
-            Enviar PDF
-            <input
-              id={inputId}
-              type="file"
-              accept="application/pdf,.pdf"
-              onChange={(event) => {
-                setArquivo(event.target.files?.[0] ?? null)
-                if (erroArquivo) {
-                  setErroArquivo(null)
-                }
-              }}
-              disabled={pending}
-            />
-          </label>
-          {erroArquivo && (
-            <p className="field-error" role="alert">
-              {erroArquivo}
-            </p>
+          {!podeEnviar && podeVisualizar && (
+            <button type="button" className="ghost" disabled={baixando} onClick={() => void visualizar()}>
+              {baixando ? 'Abrindo…' : 'Visualizar'}
+            </button>
           )}
-          <button type="submit" disabled={pending}>
-            {pending ? 'Enviando…' : 'Enviar PDF'}
-          </button>
-        </form>
+          {!podeEnviar && !podeVisualizar && <span className="muted">Aguarde</span>}
+        </div>
+      </div>
+
+      {(podeAprovar || podeReprovar) && (
+        <PainelParecerDocumento documento={documento} pending={pending} onParecer={onParecer} />
       )}
-      <PainelParecerDocumento
-        documento={documento}
-        pending={pending}
-        onParecer={onParecer}
-      />
     </article>
   )
 }
@@ -343,10 +353,6 @@ function PainelParecerDocumento({
   const [erro, setErro] = useState<string | null>(null)
   const campoId = `parecer-${documento.id}`
 
-  if (!podeAprovar && !podeReprovar) {
-    return null
-  }
-
   function disparar(acao: 'APROVAR' | 'REPROVAR') {
     const limpo = texto.trim()
     if (acao === 'REPROVAR' && limpo.length < PARECER_REPROVAR_MIN) {
@@ -365,18 +371,17 @@ function PainelParecerDocumento({
 
   return (
     <form
-      className="painel-decisao"
+      className="painel-decisao painel-decisao-compacto"
       onSubmit={(event) => {
         event.preventDefault()
       }}
     >
-      <h3>Parecer</h3>
       <label htmlFor={campoId}>
         Parecer
         <textarea
           id={campoId}
           name="parecer"
-          rows={4}
+          rows={3}
           value={texto}
           onChange={(event) => {
             setTexto(event.target.value)

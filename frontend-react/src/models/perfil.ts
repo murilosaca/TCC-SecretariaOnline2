@@ -44,11 +44,11 @@ export type NotificacaoPreferencia = {
   _links: HateoasLinks
 }
 
-export const PRIORIDADES: { id: PrioridadeNotificacao; label: string }[] = [
-  { id: 'CRITICAL', label: 'Crítica' },
-  { id: 'HIGH', label: 'Alta' },
-  { id: 'MEDIUM', label: 'Média' },
-  { id: 'LOW', label: 'Baixa' },
+export const PRIORIDADES: { id: PrioridadeNotificacao; label: string; descricao: string }[] = [
+  { id: 'CRITICAL', label: 'Crítica', descricao: 'Avisos urgentes do sistema; sempre ativos.' },
+  { id: 'HIGH', label: 'Alta', descricao: 'Deliberações, prazos e ações que pedem atenção rápida.' },
+  { id: 'MEDIUM', label: 'Média', descricao: 'Atualizações de trâmites e lembretes do dia a dia.' },
+  { id: 'LOW', label: 'Baixa', descricao: 'Informativos gerais e mensagens de menor urgência.' },
 ]
 
 export const IDENTIDADES_GENERO = [

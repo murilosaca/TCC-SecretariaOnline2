@@ -16,7 +16,10 @@ export function Eventos() {
       <header className="page-head">
         <div>
           <h1>Eventos</h1>
-          <p className="muted">Confirme presença apenas quando a janela estiver aberta (RF-F1-009).</p>
+          <p className="muted">
+            Eventos formativos do seu curso: consulte datas, carga horária e situação da presença.
+            O botão Presença aparece só enquanto a janela de validação estiver aberta.
+          </p>
         </div>
       </header>
 
@@ -34,12 +37,7 @@ export function Eventos() {
           Carregando eventos…
         </p>
       )}
-      {lista.data && lista.data.content.length === 0 && (
-        <p className="empty" role="status">
-          Nenhum evento disponível no momento.
-        </p>
-      )}
-      {lista.data && lista.data.content.length > 0 && (
+      {lista.data && (
         <table>
           <thead>
             <tr>
@@ -52,9 +50,15 @@ export function Eventos() {
             </tr>
           </thead>
           <tbody>
-            {lista.data.content.map((item) => (
-              <Linha key={item.id} item={item} />
-            ))}
+            {lista.data.content.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="tabela-vazio" role="status">
+                  Nenhum evento disponível no momento.
+                </td>
+              </tr>
+            ) : (
+              lista.data.content.map((item) => <Linha key={item.id} item={item} />)
+            )}
           </tbody>
         </table>
       )}

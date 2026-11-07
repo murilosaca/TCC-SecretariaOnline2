@@ -8,12 +8,17 @@ import { VerificarCertificado } from './VerificarCertificado'
 const verificarCertificado = vi.fn()
 const jwks = vi.fn()
 const verificarAssinatura = vi.fn()
+const useAuth = vi.fn()
 
 vi.mock('../../api/publico', () => ({
   publicoApi: {
     verificarCertificado: (...args: unknown[]) => verificarCertificado(...args),
     jwks: (...args: unknown[]) => jwks(...args),
   },
+}))
+
+vi.mock('../../auth/AuthContext', () => ({
+  useAuth: () => useAuth(),
 }))
 
 vi.mock('../../lib/certificadoPublico', async () => {
@@ -48,6 +53,7 @@ describe('VerificarCertificado', () => {
     verificarCertificado.mockReset()
     jwks.mockReset()
     verificarAssinatura.mockReset()
+    useAuth.mockReturnValue({ status: 'anonymous', links: {} })
   })
 
   it('mostra inválido sem dados quando o hash não existe (F0.7-c)', async () => {
@@ -57,6 +63,8 @@ describe('VerificarCertificado', () => {
       expect(screen.getByText('Certificado inválido')).toBeTruthy()
     })
     expect(screen.getByText(/não pôde ser verificado/)).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Voltar ao login' })).toBeTruthy()
+    expect(screen.queryByRole('link', { name: '← Certificados' })).toBeNull()
     expect(screen.queryByText(/Beneficiário/)).toBeNull()
     expect(screen.queryByText(/Tela prevista/)).toBeNull()
   })
@@ -81,6 +89,30 @@ describe('VerificarCertificado', () => {
     expect(screen.getByText('Aluno Dev')).toBeTruthy()
     expect(screen.getByText('Oficina')).toBeTruthy()
     expect(screen.getByText('Ver chave pública')).toBeTruthy()
+    expect(screen.queryByRole('link', { name: '← Certificados' })).toBeNull()
+  })
+
+  it('mostra Voltar para Certificados só com sessão e _links.certificados', async () => {
+    useAuth.mockReturnValue({ status: 'authenticated', links: { certificados: '/certificados' } })
+    verificarCertificado.mockResolvedValue({
+      status: 'VALIDO',
+      hashSha256: HASH,
+      assinaturaEd25519: 'assinatura',
+      beneficiarioNome: 'Aluno Dev',
+      atividade: 'Oficina',
+      cargaHoraria: 4,
+      emitidoEm: '2026-09-20T18:00:00Z',
+      jwksUrl: '/.well-known/jwks.json',
+    })
+    jwks.mockResolvedValue({ keys: [{ kty: 'OKP', crv: 'Ed25519', x: 'abc' }] })
+    verificarAssinatura.mockResolvedValue(true)
+    renderHash(`/publico/verificar-certificado/${HASH}`)
+    await waitFor(() => {
+      expect(screen.getByRole('link', { name: '← Certificados' })).toBeTruthy()
+    })
+    expect(screen.getByRole('link', { name: '← Certificados' }).getAttribute('href')).toBe(
+      '/certificados',
+    )
   })
 
   it('esconde beneficiário se a assinatura falhar no browser (F0.7-d)', async () => {

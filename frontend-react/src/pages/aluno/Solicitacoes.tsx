@@ -31,7 +31,10 @@ export function Solicitacoes() {
       <header className="page-head">
         <div>
           <h1>Minhas solicitações</h1>
-          <p className="muted">Acompanhe o andamento e o prazo de cada pedido (RF-F1-005-a).</p>
+          <p className="muted">
+            Acompanhe os pedidos abertos junto à secretaria: situação, prazo e SLA de cada
+            solicitação.
+          </p>
         </div>
         {actions.can('novaSolicitacao') && (
           <Link to="/solicitacoes/nova" className="button-link">
@@ -80,10 +83,7 @@ export function Solicitacoes() {
           Carregando solicitações…
         </p>
       )}
-      {lista.data && lista.data.content.length === 0 && (
-        <p className="empty">Nenhuma solicitação encontrada.</p>
-      )}
-      {lista.data && lista.data.content.length > 0 && (
+      {lista.data && (
         <table>
           <thead>
             <tr>
@@ -96,9 +96,15 @@ export function Solicitacoes() {
             </tr>
           </thead>
           <tbody>
-            {lista.data.content.map((item) => (
-              <Linha key={item.id} item={item} />
-            ))}
+            {lista.data.content.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="tabela-vazio" role="status">
+                  Nenhuma solicitação encontrada.
+                </td>
+              </tr>
+            ) : (
+              lista.data.content.map((item) => <Linha key={item.id} item={item} />)
+            )}
           </tbody>
         </table>
       )}

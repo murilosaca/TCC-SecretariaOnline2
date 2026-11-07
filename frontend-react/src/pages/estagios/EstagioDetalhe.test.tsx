@@ -13,6 +13,7 @@ vi.mock('../../api/estagios', () => ({
     enviarDocumento: vi.fn(),
     parecer: vi.fn(),
     encerrar: vi.fn(),
+    baixar: vi.fn(),
   },
 }))
 
@@ -84,17 +85,24 @@ describe('EstagioDetalhe', () => {
     })
   })
 
-  it('só mostra upload e arquivar quando o rel existe', async () => {
+  it('mostra cards de documento e tabela de pareceres sem abas', async () => {
     obter.mockResolvedValue(base)
     const { unmount } = renderDetalhe()
     await waitFor(() => {
-      expect(screen.getByText('TCE')).toBeTruthy()
+      expect(screen.getByRole('heading', { name: 'TCE' })).toBeTruthy()
     })
-    expect(screen.getAllByRole('button', { name: 'Enviar PDF' })).toHaveLength(1)
+    expect(screen.getByRole('heading', { name: 'Detalhes' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Relatório final' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Pareceres' })).toBeTruthy()
+    expect(screen.queryByRole('heading', { name: 'Documentos' })).toBeNull()
+    expect(screen.queryByRole('tab', { name: 'Documentos' })).toBeNull()
+    expect(screen.getAllByRole('button', { name: 'Enviar' })).toHaveLength(1)
+    expect(screen.getByText('Aguarde')).toBeTruthy()
+    expect(screen.getByText(/Envie o PDF deste documento/)).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Arquivar estágio' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Aprovar' })).toBeNull()
-    fireEvent.click(screen.getByRole('tab', { name: 'Pareceres' }))
-    expect(screen.getByText('Nenhum parecer registrado.')).toBeTruthy()
+    expect(screen.getByText('Nenhum parecer registrado ainda.')).toBeTruthy()
+    expect(screen.getByRole('columnheader', { name: 'Documento' })).toBeTruthy()
     unmount()
 
     obter.mockResolvedValue({
@@ -105,6 +113,7 @@ describe('EstagioDetalhe', () => {
           ...base.documentos[1],
           estado: 'AGUARDANDO_PARECER',
           _links: {
+            download: '/estagios/e1/documentos/d2/arquivo',
             revisar: '/estagios/e1',
             aprovar: '/estagios/e1/documentos/d2/parecer',
             reprovar: '/estagios/e1/documentos/d2/parecer',
@@ -118,6 +127,7 @@ describe('EstagioDetalhe', () => {
     })
     expect(screen.getByRole('button', { name: 'Reprovar' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Arquivar estágio' })).toBeTruthy()
-    expect(screen.queryByRole('button', { name: 'Enviar PDF' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Visualizar' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Enviar' })).toBeNull()
   })
 })

@@ -12,9 +12,31 @@ export default defineConfig({
     port: 5174,
     proxy: {
       '/academico': { target: 'http://localhost:8080', changeOrigin: true },
-      '/publico': { target: 'http://localhost:8080', changeOrigin: true },
+      '/publico': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        bypass(req) {
+          // SPA: /publico/verificar-* — API JSON continua no proxy
+          if (req.headers.accept?.includes('text/html')) {
+            return '/index.html'
+          }
+        },
+      },
       '/auth': { target: 'http://localhost:8080', changeOrigin: true },
-      '/me': { target: 'http://localhost:8080', changeOrigin: true },
+      '/me': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        bypass(req) {
+          // Prefixo /me também pega /meus-atendimentos no refresh (F5)
+          const path = req.url?.split('?')[0] ?? ''
+          if (path === '/meus-atendimentos' || path.startsWith('/meus-')) {
+            return '/index.html'
+          }
+          if (req.headers.accept?.includes('text/html')) {
+            return '/index.html'
+          }
+        },
+      },
       '/bff': { target: 'http://localhost:8080', changeOrigin: true },
       '/requests': { target: 'http://localhost:8080', changeOrigin: true },
       '/request-types': { target: 'http://localhost:8080', changeOrigin: true },

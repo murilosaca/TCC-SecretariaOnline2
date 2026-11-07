@@ -39,6 +39,7 @@ describe('Tccs', () => {
     await waitFor(() => {
       expect(screen.getByText('Nenhum TCC registrado. Consulte a secretaria.')).toBeTruthy()
     })
+    expect(screen.getByRole('columnheader', { name: 'Título' })).toBeTruthy()
     expect(screen.queryByText('Novo TCC')).toBeNull()
   })
 

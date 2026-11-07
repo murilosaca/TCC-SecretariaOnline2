@@ -109,10 +109,7 @@ export function TccDetalhe() {
       {item && (
         <>
           <header className="page-head">
-            <div>
-              <h1>{item.titulo}</h1>
-              <p className="muted">{item.alunoNome || item.orientadorRotulo || ''}</p>
-            </div>
+            <h1>{item.titulo}</h1>
             <span className={`badge estado-${item.estado.toLowerCase()}`}>{rotuloEstadoTcc(item.estado)}</span>
           </header>
 
@@ -154,11 +151,11 @@ export function TccDetalhe() {
           </section>
 
           {actions.can('download') && (
-            <p>
+            <div className="action-bar">
               <button type="button" className="ghost" onClick={() => void baixar()} disabled={baixando}>
                 {baixando ? 'Baixando…' : 'Baixar TCC'}
               </button>
-            </p>
+            </div>
           )}
 
           {actions.can('upload-final') && (

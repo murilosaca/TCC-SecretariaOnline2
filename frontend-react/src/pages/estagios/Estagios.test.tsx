@@ -45,6 +45,7 @@ describe('Estagios', () => {
     await waitFor(() => {
       expect(screen.getByText('Você não possui estágios registrados.')).toBeTruthy()
     })
+    expect(screen.getByRole('columnheader', { name: 'Empresa' })).toBeTruthy()
     expect(screen.queryByText('Novo estágio')).toBeNull()
   })
 

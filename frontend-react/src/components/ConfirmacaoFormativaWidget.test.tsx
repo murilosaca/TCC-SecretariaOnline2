@@ -13,6 +13,7 @@ describe('ConfirmacaoFormativaWidget', () => {
     )
     expect(screen.queryByRole('button', { name: 'Confirmar' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Cancelar' })).toBeNull()
+    expect(screen.getByText(/Nenhuma ação disponível/)).toBeTruthy()
   })
 
   it('mostra Confirmar somente com _links.confirmar', () => {
@@ -25,5 +26,18 @@ describe('ConfirmacaoFormativaWidget', () => {
     )
     expect(screen.getByRole('button', { name: 'Confirmar' })).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Cancelar' })).toBeNull()
+  })
+
+  it('trata Ver comprovante como ação e não mostra empty state', () => {
+    render(
+      <ConfirmacaoFormativaWidget
+        links={{ comprovante: '/formativas/1/comprovante' }}
+        onConfirm={() => undefined}
+        onCancel={() => undefined}
+        onComprovante={() => undefined}
+      />,
+    )
+    expect(screen.getByRole('button', { name: 'Ver comprovante' })).toBeTruthy()
+    expect(screen.queryByText(/Nenhuma ação disponível/)).toBeNull()
   })
 })

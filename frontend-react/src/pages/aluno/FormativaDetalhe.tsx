@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ApiError } from '../../api/client'
@@ -9,6 +10,8 @@ import { rotuloEstadoFormativa, rotuloOrigemFormativa } from '../../lib/formativ
 export function FormativaDetalhe() {
   const { id = '' } = useParams()
   const queryClient = useQueryClient()
+  const [avisoComprovante, setAvisoComprovante] = useState<string | null>(null)
+  const [abrindoComprovante, setAbrindoComprovante] = useState(false)
 
   const detalhe = useQuery({
     queryKey: ['formativa', id],
@@ -39,6 +42,23 @@ export function FormativaDetalhe() {
   const pending = confirmar.isPending || cancelar.isPending
   const erroAcao = confirmar.error ?? cancelar.error
 
+  async function abrirComprovante() {
+    const href = acoes.href('comprovante')
+    if (!href) {
+      return
+    }
+    setAvisoComprovante(null)
+    setAbrindoComprovante(true)
+    try {
+      const resposta = await formativasApi.comprovante(href)
+      window.open(resposta.downloadUrl, '_blank', 'noopener')
+    } catch {
+      setAvisoComprovante('Não foi possível abrir o comprovante.')
+    } finally {
+      setAbrindoComprovante(false)
+    }
+  }
+
   return (
     <section className="page detalhe">
       <p>
@@ -64,40 +84,16 @@ export function FormativaDetalhe() {
       {item && (
         <>
           <header className="page-head">
-            <div>
-              <h1>{item.titulo}</h1>
-              <p className="muted">
-                {rotuloOrigemFormativa(item.origem)} · {item.cargaHoraria}h
-              </p>
-            </div>
+            <h1>{item.titulo}</h1>
             <span className={`badge estado-${item.estado.toLowerCase()}`}>
               {rotuloEstadoFormativa(item.estado)}
             </span>
           </header>
 
-          {acoes.can('comprovante') && (
-            <p>
-              <button
-                type="button"
-                className="ghost"
-                onClick={() => {
-                  const href = acoes.href('comprovante')
-                  if (!href) {
-                    return
-                  }
-                  void formativasApi.comprovante(href).then((resposta) => {
-                    window.open(resposta.downloadUrl, '_blank', 'noopener')
-                  })
-                }}
-              >
-                Ver comprovante
-              </button>
-            </p>
-          )}
-
-          {erroAcao && (
+          {(erroAcao || avisoComprovante) && (
             <div className="banner danger" role="alert">
-              {erroAcao instanceof ApiError ? erroAcao.message : 'Não foi possível concluir a ação.'}
+              {avisoComprovante ??
+                (erroAcao instanceof ApiError ? erroAcao.message : 'Não foi possível concluir a ação.')}
             </div>
           )}
 
@@ -106,11 +102,21 @@ export function FormativaDetalhe() {
             pending={pending}
             onConfirm={() => confirmar.mutate()}
             onCancel={() => cancelar.mutate()}
+            onComprovante={() => void abrirComprovante()}
+            comprovantePending={abrindoComprovante}
           />
 
-          <article className="panel">
-            <h2>Metadados</h2>
-            <dl className="resumo">
+          <article className="panel formativa-detalhes">
+            <h2>Detalhes</h2>
+            <dl className="resumo resumo-horizontal">
+              <div>
+                <dt>Origem</dt>
+                <dd>{rotuloOrigemFormativa(item.origem)}</dd>
+              </div>
+              <div>
+                <dt>Carga horária</dt>
+                <dd>{item.cargaHoraria}h</dd>
+              </div>
               <div>
                 <dt>Estado</dt>
                 <dd>{rotuloEstadoFormativa(item.estado)}</dd>
@@ -120,7 +126,7 @@ export function FormativaDetalhe() {
                 <dd>{new Date(item.createdAt).toLocaleString('pt-BR')}</dd>
               </div>
               {item.parecer && (
-                <div>
+                <div className="formativa-detalhes-parecer">
                   <dt>Parecer da CAAF</dt>
                   <dd>{item.parecer}</dd>
                 </div>
@@ -132,4 +138,3 @@ export function FormativaDetalhe() {
     </section>
   )
 }
-

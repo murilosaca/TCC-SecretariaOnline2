@@ -1,3 +1,4 @@
+import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { ApiError } from '../../api/client'
@@ -109,28 +110,30 @@ function InicioAluno() {
           <KpiRowAluno loading={dashboard.isLoading} kpis={dashboard.data.kpis} />
 
           <div className="dashboard-main">
-            <div className="dashboard-col">
-              <PendenciasBloco
-                loading={dashboard.isLoading}
-                itens={dashboard.data.pendencias}
-                onRetry={() => dashboard.refetch()}
-              />
-              <FormativasPendenciasBloco
-                loading={dashboard.isLoading}
-                itens={dashboard.data.pendenciasFormativas}
-                onRetry={() => dashboard.refetch()}
-              />
-              <SolicitacoesBloco
-                loading={dashboard.isLoading}
-                itens={dashboard.data.ultimasSolicitacoes}
-                onRetry={() => dashboard.refetch()}
-              />
+            <div className="dashboard-split">
+              <div className="dashboard-col">
+                <PendenciasBloco
+                  loading={dashboard.isLoading}
+                  itens={dashboard.data.pendencias}
+                  onRetry={() => dashboard.refetch()}
+                />
+                <FormativasPendenciasBloco
+                  loading={dashboard.isLoading}
+                  itens={dashboard.data.pendenciasFormativas}
+                  onRetry={() => dashboard.refetch()}
+                />
+              </div>
               <EventosBloco
                 loading={dashboard.isLoading}
                 itens={dashboard.data.proximosEventos}
                 onRetry={() => dashboard.refetch()}
               />
             </div>
+            <SolicitacoesBloco
+              loading={dashboard.isLoading}
+              itens={dashboard.data.ultimasSolicitacoes}
+              onRetry={() => dashboard.refetch()}
+            />
           </div>
         </>
       )}
@@ -379,6 +382,35 @@ function KpiNumerico({
   )
 }
 
+const LISTA_PREVIEW = 3
+
+function ListaComMostrarMais({
+  total,
+  children,
+}: {
+  total: number
+  children: (visiveis: number) => ReactNode
+}) {
+  const [expandido, setExpandido] = useState(false)
+  const temMais = total > LISTA_PREVIEW
+  const visiveis = expandido || !temMais ? total : LISTA_PREVIEW
+
+  return (
+    <>
+      {children(visiveis)}
+      {temMais && (
+        <button
+          type="button"
+          className="mostrar-mais"
+          onClick={() => setExpandido((atual) => !atual)}
+        >
+          {expandido ? 'Mostrar menos' : 'Mostrar mais'}
+        </button>
+      )}
+    </>
+  )
+}
+
 function PendenciasBloco({
   loading,
   itens,
@@ -407,15 +439,22 @@ function PendenciasBloco({
       )}
       {!loading && estado === 'empty' && <p className="empty">Nenhuma pendência no momento.</p>}
       {!loading && estado === 'ok' && itens && (
-        <ul className="pendencia-list">
-          {itens.map((item) => (
-            <li key={item.id}>
-              <Link to={item.href}>
-                {item.titulo} <span className={`badge estado-${item.estado.toLowerCase()}`}>{rotuloCodigo(item.estado)}</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <ListaComMostrarMais total={itens.length}>
+          {(visiveis) => (
+            <ul className="pendencia-list">
+              {itens.slice(0, visiveis).map((item) => (
+                <li key={item.id}>
+                  <Link to={item.href}>
+                    {item.titulo}{' '}
+                    <span className={`badge estado-${item.estado.toLowerCase()}`}>
+                      {rotuloCodigo(item.estado)}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </ListaComMostrarMais>
       )}
     </section>
   )
@@ -552,24 +591,30 @@ function EventosBloco({
       )}
       {!loading && estado === 'empty' && <p className="empty">Nenhum evento com janela aberta hoje.</p>}
       {!loading && estado === 'ok' && itens && (
-        <ul className="pendencia-list">
-          {itens.map((item) => (
-            <li key={item.id}>
-              <Link to={item.href} className="evento-card">
-                <span>{item.titulo}</span>
-                <span className="evento-card-meta">
-                  <time dateTime={item.inicioEm}>
-                    {new Date(item.inicioEm).toLocaleString('pt-BR', {
-                      dateStyle: 'short',
-                      timeStyle: 'short',
-                    })}
-                  </time>
-                  {item.janelaAtiva && <span className="badge estado-em_andamento">Janela aberta</span>}
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <ListaComMostrarMais total={itens.length}>
+          {(visiveis) => (
+            <ul className="pendencia-list">
+              {itens.slice(0, visiveis).map((item) => (
+                <li key={item.id}>
+                  <Link to={item.href} className="evento-card">
+                    <span>{item.titulo}</span>
+                    <span className="evento-card-meta">
+                      <time dateTime={item.inicioEm}>
+                        {new Date(item.inicioEm).toLocaleString('pt-BR', {
+                          dateStyle: 'short',
+                          timeStyle: 'short',
+                        })}
+                      </time>
+                      {item.janelaAtiva && (
+                        <span className="badge estado-em_andamento">Janela aberta</span>
+                      )}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </ListaComMostrarMais>
       )}
     </section>
   )

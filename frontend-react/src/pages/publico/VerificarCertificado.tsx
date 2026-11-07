@@ -2,6 +2,8 @@ import { Link, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { ApiError } from '../../api/client'
 import { publicoApi } from '../../api/publico'
+import { useAuth } from '../../auth/AuthContext'
+import { useActions } from '../../hooks/useActions'
 import {
   chaveEd25519,
   hashValido,
@@ -43,6 +45,7 @@ export function VerificarCertificado() {
   if (consulta.isLoading) {
     return (
       <section className="page" aria-busy="true">
+        <VoltarSessao />
         <h1>Verificar certificado</h1>
         <p className="muted">Consultando o certificado…</p>
         <div className="skeleton skeleton-kpi" aria-hidden="true" />
@@ -58,6 +61,7 @@ export function VerificarCertificado() {
     if (status === 429) {
       return (
         <section className="page">
+          <VoltarSessao />
           <h1>Verificar certificado</h1>
           <div className="banner warning" role="alert">
             Muitas verificações realizadas. Aguarde antes de tentar novamente.
@@ -67,6 +71,7 @@ export function VerificarCertificado() {
     }
     return (
       <section className="page">
+        <VoltarSessao />
         <h1>Verificar certificado</h1>
         <div className="banner danger" role="alert">
           Não foi possível verificar o certificado no momento.{' '}
@@ -86,6 +91,35 @@ export function VerificarCertificado() {
   return <ResultadoValido hash={hash} dados={dados.metadados} />
 }
 
+function VoltarSessao() {
+  const { status, links } = useAuth()
+  const actions = useActions(links)
+  if (status !== 'authenticated') {
+    return null
+  }
+  const certificados = actions.href('certificados')
+  if (certificados) {
+    return (
+      <p>
+        <Link to={certificados} className="ghost-link">
+          ← Certificados
+        </Link>
+      </p>
+    )
+  }
+  const egressoInicio = actions.href('egresso-inicio')
+  if (egressoInicio) {
+    return (
+      <p>
+        <Link to={egressoInicio} className="ghost-link">
+          ← Início
+        </Link>
+      </p>
+    )
+  }
+  return null
+}
+
 function ResultadoValido({
   hash,
   dados,
@@ -101,6 +135,7 @@ function ResultadoValido({
 }) {
   return (
     <section className="page">
+      <VoltarSessao />
       <h1>Verificar certificado</h1>
       <Selo estado="valido" />
       <article className="panel">
@@ -117,7 +152,7 @@ function ResultadoValido({
           <strong>Emissão</strong> {new Date(dados.emitidoEm).toLocaleString('pt-BR')}
         </p>
         <p>
-          <strong>Hash</strong> <code>{hash}</code>
+          <strong>Hash</strong> <code className="hash-quebra">{hash}</code>
         </p>
       </article>
       <article className="panel">
@@ -136,16 +171,20 @@ function ResultadoValido({
 }
 
 function ResultadoInvalido() {
+  const { status } = useAuth()
   return (
     <section className="page">
+      <VoltarSessao />
       <h1>Verificar certificado</h1>
       <Selo estado="invalido" />
       <p className="empty">
         Este certificado não pôde ser verificado. Ele pode ser falso ou ter sido adulterado.
       </p>
-      <p>
-        <Link to="/login">Voltar ao login</Link>
-      </p>
+      {status !== 'authenticated' && (
+        <p>
+          <Link to="/login">Voltar ao login</Link>
+        </p>
+      )}
     </section>
   )
 }

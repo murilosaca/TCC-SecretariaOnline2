@@ -28,6 +28,7 @@ data class SolicitacaoResponse(
     val createdAt: OffsetDateTime?,
     val updatedAt: OffsetDateTime?,
     val thumbnailUrl: String? = null,
+    val anexos: List<AnexoSolicitacaoResponse> = emptyList(),
     val eventos: List<SolicitacaoEventoResponse>,
     @get:JsonProperty("_links")
     val links: Map<String, String>,

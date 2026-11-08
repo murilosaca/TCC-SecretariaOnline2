@@ -12,6 +12,7 @@ const vazio = {
   periodo: 1,
   cargaHorariaTotal: 60,
   creditos: 4,
+  vagas: 0,
 }
 
 export function Disciplinas() {
@@ -58,6 +59,7 @@ export function Disciplinas() {
       periodo: disciplina.periodo,
       cargaHorariaTotal: disciplina.cargaHorariaTotal,
       creditos: disciplina.creditos,
+      vagas: disciplina.vagas,
     })
   }
 
@@ -131,6 +133,15 @@ export function Disciplinas() {
               onChange={(e) => setForm({ ...form, creditos: Number(e.target.value) })}
             />
           </label>
+          <label>
+            Vagas
+            <input
+              type="number"
+              min={0}
+              value={form.vagas}
+              onChange={(e) => setForm({ ...form, vagas: Number(e.target.value) })}
+            />
+          </label>
         </div>
         <button type="submit" disabled={salvar.isPending || cursosIndisponiveis}>
           Salvar
@@ -148,6 +159,7 @@ export function Disciplinas() {
               <th>Nome</th>
               <th>Período</th>
               <th>CH</th>
+              <th>Vagas</th>
               <th></th>
             </tr>
           </thead>
@@ -183,6 +195,7 @@ function DisciplinaLinha({
       <td>{disciplina.nome}</td>
       <td>{disciplina.periodo}</td>
       <td>{disciplina.cargaHorariaTotal}</td>
+      <td>{disciplina.vagas}</td>
       <td className="actions">
         {actions.can('atualizar') && (
           <button type="button" className="ghost" onClick={() => onEditar(disciplina)}>

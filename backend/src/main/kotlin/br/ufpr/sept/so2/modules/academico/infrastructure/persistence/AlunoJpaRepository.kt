@@ -12,6 +12,8 @@ interface AlunoJpaRepository : JpaRepository<AlunoJpaEntity, UUID>, JpaSpecifica
 
     fun findByEmailInstitucionalIgnoreCase(email: String): Optional<AlunoJpaEntity>
 
+    fun findByIdUsuario(idUsuario: UUID): Optional<AlunoJpaEntity>
+
     fun existsByGrrIgnoreCase(grr: String): Boolean
 
     fun existsByEmailInstitucionalIgnoreCase(email: String): Boolean

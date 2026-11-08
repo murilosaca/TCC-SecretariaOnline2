@@ -12,6 +12,7 @@ data class CoordinatorReportResponse(
     val series: SeriesResponse,
     val pendencias: List<PendenciaResponse>,
     val cargaPorDeliberador: List<CargaDeliberadorResponse>,
+    val comparativo: List<PontoComparativoResponse>,
     @get:JsonProperty("_links")
     val links: Map<String, String>,
 ) {
@@ -67,6 +68,12 @@ data class CoordinatorReportResponse(
         val tempoMedioDias: Double,
     )
 
+    data class PontoComparativoResponse(
+        val cursoSigla: String,
+        val horasValidadas: Int,
+        val taxaIndeferimento: Double,
+    )
+
     companion object {
         fun from(relatorio: RelatorioCoordenador, links: Map<String, String>): CoordinatorReportResponse =
             CoordinatorReportResponse(
@@ -100,6 +107,9 @@ data class CoordinatorReportResponse(
                 },
                 cargaPorDeliberador = relatorio.cargaPorDeliberador.map {
                     CargaDeliberadorResponse(it.nome, it.quantidade, it.tempoMedioDias)
+                },
+                comparativo = relatorio.comparativo.map {
+                    PontoComparativoResponse(it.cursoSigla, it.horasValidadas, it.taxaIndeferimento)
                 },
                 links = links,
             )

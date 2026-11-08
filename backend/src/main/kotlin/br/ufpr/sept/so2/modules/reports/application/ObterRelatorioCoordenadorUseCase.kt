@@ -32,11 +32,18 @@ class ObterRelatorioCoordenadorUseCase(
         RelatorioCoordenadorAcesso.exigirDono(curso.id, coordenados)
 
         val periodo = resolverPeriodo(periodoCodigo)
-        return queryPort.agregar(curso.id, periodo).copy(
+        val base = queryPort.agregar(curso.id, periodo)
+        val comparativo = coordenados.mapNotNull { id ->
+            val escopo = escopoPort.resolverCurso(id) ?: return@mapNotNull null
+            val kpis = if (id == curso.id) base.kpis else queryPort.agregar(id, periodo).kpis
+            RelatorioCoordenador.PontoComparativo(escopo.sigla, kpis.horasValidadas, kpis.taxaIndeferimento)
+        }.sortedBy { it.cursoSigla }
+        return base.copy(
             cursoSigla = curso.sigla,
             cursoNome = curso.nome,
             periodoCodigo = periodo?.codigo,
             periodoRotulo = periodo?.rotulo,
+            comparativo = comparativo,
         )
     }
 

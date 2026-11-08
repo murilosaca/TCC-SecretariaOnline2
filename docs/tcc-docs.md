@@ -134,7 +134,7 @@ O  sistema  deve  permitir  que  o  aluno  visualize  estágios  registrados  pe
 
 ## RF-F1-008 - Acompanhar TCC e enviar versão final
 
-O sistema deve permitir que o aluno acompanhe o status do TCC, visualize banca e datas-chave, e faça upload da versão final quando autorizado.
+O sistema deve permitir que o aluno acompanhe o status do TCC, visualize banca e datas-chave, e faça upload da versão final quando autorizado. A secretaria registra em POST/PUT /tccs (tcc.manage) e na tela /secretaria/tccs. Sem lote e sem certificado de conclusão (4.11).
 
 ## RF-F1-009 - Consultar eventos e confirmar presença
 
@@ -150,7 +150,7 @@ O  sistema  deve  permitir  que  o  aluno  visualize  atendimentos  registrados 
 
 ## 4.3 PORTAL DO EGRESSO
 
-RF-F2-001 - Visualizar dashboard read-only e reemitir documentos O sistema deve oferecer ao egresso autenticado um painel estritamente read-only com histórico acadêmico  resumido,  diploma,  certificados  emitidos  durante  o  curso  e  dados  de  colação, permitindo download do diploma e reemissão de certificados (regeneração do PDF original, sem nova chave de assinatura), com bloqueio de rotas exclusivas de aluno e redirecionamento pós-login adequado ao perfil EGRESSO.
+RF-F2-001 - Visualizar dashboard read-only e reemitir documentos O sistema deve oferecer ao egresso autenticado um painel estritamente read-only com histórico acadêmico  resumido,  diploma,  certificados  emitidos  durante  o  curso  e  dados  de  colação, permitindo download do diploma e reemissão de certificados (regeneração do PDF original, sem nova chave de assinatura), com bloqueio de rotas exclusivas de aluno e o login cai em /egresso/inicio pela capability alumni.view_own e pelo _links de GET /auth/me. Não há user.role.
 
 ## 4.4 PORTAL DO PROFESSOR
 
@@ -164,7 +164,7 @@ O sistema deve permitir que o professor com `event.manage` crie, edite, liste e 
 
 ## RF-F3-002-b - Operar validação de presença ao vivo
 
-O sistema deve permitir que o professor organizador conduza a operação ao vivo do evento - abrir  janelas  de  validação,  exibir  QR  ou  PIN  aos  alunos, acompanhar contagens em tempo real e encerrar o evento disparando emissão automática de certificados.
+O sistema deve permitir que o professor organizador conduza a operação ao vivo do evento - abrir  janelas  de  validação,  exibir  QR  ou  PIN  aos  alunos, acompanhar contagens em tempo real e encerrar em POST /events/{id}/encerrar, estado CONCLUIDO, sem PDF. O certificado oficial sai na aprovação da CAAF.
 
 ## RF-F3-003-a - Listar fila de solicitações para deliberação
 
@@ -184,7 +184,7 @@ O  sistema  deve  permitir  que  orientadores  e  membros do COE visualizem est�
 
 ## RF-F3-006 - Avaliar TCC (orientador/banca)
 
-O  sistema  deve  permitir  que  orientadores  e  membros  de  banca  visualizem  TCCs  sob  sua responsabilidade,  baixem  o  arquivo  final,  registrem  nota  e  parecer,  e  disparem  emissão  de certificado de conclusão quando aprovado e elegível.
+O  sistema  deve  permitir  que  orientadores  e  membros  de  banca  visualizem  TCCs  sob  sua responsabilidade,  baixem  o  arquivo  final,  registrem  nota  e  parecer,  e  disparem  emissão  de certificado de conclusão quando aprovado e elegível (fora da demonstração).
 
 ## RF-F3-007 - Publicar comunicado para turma ou curso
 
@@ -236,7 +236,7 @@ O  sistema  deve  permitir  gestão  de  períodos  letivos  e  eventos  de  cal
 
 ## RF-F5-005-a - Listar e exportar egressos
 
-O sistema deve listar egressos com filtros e exportação CSV, exibindo situação do diploma e permitindo criação manual excepcional.
+O sistema deve listar egressos com filtros e exportação CSV, exibindo situação do diploma e sem criação manual e sem _links.novo. A lista é GET /egressos, de 20 em 20.
 
 ## RF-F5-005-b - Registrar colação de grau e entrega de diploma
 
@@ -256,7 +256,7 @@ O  sistema  deve  permitir  CRUD  de  eventos  formativos  institucionais  no  e
 
 ## RF-F5-008-b - Operar validação de presença (secretaria)
 
-O sistema deve permitir operação ao vivo de eventos pela secretária, paridade funcional com RF-F3-002-b, incluindo encerramento com emissão automática de certificados anti-fraude.
+O sistema deve permitir operação ao vivo de eventos pela secretária, paridade funcional com RF-F3-002-b, incluindo encerramento em POST /events/{id}/encerrar, estado CONCLUÍDO, sem PDF.
 
 ## RF-F5-009 - Importar dados em lote via planilha
 
@@ -272,7 +272,7 @@ O sistema deve exibir dashboards quantitativos com gráficos Recharts filtrados 
 
 ## RF-F5-012 - Gerenciar tarefas internas (kanban)
 
-O  sistema  deve  oferecer  kanban  de  tarefas  internas  da  secretaria  (pendente/concluída), controlado por feature flag `tasks.enabled`, sem bloquear demais fluxos do MVP.
+Fora da demonstração desta banca. O  sistema  deve  oferecer  kanban  de  tarefas  internas  da  secretaria  (pendente/concluída), controlado por feature flag `tasks.enabled`, sem bloquear demais fluxos do MVP.
 
 ## 4.7 COORDENACAO DE CURSO
 
@@ -304,7 +304,7 @@ O  sistema  deve  oferecer  editor  de  3  painéis  para  definir  `form\_schem
 
 ## RF-F7-004 - Gerenciar templates de comunicação
 
-O sistema deve permitir CRUD de templates de e-mail/push em Markdown com placeholders dinâmicos, preview com variáveis de exemplo e versionamento imutável por revisão.
+O sistema deve permitir CRUD de templates de e-mail em Markdown, em /admin/templates-comunicacao, com revisão em POST /{id}/revisoes, com placeholders dinâmicos, preview com variáveis de exemplo e versionamento imutável por revisão. Template de push (FCM) fica fora da demonstração.
 
 ## RF-F7-005 - Monitorar Outbox e jobs agendados
 
@@ -316,7 +316,7 @@ O sistema deve permitir pesquisa imutável na trilha de auditoria com filtros po
 
 ## RF-F7-007 - Visualizar saúde do sistema (KPIs operacionais)
 
-O sistema deve exibir KPIs operacionais (latência P95, Outbox pending, erros 5xx, uptime) via Spring Boot Actuator com polling e link para Grafana - fora do MVP (P3).
+O sistema deve exibir KPIs operacionais (latência P95, Outbox pending, erros 5xx, uptime) via Spring Boot Actuator com polling e link para Grafana - fora do MVP (P3) e fora da demonstração. O Actuator (health, info, metrics) já está no ar; a tela e o Grafana não entram.
 
 ## 4.9 FUNCIONALIDADES TRANSVERSAIS DE INTERFACE
 
@@ -326,7 +326,7 @@ O sistema deve permitir que qualquer usuário autenticado abra uma paleta de bus
 
 ## RF-F8-002 - Suporte e FAQ com abertura de ticket
 
-O sistema deve permitir que qualquer usuário autenticado consulte FAQ dinâmico em Accordion acessível e, se não  encontrar  resposta,  abra  ticket  de  suporte  com  protocolo  gerado  - preferencialmente via `RequestType=SUPORTE\_TECNICO` (workflow engine DRY).
+O sistema deve permitir que qualquer usuário autenticado consulte FAQ dinâmico em Accordion acessível e, se não  encontrar  resposta,  abra  ticket  de  suporte  com  protocolo  gerado. O FAQ é GET /suporte/faq, sem filtro por papel e sem ?perfil=. O ticket nasce em POST /requests com tipoCodigo=SUPORTE_TECNICO e protocolo PROT-…. Não há POST /support/tickets nem prefixo SUP-.
 
 ## 4.10 REQUISITOS TRANSVERSAIS DE ARQUITETURA
 
@@ -336,7 +336,7 @@ O sistema deve executar o ciclo de vida de todos os tipos de solicitação (meta
 
 ## RF-TR-002 - Hub de comunicação + entrega assíncrona (Outbox)
 
-O sistema deve publicar comunicações institucionais e enfileirar eventos de domínio na tabela `outbox\_event` para entrega assíncrona confiável (in-app, push, e-mail) sem RabbitMQ no MVP.
+O sistema deve publicar comunicações institucionais e enfileirar eventos de domínio na tabela `outbox\_event` para entrega assíncrona confiável, entrega in-app e e-mail. A entrega por push (FCM) fica fora da demonstração, sem RabbitMQ no MVP.
 
 ## RF-TR-003 - Emissão e verificação de certificados anti-fraude
 
@@ -352,15 +352,55 @@ O sistema deve autorizar por capabilities granulares (authorities dot-notation) 
 
 ## RF-TR-006 - BFF de dashboard contextual por perfil
 
-O sistema deve agregar em uma chamada HTTP os KPIs, pendências, listas recentes e `\_links` de atalhos do dashboard conforme o perfil ativo, com degradação graciosa se um submódulo falhar.
+O sistema deve agregar em uma chamada HTTP os KPIs, pendências, listas recentes e `\_links` de atalhos do dashboard conforme a capability do dashboard (dashboard.view_own, dashboard.view_self_professor ou dashboard.view_secretary) e o rel painel de GET /auth/me. Não há user.role. Com degradação graciosa se um submódulo falhar.
 
 ## RF-TR-007 - Notificações push + e-mail com fallback
 
-O sistema deve entregar notificações por push (FCM/Expo) e e-mail com política de prioridade, agregação (digest), Do Not Disturb e fallback SMTP institucional.
+O sistema deve entregar notificações in-app e por e-mail, com política de prioridade, agregação (digest), Do Not Disturb e fallback SMTP institucional. A entrega por push (FCM/Expo) fica fora da demonstração.
 
 ## RF-TR-008 - Presença em eventos formativos v4.1 (modos configuráveis)
 
 O sistema deve suportar confirmação de presença em eventos formativos internos com modos `QR\_SINGLE`, `QR\_DUAL`, `SECRET\_SINGLE`, `SECRET\_DUAL`, janelas temporais configuráveis e device binding - fora do escopo: chamada de aula regular (SIGA).
+
+## 4.11 Decisões de implementação
+
+Cada item traz o que o spec pedia, o que o sistema faz e por quê.
+
+| O spec pedia | O sistema faz | Por quê |
+| --- | --- | --- |
+| Templates em /communication-templates e POST /revisions | UI e API em /admin/templates-comunicacao; revisão nova em POST /{id}/revisoes | A demonstração já usa esse path |
+| Ticket em POST /support/tickets, protocolo SUP- | POST /requests com tipoCodigo=SUPORTE_TECNICO, protocolo PROT-… | O ticket é mais um tipo do motor (V034), não um recurso paralelo |
+| FAQ com ?perfil= espelhando o papel do JWT | GET /suporte/faq, a mesma lista para qualquer sessão autenticada | Autorização é o JWT; a lista não filtra por papel |
+| Busca por índice users/students e capabilities student.view_own / event.view | GET /search?q=, escopo dominio.acao, pg_trgm no Postgres, sem índice externo | A capability já recorta a consulta |
+| Autorização por user.role, hasRole, ROLE_*, authorities.includes ou claim cursoIds | Authority dominio.acao e _links. Escopo de curso no use case (CursoEscopoPort) | A UI não lê papel |
+| App com os portais todos | Expo só a whitelist de frontend-react-native/src/lib/navMenu.ts: início, egresso, solicitações, eventos, formativas, certificados, estágios, TCCs e contato | F5, F6, F7, CAAF, COE, busca, suporte, perfil e hub ficam na web. Ausência deles no app não é lacuna |
+| Rate limit com Bucket4j e Redis | Janela em memória no processo | Não há Redis nesta banca |
+| Flyway sempre ligado, ArchUnit, Testcontainers, migration V000 | ITs em H2, ddl-auto: create-drop, flyway.enabled: false. Última migration no código: V038. A primeira é a V001 | Decisão de fundação; dev/prod continuam com Flyway imutável |
+| F3.1 ausente ou 403 em /inicio | GET /bff/dashboard/professor, HTTP 200, capability dashboard.view_self_professor | O painel do professor aponta esse BFF |
+| Fila F5.2 | GET /requests com request.view_curso, slaBreached e PATCH /requests/bulk (V020) | Já demonstrado |
+| F6.2 | GET /reports/coordinator e a tela /coordenacao/relatorios | Já demonstrado |
+| F7.1–F7.8 | /admin/usuarios, /admin/perfis, /admin/autoridades, /admin/tipos-solicitacao, /admin/templates-comunicacao, /admin/jobs, /admin/audit-log, reset em POST /admin/usuarios/{id}/reset-senha | F7.9 continua fora |
+| Diploma | POST /diplomas, entrega em PATCH /diplomas/{id}/confirm-delivery, tela /secretaria/diplomas. Painel do egresso: GET /egressos/me | Já demonstrado |
+| Cadastro F5 de TCC | POST/PUT /tccs (tcc.manage) e /secretaria/tccs | Sem lote e sem certificado de conclusão |
+| Hub | GET/POST /communications (in-app e e-mail via Outbox) | Sem FCM |
+| CSV da página atual ou da lista inteira | Atrasados e egressos: filtro atual, página 0, size 100. Se o total passa de 100, a tela avisa: “O CSV traz só os 100 primeiros do filtro.” Egressos lista de 20 em 20 | Já demonstrado |
+| idCoordenador omitido zera o coordenador | Curso.atualizar trata idCoordenador nulo como manter | Não se apaga coordenador por omissão no PUT |
+
+Fora da demonstração
+
+- F7.9/Grafana
+- kanban F5.19
+- Expo web
+- FCM
+- cookie nativo (o app ficou em body + SecureStore)
+- HostPin em memória
+- claim cursoIds
+- CA-04 e REVOGADO
+- certificado de conclusão de TCC
+- paginação de Cursos, Alunos, Disciplinas e Calendários
+- FORWARD
+- evento semântico de calendário
+- ArchUnit e Testcontainers
 
 ## 5  REQUISITOS NÃO FUNCIONAIS
 
@@ -372,7 +412,7 @@ O  sistema  deve  armazenar  todas  as  senhas  de  usuário  exclusivamente  co
 
 ## RNF-SEC-02 - Autenticação JWT stateless com RS256
 
-O sistema deve emitir tokens de acesso JWT assinados com RS256 (chave privada RSA), com TTL de 15 minutos. O refresh token deve ser opaco (UUID armazenado em banco), com TTL de 7 dias, armazenado  no cliente como cookie `httpOnly; Secure; SameSite=Lax`. O access token deve ser armazenado apenas em memória JavaScript (nunca em `localStorage`).
+O sistema deve emitir tokens de acesso JWT assinados com RS256 (chave privada RSA), com TTL de 15 minutos. O refresh token deve ser opaco (UUID armazenado em banco), com TTL de 7 dias. O refresh na web continua cookie `httpOnly; Secure; SameSite=Lax` (`so2_refresh`). O access token deve ser armazenado apenas em memória JavaScript (nunca em `localStorage`). No app, o refresh vai no body `{ refreshToken }` + SecureStore. Cookie nativo fica fora da demonstração (4.11).
 
 ## RNF-SEC-03 - Refresh token rotativo com detecção de reutilização
 
@@ -380,7 +420,7 @@ A  cada  uso  do  refresh  token,  o  sistema  deve  emitir  um  novo  token  e 
 
 ## RNF-SEC-04 - Rate limiting em autenticação
 
-O sistema deve limitar tentativas de autenticação para mitigar ataques de força bruta. Na rota `POST /auth/login`, o limite é de 5 tentativas por minuto por par `IP + identificador` (Bucket4j). Após  10  falhas  consecutivas  para  o  mesmo  identificador,  a  conta  é  bloqueada  por  15  minutos (resposta  externa  anti-enumeração idêntica à de credencial inválida). O endpoint de recuperação de senha (`POST /auth/recuperar-senha`) mantém limite de 3 tentativas por hora por IP. Quando o rate limit é excedido, o sistema retorna HTTP 429 com corpo RFC 7807.
+O sistema deve limitar tentativas de autenticação para mitigar ataques de força bruta. Na rota `POST /auth/login`, o limite é de 5 tentativas por minuto por par `IP + identificador` (em janela de memória no processo, sem Bucket4j e sem Redis). Após  10  falhas  consecutivas  para  o  mesmo  identificador,  a  conta  é  bloqueada  por  15  minutos (resposta  externa  anti-enumeração idêntica à de credencial inválida). O endpoint de recuperação de senha (`POST /auth/recuperar-senha`) mantém limite de 3 tentativas por hora por IP. Quando o rate limit é excedido, o sistema retorna HTTP 429 com corpo RFC 7807.
 
 ## RNF-SEC-05 - Tokens de uso único para deep-links (JWT + JTI blacklist)
 
@@ -430,7 +470,7 @@ O  tempo entre a inserção de um evento na tabela `outbox\_event` (status `PEND
 
 ## RNF-DES-06 - Toda coleção retornada deve ser paginada
 
-Nenhum endpoint de listagem pode retornar coleções sem paginação. Todo `GET /{resource}` deve  aceitar  parâmetros  `page`,  `size`  (padrão  20,  máximo  100)  e  `sort`.  Queries  sem  `Pageable` devem falhar no ArchUnit.
+Nenhum endpoint de listagem pode retornar coleções sem paginação. Todo `GET /{resource}` deve  aceitar  parâmetros  `page`,  `size`  (padrão  20,  máximo  100)  e  `sort`.  Queries  sem  `Pageable` devem falhar no ArchUnit. A regra permanece como alvo; a cobrança de ArchUnit e Testcontainers nesta banca está fora da demonstração.
 
 ## 5.3 DISPONIBILIDADE
 
@@ -448,7 +488,7 @@ O  backend  deve  expor  os  endpoints  de  saúde via  Spring  Boot  Actuator: 
 
 ## RNF-DIS-04 - Observabilidade: alertas críticos de operação
 
-O sistema de monitoramento deve ter alertas Prometheus/Grafana configurados para: (a) taxa de erros 5xx &gt; 1% em janela de 5 minutos; (b) latência P99 &gt; 2 s em janela de 5 minutos; (c) fila Outbox pendente &gt; 200 eventos por mais de 2 minutos; (d) pool de conexões HikariCP com &gt; 5 conexões pendentes por mais de 1 minuto.
+Fora da demonstração. O sistema de monitoramento deve ter alertas Prometheus/Grafana configurados para: (a) taxa de erros 5xx &gt; 1% em janela de 5 minutos; (b) latência P99 &gt; 2 s em janela de 5 minutos; (c) fila Outbox pendente &gt; 200 eventos por mais de 2 minutos; (d) pool de conexões HikariCP com &gt; 5 conexões pendentes por mais de 1 minuto.
 
 - 5.4 USABILIDADE E ACESSIBILIDADE
 
@@ -492,7 +532,7 @@ A  porcentagem de blocos de código duplicados no projeto deve ser inferior a 3%
 
 ## RNF-MAN-05 - Clean Architecture enforced por ArchUnit
 
-As  regras  de  dependência  da  Clean  Architecture  devem  ser verificadas automaticamente por ArchUnit nos testes: (a) o pacote `domain/` não pode importar nenhuma classe de `org.springframework`, `jakarta.persistence`, ou `org.hibernate`; (b) o pacote `infrastructure/` de um módulo não pode ser importado pelo `infrastructure/` de outro módulo; (c) módulos comunicam-se apenas por interfaces em `application/ports/`.
+As  regras  de  dependência  da  Clean  Architecture  devem  ser verificadas automaticamente por ArchUnit nos testes: (a) o pacote `domain/` não pode importar nenhuma classe de `org.springframework`, `jakarta.persistence`, ou `org.hibernate`; (b) o pacote `infrastructure/` de um módulo não pode ser importado pelo `infrastructure/` de outro módulo; (c) módulos comunicam-se apenas por interfaces em `application/ports/`. A regra de dependência permanece como alvo. A cobrança de ArchUnit e Testcontainers nesta banca está fora da demonstração.
 
 ## 5.6 CONFIABILIDADE RNF-CON-01 - Padrão Outbox: atomicidade garantida para notificações
 
@@ -500,7 +540,7 @@ Toda mudança de estado que deve gerar notificação (email, push) deve persisti
 
 ## RNF-CON-02 - Migrations Flyway imutáveis e versionadas
 
-Toda alteração de schema  de banco de dados  deve  ser  feita  por  arquivo  Flyway `V###\_\_descricao.sql` com número de versão incrementado. É proibido editar qualquer arquivo de  migration  já  aplicado  a  qualquer  ambiente.  Correções  devem  ser  novas  migrations  (ex.: `V012\_\_fix\_index\_request.sql`). A validação Flyway (`spring.flyway.validate-on-migrate=true`) deve estar sempre ativa.
+Toda alteração de schema  de banco de dados  deve  ser  feita  por  arquivo  Flyway `V###\_\_descricao.sql` com número de versão incrementado. É proibido editar qualquer arquivo de  migration  já  aplicado  a  qualquer  ambiente.  Correções  devem  ser  novas  migrations  (ex.: `V012\_\_fix\_index\_request.sql`). A validação Flyway (`spring.flyway.validate-on-migrate=true`) deve estar sempre ativa. A validação Flyway permanece ativa em dev e produção. No perfil test, as ITs usam H2 com ddl-auto: create-drop e flyway.enabled: false. Nenhuma migration passa pelo Flyway nesse perfil. A última migration no código é a V038.
 
 ## RNF-CON-03 - Respostas de erro no formato RFC 7807 Problem Details
 
@@ -514,11 +554,11 @@ Nenhum endpoint de listagem ou detalhe pode resultar em problema de N+1 queries 
 
 ## RNF-POR-01 - Plataformas-alvo: Web e Mobile nativo
 
-O sistema deve funcionar em duas plataformas: (a) Web: React 18 + Vite, compatível com os navegadores listados em RNF-CMP-03; (b) Mobile: React Native + Expo SDK 50+, compatível com Android 10+ e iOS 15+. Funcionalidades P0 (login, dashboard, nova solicitação, confirmar presença) devem estar disponíveis em ambas as plataformas.
+O sistema deve funcionar em duas plataformas: (a) Web: React 18 + Vite, compatível com os navegadores listados em RNF-CMP-03; (b) Mobile: React Native + Expo SDK 50+, compatível com Android 10+ e iOS 15+. Funcionalidades P0 (login, dashboard, nova solicitação, confirmar presença) devem estar disponíveis em ambas as plataformas. O app segue a whitelist de frontend-react-native/src/lib/navMenu.ts (início, egresso, solicitações, eventos, formativas, certificados, estágios, TCCs e contato). F5, F6, F7, CAAF, COE, busca, suporte, perfil e hub ficam na web. Ausência deles no app não é lacuna (4.11).
 
 ## RNF-POR-02 - Ambiente de desenvolvimento reproducível (Docker Compose)
 
-O ambiente de desenvolvimento completo (PostgreSQL, MinIO, Mailpit, backend, Prometheus, Grafana, Loki) deve ser inicializável  com um único comando `docker compose up -d` a partir do diretório raiz. O README deve documentar os 5 comandos necessários para subir tudo do zero.
+O ambiente de desenvolvimento completo (PostgreSQL, MinIO, Mailpit, backend) deve ser inicializável  com um único comando `docker compose up -d` a partir do diretório raiz. Prometheus, Grafana e Loki ficam fora da demonstração. O README deve documentar os 5 comandos necessários para subir tudo do zero.
 
 ## RNF-POR-03 - Armazenamento de arquivos via API S3-compatível
 
@@ -532,7 +572,7 @@ Todos os endpoints da API REST devem ser documentados no padrão OpenAPI 3.x, ge
 
 ## RNF-CMP-02 - PostgreSQL 16 com extensões obrigatórias
 
-O banco de dados deve ser PostgreSQL 16 (mínimo 14) com as extensões: `uuid-ossp` (função `uuid\_generate\_v7()`), `pgcrypto`  (geração  segura  de  dados  aleatórios),  `citext`  (comparação case-insensitive para email), `pg\_trgm` (busca por similaridade textual). A migration `V000\_\_extensions.sql` deve ser a primeira a ser aplicada.
+O banco de dados deve ser PostgreSQL 16 (mínimo 14) com as extensões: `uuid-ossp` (função `uuid\_generate\_v7()`), `pgcrypto`  (geração  segura  de  dados  aleatórios),  `citext`  (comparação case-insensitive para email), `pg\_trgm` (busca por similaridade textual). A primeira migration no código é a V001 (extensões).
 
 ## RNF-CMP-03 - Compatibilidade com navegadores modernos
 
@@ -642,7 +682,7 @@ Notas: Passo  6:  tanto  "senha  errada"  quanto  "usuário  não  encontrado"  
 
 ## F0.1-d - Login 429 - rate limit atingido
 
-Escopo: erro 429 Atores: Usuário, WebApp, RateLimitFilter, AuthController Pré-condições: mesmo IP + identificador realizou ≥ 5 tentativas em &lt; 1 minuto Notas: Passo  3:  RateLimitFilter  é  um  OncePerRequestFilter  executado  antes  do  AuthController;  o LoginUseCase nunca é invocado (RN-F0.1-06). Passo 4: corpo RFC 7807 inclui retryAfterSeconds para o frontend exibir countdown (RN-F0.1-09). Bucket4j  usa  sliding  window  por  combinação  IP  +  identificador;  IPs  diferentes  para  o  mesmo identificador têm contadores independentes.
+Escopo: erro 429 Atores: Usuário, WebApp, RateLimitFilter, AuthController Pré-condições: mesmo IP + identificador realizou ≥ 5 tentativas em &lt; 1 minuto Notas: Passo  3:  RateLimitFilter  é  um  OncePerRequestFilter  executado  antes  do  AuthController;  o LoginUseCase nunca é invocado (RN-F0.1-06). Passo 4: corpo RFC 7807 inclui retryAfterSeconds para o frontend exibir countdown (RN-F0.1-09). O rate limit é a janela em memória descrita em 4.11.
 
 <!-- image -->
 
@@ -676,11 +716,11 @@ FONTE: Elaborado pelos autores (2026).
 
 ## CRITÉRIOS DE ACEITAÇÃO Critério de contexto: Critério 1: Fluxo principal (e-mail cadastrado)
 
-DADO QUE o usuário está em /recuperar-senha QUANDO preenche o campo "E-mail" com um e-mail válido e cadastrado no sistema clica em "Enviar link" ENTÃO o sistema realiza POST /auth/forgot-password recebe 202 Accepted o formulário é ocultado exibe DS/AlertBanner variante "info" com ícone Mail e mensagem: "Se este e-mail estiver cadastrado, você receberá um link válido por 24 horas." internamente um JWT de uso único é gerado e enfileirado para envio por e-mail o evento iam.password\_reset\_requested é registrado em audit\_log
+DADO QUE o usuário está em /recuperar-senha QUANDO preenche o campo "E-mail" com um e-mail válido e cadastrado no sistema clica em "Enviar link" ENTÃO o sistema realiza POST /auth/recuperar-senha recebe 202 Accepted o formulário é ocultado exibe DS/AlertBanner variante "info" com ícone Mail e mensagem: "Se este e-mail estiver cadastrado, você receberá um link válido por 24 horas." internamente um JWT de uso único é gerado e enfileirado para envio por e-mail o evento iam.password\_reset\_requested é registrado em audit\_log
 
 ## Critério 2: E-mail não cadastrado (resposta idêntica)
 
-DADO QUE o usuário está em /recuperar-senha QUANDO preenche o campo "E-mail" com um e-mail que NÃO existe na base de dados clica em "Enviar link" ENTÃO o sistema realiza POST /auth/forgot-password e recebe 202 Accepted exibe exatamente a mesma mensagem do CA-01 (anti-enumeração) NENHUM e-mail é enviado internamente a resposta visual é IDÊNTICA à de um e-mail cadastrado
+DADO QUE o usuário está em /recuperar-senha QUANDO preenche o campo "E-mail" com um e-mail que NÃO existe na base de dados clica em "Enviar link" ENTÃO o sistema realiza POST /auth/recuperar-senha e recebe 202 Accepted exibe exatamente a mesma mensagem do CA-01 (anti-enumeração) NENHUM e-mail é enviado internamente a resposta visual é IDÊNTICA à de um e-mail cadastrado
 
 ## Critério 3: Validação de formato de e-mail (frontend)
 
@@ -780,7 +820,7 @@ DADO QUE o usuário informou uma nova senha igual a uma das últimas 3 senhas ca
 
 DADO QUE o usuário preencheu "Nova senha" com senha que atende todos os requisitos "Confirmar senha" é igual à "Nova senha" QUANDO
 
-clica em "Salvar senha" ENTÃO o sistema realiza POST /auth/reset-password { token, novaSenha } ao receber 200 OK: - o JTI é inserido na blacklist (sem possibilidade de re-uso) - todas as sessões ativas do usuário são invalidadas - usuario.senha\_alterada é definido como true - o evento iam.password\_reset\_completed é gravado em audit\_log o usuário é redirecionado para /login
+clica em "Salvar senha" ENTÃO o sistema realiza POST /auth/redefinir-senha { token, novaSenha } ao receber 200 OK: - o JTI é inserido na blacklist (sem possibilidade de re-uso) - todas as sessões ativas do usuário são invalidadas - usuario.senha\_alterada é definido como true - o evento iam.password\_reset\_completed é gravado em audit\_log o usuário é redirecionado para /login
 
 /login exibe DS/AlertBanner success: "Senha redefinida com sucesso."
 
@@ -1070,7 +1110,7 @@ F0.6-d - Rate limit atingido (429) Escopo: erro 429 - proteção contra enumera�
 
 Passo 3: RateLimitFilter rejeita antes do ProtocoloController; o VerificarProtocoloUseCase nunca é invocado (RN-F0.6-07).
 
-Tentativas que excedam  o threshold configurável (ex.: 100 req/5min) geram  métrica  no Prometheus → alerta no Grafana para suspeita de bruteforce (RN-F0.6-08 - configuração de ops, fora do fluxo de usuário).
+Tentativas que excedam  o threshold configurável (ex.: 100 req/5min) geram  métrica  no Prometheus → alerta no Grafana (fora da demonstração) para suspeita de bruteforce (RN-F0.6-08 - configuração de ops, fora do fluxo de usuário).
 
 ## HU 7. US-F0-007 - Verificar Autenticidade de Certificado Digital
 
@@ -1102,9 +1142,9 @@ Critério 1: Certificado válido (fluxo principal)
 
 DADO QUE um verificador acessa /publico/verificar-certificado/&lt;hash\_válido&gt; QUANDO o backend retorna 200 OK com metadados + assinatura ED25519 o browser busca a chave pública em /.well-known/jwks.json a verificação criptográfica da assinatura ED25519 é bem-sucedida ENTÃO exibe DS/Badge grande variante "success": "Certificado válido" exibe card com: - Nome do beneficiário (completo ou parcial, conforme configuração) - Evento / atividade - Carga horária - Data de emissão exibe bloco "Assinatura digital": - Ícone Shield - Texto: "Assinado digitalmente pelo servidor da UFPR SEPT"
 
-exibe DS/VerificationSeal (64px, variante "success", ícone ShieldCheck) - Link "Ver chave pública" → /.well-known/jwks.json Critério 2: Certificado inválido (hash não encontrado ou assinatura falha) DADO QUE um verificador acessa a URL com hash inexistente no sistema OU com hash válido mas a assinatura ED25519 não confere com a chave pública QUANDO o browser tenta verificar ENTÃO exibe DS/VerificationSeal variante "danger" (ícone ShieldX ou ShieldAlert) exibe DS/Badge grande variante "danger": "Certificado inválido" exibe mensagem: "Este certificado não pôde ser verificado. Ele pode ser falso ou ter sido adulterado." NÃO exibe dados do beneficiário Critério 3: Certificado revogado / expirado DADO QUE (ex.: atividade cancelada administrativamente após emissão) QUANDO o verificador acessa a URL do certificado ENTÃO o backend retorna status "REVOGADO" nos metadados exibe DS/Badge variante "warning": "Certificado revogado" exibe mensagem explicativa sobre a revogação DADO QUE o certificado foi verificado com sucesso QUANDO ENTÃO
+exibe DS/VerificationSeal (64px, variante "success", ícone ShieldCheck) - Link "Ver chave pública" → /.well-known/jwks.json Critério 2: Certificado inválido (hash não encontrado ou assinatura falha) DADO QUE um verificador acessa a URL com hash inexistente no sistema OU com hash válido mas a assinatura ED25519 não confere com a chave pública QUANDO o browser tenta verificar ENTÃO exibe DS/VerificationSeal variante "danger" (ícone ShieldX ou ShieldAlert) exibe DS/Badge grande variante "danger": "Certificado inválido" exibe mensagem: "Este certificado não pôde ser verificado. Ele pode ser falso ou ter sido adulterado." NÃO exibe dados do beneficiário Critério 3: Certificado revogado / expirado (fora da demonstração) DADO QUE (ex.: atividade cancelada administrativamente após emissão) QUANDO o verificador acessa a URL do certificado ENTÃO o backend retorna status "REVOGADO" nos metadados exibe DS/Badge variante "warning": "Certificado revogado" exibe mensagem explicativa sobre a revogação DADO QUE o certificado foi verificado com sucesso QUANDO ENTÃO
 
-o certificado foi emitido mas posteriormente revogado pelo sistema AINDA exibe os dados básicos para identificação histórica Critério 4: Verificação de integridade por upload do PDF (opcional) DADO QUE o certificado foi encontrado e validado (CA-01) QUANDO o verificador faz upload do PDF recebido na zona drag-and-drop ENTÃO o browser calcula SHA-256 do arquivo localmente compara com o hash do certificado retornado pelo backend se coincidir: exibe DS/AlertBanner success "O arquivo confere com o certificado registrado." se divergir: exibe DS/AlertBanner danger "O arquivo NÃO confere com o certificado original." Critério 5: Link para chave pública JWKS o verificador clica em "Ver chave pública"
+o certificado foi emitido mas posteriormente revogado pelo sistema AINDA exibe os dados básicos para identificação histórica Critério 4: Verificação de integridade por upload do PDF (opcional; CA-04 fora da demonstração) DADO QUE o certificado foi encontrado e validado (CA-01) QUANDO o verificador faz upload do PDF recebido na zona drag-and-drop ENTÃO o browser calcula SHA-256 do arquivo localmente compara com o hash do certificado retornado pelo backend se coincidir: exibe DS/AlertBanner success "O arquivo confere com o certificado registrado." se divergir: exibe DS/AlertBanner danger "O arquivo NÃO confere com o certificado original." Critério 5: Link para chave pública JWKS o verificador clica em "Ver chave pública"
 
 é aberta a URL /.well-known/jwks.json em nova aba
 
@@ -1114,7 +1154,7 @@ DADO QUE o verificador usa leitor de tela ENTÃO o selo de verificação possui 
 
 <!-- image -->
 
-Notas: Passo 2: endpoint público, sem JWT; RateLimitFilter aplica Bucket4j 10 req/min por IP (RN-F0.7-10) - o filtro fica antes do CertificadoController. Passo  6:  beneficiarioNome  pode ser completo ou mascarado conforme configuração do tipo de certificado (RN-F0.7-08). GRR e e-mail nunca são retornados (RN-F0.7-11). Passo 8: WebApp extrai jwksUrl do payload do passo 7 e faz um GET separado; a chave pública pode ser cacheada pelo browser via Cache-Control (RN-F0.7-06). Passos  10-11:  SubtleCrypto.verify  executa  inteiramente  no  browser  -  zero  bytes  do  PDF  ou  da assinatura voltam ao servidor (RN-F0.7-05). O certificado foi  gerado  pela  emissão  documentada em transversal/10.4-certificado-emissao.md (10.4a).
+Notas: Passo 2: endpoint público, sem JWT; o rate limit é a janela em memória descrita em 4.11 (RN-F0.7-10) - o filtro fica antes do CertificadoController. Passo  6:  beneficiarioNome  pode ser completo ou mascarado conforme configuração do tipo de certificado (RN-F0.7-08). GRR e e-mail nunca são retornados (RN-F0.7-11). Passo 8: WebApp extrai jwksUrl do payload do passo 7 e faz um GET separado; a chave pública pode ser cacheada pelo browser via Cache-Control (RN-F0.7-06). Passos  10-11:  SubtleCrypto.verify  executa  inteiramente  no  browser  -  zero  bytes  do  PDF  ou  da assinatura voltam ao servidor (RN-F0.7-05). O certificado foi  gerado  pela  emissão  documentada em transversal/10.4-certificado-emissao.md (10.4a).
 
 F0.7-b - Certificado revogado (status=REVOGADO)
 
@@ -1127,6 +1167,8 @@ Pré-condições:  certificado  foi  emitido  e  posteriormente  revogado  pelo 
 <!-- image -->
 
 ## Notas:
+
+REVOGADO e o upload de PDF (CA-04) estão fora da demonstração; ver seção 4.11.
 
 Passo  5:  status=REVOGADO  é  definido  no  backend  quando  a  atividade/evento  é  cancelado administrativamente após a emissão do certificado (RN-F0.7-07).
 
@@ -1210,13 +1252,13 @@ KpiRow exibe 4 colunas e o layout principal usa proporção 2:1 QUANDO a viewpor
 
 ## F1.1-D01 - Carregamento inicial do dashboard (happy path - cache MISS)
 
-Escopo: happy path - primeiro acesso ou cache Redis expirado Atores: Aluno, WebApp, JwtFilter, DashboardBFF, Redis, Postgres Pré-condições: aluno autenticado (mustChangePassword  =  false),  access  token  válido  com dashboard.view\_own Notas: Passo 8: o BFF executa as 5 queries de forma paralela (async/await Promise.all ou coroutines); falha isolada em um bloco ativa degradação graciosa (ver F1.1-D03). Passo  11:  useActions(\_links)  filtra  botões  disponíveis;  botão  "Nova  solicitação"  só  aparece  se \_links.novaSolicitacao estiver presente - aluno sem solicitacao.create não recebe o link. Passo 12: skeleton (DS/Skeleton) exibido entre os passos 2-11; substituído bloco a bloco conforme dados chegam.
+Escopo: happy path - primeiro acesso. Não há Redis; o BFF lê o Postgres (4.11). Atores: Aluno, WebApp, JwtFilter, DashboardBFF, Postgres Pré-condições: aluno autenticado (mustChangePassword  =  false),  access  token  válido  com dashboard.view\_own Notas: Passo 8: o BFF executa as 5 queries de forma paralela (async/await Promise.all ou coroutines); falha isolada em um bloco ativa degradação graciosa (ver F1.1-D03). Passo  11:  useActions(\_links)  filtra  botões  disponíveis;  botão  "Nova  solicitação"  só  aparece  se \_links.novaSolicitacao estiver presente - aluno sem solicitacao.create não recebe o link. Passo 12: skeleton (DS/Skeleton) exibido entre os passos 2-11; substituído bloco a bloco conforme dados chegam.
 
 <!-- image -->
 
 ## F1.1-D02 - Carregamento do dashboard (cache HIT - FCP &lt; 1,5 s)
 
-Escopo: retorno em cache Redis dentro da janela de 30 s (RN-F1.1-10) Atores: Aluno, WebApp, JwtFilter, DashboardBFF, Redis Pré-condições: cache Redis populado há menos de 30 s para o alunoId Notas: O cache Redis não é invalidado por pull-to-refresh do mobile (ver F1.1-D04); o TanStack Query do cliente invalida somente seu cache local. Dados servidos pelo BFF permanecem frescos até o TTL expirar. Dados cobertos pelo cache: kpis, pendencias, ultimasSolicitacoes, proximosEventos. O cache não cobre dados tempo-real como janelaAberta de eventos - esses são buscados diretamente quando o aluno abre a tela do evento.
+Escopo: Não há Redis; o BFF lê o Postgres (4.11) (RN-F1.1-10) Atores: Aluno, WebApp, JwtFilter, DashboardBFF, Postgres Pré-condições: Não há Redis; o BFF lê o Postgres (4.11). Notas: Não há Redis; o BFF lê o Postgres (4.11). O pull-to-refresh do mobile não altera essa leitura (ver F1.1-D04); o TanStack Query do cliente invalida somente seu cache local. Dados cobertos: kpis, pendencias, ultimasSolicitacoes, proximosEventos. Dados tempo-real como janelaAberta de eventos são buscados diretamente quando o aluno abre a tela do evento.
 
 <!-- image -->
 
@@ -1228,7 +1270,7 @@ Escopo: erro parcial de módulo - CA-05, RN-F1.1-01 Atores: Aluno, WebApp, JwtFi
 
 ## F1.1-D04 - Pull-to-refresh no mobile (CA-07, RN-F1.1-11)
 
-Escopo: pull-to-refresh reinvalida cache TanStack Query e rebusca dados Atores: Aluno, MobileApp, TanStackQuery, DashboardBFF, Redis, Postgres Pré-condições: aluno autenticado no app mobile, dashboard já carregado Notas: Passos 6-9: se o cache Redis ainda estiver válido (TTL &gt; 0), o BFF serve do cache sem ir ao Postgres - o pull-to-refresh do mobile invalida apenas o cache TanStack Query (client-side), não o Redis (server-side). Dados são garantidamente frescos dentro da janela de 30 s. Passo 3: indicador nativo (RefreshControl no React Native) aparece imediatamente ao gesto; some ao completar o passo 11. Para forçar invalidação do Redis também (ex.: aluno quer ver solicitação recém-aberta), o futuro endpoint pode aceitar Cache-Control: no-cache header - não previsto no MVP.
+Escopo: pull-to-refresh reinvalida cache TanStack Query e rebusca dados Atores: Aluno, MobileApp, TanStackQuery, DashboardBFF, Postgres Pré-condições: aluno autenticado no app mobile, dashboard já carregado Notas: Passos 6-9: Não há Redis; o BFF lê o Postgres (4.11). O pull-to-refresh do mobile invalida apenas o cache TanStack Query (client-side). Passo 3: indicador nativo (RefreshControl no React Native) aparece imediatamente ao gesto; some ao completar o passo 11.
 
 <!-- image -->
 
@@ -1330,7 +1372,7 @@ COMO aluno autenticado QUERO trocar minha senha e visualizar e encerrar sessões
 
 COMO aluno autenticado QUERO
 
-configurar quais canais (e-mail, push, in-app) recebo para cada tipo de notificação, definir horário de DND e escolher entre entrega imediata ou digest
+configurar quais canais e-mail e in-app recebo para cada tipo de notificação, definir horário de DND e escolher entre entrega imediata ou digest
 
 PARA
 
@@ -1362,7 +1404,7 @@ DADO QUE o aluno está em /perfil QUANDO altera o campo "Telefone" para um novo 
 
 ## Critério 2: Upload de foto de perfil
 
-DADO QUE o aluno está em /perfil QUANDO clica em "Alterar foto" e seleciona uma imagem JPEG de 1 MB ENTÃO abre modal de crop circular para ajustar a imagem ao confirmar, a imagem é enviada para MinIO via URL pré-assinada o DS/Avatar é atualizado com a nova foto se a imagem exceder 2 MB, exibe erro: "A imagem deve ter no máximo 2 MB."
+DADO QUE o aluno está em /perfil QUANDO clica em "Alterar foto" e seleciona uma imagem JPEG de 1 MB ENTÃO abre modal de crop circular para ajustar a imagem ao confirmar, a imagem vai em POST /me/foto (multipart, no servidor). A URL pré-assinada fica para o download. o DS/Avatar é atualizado com a nova foto se a imagem exceder 2 MB, exibe erro: "A imagem deve ter no máximo 2 MB."
 
 ## Critério 3: Trocar senha
 
@@ -1376,7 +1418,7 @@ DADO QUE o aluno está em /perfil/seguranca a lista de sessões exibe uma sessã
 
 ## Critério 5: Configurar notificações
 
-DADO QUE o aluno está em /perfil/notificacoes QUANDO desabilita o switch de "push" para notificações de prioridade MEDIUM clica em "Salvar preferências" ENTÃO o sistema realiza PATCH /me/notifications com a nova configuração a partir deste ponto, notificações de prioridade MEDIUM não chegam por push QUANDO tenta desabilitar notificações CRITICAL ENTÃO os switches para canais CRITICAL estão bloqueados (disabled) e não podem ser alterados
+DADO QUE o aluno está em /perfil/notificacoes QUANDO desabilita o switch de e-mail ou in-app para notificações de prioridade MEDIUM clica em "Salvar preferências" ENTÃO o sistema realiza PATCH /me/notifications com a nova configuração a partir deste ponto, a notificação MEDIUM deixa de sair nesse canal. Não há canal push. QUANDO tenta desabilitar notificações CRITICAL ENTÃO os switches para canais CRITICAL estão bloqueados (disabled) e não podem ser alterados
 
 ## DIAGRAMAS DE SEQUÊNCIA
 
@@ -1388,15 +1430,15 @@ Escopo: happy path - aluno atualiza dado pessoal (ex.: telefone) e salva Atores:
 
 Notas: Passo 6: somente os campos enviados no PATCH são atualizados (merge parcial); campos omitidos permanecem  intactos.  Campos somente-leitura (GRR, email institucional) são ignorados mesmo que presentes no body (UseCase filtra via allowlist). Passo 8: a resposta inclui o estado completo atualizado do usuario para o frontend sincronizar o formulário sem recarregar a página. Botão "Cancelar" (RN-F1.3-03): descarta as alterações locais sem chamar a API - não há diagrama dedicado.
 
-## F1.3-D02 - Upload de foto de perfil (MinIO presigned URL)
+## F1.3-D02 - Upload de foto de perfil (POST /me/foto (multipart))
 
-Escopo: happy path - aluno seleciona imagem, obtém URL pré-assinada e envia diretamente para MinIO Atores: Aluno, WebApp, JwtFilter, ProfileController, MinIO, Postgres Pré-condições: imagem ≤ 2 MB, formato JPEG/PNG/WebP; crop circular confirmado no modal
+Escopo: happy path - aluno seleciona imagem e envia em POST /me/foto (multipart). O browser não faz PUT no MinIO. Atores: Aluno, WebApp, JwtFilter, ProfileController, MinIO, Postgres Pré-condições: imagem ≤ 2 MB, formato JPEG/PNG/WebP; crop circular confirmado no modal
 
 <!-- image -->
 
-Notas: Passo  8:  o  upload  vai  direto  do  browser  para  o  MinIO  -  o  backend  nunca  recebe  os  bytes  da imagem, evitando gargalo de banda e simplificando o handling de multipart. Passo  10:  a  segunda  chamada  ao  ProfileController  não  passa  pelo  JwtFilter  explicitamente  no diagrama para evitar segundo activate no mesmo participante; na implementação, o Bearer token é enviado e validado normalmente pelo filtro Spring Security.
+Notas: Passo  8:  a imagem vai em POST /me/foto (multipart). O browser não faz PUT no MinIO. Passo  10:  a  segunda  chamada  ao  ProfileController  não  passa  pelo  JwtFilter  explicitamente  no diagrama para evitar segundo activate no mesmo participante; na implementação, o Bearer token é enviado e validado normalmente pelo filtro Spring Security.
 
-Se a imagem exceder 2 MB, o frontend rejeita antes do passo 1 (validação client-side via File API) - nenhuma chamada HTTP é feita. Se o MinIO rejeitar por content-type inválido, o PUT retorna 403 e o frontend exibe DS/AlertBanner warning.
+Se a imagem exceder 2 MB, o frontend rejeita antes do passo 1 (validação client-side via File API) - nenhuma chamada HTTP é feita. Se o content-type for inválido, a API rejeita e o frontend exibe DS/AlertBanner warning. O browser não faz PUT no MinIO.
 
 ## F1.4-D03 - Trocar senha + invalidar outras sessões (happy path)
 
@@ -1414,7 +1456,7 @@ Escopo: erro - CA-03 branch negativo · RN-F1.4-01 - Argon2id.verify falha Atore
 
 <!-- image -->
 
-Notas: Passo 8: resposta segue RFC 7807 - status=401, type="urn:secretaria:error:senha\_atual\_incorreta". O backend não revela o hash nem fornece dica sobre a senha correta. Tentativas repetidas são limitadas pela mesma política de rate-limit do login (Bucket4j, 5 req/min por IP+usuarioId) - proteção contra brute force na troca de senha.
+Notas: Passo 8: resposta segue RFC 7807 - status=401, type="urn:secretaria:error:senha\_atual\_incorreta". O backend não revela o hash nem fornece dica sobre a senha correta. Tentativas repetidas são limitadas pela mesma política de rate-limit do login. O rate limit é a janela em memória descrita em 4.11 - proteção contra brute force na troca de senha.
 
 ## F1.4-D05 - Listar sessões ativas + encerrar sessão de outro dispositivo (HATEOAS)
 
@@ -1544,7 +1586,7 @@ o Passo 2 carrega ENTÃO renderiza os campos definidos no form\_schema (texto, s
 
 ## Critério 4: Upload de anexo no wizard
 
-DADO QUE o aluno está no Passo 2 do wizard QUANDO arrasta um arquivo PDF de 5 MB para a zona de upload ENTÃO o cliente calcula o SHA-256 do arquivo localmente inicia o upload para MinIO via URL pré-assinada exibe barra de progresso durante o upload ao concluir exibe o arquivo na lista com nome e botão de remover
+DADO QUE o aluno está no Passo 2 do wizard QUANDO arrasta um arquivo PDF de 5 MB para a zona de upload ENTÃO o cliente calcula o SHA-256 do arquivo localmente. Esse upload fica fora da demonstração (4.11): o módulo solicitacoes não tem anexo. O download de arquivo, quando existe, continua por URL pré-assinada de 15 min.
 
 QUANDO tenta fazer upload de arquivo acima de 10 MB ENTÃO exibe erro: "O arquivo excede o tamanho máximo de 10 MB."
 
@@ -1578,9 +1620,9 @@ Escopo: Passo 1 - backend filtra tipos pelo curso, período e pré-requisitos do
 
 Notas: Passo 5: a query avalia request\_type.prerequisitos (JSONB com regras de período mínimo, situação acadêmica,  etc.)  contra  os  dados  do  aluno  -  tipos  não  elegíveis  são  excluídos  da  query,  não ocultados no frontend (RN-F1.8-02). O aluno nunca vê nem recebe os tipos não elegíveis. O form\_schema retornado em cada tipo já vem nesta resposta para o Passo 2 poder renderizar o formulário sem nova chamada HTTP (cache local do TanStack Query).
 
-## F1.8-D03 - Upload de anexo no wizard (SHA-256 + MinIO presigned PUT)
+## F1.8-D03 - Upload de anexo no wizard (SHA-256). Esse upload está fora da demonstração (4.11).
 
-Escopo: CA-04 · RN-F1.8-04 - aluno envia arquivo PDF ao MinIO diretamente via URL pré-assinada
+Escopo: CA-04 · RN-F1.8-04 - esse upload está fora da demonstração (4.11). O download, quando existe, continua por URL pré-assinada de 15 min.
 
 Atores: Aluno, WebApp, JwtFilter, AttachmentController, MinIO Pré-condições: aluno no Passo 2 do wizard; arquivo ≤ 10 MB, tipo PDF/JPEG/PNG
 
@@ -1630,7 +1672,7 @@ Notas: Passo 7: o PDF é gerado internamente (template engine ou Gotenberg headl
 
 F1.9-D08 - Download de anexo via presigned GET URL (MinIO, TTL=15 min)
 
-Escopo: RN-F1.9-05 - aluno baixa um anexo da solicitação sem trafegar bytes pelo backend Atores: Aluno, WebApp, JwtFilter, AttachmentController, MinIO Pré-condições: solicitação carregada (D06); anexo presente na DS/AttachmentList Notas: TTL=15  min  (RN-F1.9-05):  curto  o  suficiente  para  dificultar  compartilhamento  indevido,  longo  o suficiente para o browser iniciar o download sem erro de expiração. Diferença vs D03 (upload): aqui é presigned GET (download) com TTL=15 min vs presigned PUT (upload) com TTL=5 min. O fileKey vem do attachment.file\_key retornado em D06. O owner check do passo 3 garante que um aluno não possa gerar URL de download para anexo de solicitação alheia - proteção IDOR por requestId + attachId.
+Escopo: RN-F1.9-05 - aluno baixa um anexo da solicitação sem trafegar bytes pelo backend Atores: Aluno, WebApp, JwtFilter, AttachmentController, MinIO Pré-condições: solicitação carregada (D06); anexo presente na DS/AttachmentList Notas: TTL=15  min  (RN-F1.9-05):  curto  o  suficiente  para  dificultar  compartilhamento  indevido,  longo  o suficiente para o browser iniciar o download sem erro de expiração. O download é presigned GET de 15 min. Esse upload por presigned PUT do browser para o MinIO está fora da demonstração (4.11). O fileKey vem do attachment.file\_key retornado em D06. O owner check do passo 3 garante que um aluno não possa gerar URL de download para anexo de solicitação alheia - proteção IDOR por requestId + attachId.
 
 <!-- image -->
 
@@ -1646,17 +1688,17 @@ DESENHO DA(S) TELA(S)
 
 FONTE: Elaborado pelos autores (2026). CRITÉRIOS DE ACEITAÇÃO Critério de contexto:
 
-Critério 1: Listar formativas DADO QUE o aluno está em /formativas QUANDO a página carrega ENTÃO filtrável por estado e tipo exibe tabela com atividades, horas, estado (DS/Badge) e data button "Nova atividade" visível se \_links.nova existir Critério 2: Submeter nova formativa manualmente DADO QUE o aluno está em /formativas/nova QUANDO seleciona tipo de atividade, informa carga horária e faz upload de comprovante PDF clica em "Enviar" ENTÃO o sistema realiza POST /formative-entries a entrada aparece na lista com estado "SUBMETIDA" a CAAF do curso recebe notificação via Outbox Critério 3: Confirmar formativa pré-validada (evento interno) DADO QUE o aluno participou de um evento interno com presença validada o sistema criou automaticamente uma formative\_entry PENDENTE\_CONFIRMACAO QUANDO o aluno acessa /formativas/nova (ou link direto) ENTÃO o formulário está pré-preenchido com os dados do evento (campos readonly) exibe DS/AlertBanner info: "Participação registrada pelo sistema. Confirme para finalizar." ao clicar em "Confirmar" transiciona para SUBMETIDA sem necessidade de upload Critério 4: Detalhe com link para certificado DADO QUE a formativa do aluno tem estado APROVADA \_links.baixar-certificado existe na resposta QUANDO o aluno acessa /formativas/:id ENTÃO exibe badge "APROVADA" em success exibe botão "Baixar certificado" na ActionBar ao clicar realiza o download do PDF do certificado emitido DIAGRAMAS DE SEQUÊNCIA
+Critério 1: Listar formativas DADO QUE o aluno está em /formativas QUANDO a página carrega ENTÃO filtrável por estado e tipo exibe tabela com atividades, horas, estado (DS/Badge) e data button "Nova atividade" visível se \_links.nova existir Critério 2: Submeter nova formativa manualmente DADO QUE o aluno está em /formativas/nova QUANDO seleciona tipo de atividade, informa carga horária e faz upload de comprovante PDF clica em "Enviar" ENTÃO o sistema realiza POST /formativas (multipart); a entrada aparece na lista e nasce AGUARDANDO_CAAF, origem COMPROVANTE a CAAF do curso recebe notificação via Outbox Critério 3: Confirmar formativa pré-validada (evento interno) DADO QUE o aluno participou de um evento interno com presença validada o sistema criou automaticamente uma formative\_entry PENDENTE\_CONFIRMACAO QUANDO o aluno acessa /formativas/nova (ou link direto) ENTÃO o formulário está pré-preenchido com os dados do evento (campos readonly) exibe DS/AlertBanner info: "Participação registrada pelo sistema. Confirme para finalizar." ao clicar em "Confirmar" o sistema realiza POST /formativas/{id}/confirmar, de PENDENTE_CONFIRMACAO para AGUARDANDO_CAAF, sem necessidade de upload Critério 4: Detalhe com link para certificado DADO QUE a formativa do aluno tem estado APROVADA \_links.baixar-certificado existe na resposta QUANDO o aluno acessa /formativas/:id ENTÃO exibe badge "APROVADA" em success exibe botão "Baixar certificado" na ActionBar ao clicar realiza o download do PDF do certificado emitido DIAGRAMAS DE SEQUÊNCIA
 
-F1.10-D01 - Listar formativas do aluno (GET /formative-entries)
+F1.10-D01 - Listar formativas do aluno (GET /formativas)
 
 Escopo: happy path - aluno acessa /formativas e vê todas suas entradas com filtros Atores: Aluno, WebApp, JwtFilter, FormativeController, Postgres Pré-condições: aluno autenticado com formative.view\_own Notas: Passo 8: \_links.nova aparece somente se formative.submit estiver nas authorities do aluno - sem condicional hardcoded no frontend. Filtros por estado e tipo são query params no mesmo GET (?estado=SUBMETIDA&amp;tipo=CURSODOTACAO); o Postgres  aplica  WHERE  composto  -  sem filtragem client-side (analogia com RN-F1.7-01 de solicitações). Entradas no estado PENDENTE\_CONFIRMACAO (pré-validadas por evento interno) aparecem na lista com badge "Aguardando confirmação" e CTA para F1.11-D03.
 
 <!-- image -->
 
-F1.11-D02 - Submeter formativa manualmente (POST /formative-entries)
+F1.11-D02 - Submeter formativa manualmente (POST /formativas)
 
-Escopo:  CA-02  ·  RN-F1.11-01  ·  RN-F1.11-03  -  aluno  seleciona  atividade,  declara  horas,  anexa comprovante e submete Atores: Aluno, WebApp, JwtFilter, FormativeController, SubmitFormativeUseCase, Postgres Pré-condições: comprovante já enviado ao MinIO (via F1.8-D03 - presigned PUT); comprovanteKey disponível
+Escopo:  CA-02  ·  RN-F1.11-01  ·  RN-F1.11-03  -  aluno  seleciona  atividade,  declara  horas,  anexa comprovante e submete Atores: Aluno, WebApp, JwtFilter, FormativeController, SubmitFormativeUseCase, Postgres Pré-condições: a submissão manual é POST /formativas (multipart) e nasce AGUARDANDO_CAAF, origem COMPROVANTE. Não há comprovante já enviado por presigned PUT.
 
 <!-- image -->
 
@@ -1664,7 +1706,7 @@ Escopo:  CA-02  ·  RN-F1.11-01  ·  RN-F1.11-03  -  aluno  seleciona  atividade
 
 Passo 6: a query valida que formative\_activity é elegível para o cursoId do aluno (RN-F1.11-01) - mesma  lógica  de  filtro  de  elegibilidade  do  backend.  Se  a  atividade  não  for  aplicável,  o  UseCase retorna 422 Problem Details.
 
-Upload do comprovante (RN-F1.11-02): ocorre antes do passo 1, via presigned PUT ao MinIO - DRY → F1/US-F1-005-SOLICITACOES.md  F1.8-D03.  O  comprovanteKey  é  passado  aqui  sem  nova chamada de upload.
+Não há comprovante já enviado por presigned PUT. A submissão manual é POST /formativas (multipart) e nasce AGUARDANDO_CAAF, origem COMPROVANTE (RN-F1.11-02).
 
 Passo 8: outbox\_event é inserido na mesma transação - a notificação à CAAF (formativas.submitted) só dispara após o COMMIT. Dispatch: transversal/10.1-outbox-notificacao.md.
 
@@ -1678,7 +1720,7 @@ validada pelo sistema de eventos (US-F1-009), eliminando fraude por upload manua
 
 F1.12-D04 - Detalhe da formativa aprovada com \_links HATEOAS
 
-Escopo:  CA-04  ·  RN-F1.12-01  ·  RN-F1.12-02  -  GET  /formative-entries/{id}  retorna  detalhe completo e link para certificado
+Escopo:  CA-04  ·  RN-F1.12-01  ·  RN-F1.12-02  -  GET /formativas/{id} retorna detalhe completo e link para certificado
 
 Atores: Aluno, WebApp, JwtFilter, FormativeController, Postgres Pré-condições: aluno autenticado com formative.view\_own; entrada no estado APROVADA
 
@@ -1690,7 +1732,7 @@ Passo 7: \_links.baixar-certificado aparece somente quando estado=APROVADA e o c
 
 Clique  em  "Baixar  certificado" → navegação  para  \_links.baixar-certificado.href → fluxo  de download coberto em F1/US-F1-010-CERTIFICADOS.md.
 
-Estado  REJEITADA  +  \_links.resubmeter  (RN-F1.12-03):  quando  presente, o frontend exibe botão "Resubmeter". O fluxo de resubmissão é DRY → F1.11-D02 (mesmo POST /formative-entries com endpoint /resubmit).
+Estado  REJEITADA  +  \_links.resubmeter  (RN-F1.12-03):  quando  presente, o frontend exibe botão "Resubmeter". O fluxo de resubmissão é DRY → F1.11-D02 (POST /formativas). Não há comprovante já enviado por presigned PUT.
 
 ## HU 14. US-F1-007 - Acompanhar Estágios e Enviar Documentos
 
@@ -1716,7 +1758,7 @@ FONTE: Elaborado pelos autores (2026).
 
 CRITÉRIOS DE ACEITAÇÃO
 
-Critério de contexto: Critério 1: Listar estágios DADO QUE o aluno está em /estagios QUANDO a página carrega ENTÃO exibe tabela com: Empresa, Supervisor, Vigência, Situação filtrável por situação (Ativo, Concluído, Pendente) se não há estágios: DS/EmptyState "Você não possui estágios registrados." Critério 2: Enviar documento de estágio DADO QUE o aluno está em /estagios/:id, tab Documentos o tipo "Relatório Final" tem \_links.upload na resposta QUANDO faz upload do PDF do relatório ENTÃO o documento é enviado para MinIO via URL pré-assinada o status do documento muda para "Enviado - aguardando parecer" o orientador/COE recebe notificação via Outbox (estagios.document\_uploaded) Critério 3: Visualizar pareceres DADO QUE o aluno está em /estagios/:id, tab Pareceres QUANDO há pareceres registrados pelo orientador/COE
+Critério de contexto: Critério 1: Listar estágios DADO QUE o aluno está em /estagios QUANDO a página carrega ENTÃO exibe tabela com: Empresa, Supervisor, Vigência, Situação filtrável por situação (Ativo, Concluído, Pendente) se não há estágios: DS/EmptyState "Você não possui estágios registrados." Critério 2: Enviar documento de estágio DADO QUE o aluno está em /estagios/:id, tab Documentos o tipo "Relatório Final" tem \_links.upload na resposta QUANDO faz upload do PDF do relatório ENTÃO o PDF vai em POST /estagios/{id}/documentos (multipart). A URL pré-assinada é o download. o status do documento muda para "Enviado - aguardando parecer" o orientador/COE recebe notificação via Outbox (estagios.document\_uploaded) Critério 3: Visualizar pareceres DADO QUE o aluno está em /estagios/:id, tab Pareceres QUANDO há pareceres registrados pelo orientador/COE
 
 ENTÃO
 
@@ -1724,7 +1766,7 @@ exibe cada parecer com: data, autor, texto e ícone de status (aprovado/rejeitad
 
 DIAGRAMAS DE SEQUÊNCIA
 
-F1.13-D01 - Listar estágios do aluno (GET /internships?aluno=me)
+F1.13-D01 - Listar estágios do aluno (GET /estagios?aluno=me)
 
 Escopo: CA-01 · RN-F1.13-01 - happy path - aluno vê tabela de estágios registrados pela secretaria Atores: Aluno, WebApp, JwtFilter, InternshipsController, Postgres Pré-condições: aluno autenticado com internship.view\_own; ao menos um estágio registrado pela secretaria
 
@@ -1736,7 +1778,7 @@ Filtros  por  situação  (?situacao=ATIVO)  são  query  params  no  mesmo  GET
 
 F1.14-D02 - Detalhe do estágio: documentos + pareceres + \_links HATEOAS
 
-Escopo: RN-F1.14-01 · RN-F1.14-02 · RN-F1.14-04 · CA-03 - GET /internships/{id} retorna dados de ambas as tabs em uma única resposta Atores: Aluno, WebApp, JwtFilter, InternshipsController, Postgres Pré-condições: aluno autenticado; estágio pertence ao aluno
+Escopo: RN-F1.14-01 · RN-F1.14-02 · RN-F1.14-04 · CA-03 - GET /estagios/{id} retorna dados de ambas as tabs em uma única resposta Atores: Aluno, WebApp, JwtFilter, InternshipsController, Postgres Pré-condições: aluno autenticado; estágio pertence ao aluno
 
 <!-- image -->
 
@@ -1744,17 +1786,15 @@ Notas: Passo 5: uma única query (JOIN) retorna dados de ambas as tabs - tab swi
 
 Passo 7: \_links.upload aparece por tipo de documento somente quando o documento ainda não foi entregue  ou  está  pendente  de  reenvio  (RN-F1.14-02).  A  UI  não  conhece  a  lógica  de  "quais documentos são obrigatórios" - depende exclusivamente dos links presentes. CA-03  (pareceres):  pareceres  vêm na mesma resposta, em ORDER BY created\_at DESC - mais recente no topo (RN-F1.14-04). Sem diagrama separado.
 
-F1.14-D03 - Enviar documento de estágio (POST /internships/{id}/documents)
+F1.14-D03 - Enviar documento de estágio (POST /estagios/{id}/documentos)
 
-Escopo: CA-02 · RN-F1.14-02 · RN-F1.14-03 - aluno envia PDF via MinIO presigned URL e notifica orientador/COE via Outbox Atores: Aluno, WebApp, JwtFilter, InternshipsController, UploadDocumentUseCase, Postgres Pré-condições: \_links.upload presente para o tipo de documento (D02); arquivo enviado ao MinIO
-
-(DRY → F1.8-D03); fileKey disponível
+Escopo: CA-02 · RN-F1.14-02 · RN-F1.14-03 - o upload é POST /estagios/{id}/documentos (multipart). A notificação é in-app e e-mail. Push FCM fica fora da demonstração (4.11). Atores: Aluno, WebApp, JwtFilter, InternshipsController, UploadDocumentUseCase, Postgres Pré-condições: \_links.upload presente para o tipo de documento (D02). O upload é POST /estagios/{id}/documentos (multipart).
 
 <!-- image -->
 
 Notas:
 
-Passo  1:  upload  do  PDF  ao  MinIO  ocorre  antes  desta  chamada  (presigned  PUT  -  DRY → F1/US-F1-005-SOLICITACOES.md F1.8-D03). O POST aqui registra apenas o fileKey, sem trafegar bytes pelo backend. Passo  7:  outbox\_event  é  inserido  na  mesma  transação  que  o  UPDATE  -  garante  que  o orientador/COE  só  é  notificado  após  confirmação  do  COMMIT. O dispatcher (transversal/10.1) entrega push/email ao orientador responsável. O  UseCase  verifica  que  \_links.upload  estava  presente  para  o  documentType  (validação  de HATEOAS no backend) - se o aluno tentar enviar um tipo não permitido, retorna 403 Problem Details.
+Passo  1:  o PDF vai em POST /estagios/{id}/documentos (multipart). A URL pré-assinada é o download. Passo  7:  outbox\_event  é  inserido  na  mesma  transação  que  o  UPDATE  -  garante  que  o orientador/COE  só  é  notificado  após  confirmação  do  COMMIT. O dispatcher (transversal/10.1) entrega a notificação in-app e por e-mail. Push FCM fica fora da demonstração (4.11). O  UseCase  verifica  que  \_links.upload  estava  presente  para  o  documentType  (validação  de HATEOAS no backend) - se o aluno tentar enviar um tipo não permitido, retorna 403 Problem Details.
 
 ## HU 15. US-F1-008 - Acompanhar TCC e Enviar Versão Final
 
@@ -1768,7 +1808,7 @@ DESENHO DA(S) TELA(S)
 
 exibe tabela com: Título, Orientador, Situação (DS/Badge), Data defesa
 
-se não há TCC cadastrado: DS/EmptyState "Nenhum TCC registrado. Consulte a secretaria." Critério 2: Fazer upload da versão final DADO QUE o aluno está em /tccs/:id \_links.upload-final existe na resposta (estado permite upload) QUANDO faz upload do arquivo PDF do TCC ENTÃO o arquivo é enviado para MinIO via URL pré-assinada o estado muda para "SUBMETIDO" a banca recebe notificação via Outbox (tcc.submitted) o botão de upload desaparece (estado não permite novo upload) Critério 3: Visualizar banca e datas DADO QUE o aluno está em /tccs/:id QUANDO a página carrega ENTÃO exibe composição da banca com nome e papel de cada membro exibe data prevista de defesa com destaque visual exibe data limite de entrega com badge danger se prazo próximo DIAGRAMAS DE SEQUÊNCIA F1.15-D01 - Listar TCCs do aluno (GET /tccs?aluno=me) Escopo: CA-01 · RN-F1.15-01 - happy path - aluno vê tabela de TCCs registrados pela secretaria
+se não há TCC cadastrado: DS/EmptyState "Nenhum TCC registrado. Consulte a secretaria." Critério 2: Fazer upload da versão final DADO QUE o aluno está em /tccs/:id \_links.upload-final existe na resposta (estado permite upload) QUANDO faz upload do arquivo PDF do TCC ENTÃO o PDF vai em POST /tccs/{id}/versao-final (multipart). A URL pré-assinada é o download. o estado muda para "SUBMETIDO" a banca recebe notificação via Outbox (tcc.submitted) o botão de upload desaparece (estado não permite novo upload) Critério 3: Visualizar banca e datas DADO QUE o aluno está em /tccs/:id QUANDO a página carrega ENTÃO exibe composição da banca com nome e papel de cada membro exibe data prevista de defesa com destaque visual exibe data limite de entrega com badge danger se prazo próximo DIAGRAMAS DE SEQUÊNCIA F1.15-D01 - Listar TCCs do aluno (GET /tccs?aluno=me) Escopo: CA-01 · RN-F1.15-01 - happy path - aluno vê tabela de TCCs registrados pela secretaria
 
 Atores: Aluno, WebApp, JwtFilter, TccController, Postgres Pré-condições: aluno autenticado com tcc.view\_own Notas: Se tccs:  [], a UI exibe DS/EmptyState "Nenhum TCC registrado. Consulte a secretaria." - mesmo fluxo HTTP, payload diferente. TCCs de períodos anteriores com situacao=CONCLUIDO aparecem na lista (RN-F1.15-02): o aluno pode ter histórico de TCCs, mas apenas um ATIVO por vez. O  aluno  não  possui  botão  "Novo  TCC":  a  abertura  é  feita  pela  secretaria  (F5)  e  a  ausência  de
 
@@ -1784,13 +1824,13 @@ Pré-condições: aluno autenticado com tcc.view\_own; TCC pertence ao aluno Not
 
 <!-- image -->
 
-F1.16-D03 - Enviar versão final do TCC (POST /tccs/{id}/upload)
+F1.16-D03 - Enviar versão final do TCC (POST /tccs/{id}/versao-final)
 
-Escopo: CA-02 · RN-F1.16-03 - aluno faz upload do PDF final e banca é notificada via Outbox Atores: Aluno, WebApp, JwtFilter, TccController, SubmitTccUseCase, Postgres Pré-condições:  \_links.upload-final presente (D02); arquivo enviado ao MinIO (DRY → F1.8-D03); fileKey disponível
+Escopo: CA-02 · RN-F1.16-03 - aluno faz upload do PDF final e banca é notificada via Outbox Atores: Aluno, WebApp, JwtFilter, TccController, SubmitTccUseCase, Postgres Pré-condições: \_links.upload-final presente (D02). O PDF vai em POST /tccs/{id}/versao-final (multipart).
 
 <!-- image -->
 
-Notas: Passo 1: upload do PDF ao MinIO ocorre antes desta chamada - DRY → F1/US-F1-005-SOLICITACOES.md  F1.8-D03  (presigned  PUT).  O  POST  aqui  registra  apenas  o fileKey. Passo 6: a cláusula AND aluno\_id=:alunoId é o guard IDOR - garante que nenhum aluno submeta versão ao TCC de outro. Passo  7:  INSERT  tcc\_event  +  INSERT  outbox\_event  + COMMIT são atômicos. O outbox\_event notifica todos os membros  da  banca  (bancaIds  obtidos  do  JOIN  em  passo  6).  Dispatch: transversal/10.1-outbox-notificacao.md. Passo 9: \_links retornado após submissão não contém mais upload-final - o botão desaparece sem lógica de estado hardcoded no frontend (CA-02 último critério).
+Notas: Passo 1: o PDF vai em POST /tccs/{id}/versao-final (multipart). A URL pré-assinada é o download. Passo 6: a cláusula AND aluno\_id=:alunoId é o guard IDOR - garante que nenhum aluno submeta versão ao TCC de outro. Passo  7:  INSERT  tcc\_event  +  INSERT  outbox\_event  + COMMIT são atômicos. O outbox\_event notifica todos os membros  da  banca  (bancaIds  obtidos  do  JOIN  em  passo  6).  Dispatch: transversal/10.1-outbox-notificacao.md. Passo 9: \_links retornado após submissão não contém mais upload-final - o botão desaparece sem lógica de estado hardcoded no frontend (CA-02 último critério).
 
 ## HU 16. US-F1-009 - Consultar Eventos e Confirmar Presença
 
@@ -1880,7 +1920,7 @@ Escopo: CA-06 · RN-F1.18-05 - countdown zerou ou janela nunca abriu; backend re
 
 Notas: Passo 9: RFC 7807 Problem Details sem revelar hora de reabertura, configuração da janela ou PIN armazenado (RN-F1.18-05 - segurança).
 
-Passo  10:  O  DS/AttendanceWidget  bloqueia  inputs  localmente  via  countdown  (RN-F1.18-07).  O backend  é  a  autoridade  final  -  o  403  é  a  segunda  linha  de  defesa  caso  o  countdown  seja manipulado client-side. Rate limiting: POST /events/{id}/attendance/confirm deve ter rate limiter (Bucket4j) por alunoId -  rejeições  excessivas  indicam  força-bruta  de  PIN.  Sem  diagrama  adicional  (configuração cross-cutting).
+Passo  10:  O  DS/AttendanceWidget  bloqueia  inputs  localmente  via  countdown  (RN-F1.18-07).  O backend  é  a  autoridade  final  -  o  403  é  a  segunda  linha  de  defesa  caso  o  countdown  seja manipulado client-side. Rate limiting: o rate limit é a janela em memória descrita em 4.11. Rejeições excessivas indicam força-bruta de PIN.  Sem  diagrama  adicional  (configuração cross-cutting).
 
 ## HU 17. US-F1-010 - Visualizar e Baixar Certificados Emitidos
 
@@ -1890,7 +1930,7 @@ ter  acesso  aos  documentos que comprovam minhas atividades e participações, 
 
 o aluno está em /certificados QUANDO a página carrega ENTÃO exibe tabela com: Tipo, Evento/Atividade, Data de emissão, botão Download filtrável por tipo e ano
 
-se não há certificados: DS/EmptyState "Você ainda não possui certificados emitidos." Critério 2: Download do PDF DADO QUE o aluno clica em "Download" para um certificado \_links.download existe na resposta QUANDO o sistema gera a URL pré-assinada do MinIO ENTÃO o download do PDF inicia automaticamente o PDF contém o QR Code de verificação se a URL pré-assinada expirar (&gt; 15 min): novo clique gera nova URL Critério 3: Badge no dashboard ao receber novo certificado DADO QUE a CAAF aprovou uma formativa do aluno QUANDO o CertificateIssuerUseCase emite o certificado (processo background) ENTÃO o KpiCard de certificados no dashboard (US-F1-001) incrementa em 1 o aluno recebe notificação in-app + push: "Seu certificado de [atividade] foi emitido." o certificado aparece no topo da lista em /certificados DIAGRAMAS DE SEQUÊNCIA
+se não há certificados: DS/EmptyState "Você ainda não possui certificados emitidos." Critério 2: Download do PDF DADO QUE o aluno clica em "Download" para um certificado \_links.download existe na resposta QUANDO o sistema gera a URL pré-assinada do MinIO ENTÃO o download do PDF inicia automaticamente o PDF contém o QR Code de verificação se a URL pré-assinada expirar (&gt; 15 min): novo clique gera nova URL Critério 3: Badge no dashboard ao receber novo certificado DADO QUE a CAAF aprovou uma formativa do aluno QUANDO o CertificateIssuerUseCase emite o certificado (processo background) ENTÃO o KpiCard de certificados no dashboard (US-F1-001) incrementa em 1 o aluno recebe notificação in-app e e-mail via Outbox: "Seu certificado de [atividade] foi emitido." Push FCM fica fora da demonstração (4.11). o certificado aparece no topo da lista em /certificados DIAGRAMAS DE SEQUÊNCIA
 
 F1.19-D01 - Listar certificados do aluno (GET /certificates?beneficiario=me)
 
@@ -1926,7 +1966,7 @@ Passo  10:  notificacao\_in\_app  incrementa  o  KpiCard  de  certificados  no  
 
 ## HU 18. US-F1-011 - Consultar Atendimentos e Dar Ciência
 
-COMO aluno autenticado QUERO ver  os  atendimentos  que  a  secretaria  registrou  para  mim  e  confirmar  ciência  daqueles  que aguardam minha resposta PARA ter  registro  formal  dos  atendimentos  presenciais  e cumprir com as confirmações necessárias de forma digital. DESENHO DA(S) TELA(S) [INSERIR TELA WEB AQUI] [INSERIR TELA MOBILE AQUI] FONTE: Elaborado pelos autores (2026). CRITÉRIOS DE ACEITAÇÃO Critério de contexto: Critério 1: Listar atendimentos com pendência destacada DADO QUE o aluno está em /meus-atendimentos QUANDO a página carrega ENTÃO exibe tabela com: Data, Assunto, Status (DS/Badge), Ação atendimentos com estado PENDENTE\_CIENCIA têm badge "Pendente ciência" em warning exibem botão "Estou ciente" na coluna Ação Critério 2: Dar ciência DADO QUE o aluno vê atendimento com "Estou ciente" disponível \_links.acknowledge existe na resposta QUANDO clica em "Estou ciente" ENTÃO o sistema realiza POST /service-records/:id/acknowledge o estado muda para CIENCIA\_DADA o badge muda para "Ciente" (success) e o botão desaparece a pendência correspondente some do Dashboard o evento atendimentos.acknowledged é gravado em audit\_log com data/IP
+COMO aluno autenticado QUERO ver  os  atendimentos  que  a  secretaria  registrou  para  mim  e  confirmar  ciência  daqueles  que aguardam minha resposta PARA ter  registro  formal  dos  atendimentos  presenciais  e cumprir com as confirmações necessárias de forma digital. DESENHO DA(S) TELA(S) [INSERIR TELA WEB AQUI] [INSERIR TELA MOBILE AQUI] FONTE: Elaborado pelos autores (2026). CRITÉRIOS DE ACEITAÇÃO Critério de contexto: Critério 1: Listar atendimentos com pendência destacada DADO QUE o aluno está em /meus-atendimentos QUANDO a página carrega ENTÃO exibe tabela com: Data, Assunto, Status (DS/Badge), Ação atendimentos com estado PENDENTE\_CIENCIA têm badge "Pendente ciência" em warning exibem botão "Estou ciente" na coluna Ação Critério 2: Dar ciência DADO QUE o aluno vê atendimento com "Estou ciente" disponível \_links.acknowledge existe na resposta QUANDO clica em "Estou ciente" ENTÃO o sistema realiza POST /atendimentos/{id}/acknowledge o estado muda para CIENCIA\_DADA o badge muda para "Ciente" (success) e o botão desaparece a pendência correspondente some do Dashboard o evento atendimentos.acknowledged é gravado em audit\_log com data/IP
 
 Critério 3: Filtro por pendências
 
@@ -1934,7 +1974,7 @@ DADO QUE o aluno filtra por "Pendente ciência" ENTÃO exibe apenas atendimentos
 
 DIAGRAMAS DE SEQUÊNCIA
 
-F1.20-D01 - Listar atendimentos (GET /service-records?aluno=me)
+F1.20-D01 - Listar atendimentos (GET /atendimentos?aluno=me)
 
 Escopo: CA-01 · CA-03 · RN-F1.20-01 · RN-F1.20-02 - happy path - tabela de atendimentos com badge e filtro por status Atores: Aluno, WebApp, JwtFilter, ServiceRecordController, Postgres Pré-condições: aluno autenticado com service\_record.view\_own
 
@@ -1942,7 +1982,7 @@ Escopo: CA-01 · CA-03 · RN-F1.20-01 · RN-F1.20-02 - happy path - tabela de at
 
 Notas: CA-03  usa  o  mesmo  endpoint  com  status=PENDENTE\_CIENCIA:  se  resultado  [],  UI  exibe DS/EmptyState "Nenhum atendimento pendente." \_links.acknowledge por item: presente apenas quando status=PENDENTE\_CIENCIA - HATEOAS controla a renderização do botão sem lógica hardcoded no frontend. Atendimentos  registrados  pela  secretaria  (F5.13)  chegam  com  status=PENDENTE\_CIENCIA  por padrão (RN-F1.20-01). O aluno não possui \_links de criação ou contestação - somente visualização e ciência.
 
-F1.20-D02 - Dar ciência (POST /service-records/{id}/acknowledge)
+F1.20-D02 - Dar ciência (POST /atendimentos/{id}/acknowledge)
 
 Escopo:  CA-02  ·  RN-F1.20-03  -  aluno  confirma  ciência;  transição  de  estado  +  registro  em audit\_log com IP
 
@@ -1988,15 +2028,15 @@ CRITÉRIOS DE ACEITAÇÃO
 
 <!-- image -->
 
-Critério de contexto: Critério 1: Acesso ao dashboard após transição para Egresso DADO QUE a secretaria registrou o diploma do aluno (F5.11) o sistema atribuiu role = EGRESSO ao usuário QUANDO o egresso faz login ENTÃO é redirecionado para /egresso/inicio (não para /inicio do aluno) o dashboard exibe dados read-only: curso concluído, data de conclusão, diploma, certificados NÃO exibe botões de criação (Nova solicitação, Nova formativa, etc.) Critério 2: Conteúdo do dashboard do egresso DADO QUE o egresso está em /egresso/inicio QUANDO a página carrega ENTÃO exibe KpiRow com indicadores históricos: - Total de horas formativas validadas (somente leitura) - Número de certificados emitidos - Situação do diploma (DS/Badge "Emitido" - success) exibe seção "Diploma": número, data de emissão, botão Download (se \_links.download) exibe seção "Certificados": lista dos certificados com botão Reemitir PDF (se \_links.reemitir) exibe seção "Dados de colação": data, turma (se disponível) todos os badges de status exibem variante "Concluído" (neutral ou success) Critério 3: Reemitir certificado DADO QUE o egresso está em /egresso/inicio um certificado tem \_links.reemitir na resposta QUANDO clica em "Reemitir PDF" ENTÃO o sistema regenera a URL pré-assinada do MinIO para o arquivo já existente o download do PDF inicia com o mesmo conteúdo, hash SHA-256 e assinatura ED25519 do original o certificado reemitido continua verificável em /publico/verificar-certificado/:hash NÃO é criado um novo registro de certificado na base de dados Critério 4: Tentativa de acessar rotas exclusivas de aluno DADO QUE o usuário tem role = EGRESSO QUANDO tenta acessar /solicitacoes/nova, /formativas ou /estagios ENTÃO o sistema retorna 403 Forbidden redireciona para /erro/403 exibe mensagem: "Você não tem permissão para acessar este recurso." o botão "Ir ao início" da tela de erro leva para /egresso/inicio Critério 5: Egresso acessa perfil e certificados (rotas reaproveitadas)
+Critério de contexto: Critério 1: Acesso ao dashboard após transição para Egresso DADO QUE a secretaria registrou o diploma do aluno (F5.11) o sistema reconhece o egresso pela capability alumni.view_own e pelo _links de GET /auth/me; o login cai em /egresso/inicio. Não há user.role, hasRole, ROLE_* nem authorities.includes. QUANDO o egresso faz login ENTÃO é redirecionado para /egresso/inicio (não para /inicio do aluno) o dashboard exibe dados read-only: curso concluído, data de conclusão, diploma, certificados NÃO exibe botões de criação (Nova solicitação, Nova formativa, etc.) Critério 2: Conteúdo do dashboard do egresso DADO QUE o egresso está em /egresso/inicio QUANDO a página carrega ENTÃO exibe KpiRow com indicadores históricos: - Total de horas formativas validadas (somente leitura) - Número de certificados emitidos - Situação do diploma (DS/Badge "Emitido" - success) exibe seção "Diploma": número, data de emissão, botão Download (se \_links.download) exibe seção "Certificados": lista dos certificados com botão Reemitir PDF (se \_links.reemitir) exibe seção "Dados de colação": data, turma (se disponível) todos os badges de status exibem variante "Concluído" (neutral ou success) Critério 3: Reemitir certificado DADO QUE o egresso está em /egresso/inicio um certificado tem \_links.reemitir na resposta QUANDO clica em "Reemitir PDF" ENTÃO o sistema regenera a URL pré-assinada do MinIO para o arquivo já existente o download do PDF inicia com o mesmo conteúdo, hash SHA-256 e assinatura ED25519 do original o certificado reemitido continua verificável em /publico/verificar-certificado/:hash NÃO é criado um novo registro de certificado na base de dados Critério 4: Tentativa de acessar rotas exclusivas de aluno DADO QUE o usuário tem a capability alumni.view_own e o _links de GET /auth/me aponta /egresso/inicio. Não há user.role. QUANDO tenta acessar /solicitacoes/nova, /formativas ou /estagios ENTÃO o sistema retorna 403 Forbidden redireciona para /erro/403 exibe mensagem: "Você não tem permissão para acessar este recurso." o botão "Ir ao início" da tela de erro leva para /egresso/inicio Critério 5: Egresso acessa perfil e certificados (rotas reaproveitadas)
 
 DADO QUE o egresso está em /egresso/inicio QUANDO navega para /perfil ENTÃO pode editar e-mail pessoal, telefone e foto (capability user.update\_own\_profile mantida) NÃO vê opções de notificações de solicitação ou formativa (capabilities revogadas) QUANDO
 
 navega para /certificados ENTÃO
 
-vê a lista completa dos certificados emitidos durante o curso pode baixar cada um via botão Download Critério 6: Loading e estado vazio DADO QUE o egresso está em /egresso/inicio QUANDO a API está em processamento ENTÃO exibe DS/Skeleton cobrindo os blocos do dashboard DADO QUE o egresso não tem certificados ENTÃO a seção Certificados exibe DS/EmptyState: "Nenhum certificado emitido durante o curso." Critério 7: Acessibilidade (WCAG 2.1 AA) DADO QUE o egresso usa leitor de tela ENTÃO os  campos  read-only  possuem  atributo  aria-readonly="true"  ou  são  renderizados  como  texto estático a estrutura de headings é: H1 "Olá, {nome}" → H2 por seção (Diploma, Certificados, Colação) os botões de download possuem aria-label descritivo: "Baixar certificado de [atividade]" DIAGRAMAS DE SEQUÊNCIA F2.1-D01 - GET /alumni/me - Dashboard read-only (happy path)
+vê a lista completa dos certificados emitidos durante o curso pode baixar cada um via botão Download Critério 6: Loading e estado vazio DADO QUE o egresso está em /egresso/inicio QUANDO a API está em processamento ENTÃO exibe DS/Skeleton cobrindo os blocos do dashboard DADO QUE o egresso não tem certificados ENTÃO a seção Certificados exibe DS/EmptyState: "Nenhum certificado emitido durante o curso." Critério 7: Acessibilidade (WCAG 2.1 AA) DADO QUE o egresso usa leitor de tela ENTÃO os  campos  read-only  possuem  atributo  aria-readonly="true"  ou  são  renderizados  como  texto estático a estrutura de headings é: H1 "Olá, {nome}" → H2 por seção (Diploma, Certificados, Colação) os botões de download possuem aria-label descritivo: "Baixar certificado de [atividade]" DIAGRAMAS DE SEQUÊNCIA F2.1-D01 - GET /egressos/me - Dashboard read-only (happy path)
 
-Escopo: Egresso autenticado acessa /egresso/inicio; WebApp carrega dados via GET /alumni/me e renderiza dashboard estritamente read-only com diploma, certificados e dados de colação. Atores: Egresso, WebApp, AlumniController, GetAlumniProfileUC, Postgres Pré-condições:  JWT  válido com alumni.view\_own; usuario.role = EGRESSO; registro de diploma
+Escopo: Egresso autenticado acessa /egresso/inicio; WebApp carrega dados via GET /egressos/me (4.11) e renderiza dashboard estritamente read-only com diploma, certificados e dados de colação. Atores: Egresso, WebApp, AlumniController, GetAlumniProfileUC, Postgres Pré-condições:  JWT  válido com alumni.view\_own; autorização pela linha de autorização da 4.11 (authority dominio.acao e _links); registro de diploma
 
 existe na base.
 
@@ -2044,7 +2084,7 @@ Passo 9: \_links.verify aponta para /publico/verificar-certificado/{hash} - o ce
 
 F2.1-D04 - 403: Egresso tenta rota exclusiva de aluno (erro)
 
-Escopo: Egresso (role=EGRESSO, sem request.open) tenta acessar /solicitacoes/nova; RouteGuard do  frontend  bloqueia  antes  mesmo  de  chamar  o  backend; botão "Ir ao início" redireciona para /egresso/inicio.
+Escopo: Egresso (autorização pela linha da 4.11: authority dominio.acao e _links; sem request.open) tenta acessar /solicitacoes/nova. Não há user.role. RouteGuard do  frontend  bloqueia  antes  mesmo  de  chamar  o  backend; botão "Ir ao início" redireciona para /egresso/inicio.
 
 Atores: Egresso, WebApp
 
@@ -2066,7 +2106,7 @@ COMO professor autenticado QUERO ver um painel unificado com todas as minhas fil
 
 DADO QUE o professor está autenticado com capabilities event.manage e request.deliberate QUANDO acessa /inicio ENTÃO
 
-o BFF retorna blocos para: KpiRow, fila solicitações, meus eventos o bloco "Formativas CAAF" NÃO aparece (professor não tem formative.review) todos os CTAs derivam de \_links na resposta DADO QUE o mesmo professor tem também formative.review ENTÃO o bloco "Formativas CAAF" aparece com a lista de entradas pendentes
+GET /bff/dashboard/professor (capability dashboard.view_self_professor) retorna HTTP 200 com blocos para: KpiRow, fila solicitações, meus eventos. /inicio do professor não responde 403 o bloco "Formativas CAAF" NÃO aparece (professor não tem formative.review) todos os CTAs derivam de \_links na resposta DADO QUE o mesmo professor tem também formative.review ENTÃO o bloco "Formativas CAAF" aparece com a lista de entradas pendentes
 
 Critério 2: KpiCard SLA warning
 
@@ -2082,7 +2122,7 @@ DADO QUE o módulo de solicitações está indisponível QUANDO o BFF tenta agre
 
 F3.1-D01 - Carregamento inicial do dashboard (happy path - cache MISS)
 
-Escopo: happy path - professor acessa /inicio; cache Redis expirado ou ausente Atores: Professor, WebApp, JwtFilter, DashboardBFF, Redis, Postgres Pré-condições:  professor  autenticado  com  dashboard.view\_self\_professor;  access  token válido; capabilities podem incluir event.manage, request.deliberate e opcionalmente formative.review
+Escopo: happy path - professor acessa /inicio. GET /bff/dashboard/professor retorna HTTP 200. Não há Redis; o BFF lê o Postgres (4.11). Atores: Professor, WebApp, JwtFilter, DashboardBFF, Postgres Pré-condições:  professor  autenticado  com  dashboard.view\_self\_professor;  access  token válido; capabilities podem incluir event.manage, request.deliberate e opcionalmente formative.review
 
 <!-- image -->
 
@@ -2128,13 +2168,13 @@ CRITÉRIOS DE ACEITAÇÃO
 
 Critério de contexto:
 
-Critério 1: Criar novo evento DADO QUE o professor está em /professor/eventos \_links.novoEvento existe na resposta QUANDO clica em "Novo evento" ENTÃO navega para o formulário de criação ao preencher: título, curso, inicioEm, fimEm, chCreditadas = 4, attendanceMode SECRET\_SINGLE clicar em "Salvar" ENTÃO o sistema realiza POST /events ao receber 201 Created redireciona para /professor/eventos/:id o evento aparece na lista com estado "AGENDADO" Critério 2: Configuração de janelas de validação (modo DUAL) DADO QUE o professor seleciona attendanceMode = SECRET\_DUAL no formulário QUANDO o formulário atualiza ENTÃO exibe dois blocos de configuração de janela: "Janela de entrada" e "Janela de saída" ambas são obrigatórias antes de salvar ao configurar: entrada 19h00-19h15, saída 21h45-22h00; salvar ENTÃO o evento é criado com duas sub-janelas configuradas Critério 3: Evento concluído é imutável DADO QUE o professor acessa /professor/eventos/:id de um evento com estado CONCLUIDO
+Critério 1: Criar novo evento DADO QUE o professor está em /professor/eventos \_links.novoEvento existe na resposta QUANDO clica em "Novo evento" ENTÃO navega para o formulário de criação ao preencher: título, curso, inicioEm, fimEm, chCreditadas = 4, attendanceMode SECRET\_SINGLE clicar em "Salvar" ENTÃO o sistema realiza POST /events ao receber 201 Created redireciona para /professor/eventos/:id o evento aparece na lista com estado "AGENDADO" Critério 2: Configuração de janelas de validação (modo DUAL) — fora da demonstração. A presença desta banca abre janela ao vivo de 15 minutos. DADO QUE o professor seleciona attendanceMode = SECRET\_DUAL no formulário QUANDO o formulário atualiza ENTÃO exibe dois blocos de configuração de janela: "Janela de entrada" e "Janela de saída" ambas são obrigatórias antes de salvar ao configurar: entrada 19h00-19h15, saída 21h45-22h00; salvar ENTÃO o evento é criado com duas sub-janelas configuradas Critério 3: Evento concluído é imutável DADO QUE o professor acessa /professor/eventos/:id de um evento com estado CONCLUIDO
 
 =
 
 QUANDO a página carrega ENTÃO todos os campos do formulário estão disabled
 
-um DS/AlertBanner info exibe: "Evento concluído - somente leitura." \_links.excluir NÃO existe na resposta Critério 4: Painel de operação: exibir QR (QR\_SINGLE) DADO QUE o professor está em /professor/eventos/:id/operacao o evento está EM\_ANDAMENTO e attendanceMode = QR\_SINGLE \_links.abrir-janela-entrada existe QUANDO clica em "Abrir janela entrada" ENTÃO o sistema realiza POST /events/:id/attendance/windows/entry o DS/QRDisplay exibe o token QR gerado pelo backend (280×280px) um countdown exibe o tempo restante da janela o QR é renovado automaticamente a cada 5 minutos Critério 5: Painel de operação: exibir PIN (SECRET\_DUAL - fase saída) DADO QUE o professor está no painel de operação de um evento SECRET\_DUAL a fase de entrada já foi concluída \_links.abrir-janela-saida existe QUANDO clica em "Abrir janela saída" ENTÃO o sistema ativa a janela de saída o DS/PINDisplay exibe o PIN de saída em fonte mono 32px alunos que não completaram a entrada ficam marcados como "Inelegíveis" na lista ao vivo Critério 6: Contadores em tempo real DADO QUE o professor está no painel de operação com janela ativa QUANDO os alunos começam a confirmar presença ENTÃO os contadores atualizam a cada 5s:
+um DS/AlertBanner info exibe: "Evento concluído - somente leitura." \_links.excluir NÃO existe na resposta Critério 4: Painel de operação: exibir QR (QR\_SINGLE) DADO QUE o professor está em /professor/eventos/:id/operacao o evento está EM\_ANDAMENTO e attendanceMode = QR\_SINGLE \_links.abrir-janela-entrada existe QUANDO clica em "Abrir janela entrada" ENTÃO o sistema realiza POST /events/:id/attendance/windows/entry o DS/QRDisplay exibe o token QR gerado pelo backend (280×280px) um countdown exibe o tempo restante da janela o QR é renovado automaticamente a cada 5 minutos Critério 5: Painel de operação: exibir PIN (SECRET\_DUAL - fase saída) — fora da demonstração. DADO QUE o professor está no painel de operação de um evento SECRET\_DUAL a fase de entrada já foi concluída \_links.abrir-janela-saida existe QUANDO clica em "Abrir janela saída" ENTÃO o sistema ativa a janela de saída o DS/PINDisplay exibe o PIN de saída em fonte mono 32px alunos que não completaram a entrada ficam marcados como "Inelegíveis" na lista ao vivo Critério 6: Contadores em tempo real DADO QUE o professor está no painel de operação com janela ativa QUANDO os alunos começam a confirmar presença ENTÃO os contadores atualizam a cada 5s:
 
 - Presenças completas: N
 - Presenças parciais (duplos): N
@@ -2143,7 +2183,7 @@ um DS/AlertBanner info exibe: "Evento concluído - somente leitura." \_links.exc
 
 Critério 7: Encerrar evento e disparar certificados
 
-DADO QUE o professor está no painel de operação \_links.encerrar-evento existe QUANDO clica em "Encerrar evento" e confirma no modal de confirmação ENTÃO o sistema realiza POST /events/:id/close o estado muda para CONCLUIDO para cada aluno com presença completa: CertificateIssuerUseCase emite certificado automaticamente o professor vê DS/AlertBanner success: "Evento encerrado. Certificados sendo gerados."
+DADO QUE o professor está no painel de operação \_links.encerrar-evento existe QUANDO clica em "Encerrar evento" e confirma no modal de confirmação ENTÃO o sistema realiza POST /events/{id}/encerrar o estado muda para CONCLUIDO. Não há PDF nem certificado nesse passo.
 
 DIAGRAMAS DE SEQUÊNCIA
 
@@ -2225,7 +2265,7 @@ Critério 1: Fila carregada com SLA breach destacado
 
 DADO QUE o professor está em /solicitacoes?to=me
 
-QUANDO a página carrega ENTÃO exibe tabela com: Número, Aluno, Tipo, Prazo (danger se vencido), SLA ordenada por prazo ascendente (mais urgente no topo) por padrão filtrável por tipo, curso e atraso Critério 2: Navegação da fila para deliberação DADO QUE o professor está na fila e clica em uma solicitação QUANDO abre /solicitacoes/:id/deliberar ENTÃO exibe: dados da solicitação, anexos, timeline de eventos painel sticky de decisão com: Textarea "Parecer", botões das ações disponíveis via \_links os botões têm variantes: Deferir (success), Indeferir (danger), Solicitar ajustes (warning), Encaminhar (secondary) Critério 3: Deferir solicitação DADO QUE o professor está na tela de deliberação \_links.deferir existe QUANDO preenche o Textarea com o parecer e clica em "Deferir" ENTÃO o sistema realiza POST /requests/:id/transitions { action: "DEFER", parecer: "..." } ao receber 200 OK: o estado da solicitação muda conforme o workflow a timeline exibe o novo evento "DEFERIDA" com o parecer o aluno recebe notificação push/e-mail o professor é redirecionado para a fila com mensagem de confirmação Critério 4: Deep-link por e-mail (professor não logado) DADO QUE o professor recebeu e-mail com URL /solicitacoes/:id/deliberar?token=JWT não está logado no sistema QUANDO clica no link ENTÃO a tela exibe modo "preview": dados da solicitação visíveis (read-only) um banner info: "Faça login para deliberar esta solicitação." botão "Fazer login" que redireciona para /login mantendo a URL de retorno após login bem-sucedido retorna para /solicitacoes/:id/deliberar?token=JWT o token JWT é validado e as ações ficam disponíveis Critério 5: Deep-link com token já utilizado DADO QUE o professor tenta acessar um deep-link cujo JTI já está na blacklist QUANDO o backend valida o token ENTÃO retorna 401 com detalhe "Token já utilizado" a tela exibe DS/EmptyState: "Este link já foi utilizado. Acesse a fila de solicitações para continuar." botão "Ir para a fila" → /solicitacoes?to=me Critério 6: Encaminhar para outro professor o professor clica em "Encaminhar", seleciona outro professor no select DADO QUE \_links.encaminhar existe na resposta QUANDO clica em "Confirmar encaminhamento" ENTÃO
+QUANDO a página carrega ENTÃO exibe tabela com: Número, Aluno, Tipo, Prazo (danger se vencido), SLA ordenada por prazo ascendente (mais urgente no topo) por padrão filtrável por tipo, curso e atraso Critério 2: Navegação da fila para deliberação DADO QUE o professor está na fila e clica em uma solicitação QUANDO abre /solicitacoes/:id/deliberar ENTÃO exibe: dados da solicitação, anexos, timeline de eventos painel sticky de decisão com: Textarea "Parecer", botões das ações disponíveis via \_links os botões do circuito são Deferir, Indeferir e Solicitar ajustes. Encaminhar fica fora da demonstração (4.11). Critério 3: Deferir solicitação DADO QUE o professor está na tela de deliberação \_links.deferir existe QUANDO preenche o Textarea com o parecer e clica em "Deferir" ENTÃO o sistema realiza POST /requests/:id/transitions { action: "DEFER", parecer: "..." } ao receber 200 OK: o estado da solicitação muda conforme o workflow a timeline exibe o novo evento "DEFERIDA" com o parecer o aluno recebe a deliberação in-app e por e-mail. Push FCM fica fora da demonstração (4.11). o professor é redirecionado para a fila com mensagem de confirmação Critério 4: Deep-link por e-mail (professor não logado) DADO QUE o professor recebeu e-mail com URL /solicitacoes/:id/deliberar?token=JWT não está logado no sistema QUANDO clica no link ENTÃO a tela exibe modo "preview": dados da solicitação visíveis (read-only) um banner info: "Faça login para deliberar esta solicitação." botão "Fazer login" que redireciona para /login mantendo a URL de retorno após login bem-sucedido retorna para /solicitacoes/:id/deliberar?token=JWT o token JWT é validado e as ações ficam disponíveis Critério 5: Deep-link com token já utilizado DADO QUE o professor tenta acessar um deep-link cujo JTI já está na blacklist QUANDO o backend valida o token ENTÃO retorna 401 com detalhe "Token já utilizado" a tela exibe DS/EmptyState: "Este link já foi utilizado. Acesse a fila de solicitações para continuar." botão "Ir para a fila" → /solicitacoes?to=me Critério 6: Encaminhar para outro professor (FORWARD fora da demonstração) o professor clica em "Encaminhar", seleciona outro professor no select DADO QUE \_links.encaminhar existe na resposta QUANDO clica em "Confirmar encaminhamento" ENTÃO
 
 o sistema realiza POST /requests/:id/transitions { action: "FORWARD", targetUserId: "..." } o sistema gera novo JWT 1-uso para o professor destino enfileira e-mail via Outbox para o novo deliberante a timeline exibe evento "ENCAMINHADA" com nome do destinatário Critério 7: Parecer obrigatório ao indeferir DADO QUE o professor tenta clicar em "Indeferir" sem preencher o Textarea ENTÃO o  campo Textarea exibe borda danger e mensagem: "Informe o parecer para indeferimento (mín. 20 caracteres)." a chamada à API NÃO é realizada DIAGRAMAS DE SEQUÊNCIA F3.3-D01 - Fila de deliberação (GET /requests?canDeliberate=true) Escopo: professor acessa /solicitacoes?to=me e obtém lista filtrada por canDeliberate=true
 
@@ -2241,7 +2281,7 @@ Escopo: professor delibera DEFER via sistema - transição workflow + TX atômic
 
 <!-- image -->
 
-Notas: Passo 5: DeliberateRequestUseCase valida internamente (RN-F3.4-05): (a) authority request.deliberate × Transition.requiresAuthority, (b) guard do workflow satisfeito, (c) JTI não está na blacklist quando  oriundo de deep-link. Qualquer falha → 422  sem  executar  TX  (ver F3.4-ERRO-b). Passos  6-10:  transação  atômica  -  UPDATE estado, INSERT request\_event, INSERT audit\_log e INSERT  outbox\_event  gravados  em  uma  única  TX  (padrão  P4).  Se  o  COMMIT  falhar,  nenhum evento é emitido. Passo 9: o OutboxDispatcher (a cada 5 s) consome solicitacoes.deliberated e dispara push/e-mail ao aluno. Fluxo completo → transversal/10.1-outbox-notificacao.md. RN-F3.4-07  -  Solicitar  ajustes:  mesmo  fluxo  com  action=REQUEST\_ADJUSTMENT;  UPDATE request SET estado=EM\_AJUSTE; outbox solicitacoes.adjustment\_requested → aluno recebe push para corrigir (DRY - não gera diagrama separado). RN-F3.4-08:  request\_event  e  audit\_log  são  imutáveis  após  COMMIT  -  sem UPDATE/DELETE permitidos nessas tabelas.
+Notas: Passo 5: DeliberateRequestUseCase valida internamente (RN-F3.4-05): (a) authority request.deliberate × Transition.requiresAuthority, (b) guard do workflow satisfeito, (c) JTI não está na blacklist quando  oriundo de deep-link. Qualquer falha → 422  sem  executar  TX  (ver F3.4-ERRO-b). Passos  6-10:  transação  atômica  -  UPDATE estado, INSERT request\_event, INSERT audit\_log e INSERT  outbox\_event  gravados  em  uma  única  TX  (padrão  P4).  Se  o  COMMIT  falhar,  nenhum evento é emitido. Passo 9: o OutboxDispatcher (a cada 5 s) consome solicitacoes.deliberated e entrega a deliberação in-app e por e-mail. Push FCM fica fora da demonstração (4.11). Fluxo completo → transversal/10.1-outbox-notificacao.md. RN-F3.4-07  -  Solicitar  ajustes:  mesmo  fluxo  com  action=REQUEST\_ADJUSTMENT;  UPDATE request SET estado=EM\_AJUSTE; outbox solicitacoes.adjustment\_requested → aluno recebe a correção in-app e por e-mail. Push FCM fica fora da demonstração (4.11). (DRY - não gera diagrama separado). RN-F3.4-08:  request\_event  e  audit\_log  são  imutáveis  após  COMMIT  -  sem UPDATE/DELETE permitidos nessas tabelas.
 
 F3.4-D03 - Deep-link por e-mail: professor não logado (preview → login → validar token)
 
@@ -2309,11 +2349,11 @@ DESENHO DA(S) TELA(S)
 
 <!-- image -->
 
-FONTE: Elaborado pelos autores (2026). CRITÉRIOS DE ACEITAÇÃO Critério de contexto: Critério 1: Fila de formativas para revisão DADO QUE o professor membro da CAAF acessa /formativas?to=me QUANDO a página carrega ENTÃO exibe tabela com: Aluno (nome), Atividade, Horas declaradas, Estado (DS/Badge), Data filtrável por curso e estado professor sem formative.review recebe 403 Critério 2: Aprovar formativa individual DADO QUE o professor clica em uma formativa com estado SUBMETIDA \_links.aprovar existe QUANDO preenche horasValidadas = 4 e clica em "Aprovar" ENTÃO o sistema realiza POST /formative-entries/:id/approve { horasValidadas: 4 } o estado muda para APROVADA CertificateIssuerUseCase emite o certificado para o aluno o aluno recebe notificação: "Sua atividade formativa foi aprovada. Certificado disponível." Critério 3: Aprovar em lote (presença validada)
+FONTE: Elaborado pelos autores (2026). CRITÉRIOS DE ACEITAÇÃO Critério de contexto: Critério 1: Fila de formativas para revisão DADO QUE o professor membro da CAAF acessa /formativas?to=me QUANDO a página carrega ENTÃO exibe tabela com: Aluno (nome), Atividade, Horas declaradas, Estado (DS/Badge), Data filtrável por curso e estado professor sem formative.review recebe 403 Critério 2: Aprovar formativa individual DADO QUE o professor clica em uma formativa com estado AGUARDANDO_CAAF \_links.aprovar existe QUANDO preenche horasValidadas = 4 e clica em "Aprovar" ENTÃO o sistema realiza POST /formativas/{id}/aprovar { horasValidadas: 4 } o estado muda para APROVADA e o certificado oficial sai na mesma transação o aluno recebe notificação: "Sua atividade formativa foi aprovada. Certificado disponível." Critério 3: Aprovar em lote (presença validada)
 
 DADO QUE há 15 formativas do tipo EVENTO\_INTERNO\_PRESENCA\_VALIDADA submetidas QUANDO o professor seleciona todas e clica em "Revisar em lote" ENTÃO ao confirmar: o sistema aprova todas em uma chamada batch
 
-um modal exibe: "Confirmar aprovação de 15 atividades de evento com presença validada?" cada item ganha seu event\_log individual Critério 4: Rejeitar formativa com parecer DADO QUE o professor clica em uma formativa \_links.rejeitar existe QUANDO preenche o campo parecer com menos de 20 caracteres e tenta rejeitar ENTÃO exibe erro inline: "O parecer deve ter pelo menos 20 caracteres." QUANDO preenche parecer adequado e confirma ENTÃO o estado muda para REJEITADA o aluno recebe push com o parecer DIAGRAMAS DE SEQUÊNCIA F3.5-D01 - Fila de revisão CAAF (GET /formative-entries?canReview=true) Escopo: professor membro da CAAF acessa /formativas?to=me e obtém fila filtrada por escopo de curso Atores: Professor, WebApp, JwtFilter, FormativeController, Postgres Pré-condições: professor autenticado com formative.review; vínculo com CAAF do curso Notas: Passo 4: cursoIds[] extraído do vínculo CAAF do professor no JWT (claim de escopo); ele não vê submissões de alunos de outros cursos (RN-F3.5-02). Passo 7: \_links.batch-approve presente apenas quando há itens do tipo EVENTO\_INTERNO\_PRESENCA\_VALIDADA  na  página  -  o  frontend  exibe  o  seletor  de  lote somente nesses itens (RN-F3.5-03).
+um modal exibe: "Confirmar aprovação de 15 atividades de evento com presença validada?" cada item ganha seu event\_log individual Critério 4: Rejeitar formativa com parecer DADO QUE o professor clica em uma formativa \_links.rejeitar existe QUANDO preenche o campo parecer com menos de 20 caracteres e tenta rejeitar ENTÃO exibe erro inline: "O parecer deve ter pelo menos 20 caracteres." QUANDO preenche parecer adequado e confirma ENTÃO o sistema realiza POST /formativas/{id}/indeferir; o estado vai para INDEFERIDA; o aluno recebe o parecer in-app e por e-mail. Push FCM fica fora da demonstração. DIAGRAMAS DE SEQUÊNCIA F3.5-D01 - Fila de revisão CAAF (GET /formativas?canReview=true) Escopo: professor membro da CAAF acessa /formativas?to=me e obtém fila filtrada por escopo de curso Atores: Professor, WebApp, JwtFilter, FormativeController, Postgres Pré-condições: professor autenticado com formative.review; vínculo com CAAF do curso Notas: Passo 4: escopo de curso no use case, sem claim cursoIds (4.11, linha de autorização: authority dominio.acao e _links); ele não vê submissões de alunos de outros cursos (RN-F3.5-02). Passo 7: \_links.batch-approve presente apenas quando há itens do tipo EVENTO\_INTERNO\_PRESENCA\_VALIDADA  na  página  -  o  frontend  exibe  o  seletor  de  lote somente nesses itens (RN-F3.5-03).
 
 <!-- image -->
 
@@ -2323,7 +2363,7 @@ Escopo: professor aprova formative\_entry com horasValidadas - TX atômica + out
 
 <!-- image -->
 
-Notas: Passos 6-10: TX atômica - UPDATE estado, INSERT event\_log e INSERT outbox\_event gravados juntos (RN-F3.5-06). Se o COMMIT falhar, nenhum certificado é emitido. Passo 9: o OutboxDispatcher (a cada 5 s) consome formativas.approved e aciona o CertificateIssuerUseCase para o aluno. O fluxo completo de emissão (Gotenberg PDF + SHA-256 + ED25519 + MinIO) está em → transversal/10.4-certificado-emissao.md. horasValidadas pode diferir das horas declaradas pelo aluno (RN-F3.5-04). O certificado usará o valor validado. Notificação push/e-mail ao aluno após despacho do outbox → transversal/10.1-outbox-notificacao.md.
+Notas: Passos 6-10: TX atômica - UPDATE estado, INSERT event\_log e INSERT outbox\_event gravados juntos (RN-F3.5-06). Se o COMMIT falhar, nenhum certificado é emitido. Passo 9: o certificado da aprovação individual continua na mesma transação. A notificação é in-app e por e-mail. Push FCM fica fora da demonstração (4.11). horasValidadas pode diferir das horas declaradas pelo aluno (RN-F3.5-04). O certificado usará o valor validado. → transversal/10.1-outbox-notificacao.md.
 
 F3.5-D03 - Aprovar em lote (EVENTO\_INTERNO\_PRESENCA\_VALIDADA)
 
@@ -2339,7 +2379,7 @@ F3.5-D04 - Rejeitar formativa com parecer + TX outbox Escopo:  professor  rejeit
 
 <!-- image -->
 
-Notas: Passo 1:  se  o  parecer  tiver  menos  de  20  caracteres,  o  React  Hook  Form  /  Zod bloqueia o POST antes de ser disparado -  validação client-side, sem  chamada  HTTP  (CA-04  parte 1 → NAO\_APLICAVEL). Passo  9:  o  OutboxDispatcher consome formativas.rejected, renderiza template com o parecer e envia push/e-mail ao aluno para corrigir e  resubmeter  (RN-F3.5-05).  Fluxo  completo → transversal/10.1-outbox-notificacao.md. O  aluno  poderá  corrigir  e  resubmeter  a  atividade → estado  retorna  a  SUBMETIDA  (fluxo  em
+Notas: Passo 1:  se  o  parecer  tiver  menos  de  20  caracteres,  o  React  Hook  Form  /  Zod bloqueia o POST antes de ser disparado -  validação client-side, sem  chamada  HTTP  (CA-04  parte 1 → NAO\_APLICAVEL). Passo  9:  o  OutboxDispatcher consome formativas.rejected, renderiza template com o parecer e entrega a notificação in-app e por e-mail. Push FCM fica fora da demonstração (4.11). O aluno pode corrigir e resubmeter  (RN-F3.5-05).  Fluxo  completo → transversal/10.1-outbox-notificacao.md. O  aluno  poderá  corrigir  e  resubmeter  a  atividade → estado  retorna  a  SUBMETIDA  (fluxo  em
 
 F1/US-F1-006-FORMATIVAS.md F1.11-D02).
 
@@ -2373,9 +2413,9 @@ FONTE: Elaborado pelos autores (2026).
 
 decisao:  "APROVADO",
 
-CRITÉRIOS DE ACEITAÇÃO Critério de contexto: Critério 1: Listar estágios para revisão DADO QUE o professor está em /estagios?to=me QUANDO a página carrega ENTÃO exibe tabela com: Aluno, Empresa, Documento pendente se não há estágios: DS/EmptyState "Nenhum estágio aguardando sua revisão." Critério 2: Emitir parecer em documento DADO QUE o professor está em /estagios/:id, tab Documentos o aluno fez upload do Relatório Final e \_links.revisar existe QUANDO preenche o parecer e seleciona "Aprovado" ENTÃO o sistema realiza POST /internships/:id/documents/:docId/review{ parecer: "..."} o documento muda para estado "Aprovado" o aluno recebe notificação Critério 3: Arquivar estágio concluído DADO QUE todos os documentos obrigatórios foram aprovados \_links.arquivar existe QUANDO
+CRITÉRIOS DE ACEITAÇÃO Critério de contexto: Critério 1: Listar estágios para revisão DADO QUE o professor está em /estagios?to=me QUANDO a página carrega ENTÃO exibe tabela com: Aluno, Empresa, Documento pendente se não há estágios: DS/EmptyState "Nenhum estágio aguardando sua revisão." Critério 2: Emitir parecer em documento DADO QUE o professor está em /estagios/:id, tab Documentos o aluno fez upload do Relatório Final e \_links.revisar existe QUANDO preenche o parecer e seleciona "Aprovado" ENTÃO o sistema realiza POST /estagios/{id}/documentos/{documentoId}/parecer { parecer: "..." } o documento muda para estado "Aprovado" o aluno recebe notificação Critério 3: Arquivar estágio concluído DADO QUE todos os documentos obrigatórios foram aprovados \_links.arquivar existe QUANDO
 
-o professor clica em "Arquivar estágio" ENTÃO o sistema realiza POST /internships/:id/close o estágio muda para estado CONCLUIDO o aluno recebe notificação de conclusão
+o professor clica em "Arquivar estágio" ENTÃO o sistema realiza POST /estagios/{id}/encerrar o estágio muda para estado CONCLUIDO o aluno recebe notificação de conclusão
 
 DIAGRAMAS DE SEQUÊNCIA
 
@@ -2399,7 +2439,7 @@ parecer preenchido
 
 Notas:
 
-Passo 1: antes do POST, o frontend carregou /estagios/:id via GET /internships/{id} - a resposta inclui  os  documentos  e  \_links.revisar  quando  documento.estado  =  AGUARDANDO\_PARECER (RN-F3.6-03). Sem o link, o botão não é exibido (useActions). Passo 9: o OutboxDispatcher consome estagios.document\_reviewed e envia push/e-mail ao aluno com o resultado do parecer (RN-F3.6-06). Fluxo completo → transversal/10.1-outbox-notificacao.md. Passo  12:  \_links.arquivar  aparece  na  resposta  somente  se  todos  os  documentos  obrigatórios  do estágio estiverem com estado=APROVADO (RN-F3.6-05) - HATEOAS condicional.
+Passo 1: antes do POST, o frontend carregou /estagios/:id via GET /estagios/{id} - a resposta inclui  os  documentos  e  \_links.revisar  quando  documento.estado  =  AGUARDANDO\_PARECER (RN-F3.6-03). Sem o link, o botão não é exibido (useActions). Passo 9: o OutboxDispatcher consome estagios.document\_reviewed e entrega a notificação in-app e por e-mail (4.11) ao aluno com o resultado do parecer (RN-F3.6-06). Fluxo completo → transversal/10.1-outbox-notificacao.md. Passo  12:  \_links.arquivar  aparece  na  resposta  somente  se  todos  os  documentos  obrigatórios  do estágio estiverem com estado=APROVADO (RN-F3.6-05) - HATEOAS condicional.
 
 F3.6-D03 - Arquivar estágio concluído + TX outbox
 
@@ -2419,9 +2459,9 @@ Notas: Em  condições  normais,  o  menu  "Estágios"  para  revisão  não  é
 
 ## HU 25. US-F3-006 - Avaliar TCC (Orientador / Banca)
 
-COMO professor orientador ou membro de banca de TCC QUERO visualizar os TCCs sob minha responsabilidade, baixar o arquivo enviado, registrar nota e parecer PARA
+COMO professor orientador ou membro de banca de TCC QUERO visualizar os TCCs sob minha responsabilidade, baixar o arquivo enviado, registrar nota e parecer (avaliação individual: POST /tccs/{id}/avaliacoes, capability tcc.review) PARA
 
-formalizar a avaliação e, quando aprovado, desencadear a emissão do certificado de conclusão do aluno.
+formalizar a avaliação e, quando aprovado, desencadear a emissão do certificado de conclusão do aluno (fora da demonstração).
 
 ## DESENHO DA(S) TELA(S)
 
@@ -2445,7 +2485,7 @@ DADO QUE o professor acessa /tccs?to=me QUANDO a página carrega ENTÃO exibe ta
 
 Critério 2: Registrar avaliação
 
-DADO QUE o professor acessa /tccs/:id o aluno enviou o arquivo final e \_links.avaliar existe QUANDO preenche nota = 8.5, parecer e clica em "Registrar avaliação" ENTÃO o sistema realiza POST /tccs/:id/review { nota: 8.5, parecer: "...", situacao: "APROVADO" } o estado do TCC muda conforme a nota se aprovado: CertificateIssuerUseCase é disparado o aluno recebe notificação com o resultado
+DADO QUE o professor acessa /tccs/:id o aluno enviou o arquivo final e \_links.avaliar existe QUANDO preenche nota = 8.5, parecer e clica em "Registrar avaliação" ENTÃO o sistema realiza POST /tccs/{id}/avaliacoes (capability tcc.review) { nota: 8.5, parecer: "...", situacao: "APROVADO" } o estado do TCC muda conforme a nota se aprovado: CertificateIssuerUseCase é disparado (fora da demonstração) o aluno recebe notificação com o resultado
 
 Critério 3: Download do arquivo para avaliação
 
@@ -2471,7 +2511,7 @@ Passo 7: \_links inclui avaliar por item se \_links.avaliar disponível (aluno e
 
 F3.7-D02 - Registrar avaliação + TX outbox + trigger certificado
 
-Escopo:  professor  registra  nota  e  parecer  -  TX  atômica  +  outbox  que  aciona  notificação  e,  se APROVADO, emissão de certificado
+Escopo: professor registra nota e parecer - TX atômica + outbox. O certificado de conclusão fica fora da demonstração (4.11). A notificação é in-app e e-mail, sem push.
 
 Atores: Professor, WebApp, JwtFilter, TccController, ReviewTccUseCase, Postgres Pré-condições: professor com tcc.supervise; \_links.avaliar presente; aluno enviou arquivo final
 
@@ -2481,7 +2521,7 @@ Notas:
 
 Passo  8:  ReviewTccUseCase  calcula  situacao  internamente  com  base  em  nota &gt;= nota\_minima configurada  no  sistema  -  pode  resultar  em  APROVADO,  COM\_CORRECOES  ou  REPROVADO (RN-F3.7-04). O frontend envia apenas nota e parecer; o situacao é determinado pelo backend.
 
-Passo  9:  o  OutboxDispatcher  consome  tcc.reviewed  e:  (a)  envia  push/e-mail  ao  aluno  com  o resultado;  (b)  se  situacao=APROVADO  e  aluno  elegível,  aciona  CertificateIssuerUseCase.  Fluxo completo de emissão → transversal/10.4-certificado-emissao.md. Notificação → transversal/10.1-outbox-notificacao.md.
+Passo  9:  o  OutboxDispatcher  consome  tcc.reviewed. A notificação é in-app e e-mail, sem push. O certificado de conclusão fica fora da demonstração (4.11). Notificação → transversal/10.1-outbox-notificacao.md.
 
 Passo 7: tcc\_evaluation é imutável após INSERT - cada professor de banca registra a sua avaliação individualmente (RN-F3.7-06). A situacao final do TCC pode depender da consolidação de múltiplas avaliações de banca (regra de negócio a definir no workflow\_json do RequestType).
 
@@ -2571,15 +2611,15 @@ o professor com formative.review acessa /comissoes/caaf QUANDO a página carrega
 
 a DataTable exibe: Aluno, Tipo atividade, Horas, Data submissão, Responsável (pool ou nome) itens sem responsável exibem DS/Badge "No pool" itens atribuídos ao usuário exibem DS/Badge "Comigo"
 
-professor sem formative.review recebe HTTP 403 Critério 2: Self-assign DADO QUE o professor está na lista do pool \_links.assign-member existe para um item QUANDO clica em "Atribuir a mim" na linha ENTÃO o sistema realiza POST /commissions/caaf/assign { itemId, assigneeId: "meu-id" } o badge da linha muda para "Comigo" o contador "Atribuídas a mim" no KpiRow incrementa o item aparece na fila individual em /formativas?to=me (F3.5) Critério 3: Atribuir a outro membro via AssignmentBoard DADO QUE o professor está na lista e há outros membros na comissão \_links.assign-member existe QUANDO clica em "Atribuir..." na linha ou no BulkActionBar com 1+ selecionados ENTÃO o DS/AssignmentBoard abre como overlay lateral exibe lista de membros da comissão com nome e carga atual (N itens) o membro com maior carga recebe badge warning QUANDO seleciona um colega e clica em "Confirmar" ENTÃO
+professor sem formative.review recebe HTTP 403 Critério 2: Self-assign DADO QUE o professor está na lista do pool \_links.assign-member existe para um item QUANDO clica em "Atribuir a mim" na linha ENTÃO o sistema realiza POST /comissoes/caaf/atribuicoes { formativaId, assigneeId: "meu-id" } o badge da linha muda para "Comigo" o contador "Atribuídas a mim" no KpiRow incrementa o item aparece na fila individual em /formativas?to=me (F3.5) Critério 3: Atribuir a outro membro via AssignmentBoard DADO QUE o professor está na lista e há outros membros na comissão \_links.assign-member existe QUANDO clica em "Atribuir..." na linha ou no BulkActionBar com 1+ selecionados ENTÃO o DS/AssignmentBoard abre como overlay lateral exibe lista de membros da comissão com nome e carga atual (N itens) o membro com maior carga recebe badge warning QUANDO seleciona um colega e clica em "Confirmar" ENTÃO
 
-o sistema realiza POST /commissions/caaf/assign { itemId, assigneeId: "id-colega" } o overlay fecha e a linha atualiza badge com nome do responsável Outbox enfileira notificação para o colega destinatário
+o sistema realiza POST /comissoes/caaf/atribuicoes { formativaId, assigneeId: "id-colega" } o overlay fecha e a linha atualiza badge com nome do responsável Outbox enfileira notificação para o colega destinatário
 
 Critério 4: Aprovação em lote (presença validada)
 
-DADO QUE existem 10 formativas do tipo EVENTO\_INTERNO\_PRESENCA\_VALIDADA no pool QUANDO o professor seleciona todas via checkbox "selecionar todos" a DS/BulkActionBar aparece com "Aprovar selecionados" habilitado clica em "Aprovar selecionados"
+DADO QUE existem 10 formativas só de origem PRESENCA\_VALIDADA no pool QUANDO o professor seleciona todas via checkbox "selecionar todos" a DS/BulkActionBar aparece com "Aprovar selecionados" habilitado clica em "Aprovar selecionados"
 
-ENTÃO um modal de confirmação exibe: "Aprovar 10 atividades de evento com presença validada?" ao confirmar: POST /commissions/caaf/batch-decide { ids: [...], decisao: "APROVADA" } cada item recebe seu event\_log individual CertificateIssuerUseCase é disparado para cada aluno DS/AlertBanner success: "10 atividades aprovadas. Certificados sendo gerados."
+ENTÃO um modal de confirmação exibe: "Aprovar 10 atividades de evento com presença validada?" ao confirmar: POST /comissoes/caaf/lote { ids, decisao: APROVADA } cada item recebe seu event\_log individual CertificateIssuerUseCase é disparado para cada aluno DS/AlertBanner success: "10 atividades aprovadas. Certificados sendo gerados."
 
 Critério 5: Lote com tipo de atividade incompatível
 
@@ -2637,7 +2677,7 @@ Notas:
 
 Passo  4:  load  é  calculado  como  COUNT(*)  WHERE  assignee\_id  =  member.id  AND  estado  = 'EM\_REVISAO' - reflete apenas itens ativos.
 
-Passo  12:  transação  atômica;  outbox\_event  'formativas.assigned'  com  assigneeId  =  colega.id  -  o dispatcher entrega push/email ao colega ( → ../transversal/10.1-outbox-notificacao.md).
+Passo  12:  transação  atômica;  outbox\_event  'formativas.assigned'  com  assigneeId  =  colega.id  -  a notificação é in-app e por e-mail (4.11) ao colega ( → ../transversal/10.1-outbox-notificacao.md).
 
 Após  atribuição  ao  colega,  o  item  desaparece  da  listagem  do  professor  atual  (RN-F4.1-02: formativas atribuídas a outro membro não aparecem no pool).
 
@@ -2661,7 +2701,7 @@ Escopo: caminhos de erro 403 - (A) professor sem formative.review tenta acessar 
 
 Atores: Professor, WebApp, CAAFController, Postgres.
 
-Pré-condições:  (A)  professor  autenticado,  JWT  válido,  mas  sem  a  authority  formative.review;  (B) professor com formative.review mas itemId.curso\_id ∉ commission\_member.cursoIds.
+Pré-condições:  (A)  professor  autenticado,  JWT  válido,  mas  sem  a  authority  formative.review;  (B) professor com formative.review mas item fora do escopo de curso no use case, sem claim cursoIds (4.11).
 
 <!-- image -->
 
@@ -2674,8 +2714,6 @@ F4.1f - ERRO 422 - batch-decide com tipos de atividade incompatíveis (guard bac
 Escopo: defesa em profundidade - cliente envia POST /commissions/caaf/batch-decide com ids contendo formativas de tipo misto (não exclusivamente EVENTO\_INTERNO\_PRESENCA\_VALIDADA); backend rejeita com 422 antes de qualquer UPDATE. Atores: Professor, WebApp, CAAFController, BatchDecideFormativesUC, Postgres. Pré-condições: seleção contém ≥ 1 formativa de tipo COMPROVANTE\_MANUAL (ou outro tipo sem aprovação em lote); chamada pode ocorrer por bypass da UI (manipulação direta da API).
 
 [INSERIR DIAGRAMA DE SEQUÊNCIA AQUI] Notas: Passo  6:  a  validação  ocorre  antes  de  qualquer  BEGIN  TX  -  sem  efeito  colateral  no  banco  para payload inválido. No caminho normal da UI, este cenário é prevenido pelo DS/BulkActionBar que desabilita "Aprovar selecionados"  e  exibe  tooltip  quando  a  seleção  é  de  tipos  mistos  (RN-F4.1-07)  -  este  diagrama cobre o guard de backend equivalente. O campo invalidIds no corpo 422 permite ao cliente identificar e destacar os itens incompatíveis na DS/DataTable.
-
-## Execução fila Item: US-F4-001 Status: pendente → feito Arquivo: sequenceDiagrams/F4/US-F4-001-COMISSAO-CAAF.md Próximo: US-F3-002 (ordem 21, pendente) - mas F4-001 foi gerado fora de ordem por solicitação direta; próximo na fila regular é US-F3-002.
 
 ## HU 28. US-F4-002 - Pool COE: Atribuir e Acompanhar Estágios em Lote
 
@@ -2701,9 +2739,9 @@ Critério 1: Pool COE carregado com KPIs
 
 DADO QUE o professor com internship.review acessa /comissoes/coe QUANDO a página carrega ENTÃO o KpiRow exibe: pool total, atribuídos ao usuário, documentos pendentes, concluídos no período a DataTable exibe: Aluno, Empresa, Tipo estágio, Data início, Documento pendente, Responsável estágios sem orientador exibem DS/Badge "No pool"
 
-documento com SLA vencido exibe célula em status/danger Critério 2: Self-assign de estágio DADO QUE o professor está na lista do pool e \_links.assign-member existe para um estágio QUANDO clica em "Atribuir a mim" ENTÃO o sistema realiza POST /commissions/coe/assign { internshipId, assigneeId: "meu-id" } o badge da linha muda para "Comigo" o contador "Atribuídos a mim" incrementa no KpiRow o estágio passa a aparecer em /estagios?to=me (F3.6) o aluno recebe notificação: "Seu orientador de estágio foi definido: [nome]" Critério 3: Atribuir a outro orientador via AssignmentBoard DADO QUE o COE tem múltiplos membros QUANDO o responsável seleciona um estágio e clica em "Atribuir..." ENTÃO DS/AssignmentBoard abre como overlay lateral exibe lista de membros do COE com: nome, estágios ativos (carga atual)
+documento com SLA vencido exibe célula em status/danger Critério 2: Self-assign de estágio DADO QUE o professor está na lista do pool e \_links.assign-member existe para um estágio QUANDO clica em "Atribuir a mim" ENTÃO o sistema realiza POST /comissoes/coe/atribuicoes { estagioId, assigneeId } o badge da linha muda para "Comigo" o contador "Atribuídos a mim" incrementa no KpiRow o estágio passa a aparecer em /estagios?to=me (F3.6) o aluno recebe notificação: "Seu orientador de estágio foi definido: [nome]" Critério 3: Atribuir a outro orientador via AssignmentBoard DADO QUE o COE tem múltiplos membros QUANDO o responsável seleciona um estágio e clica em "Atribuir..." ENTÃO DS/AssignmentBoard abre como overlay lateral exibe lista de membros do COE com: nome, estágios ativos (carga atual)
 
-membro com mais estágios que a média recebe badge warning "Carga alta" QUANDO seleciona um membro e confirma ENTÃO POST /commissions/coe/assign { internshipId, assigneeId } overlay fecha, linha atualiza com nome do orientador Outbox enfileira notificação para o orientador designado Critério 4: BulkActionBar somente com "Atribuir" (sem "Aprovar") DADO QUE o professor seleciona 5 estágios no pool QUANDO a DS/BulkActionBar aparece ENTÃO exibe somente "Atribuir selecionados" habilitado NÃO exibe "Aprovar selecionados" (pareceres de estágio são sempre individuais) QUANDO clica em "Atribuir selecionados" com 5 itens selecionados ENTÃO DS/AssignmentBoard abre com capacidade de atribuir todos de uma vez ao mesmo orientador o sistema realiza POST para cada item (ou endpoint batch) mantendo event\_log individual Critério 5: Estado Empty (pool vazio) DADO QUE não há estágios sem orientador no escopo do COE QUANDO o professor acessa /comissoes/coe
+membro com mais estágios que a média recebe badge warning "Carga alta" QUANDO seleciona um membro e confirma ENTÃO POST /comissoes/coe/atribuicoes { estagioId, assigneeId } overlay fecha, linha atualiza com nome do orientador Outbox enfileira notificação para o orientador designado Critério 4: BulkActionBar somente com "Atribuir" (sem "Aprovar") DADO QUE o professor seleciona 5 estágios no pool QUANDO a DS/BulkActionBar aparece ENTÃO exibe somente "Atribuir selecionados" habilitado NÃO exibe "Aprovar selecionados" (pareceres de estágio são sempre individuais) QUANDO clica em "Atribuir selecionados" com 5 itens selecionados ENTÃO DS/AssignmentBoard abre com capacidade de atribuir todos de uma vez ao mesmo orientador o sistema realiza POST para cada item (ou endpoint batch) mantendo event\_log individual Critério 5: Estado Empty (pool vazio) DADO QUE não há estágios sem orientador no escopo do COE QUANDO o professor acessa /comissoes/coe
 
 ENTÃO
 
@@ -2727,7 +2765,7 @@ dias de atraso ocorrem no DS/DataTable client-side (CA-06 - sem chamada backend 
 
 F4.2b - Self-assign com notificação ao aluno (happy path) Escopo:  happy  path  - membro do COE atribui um estágio a si mesmo como orientador; aluno
 
-recebe notificação push/email com o nome do orientador designado. Atores: Professor, WebApp, COEController, AssignInternshipUC, Postgres.
+recebe notificação in-app e por e-mail (4.11) com o nome do orientador designado. Atores: Professor, WebApp, COEController, AssignInternshipUC, Postgres.
 
 Pré-condições: estágio sem orientador no pool; professor com internship.review e escopo de curso compatível; \_links.assign-member presente.
 
@@ -2735,7 +2773,7 @@ Pré-condições: estágio sem orientador no pool; professor com internship.revi
 
 Notas: Passos  6-9:  transação  atômica  -  UPDATE  +  outbox\_event  em  commit  único  (sem  notificação fantasma).
 
-O payload {assigneeId=self, alunoId} resulta em dois destinatários no dispatcher: (a) assigneeId = self  é  filtrado  como  ator  da  ação  (sem  auto-notificação);  (b)  alunoId  recebe  push/email  "Seu orientador  de  estágio  foi  definido:  [nome  do  professor]"  (RN-F4.2-05,  CA-02).  Fase  dispatch → ../transversal/10.1-outbox-notificacao.md.
+O payload {assigneeId=self, alunoId} resulta em dois destinatários no dispatcher: (a) assigneeId = self  é  filtrado  como  ator  da  ação  (sem  auto-notificação);  (b)  alunoId  recebe  notificação in-app e por e-mail (4.11)  "Seu orientador  de  estágio  foi  definido:  [nome  do  professor]"  (RN-F4.2-05,  CA-02).  Fase  dispatch → ../transversal/10.1-outbox-notificacao.md.
 
 Diferença chave vs CAAF F4.1b: no COE o aluno é notificado no momento da atribuição (orientador
 
@@ -2751,7 +2789,7 @@ professor com internship.review.
 
 Notas: Passo 4: load = COUNT(*) WHERE assignee\_id = member.id AND estado IN ('EM\_ANDAMENTO', 'AGUARDANDO\_DOC') - reflete apenas estágios ativos em análise. Passo 12 (TX): outbox\_event com payload={assigneeId=orientador, alunoId} → orientador foi definido: [nome]". Fase dispatch → ../transversal/10.1-outbox-notificacao.md.
 
-dispatcher entrega: (a)  push/email  ao  orientador  "Novo  estágio  atribuído  a  você";  (b)  push/email  ao  aluno  "Seu Após atribuição ao colega, o estágio desaparece do pool do professor atual (RN-F4.2-02).
+dispatcher entrega notificação in-app e por e-mail (4.11): (a)  ao  orientador  "Novo  estágio  atribuído  a  você";  (b)  ao  aluno  "Seu Após atribuição ao colega, o estágio desaparece do pool do professor atual (RN-F4.2-02).
 
 F4.2d - BulkActionBar - atribuição em lote a um orientador Escopo:  happy  path  -  professor  seleciona  N  estágios  no  pool,  abre  DS/AssignmentBoard pelo DS/BulkActionBar  (que  exibe  apenas  "Atribuir  selecionados",  sem  "Aprovar"),  atribui  todos  ao mesmo orientador em um único commit; cada estágio recebe outbox\_event individual.
 
@@ -2773,7 +2811,7 @@ F4.2e - ERRO 403 - sem internship.review ou violação de escopo Escopo: caminho
 
 Atores: Professor, WebApp, COEController, AssignInternshipUC, Postgres.
 
-Pré-condições: (A) JWT  válido, sem  authority internship.review; (B) internship.curso\_id ∉ commission\_member.cursoIds.
+Pré-condições: (A) JWT  válido, sem  authority internship.review; (B) internship fora do escopo de curso no use case, sem claim cursoIds (4.11).
 
 <!-- image -->
 
@@ -2782,8 +2820,6 @@ Pré-condições: (A) JWT  válido, sem  authority internship.review; (B) intern
 Passo  3  (cenário  A):  @PreAuthorize("hasAuthority('internship.review')")  rejeita  antes  de  qualquer query; o sidebar BFF não inclui link /comissoes/coe sem a authority (UI cega via \_links).
 
 Passo 11  (cenário  B):  validação  de  escopo  no  use  case  após  query  -  não confiar apenas no JWT; defesa em profundidade contra acesso cross-curso/centro. Padrão  idêntico  ao  F4.1e  (CAAF);  diferenças  apenas  no  nome  da  authority  (internship.review  vs formative.review) e no endpoint.
-
-## Execução fila Item: US-F4-002 Status: pendente → feito Arquivo: sequenceDiagrams/F4/US-F4-002-COMISSAO-COE.md Próximo: US-F3-002 (ordem 21, pendente) - próximo item da fila regular.
 
 8.6 SECRETARIA
 
@@ -2807,15 +2843,15 @@ DIAGRAMAS DE SEQUÊNCIA
 
 F5.1-D01 - Carregamento inicial do dashboard (happy path - cache MISS)
 
-Escopo: happy path - secretária acessa /inicio; cache Redis expirado ou ausente Atores: Secretaria, WebApp, JwtFilter, DashboardBFF, Redis, Postgres
+Escopo: happy path - secretária acessa /inicio. Não há Redis; o BFF lê o Postgres (4.11). Atores: Secretaria, WebApp, JwtFilter, DashboardBFF, Postgres
 
-Pré-condições: secretária autenticada com  dashboard.view\_secretary; access token válido; cursoIds[] extraídos das capabilities escopeadas
+Pré-condições: secretária autenticada com dashboard.view\_secretary; access token válido; escopo em CursoEscopoPort (4.11). GET /bff/dashboard/secretary.
 
 <!-- image -->
 
 Notas:
 
-Passo 6: BFF executa as 4 sub-queries em paralelo (coroutines/awaitAll); filaPriorizada limitada a ≤ 10  registros  ordenados  por  prazo\_em ASC, criado\_em ASC (RN-F5-001-03); todas filtradas por cursoIds[] extraídos do JWT/escopeamento do usuário (RN-F5-001-05).
+Passo 6: BFF executa as 4 sub-queries em paralelo (coroutines/awaitAll); filaPriorizada limitada a ≤ 10  registros  ordenados  por  prazo\_em ASC, criado\_em ASC (RN-F5-001-03); escopo em CursoEscopoPort (4.11) (RN-F5-001-05).
 
 Passo 6: alertasSla = itens com prazo\_em &lt; now(); filaPriorizada[].sla\_status é calculado pelo BFF (danger se prazo\_em &lt; now(), warning se prazo\_em &lt; now + 24h) - renderização visual client-side via CSS tokens (CA-F5-001-02).
 
@@ -2829,11 +2865,11 @@ Escopo: secretária clica no botão Refresh; TanStack Query invalida cache e for
 
 Notas:
 
-Passo 2: queryClient.invalidateQueries zera apenas o cache client-side (TanStack  Query staleTime=60s); o cache Redis server-side (TTL=60s) pode ainda estar válido. Se Redis HIT ocorrer no  passo  5,  o  BFF  devolve  dados  do  cache  de  servidor  (que  pode  ter  até  60  s  de  defasagem). Comportamento esperado e documentado - para dados 100% em tempo real, o TTL Redis deve ser reduzido.
+Passo 2: queryClient.invalidateQueries zera apenas o cache client-side (TanStack  Query staleTime=60s). Não há Redis; o BFF lê o Postgres (4.11).
 
 Passo 2: Skeleton (DS/Skeleton) exibido imediatamente após invalidateQueries, enquanto isLoading=true; oculto ao completar o passo 8 (CA-F5-001-01, CA-F5-001-05).
 
-Redis omitido do diagrama para brevidade; comportamento completo (com HIT/MISS Redis) em F5.1-D01.
+Não há Redis (4.11). Comportamento de leitura no Postgres em F5.1-D01.
 
 F5.1-D03 - Erro 403 FGAC (acesso sem dashboard.view\_secretary)
 
@@ -2847,7 +2883,7 @@ Pré-condições: JWT válido; authorities não incluem dashboard.view\_secretar
 
 Passo 4: @PreAuthorize("hasAuthority('dashboard.view\_secretary')") no controller bloqueia a requisição  antes  de  qualquer  query  ao  Postgres;  resposta  é  RFC  7807  Problem  Details  com type=access\_denied.
 
-Passo 5: a rota /inicio é universal; o frontend detecta o 403 e redireciona para o BFF endpoint correto do perfil do usuário (/bff/dashboard/aluno, /bff/dashboard/professor, etc.) conforme a authority presente no JWT - comportamento DRY via mesma rota (RN-F5-001-01, fluxos\_por\_perfil.md §13). Diagrama relacionado: F5.1-D01 (happy path com capability válida).
+Passo 5: a rota /inicio é universal; o professor em /inicio chama direto GET /bff/dashboard/professor e recebe 200; não há 403 seguido de redirect (4.11). Diagrama relacionado: F5.1-D01 (happy path com capability válida).
 
 ## HU  30.  US-F5-002  -  Fila  de  Solicitações,  Nova  Interna,  Deliberar  e Atrasados
 
@@ -2863,7 +2899,7 @@ FONTE: Elaborado pelos autores (2026). CRITÉRIOS DE ACEITAÇÃO Critério de co
 
 DADO QUE três solicitações na fila têm \_link bulk\_assign QUANDO a secretária seleciona as três usando os checkboxes escolhe "Atribuir" na DS/BulkActionBar seleciona um professor deliberador ENTÃO
 
-a API recebe PATCH /requests/bulk com os três IDs e o deliberador selecionado a coluna Deliberador das três linhas é atualizada Critério 5: Tela Atrasados DADO QUE existem solicitações com slaBreached=true QUANDO a secretária acessa /secretaria/atrasados ENTÃO a tabela exibe somente essas solicitações o botão "Exportar" está visível QUANDO ela clica em "Exportar" ENTÃO um CSV é baixado com as colunas documentadas Critério 6: Estado Empty da fila DADO QUE não há solicitações abertas para os cursos vinculados QUANDO a secretária acessa /solicitacoes ENTÃO o componente EmptyState é exibido com mensagem "Nenhuma solicitação aberta" DIAGRAMAS DE SEQUÊNCIA
+a API recebe PATCH /requests/bulk com os três IDs e o deliberador selecionado a coluna Deliberador das três linhas é atualizada Critério 5: Tela Atrasados DADO QUE existem solicitações com slaBreached=true QUANDO a secretária acessa /secretaria/atrasados ENTÃO a tabela exibe somente essas solicitações o botão "Exportar" está visível QUANDO ela clica em "Exportar" ENTÃO o CSV usa o filtro atual (slaBreached=true), página 0 e size 100. Se o total passa de 100, a tela avisa: "O CSV traz só os 100 primeiros do filtro." Critério 6: Estado Empty da fila DADO QUE não há solicitações abertas para os cursos vinculados QUANDO a secretária acessa /solicitacoes ENTÃO o componente EmptyState é exibido com mensagem "Nenhuma solicitação aberta" DIAGRAMAS DE SEQUÊNCIA
 
 F5.2-D01 - Fila de solicitações (lista paginada com filtros e HATEOAS - happy path)
 
@@ -3015,9 +3051,9 @@ DADO QUE a secretária acessa /secretaria/alunos QUANDO ela digita "João" na ba
 
 ENTÃO
 
-a tabela exibe os alunos cujo nome contém "João" (trigrama) cada linha mostra: Nome, GRR, Curso, Período, Situação Critério 2: Cadastrar novo aluno DADO QUE a secretária clica em "Novo aluno" QUANDO o Drawer abre e ela preenche todos os campos obrigatórios clica em "Salvar" ENTÃO a API recebe POST /students com os dados o aluno aparece na tabela um e-mail de boas-vindas com senha temporária é enviado via Outbox Critério 3: Editar aluno DADO QUE a secretária clica em "Editar" na linha de um aluno do seu curso QUANDO o Drawer abre com os dados pré-preenchidos ela altera o período de ingresso salva ENTÃO a API recebe PATCH /students/:id a linha na tabela reflete a alteração sem recarregar a página Critério 4: Reset de senha DADO QUE a secretária clica em "Reset senha" para um aluno QUANDO
+a tabela exibe os alunos cujo nome contém "João" (trigrama) cada linha mostra: Nome, GRR, Curso, Período, Situação Critério 2: Cadastrar novo aluno DADO QUE a secretária clica em "Novo aluno" QUANDO o Drawer abre e ela preenche todos os campos obrigatórios clica em "Salvar" ENTÃO a API recebe POST /academico/alunos com os dados o aluno aparece na tabela um e-mail de boas-vindas com senha temporária é enviado via Outbox Critério 3: Editar aluno DADO QUE a secretária clica em "Editar" na linha de um aluno do seu curso QUANDO o Drawer abre com os dados pré-preenchidos ela altera o período de ingresso salva ENTÃO a API recebe PUT /academico/alunos/{id} a linha na tabela reflete a alteração sem recarregar a página Critério 4: Reset de senha DADO QUE a secretária clica em "Reset senha" para um aluno QUANDO
 
-um dialog de confirmação aparece e ela confirma ENTÃO a API envia POST /students/:id/reset-password o aluno recebe e-mail com nova senha temporária audit\_log registra a ação com o ID da secretária e timestamp mustChangePassword é marcado como true para o aluno
+um dialog de confirmação aparece e ela confirma ENTÃO a API envia POST /admin/usuarios/{id}/reset-senha (user.reset_password). Não há POST /students/{id}/reset-password. POST /admin/usuarios/{id}/reset-senha (user.reset_password) enfileira o link JWT de uso único para /nova-senha?token=. O operador não vê a senha. O audit\_log registra a ação com o ID da secretária e timestamp. Não há senha temporária nesse reset.
 
 Critério 5: Conflito de GRR
 
@@ -3035,7 +3071,7 @@ Escopo:  happy  path  -  secretária  pesquisa  alunos  por  nome/GRR/e-mail;  a
 
 <!-- image -->
 
-F5.6-D02 - Cadastrar novo aluno (POST /students + audit\_log + outbox email boas-vindas) Escopo: happy path - secretária preenche Drawer e cria novo aluno; TX inclui senha temporária Argon2id + audit\_log + outbox Atores: Secretaria, WebApp, JwtFilter, StudentController, Postgres Pré-condições: autenticada com user.manage\_students; GRR e CPF ainda não existem no sistema Notas: Passo 4: StudentController gera a senha temporária em memória (não persistida em texto claro) e calcula  o  hash  Argon2id  antes  de  abrir  a  TX  -  a  senha  temporária  só  trafega  no  payload  do outbox\_event  (criptografado  em  trânsito  via  TLS;  template  de  e-mail  é  o  único  ponto  de exposição). Passos  5-9:  TX  atômica  -  INSERT  usuario  +  INSERT  audit\_log  +  INSERT  outbox\_event  em COMMIT único; se falhar, nenhum evento é enfileirado e nenhum e-mail é enviado (padrão 10.1a). Passo  11:  dispatch  assíncrono  via  OutboxDispatcher  envia  e-mail  de  boas-vindas  com  senha temporária;  DRY → transversal/10.1-outbox-notificacao.md 10.1b.  mustChangePassword=true força troca no próximo login (DRY → F1/US-F1-002-PRIMEIRO-ACESSO.md).
+F5.6-D02 - Cadastrar novo aluno (POST /academico/alunos + audit\_log + outbox email boas-vindas) Escopo: happy path - secretária preenche Drawer e cria novo aluno; TX inclui senha temporária Argon2id + audit\_log + outbox Atores: Secretaria, WebApp, JwtFilter, StudentController, Postgres Pré-condições: autenticada com user.manage\_students; GRR e CPF ainda não existem no sistema Notas: Passo 4: StudentController gera a senha temporária em memória (não persistida em texto claro) e calcula  o  hash  Argon2id  antes  de  abrir  a  TX  -  a  senha  temporária  só  trafega  no  payload  do outbox\_event  (criptografado  em  trânsito  via  TLS;  template  de  e-mail  é  o  único  ponto  de exposição). Passos  5-9:  TX  atômica  -  INSERT  usuario  +  INSERT  audit\_log  +  INSERT  outbox\_event  em COMMIT único; se falhar, nenhum evento é enfileirado e nenhum e-mail é enviado (padrão 10.1a). Passo  11:  dispatch  assíncrono  via  OutboxDispatcher  envia  e-mail  de  boas-vindas  com  senha temporária;  DRY → transversal/10.1-outbox-notificacao.md 10.1b.  mustChangePassword=true força troca no próximo login (DRY → F1/US-F1-002-PRIMEIRO-ACESSO.md). A senha temporária do cadastro novo (e-mail de boas-vindas) permanece; isso não é o reset.
 
 <!-- image -->
 
@@ -3093,7 +3129,7 @@ F5.6-ERRO-01 - 409 conflito de GRR ou CPF
 
 Escopo: erro de unicidade - secretária tenta cadastrar aluno com GRR ou CPF já existente
 
-Atores: Secretaria, WebApp, JwtFilter, StudentController, Postgres Pré-condições: POST /students disparado; GRR ou CPF já existe em usuario
+Atores: Secretaria, WebApp, JwtFilter, StudentController, Postgres Pré-condições: POST /academico/alunos disparado; GRR ou CPF já existe em usuario
 
 <!-- image -->
 
@@ -3109,7 +3145,7 @@ F5.6-ERRO-02 - 422 matrícula sem vagas disponíveis
 
 Escopo: erro de validação - secretária tenta matricular aluno em disciplina sem vagas Atores: Secretaria, WebApp, JwtFilter, StudentController, Postgres
 
-Pré-condições: POST /students/:id/matricula disparado; ao menos uma disciplina com vagas\_disponiveis = 0
+Pré-condições: Não há POST /students/{id}/matricula. Ao menos uma disciplina com vagas\_disponiveis = 0
 
 <!-- image -->
 
@@ -3153,19 +3189,19 @@ DESENHO DA(S) TELA(S)
 
 <!-- image -->
 
-FONTE: Elaborado pelos autores (2026). CRITÉRIOS DE ACEITAÇÃO Critério de contexto: Critério 1: CRUD de Curso DADO QUE a secretária acessa /secretaria/cursos QUANDO ela clica em "Novo" preenche Nome, Sigla, Coordenador, Horas formativas e Secretários salva ENTÃO a API recebe POST /secretaria/cursos o novo curso aparece na tabela o vínculo de secretários é salvo, refletindo em request.view\_curso Critério 2: Sigla de curso duplicada DADO QUE já existe um curso com sigla "TADS"
+FONTE: Elaborado pelos autores (2026). CRITÉRIOS DE ACEITAÇÃO Critério de contexto: Critério 1: CRUD de Curso DADO QUE a secretária acessa /secretaria/cursos QUANDO ela clica em "Novo" preenche Nome, Sigla, Coordenador, Horas formativas e Secretários salva ENTÃO a API recebe POST /academico/cursos o novo curso aparece na tabela o vínculo de secretários é salvo, refletindo em request.view\_curso Critério 2: Sigla de curso duplicada DADO QUE já existe um curso com sigla "TADS"
 
 QUANDO a secretária tenta criar outro curso com sigla "TADS" ENTÃO a API retorna HTTP 409 o formulário exibe erro inline no campo Sigla
 
 Critério 3: CRUD de Disciplina
 
-DADO QUE a secretária acessa /secretaria/disciplinas QUANDO ela cria uma disciplina com Nome "Banco de Dados", Código "BDD01", Curso "TADS", Carga 60h ENTÃO a API recebe POST /secretaria/disciplinas a disciplina aparece na tabela com situação Ativa
+DADO QUE a secretária acessa /secretaria/disciplinas QUANDO ela cria uma disciplina com Nome "Banco de Dados", Código "BDD01", Curso "TADS", Carga 60h ENTÃO a API recebe POST /academico/disciplinas a disciplina aparece na tabela com situação Ativa
 
 Critério 4: Desativar disciplina
 
-DADO QUE existe uma disciplina ativa QUANDO a secretária a desativa via toggle ENTÃO o campo Ativa é atualizado para false via PATCH alunos já matriculados permanecem vinculados a disciplina aparece com badge "Inativa" na tabela Critério 5: Criar período letivo DADO QUE a secretária acessa /secretaria/calendarios na aba Períodos QUANDO ela cria um período "2026/2" com início 01/08/2026 e fim 30/11/2026 ENTÃO a API recebe POST /calendars/periods o período aparece na visualização mensal Critério 6: Sobreposição de período letivo DADO QUE já existe um período de 01/08/2026 a 30/11/2026 para o curso TADS QUANDO a secretária tenta criar período de 01/10/2026 a 28/02/2026 para o mesmo curso ENTÃO a API retorna HTTP 422 com mensagem "Período sobrepõe 2026/2"
+DADO QUE existe uma disciplina ativa QUANDO a secretária a desativa via toggle ENTÃO o campo ativo segue no PUT e é atualizado para false; não há PATCH dessa tela. Alunos já matriculados permanecem vinculados a disciplina aparece com badge "Inativa" na tabela Critério 5: Criar período letivo DADO QUE a secretária acessa /secretaria/calendarios na aba Períodos QUANDO ela cria um período "2026/2" com início 01/08/2026 e fim 30/11/2026 ENTÃO a API recebe POST /academico/periodos o período aparece na visualização mensal Critério 6: Sobreposição de período letivo DADO QUE já existe um período de 01/08/2026 a 30/11/2026 QUANDO a secretária tenta criar período de 01/10/2026 a 28/02/2026 ENTÃO a API retorna HTTP 422 com mensagem "Período sobrepõe 2026/2". A sobreposição é do periodo_letivo global; o período não tem id_curso
 
-Critério 7: Criar evento de calendário
+Critério 7: Criar evento de calendário (fora da demonstração: evento com tipo semântico; o período letivo permanece)
 
 DADO QUE a secretária acessa a aba Eventos QUANDO ela cria um evento tipo COLACAO em 15/11/2026 com título "Colação de Grau TADS" ENTÃO o evento aparece no dia 15/11 com a cor semântica roxa
 
@@ -3187,7 +3223,7 @@ Passo  6:  INSERT  curso\_secretario  materializa  o  vínculo  secretária ↔ 
 
 Passos 4-8: TX única - se o INSERT dos secretários falhar (ex.: usuário inválido), o curso também não é criado. Consistência garantida sem compensação manual.
 
-Desativar curso: PATCH /secretaria/cursos/{id} {ativo: false} - DRY → F5.6-D03 (mesmo padrão PATCH + audit\_log; RN-F5-004-04: histórico de alunos e solicitações preservado).
+Desativar curso é DELETE; se houver aluno ou disciplina, a API responde 409. O campo ativo segue no PUT (4.11). RN-F5-004-04: histórico de alunos e solicitações preservado.
 
 F5.8-D02 - Criar disciplina (POST /secretaria/disciplinas + audit\_log)
 
@@ -3221,7 +3257,7 @@ Passo 5: UPDATE disciplina SET ativa=false não afeta a tabela matricula - aluno
 
 Passo 8: \_links retornados: se ativa=false, o link deactivate é substituído por activate; o frontend exibe toggle "Reativar" via useActions(\_links).
 
-Padrão idêntico ao PATCH /secretaria/cursos/{id} {ativo: false} para desativar curso (DRY).
+Padrão idêntico: desativar curso é DELETE; se houver aluno ou disciplina, a API responde 409. O campo ativo segue no PUT (DRY).
 
 F5.8-D04-CSV - Exportar CSV de disciplinas (GET ?format=csv)
 
@@ -3305,25 +3341,25 @@ a  transição  do  aluno  para  o  perfil  EGRESSO  seja  documentada,  o  dipl
 
 <!-- image -->
 
-FONTE: Elaborado pelos autores (2026). CRITÉRIOS DE ACEITAÇÃO Critério de contexto: Critério 1: Listar egressos DADO QUE a secretária acessa /secretaria/egressos QUANDO a página carrega ENTÃO a tabela exibe os egressos com Nome, Curso, Ano de Colação e Situação do diploma filtros de curso, ano e situação estão disponíveis Critério 2: Iniciar processo de colação DADO QUE a secretária acessa /secretaria/diplomas QUANDO ela escolhe o curso "TADS" e o período "2026/2" ENTÃO o Passo 1 exibe a lista de elegíveis com checkboxes alunos inelegíveis aparecem desabilitados com tooltip explicativo Critério 3: Confirmar colação DADO QUE a secretária selecionou 5 alunos elegíveis no Passo 1 QUANDO ela avança para o Passo 2 e preenche data da cerimônia, livro e folha clica em "Confirmar colação" ENTÃO a API recebe POST /graduations com os dados os 5 alunos têm role atualizado para EGRESSO cada um recebe e-mail de boas-vindas via Outbox um graduation\_record é criado para cada aluno Critério 4: Aluno inelegível DADO QUE um aluno tem apenas 60 horas formativas e o mínimo é 120 QUANDO a secretária abre o wizard de colação para o curso do aluno ENTÃO o aluno aparece na lista mas com checkbox desabilitado o tooltip exibe "Horas formativas insuficientes: 60/120 h"
+FONTE: Elaborado pelos autores (2026). CRITÉRIOS DE ACEITAÇÃO Critério de contexto: Critério 1: Listar egressos DADO QUE a secretária acessa /secretaria/egressos QUANDO a página carrega ENTÃO a tabela exibe os egressos com Nome, Curso, Ano de Colação e Situação do diploma filtros de curso, ano e situação estão disponíveis. A lista vem de GET /egressos, de 20 em 20. O CSV (?format=csv) usa o filtro atual (curso, ano, situação), página 0 e size 100. Se o total passa de 100, a tela avisa: "O CSV traz só os 100 primeiros do filtro." Critério 2: Iniciar processo de colação DADO QUE a secretária acessa /secretaria/diplomas QUANDO ela escolhe o curso "TADS" e o período "2026/2" ENTÃO o Passo 1 exibe a lista de elegíveis com checkboxes alunos inelegíveis aparecem desabilitados com tooltip explicativo Critério 3: Confirmar colação DADO QUE a secretária selecionou 5 alunos elegíveis no Passo 1 QUANDO ela avança para o Passo 2 e preenche data da cerimônia, livro e folha clica em "Confirmar colação" ENTÃO a API recebe POST /diplomas com os dados. A colação não grava role = EGRESSO. Cada um recebe e-mail de boas-vindas via Outbox um graduation\_record é criado para cada aluno Critério 4: Aluno inelegível DADO QUE um aluno tem apenas 60 horas formativas e o mínimo é 120 QUANDO a secretária abre o wizard de colação para o curso do aluno ENTÃO o aluno aparece na lista mas com checkbox desabilitado o tooltip exibe "Horas formativas insuficientes: 60/120 h"
 
 Critério 5: Confirmar entrega de diploma
 
-DADO QUE um egresso tem graduation\_record com diploma PENDENTE QUANDO a secretária clica em "Confirmar entrega" e seleciona "Retirada presencial" com a data atual ENTÃO a API recebe PATCH /graduations/:id/confirm-delivery a situação do diploma muda para ENTREGUE na lista de egressos
+DADO QUE um egresso tem graduation\_record com diploma PENDENTE QUANDO a secretária clica em "Confirmar entrega" e seleciona "Retirada presencial" com a data atual ENTÃO a API recebe PATCH /diplomas/{id}/confirm-delivery a situação do diploma muda para ENTREGUE na lista de egressos
 
 DIAGRAMAS DE SEQUÊNCIA
 
-F5.10-D01-EGRESSOS - Listar egressos (GET /secretaria/egressos + filtros - happy path)
+F5.10-D01-EGRESSOS - Listar egressos (GET /egressos + filtros - happy path)
 
-Escopo:  happy  path  -  secretária  acessa  lista  de  egressos  filtrada  por  curso,  ano  de  colação  e situação do diploma Atores: Secretaria, WebApp, JwtFilter, EgressosController, Postgres Pré-condições: autenticada com alumni.list; cursoIds[] no JWT
+Escopo:  happy  path  -  secretária  acessa  lista  de  egressos  filtrada  por  curso,  ano  de  colação  e situação do diploma Atores: Secretaria, WebApp, JwtFilter, EgressosController, Postgres Pré-condições: autenticada com alumni.list. Autorização pela linha da 4.11 (authority dominio.acao e _links).
 
 <!-- image -->
 
-Notas: Passo 4: JOIN entre usuario (role=EGRESSO) e graduation\_record (situacao\_diploma, data\_colacao); cursoIds[] restringe a egressos dos cursos de competência da secretária (RN-F5-005-01). Passo 6: \_links por item inclui confirm-delivery somente se situacao\_diploma=PENDENTE; item com ENTREGUE retorna apenas view - HATEOAS controla ações disponíveis por linha.
+Notas: Passo 4: a lista é GET /egressos. Autorização pela linha da 4.11. JOIN com graduation\_record (situacao\_diploma, data\_colacao) (RN-F5-005-01). Passo 6: \_links por item inclui confirm-delivery somente se situacao\_diploma=PENDENTE; item com ENTREGUE retorna apenas view - HATEOAS controla ações disponíveis por linha.
 
-Exportação CSV: DRY → F5.8-D04-CSV (GET /secretaria/egressos?format=csv - mesmo padrão stream download) (RN-F5-005-05).
+O CSV já está no critério (página 0, size 100) (RN-F5-005-05).
 
-F5.11-D02-ELEGIVEIS - Buscar elegíveis para colação (GET /students?eligibleForGraduation=true) Escopo:  happy  path  -  secretária  inicia  wizard  de  colação;  backend  verifica  5  critérios  de elegibilidade por aluno Atores: Secretaria, WebApp, JwtFilter, GraduationController, Postgres
+F5.11-D02-ELEGIVEIS - Buscar elegíveis para colação (GET /diplomas/elegiveis (4.11, diploma)) Escopo:  happy  path  -  secretária  inicia  wizard  de  colação;  backend  verifica  5  critérios  de elegibilidade por aluno Atores: Secretaria, WebApp, JwtFilter, GraduationController, Postgres
 
 Pré-condições: autenticada com diploma.register; curso e período selecionados no formulário
 
@@ -3331,11 +3367,11 @@ Pré-condições: autenticada com diploma.register; curso e período selecionado
 
 Notas: Passo 4: o backend avalia os 5 critérios de elegibilidade por aluno em paralelo (RN-F5-005-07): (a) TCC aprovado, (b) todas as disciplinas do currículo concluídas, (c) horas\_formativas &gt;= curso.horas\_minimas,  (d)  sem  pendências  financeiras  (se  integração  ativa),  (e)  sem  solicitações bloqueantes abertas. Resultado materializado em eligible + bloqueio.razao (ex.: "Horas formativas insuficientes: 60/120 h"). Passo  6:  alunos  com  eligible:  false  retornam  bloqueio:  {razao,  detalhe}  -  frontend  desabilita  o checkbox e exibe tooltip com a razão (CA-F5-005-04, RN-F5-005-12). Sem HTTP extra.
 
-Alunos já com role=EGRESSO (colação anterior) são excluídos da query.
+Alunos já egressos (colação anterior) são excluídos da query. Autorização pela linha da 4.11. Não há user.role.
 
-F5.11-D03 -  Confirmar colação em  lote (POST  /graduations + TX: graduation\_record  + role → EGRESSO + outbox × N + audit\_log)
+F5.11-D03 -  Confirmar colação em  lote (POST  /graduations + TX: graduation\_record  + autorização pela linha da 4.11 + outbox × N + audit\_log)
 
-Escopo: happy path - secretária confirma colação de N alunos; TX atômica cria graduation\_record, transiciona usuario.role → EGRESSO e enfileira outbox\_event por egresso Atores: Secretaria, WebApp, JwtFilter, GraduationController, Postgres Pré-condições: autenticada com diploma.register; ao menos 1 aluno selecionado com eligible: true; dados da cerimônia preenchidos no Passo 2
+Escopo: happy path - secretária confirma colação de N alunos; TX atômica cria graduation\_record, a autorização segue a linha da 4.11 (authority dominio.acao e _links; não há user.role) e enfileira outbox\_event por egresso Atores: Secretaria, WebApp, JwtFilter, GraduationController, Postgres Pré-condições: autenticada com diploma.register; ao menos 1 aluno selecionado com eligible: true; dados da cerimônia preenchidos no Passo 2
 
 <!-- image -->
 
@@ -3343,11 +3379,11 @@ Notas:
 
 Passos 4-9: TX única para todos os N alunos - se qualquer INSERT/UPDATE falhar, o COMMIT não  ocorre  e  nenhum  aluno  é  promovido  (RN-F5-005-09). Evita estado parcial onde parte dos alunos seria EGRESSO e outra parte continuaria ALUNO.
 
-Passo 6: UPDATE  usuario SET role=EGRESSO remove as capabilities do perfil  ALUNO (request.view\_own, event.attend, etc.) e concede as do perfil EGRESSO (alumni.view\_own). O JWT do aluno retém as capabilities antigas até expirar (15 min); em /egresso/inicio o frontend força re-autenticação via refresh token se detectar role ≠ EGRESSO (§5.2 F5.11b).
+Passo 6: a autorização segue a linha da 4.11 (authority dominio.acao e _links). Não há user.role. A transição remove as capabilities do aluno (request.view\_own, event.attend, etc.) e concede alumni.view\_own. O JWT do aluno retém as capabilities antigas até expirar (15 min); em /egresso/inicio o frontend força re-autenticação via refresh token (§5.2 F5.11b).
 
 Passo 7: INSERT outbox\_event(egressos.graduated) × N - um evento por aluno; OutboxDispatcher processa  em  lote  e  envia  e-mail  de  boas-vindas  ao  portal  do  egresso  (RN-F5-005-10).  DRY → transversal/10.1-outbox-notificacao.md 10.1b para o dispatch completo.
 
-Downstream (DRY): após a promoção, o aluno passa a ter acesso via GET /alumni/me (dashboard egresso) → F2/US-F2-001-DASHBOARD-EGRESSO.md F2.1-D01.
+Downstream (DRY): após a promoção, o aluno passa a ter acesso via GET /egressos/me (4.11) (dashboard egresso) → F2/US-F2-001-DASHBOARD-EGRESSO.md F2.1-D01.
 
 F5.11-D04 - Confirmar entrega física do diploma (PATCH confirm-delivery + audit\_log)
 
@@ -3377,7 +3413,7 @@ Pré-condições: JWT válido; authorities incluem alumni.list mas não diploma.
 
 ## Notas:
 
-Passo 4: @PreAuthorize("hasAuthority('diploma.register')") bloqueia antes de qualquer query; RFC 7807 type=access\_denied (RN-F5-005-06). Observação HATEOAS: o botão "Confirmar colação" somente aparece se o \_link confirm estiver na resposta de GET /students?eligibleForGraduation=true - secretária sem diploma.register não vê o botão. O diagrama documenta a defesa backend para acesso direto à URL. Padrão idêntico a F5.6-ERRO-03 (DRY).
+Passo 4: @PreAuthorize("hasAuthority('diploma.register')") bloqueia antes de qualquer query; RFC 7807 type=access\_denied (RN-F5-005-06). Observação HATEOAS: o botão "Confirmar colação" somente aparece se o \_link confirm estiver na resposta de GET /diplomas/elegiveis (4.11, diploma) - secretária sem diploma.register não vê o botão. O diagrama documenta a defesa backend para acesso direto à URL. Padrão idêntico a F5.6-ERRO-03 (DRY).
 
 ## HU 34. US-F5-006 - Revisão de Autorizações de Uso de Imagem
 
@@ -3495,13 +3531,13 @@ DADO QUE a secretária acessa /secretaria/atendimentos QUANDO ela digita "202312
 
 Critério 2: Registrar atendimento com anexo
 
-DADO QUE a secretária preencheu o formulário e adicionou um PDF de 2 MB QUANDO ela clica em "Registrar" ENTÃO o arquivo é enviado ao MinIO a API recebe POST /service-records com o campo anexoUrl preenchido o aluno recebe e-mail com o resumo do atendimento e link para o histórico
+DADO QUE a secretária preencheu o formulário e adicionou um PDF de 2 MB QUANDO ela clica em "Registrar" ENTÃO a API recebe POST /atendimentos (multipart). O PDF vai no corpo da requisição, não em anexoUrl. o aluno recebe e-mail com o resumo do atendimento e link para o histórico
 
 Critério 3: Registrar atendimento sem anexo
 
 DADO QUE
 
-a secretária preencheu apenas Aluno, Assunto e Resposta QUANDO ela clica em "Registrar" ENTÃO a API recebe POST /service-records sem o campo anexoUrl o registro é criado com sucesso um toast de confirmação "Atendimento registrado" é exibido
+a secretária preencheu apenas Aluno, Assunto e Resposta QUANDO ela clica em "Registrar" ENTÃO a API recebe POST /atendimentos (multipart). O PDF vai no corpo da requisição, não em anexoUrl. o registro é criado com sucesso um toast de confirmação "Atendimento registrado" é exibido
 
 Critério 4: Arquivo acima do limite
 
@@ -3519,21 +3555,21 @@ Escopo: página carrega dropdown de categorias; secretária digita no Combobox e
 
 <!-- image -->
 
-Notas: Passos 2-7: GET /service-record-categories é chamado na montagem da página; categorias são configuráveis pelo admin e raramente mudam - TanStack Query usa staleTime longo (ex.: 5 min) para evitar re-fetches desnecessários (RN-F5-007-03). Passos 9-14: busca Combobox com debounce 300 ms; DRY → F5/US-F5-002-SOLICITACOES.md F5.3-D02 passos 2-6. cursoIds[] restringe aos alunos dos cursos da secretária. Passo 14: ao selecionar o aluno, o preview de notificação (card estático) atualiza em tempo real via React state - sem HTTP adicional (RN-F5-007-05, CA-F5-007-05).
+Notas: Passos 2-7: GET /atendimentos/categorias é chamado na montagem da página; categorias são configuráveis pelo admin e raramente mudam - TanStack Query usa staleTime longo (ex.: 5 min) para evitar re-fetches desnecessários (RN-F5-007-03). Passos 9-14: busca Combobox com debounce 300 ms; DRY → F5/US-F5-002-SOLICITACOES.md F5.3-D02 passos 2-6. Escopo no use case, sem claim cursoIds (4.11). Passo 14: ao selecionar o aluno, o preview de notificação (card estático) atualiza em tempo real via React state - sem HTTP adicional (RN-F5-007-05, CA-F5-007-05).
 
-F5.13-D02 - Registrar atendimento com anexo (presigned PUT + POST + TX + outbox)
+F5.13-D02 - Registrar atendimento com anexo (POST /atendimentos (multipart) + TX + outbox)
 
-Escopo:  happy  path  -  secretária  confirma  formulário  com  PDF;  arquivo  vai  para  MinIO;  POST /service-records cria registro e dispara outbox Atores: Secretaria, WebApp, JwtFilter, ServiceController, MinIO, Postgres Pré-condições: autenticada com service\_record.create; campos obrigatórios preenchidos; arquivo PDF ≤ 10 MB validado client-side Notas:
+Escopo:  happy  path  -  secretária  confirma  formulário  com  PDF;  POST /atendimentos (multipart) cria registro e dispara outbox. O PDF vai no corpo. Atores: Secretaria, WebApp, JwtFilter, ServiceController, MinIO, Postgres Pré-condições: autenticada com service\_record.create; campos obrigatórios preenchidos; arquivo PDF ≤ 10 MB validado client-side Notas:
 
 <!-- image -->
 
-Passos 2-8 (fase MinIO): padrão presigned PUT idêntico a F1.8-D03. O storage\_key retornado no passo 6 é incluído como anexoUrl no POST do passo 9; o arquivo já está no MinIO antes de criar o registro - objeto sem registro é removido por TTL-based cleanup.
+O PDF vai no corpo de POST /atendimentos (multipart).
 
 Passo  11:  TX  atômica  -  INSERT  service\_record  +  INSERT  outbox\_event  em  COMMIT  único (padrão 10.1a). numero gerado atomicamente (AT-{ano}-{seq}).
 
 Passo  14:  OutboxDispatcher  processa  atendimento.registrado → envia  e-mail  ao  aluno  com assunto, resposta e link para /meus-atendimentos (US-F1-011). DRY → transversal/10.1-outbox-notificacao.md 10.1b.
 
-Sem anexo (CA-F5-007-03): passos 2-8 omitidos; POST /service-records sem storage\_key; mesmo TX e outbox - DRY, sem diagrama separado.
+Sem anexo (CA-F5-007-03): POST /atendimentos sem o PDF; mesmo TX e outbox - DRY, sem diagrama separado.
 
 ## HU 36. US-F5-008 - Gestão de Eventos Institucionais
 
@@ -3555,15 +3591,15 @@ Critério de contexto:
 
 Critério 1: Listar e filtrar eventos
 
-DADO QUE a secretária acessa /secretaria/eventos QUANDO a página carrega ENTÃO a tabela exibe os eventos dos cursos vinculados com Título, Período, Modo, Estado e Organizador os filtros de estado e curso estão disponíveis eventos CONCLUÍDOS não têm botões de Editar ou Excluir Critério 2: Criar novo evento DADO QUE a secretária clica em "Novo evento" QUANDO ela preenche Título, Datas, Modo QR\_SINGLE, Cursos vinculados define uma janela de validação de 09:00 às 10:00 ; salva ENTÃO a API recebe POST /events o evento aparece na lista com estado AGENDADO
+DADO QUE a secretária acessa /secretaria/eventos QUANDO a página carrega ENTÃO a tabela exibe os eventos dos cursos vinculados com Título, Período, Modo, Estado e Organizador os filtros de estado e curso estão disponíveis eventos CONCLUÍDOS não têm botões de Editar ou Excluir Critério 2: Criar novo evento DADO QUE a secretária clica em "Novo evento" QUANDO ela preenche Título, Datas, Modo QR\_SINGLE, Cursos vinculados define uma janela de validação de 09:00 às 10:00 (fora da demonstração); salva ENTÃO a API recebe POST /events o evento aparece na lista com estado AGENDADO
 
 Critério 3: Abrir painel de operação (QR\_SINGLE)
 
 DADO QUE existe um evento com modo QR\_SINGLE no estado EM\_ANDAMENTO QUANDO a secretária acessa /secretaria/eventos/:id/operacao ENTÃO o painel exibe o QR Code da sessão em tela cheia um contador de presenças confirmadas é atualizado em tempo real via polling o botão "Encerrar evento" está disponível
 
-Critério 4: Encerrar evento e gerar certificados
+Critério 4: Encerrar evento
 
-DADO QUE o evento foi operado com 30 alunos confirmados QUANDO a secretária clica em "Encerrar evento" ENTÃO a API recebe POST /events/:id/close o backend gera formative\_entry para os 30 alunos certificados são emitidos com hash SHA-256 e assinatura ED25519 o evento passa para estado CONCLUÍDO
+DADO QUE o evento foi operado com 30 alunos confirmados QUANDO a secretária clica em "Encerrar evento" ENTÃO a API recebe POST /events/{id}/encerrar. O estado passa a CONCLUÍDO. Não nasce formative_entry nem certificado nesse passo.
 
 Critério 5: Excluir evento com presença já registrada
 
@@ -3709,7 +3745,7 @@ DESENHO DA(S) TELA(S)
 
 FONTE: Elaborado pelos autores (2026). CRITÉRIOS DE ACEITAÇÃO Critério de contexto: Critério 1: Solicitar exportação DADO QUE a secretária acessa /secretaria/exportacoes QUANDO
 
-ela clica no card "Alunos" seleciona o filtro "Curso: TADS" e "Período: 2026/2" confirma ENTÃO a API recebe POST /exports/alunos com os filtros um job aparece no histórico com status PROCESSANDO um toast confirma "Exportação solicitada"
+ela clica no card "Alunos" seleciona o filtro "Curso: TADS" e "Período: 2026/2" confirma ENTÃO a API recebe POST /exportacoes/{kind}. POST /exportacoes/{kind} responde 202 com status PROCESSANDO. Não há POST /exports. um job aparece no histórico com status PROCESSANDO um toast confirma "Exportação solicitada"
 
 Critério 2: Polling e download
 
@@ -3727,7 +3763,7 @@ um job muda de PROCESSANDO para PRONTO QUANDO o polling atualiza a UI ENTÃO a r
 
 DIAGRAMAS DE SEQUÊNCIA
 
-F5.17-D01 - Solicitar exportação (POST /exports/:kind → 202)
+F5.17-D01 - Solicitar exportação (POST /exportacoes/{kind} → 202)
 
 Escopo: happy path - secretaria seleciona kind, informa filtros e solicita exportação; backend cria export\_job assíncrono Atores: Secretaria, WebApp, JwtFilter, ExportController, CreateExportUseCase, Postgres Pré-condições: secretaria autenticada com export.run; acessa /secretaria/exportacoes
 
@@ -3838,6 +3874,8 @@ DESENHO DA(S) TELA(S)
 FONTE: Elaborado pelos autores (2026).
 
 CRITÉRIOS DE ACEITAÇÃO
+
+Fora da demonstração desta banca.
 
 Critério de contexto:
 
@@ -3995,7 +4033,7 @@ o  sistema  aplique  automaticamente  as  regras  corretas  de  elegibilidade,  
 
 FONTE: Elaborado pelos autores (2026).
 
-CRITÉRIOS DE ACEITAÇÃO Critério de contexto: Critério 1: Exibição dos valores atuais DADO QUE o coordenador acessa /coordenacao/cursos/tads/configurar QUANDO a tela carrega ENTÃO os campos exibem os valores atuais persistidos no banco: horas formativas, duração calendário, membros externos banca, modalidade banca, regimento o botão "Salvar" está desabilitado (nenhum campo alterado) Critério 2: Alterar horas formativas mínimas DADO QUE o valor atual de horas formativas é 120 QUANDO o coordenador altera para 150 e clica em "Salvar" ENTÃO a API recebe PATCH /courses/tads/config com { "horasFormativasMinimas": 150 } o audit\_log registra { campo: "horasFormativasMinimas", de: 120, para: 150 } um toast "Configuração salva" é exibido Critério 3: Dirty state e cancelar com confirmação DADO QUE o coordenador alterou o número de membros externos de 1 para 2 QUANDO ele clica em "Cancelar"
+CRITÉRIOS DE ACEITAÇÃO Critério de contexto: Critério 1: Exibição dos valores atuais DADO QUE o coordenador acessa /coordenacao/cursos/tads/configurar QUANDO a tela carrega ENTÃO os campos exibem os valores atuais persistidos no banco: horas formativas, duração calendário, membros externos banca, modalidade banca, regimento o botão "Salvar" está desabilitado (nenhum campo alterado) Critério 2: Alterar horas formativas mínimas DADO QUE o valor atual de horas formativas é 120 QUANDO o coordenador altera para 150 e clica em "Salvar" ENTÃO a API recebe PATCH /coordenacao/cursos/{id}/config com { "horasFormativasMinimas": 150 } o audit\_log registra { campo: "horasFormativasMinimas", de: 120, para: 150 } um toast "Configuração salva" é exibido Critério 3: Dirty state e cancelar com confirmação DADO QUE o coordenador alterou o número de membros externos de 1 para 2 QUANDO ele clica em "Cancelar"
 
 ENTÃO um dialog de confirmação pergunta "Deseja descartar as alterações?"
 
@@ -4061,7 +4099,7 @@ DS/Skeleton/block em cada uma das 4 áreas de gráfico os KpiCards exibem placeh
 
 Critério 2: Exibição de KPIs e gráficos
 
-DADO QUE o coordenador aplica os filtros "Período: 2026/2" e "Curso: TADS" QUANDO a resposta da API é recebida ENTÃO os 4 KpiCards exibem: tempo médio, taxa indeferimento, horas validadas, taxa presença os 4 gráficos são renderizados com dados do período 2026/2 para TADS as cores dos gráficos usam tokens do design system (sem hex hardcoded)
+DADO QUE o coordenador aplica os filtros "Período: 2026/2" e "Curso: TADS" QUANDO a resposta da API é recebida ENTÃO os 4 KpiCards exibem: tempo médio, taxa indeferimento, horas validadas, taxa presença os 4 gráficos são renderizados com dados do período 2026/2 para TADS as cores dos gráficos usam tokens do design system (sem hex hardcoded) a API é GET /reports/coordinator. A tela é /coordenacao/relatorios.
 
 Critério 3: Alerta de taxa de indeferimento
 
@@ -4123,9 +4161,9 @@ Critério 1: Listar e filtrar usuários
 
 DADO QUE o admin acessa /admin/usuarios QUANDO a tabela carrega ENTÃO
 
-todos os usuários do sistema são exibidos com Nome, E-mail, Tipo, Situação, Último acesso a busca filtra por nome (trigrama), e-mail e GRR em tempo real (debounce 300 ms) Critério 2: Criar usuário DADO QUE o admin clica em "Novo" QUANDO preenche Nome, E-mail, Tipo e Curso (se aplicável) e salva ENTÃO a API cria o usuário com mustChangePassword=true o usuário recebe e-mail com link de acesso inicial via Outbox o admin nunca visualiza a senha criada Critério 3: Desativar usuário DADO QUE o admin clica em "Desativar" na linha de um usuário ativo QUANDO confirma o dialog destrutivo ENTÃO a API atualiza status=INATIVO via PATCH /admin/usuarios/:id todos os tokens JWT do usuário são invalidados via JTI blacklist a linha exibe badge "Inativo" o audit\_log registra a ação Critério 4: Reset de senha (F7.8) - operador nunca vê senha DADO QUE o admin clica em "Reset senha" na linha de um usuário QUANDO o modal DS/Dialog · Reset senha é exibido ENTÃO
+todos os usuários do sistema são exibidos com Nome, E-mail, Tipo, Situação, Último acesso a busca filtra por nome (trigrama), e-mail e GRR em tempo real (debounce 300 ms) Critério 2: Criar usuário DADO QUE o admin clica em "Novo" QUANDO preenche Nome, E-mail, Tipo e Curso (se aplicável) e salva ENTÃO a API cria o usuário com mustChangePassword=true o usuário recebe e-mail com link de acesso inicial via Outbox o admin nunca visualiza a senha criada Critério 3: Desativar usuário DADO QUE o admin clica em "Desativar" na linha de um usuário ativo QUANDO confirma o dialog destrutivo ENTÃO a API atualiza status=INATIVO via POST /admin/usuarios/{id}/desativar todos os tokens JWT do usuário são invalidados via JTI blacklist a linha exibe badge "Inativo" o audit\_log registra a ação Critério 4: Reset de senha (F7.8) - operador nunca vê senha DADO QUE o admin clica em "Reset senha" na linha de um usuário QUANDO o modal DS/Dialog · Reset senha é exibido ENTÃO
 
-o modal mostra apenas o nome do usuário e um botão "Confirmar envio" não há nenhum campo de senha ou exibição de credencial QUANDO o admin confirma ENTÃO a API recebe POST /users/:id/password-reset o usuário recebe e-mail com link JWT 1-uso válido por 24 h o DS/AlertBanner informativo é exibido: "Link enviado para [email]"
+o modal mostra apenas o nome do usuário e um botão "Confirmar envio" não há nenhum campo de senha ou exibição de credencial QUANDO o admin confirma ENTÃO a API recebe POST /admin/usuarios/{id}/reset-senha (user.reset_password). O e-mail leva o link JWT para /nova-senha?token=. Não há POST /users/{id}/password-reset. o usuário recebe e-mail com link JWT 1-uso válido por 24 h o DS/AlertBanner informativo é exibido: "Link enviado para [email]"
 
 Critério 5: Link de reset expirado
 
@@ -4163,7 +4201,7 @@ enviado por e-mail via Outbox; admin nunca vê a senha
 
 Atores: Admin, WebApp, IAMController, ResetPasswordAdminUseCase, Postgres
 
-Pré-condições: admin com user.reset\_password; usuário alvo existe Notas: Admin nunca visualiza o link nem a senha (RN-07) - modal apenas confirma envio Link  enviado  ao  usuário:  /redefinir-senha?token=&lt;JWT&gt; → fluxo  de  consumo  em  US-F0-003 (F0.3-a) Token expirado (CA-05) → DRY para US-F0-003 F0.3-b - mecanismo idêntico Fase de dispatch (OutboxDispatcher → MailAdapter) → transversal/10.1 audit\_log inclui operadorId, targetUserId, acao='RESET\_PASSWORD', timestamp (RN-09) Lacunas: nenhuma F7.1-ERRO-01 - 403 FGAC: user.manage\_all ausente Escopo: erro - usuário sem capability user.manage\_all tenta acessar /admin/usuarios Atores: Admin (sem permissão), WebApp, IAMController Pré-condições: token JWT válido, mas sem user.manage\_all nas authorities Notas: @PreAuthorize("hasAuthority('user.manage\_all')") no controller - Spring Security rejeita antes de atingir o use case RFC 7807 Problem Details: type: access\_denied, status: 403, title: Acesso negado Mesmo padrão aplica-se ao POST /users/:id/password-reset sem user.reset\_password Lacunas: nenhuma HU 44. US-F7-002 - Perfis (Roles) e Matriz de Autoridades COMO administrador da plataforma QUERO criar  e  gerenciar  perfis  (roles)  como  agregadores  de  capabilities,  definir  capabilities  granulares (authorities) e atribuí-las a usuários via matriz PARA
+Pré-condições: admin com user.reset\_password; usuário alvo existe Notas: Admin nunca visualiza o link nem a senha (RN-07) - modal apenas confirma envio Link  enviado  ao  usuário:  /nova-senha?token=&lt;JWT&gt;. O path da API é POST /admin/usuarios/{id}/reset-senha. → fluxo  de  consumo  em  US-F0-003 (F0.3-a) Token expirado (CA-05) → DRY para US-F0-003 F0.3-b - mecanismo idêntico Fase de dispatch (OutboxDispatcher → MailAdapter) → transversal/10.1 audit\_log inclui operadorId, targetUserId, acao='RESET\_PASSWORD', timestamp (RN-09) Lacunas: nenhuma F7.1-ERRO-01 - 403 FGAC: user.manage\_all ausente Escopo: erro - usuário sem capability user.manage\_all tenta acessar /admin/usuarios Atores: Admin (sem permissão), WebApp, IAMController Pré-condições: token JWT válido, mas sem user.manage\_all nas authorities Notas: @PreAuthorize("hasAuthority('user.manage\_all')") no controller - Spring Security rejeita antes de atingir o use case RFC 7807 Problem Details: type: access\_denied, status: 403, title: Acesso negado Mesmo padrão aplica-se ao POST /admin/usuarios/{id}/reset-senha sem user.reset\_password. Não há POST /users/{id}/password-reset. Lacunas: nenhuma HU 44. US-F7-002 - Perfis (Roles) e Matriz de Autoridades COMO administrador da plataforma QUERO criar  e  gerenciar  perfis  (roles)  como  agregadores  de  capabilities,  definir  capabilities  granulares (authorities) e atribuí-las a usuários via matriz PARA
 
 <!-- image -->
 
@@ -4353,7 +4391,7 @@ administrador da plataforma
 
 QUERO
 
-criar  e  editar  templates  de  e-mail  e  notificação  em  Markdown  com  placeholders  dinâmicos  e visualizar o preview com variáveis substituídas
+criar  e  editar  templates  de  e-mail  em  Markdown. Template de push (FCM) fica fora da demonstração (4.11). com  placeholders  dinâmicos  e visualizar o preview com variáveis substituídas
 
 PARA
 
@@ -4395,7 +4433,7 @@ Notas: variaveis[] na resposta alimenta client-side: autocomplete de {{ (CA-06) 
 
 F7.5-D02 - Criar novo template (POST)
 
-Escopo: happy path - admin cria novo template de comunicação com primeira revisão Atores: Admin, WebApp, CTController, CreateTemplateUseCase, Postgres Pré-condições: admin com communication.manage\_templates; nome do template inexistente Notas: Nome em dot-notation (ex.: boas-vindas.egresso) - único; 409 Conflict se já existir (verificado via SELECT BY nome antes da TX) TX atômica: cabeçalho do template + primeira revisão + audit\_log no mesmo COMMIT variaveis lista os placeholders disponíveis (ex.: [nome, protocolo, curso, link]) - RN-02 audit\_log registra operadorId, acao='CREATE\_TEMPLATE', payload (RN-10) Lacunas: nenhuma F7.5-D03 - Salvar revisão (POST /revisions + versionamento imutável) Escopo: happy path - admin edita corpo/assunto e salva; nova revisão é criada como CURRENT; revisão anterior arquivada atomicamente Atores: Admin, WebApp, CTController, SaveRevisionUseCase, Postgres Pré-condições: template existente; admin com communication.manage\_templates Notas: Revisões  anteriores  nunca  são  excluídas  -  apenas  status='ARCHIVED'  (RN-06  - auditabilidade imutável)
+Escopo: happy path - admin cria novo template de comunicação com primeira revisão Atores: Admin, WebApp, CTController, CreateTemplateUseCase, Postgres Pré-condições: admin com communication.manage\_templates; nome do template inexistente Notas: Nome em dot-notation (ex.: boas-vindas.egresso) - único; 409 Conflict se já existir (verificado via SELECT BY nome antes da TX) TX atômica: cabeçalho do template + primeira revisão + audit\_log no mesmo COMMIT variaveis lista os placeholders disponíveis (ex.: [nome, protocolo, curso, link]) - RN-02 audit\_log registra operadorId, acao='CREATE\_TEMPLATE', payload (RN-10) Lacunas: nenhuma F7.5-D03 - Salvar revisão (POST /admin/templates-comunicacao/{id}/revisoes + versionamento imutável; ver seção 4.11) Escopo: happy path - admin edita corpo/assunto e salva; nova revisão é criada como CURRENT; revisão anterior arquivada atomicamente Atores: Admin, WebApp, CTController, SaveRevisionUseCase, Postgres Pré-condições: template existente; admin com communication.manage\_templates Notas: Revisões  anteriores  nunca  são  excluídas  -  apenas  status='ARCHIVED'  (RN-06  - auditabilidade imutável)
 
 <!-- image -->
 
@@ -4441,7 +4479,7 @@ Critério 1: Visualizar eventos por status DADO QUE o admin acessa /admin/jobs Q
 
 Critério 3: Reentregar evento DEAD
 
-DADO QUE existe um evento com status DEAD (5 tentativas esgotadas) QUANDO o admin clica em "Reentregar" na linha do evento ENTÃO a API recebe POST /admin/outbox/:id/retry o evento muda para status PENDING o badge atualiza imediatamente na tabela
+DADO QUE existe um evento com status DEAD (5 tentativas esgotadas) QUANDO o admin clica em "Reentregar" na linha do evento ENTÃO a API recebe POST /admin/outbox/{id}/reentrega o evento muda para status PENDING o badge atualiza imediatamente na tabela
 
 um toast "Evento reenfileirado" é exibido
 
@@ -4463,7 +4501,7 @@ job recorrente Atores: Admin, WebApp, JobsController, ListScheduledJobsUseCase, 
 
 <!-- image -->
 
-Notas: Jobs documentados (RN-09): OutboxDispatcher (5 s) · SlaBreachChecker (diário) · ExportJobCleaner (diário) · EventAutoCloser (23:59 diário) status  calculado  no  backend:  OK  se  ultimoRun  recente  +  sem erro; ATRASADO se proximoRun &lt; now; FALHOU se último run com exceção Leitura de observabilidade pura - sem mutações nem audit\_log Diagrama relacionado: F7.6-D01 (outbox events), US-F7-007 (saúde do sistema - Prometheus/Grafana) Lacunas: nenhuma F7.6-ERRO-01 - 403 FGAC: system.observe ausente Escopo: erro - usuário sem system.observe tenta acessar /admin/jobs Atores: Admin (sem permissão), WebApp, OutboxController Pré-condições: token JWT válido; sem system.observe nas authorities Notas: @PreAuthorize("hasAuthority('system.observe')") - Spring Security rejeita antes do use case DRY → F7.1-ERRO-01 - padrão idêntico; capability system.observe Aplica-se a todos os endpoints desta HU (GET /admin/outbox, POST /retry, GET /admin/scheduled-jobs) Lacunas: nenhuma
+Notas: O que está no ar é GET /admin/outbox e POST /admin/outbox/{id}/reentrega, tela /admin/jobs. SlaBreachChecker e a tela de saúde/Grafana ficam fora da demonstração (4.11). status  calculado  no  backend:  OK  se  ultimoRun  recente  +  sem erro; ATRASADO se proximoRun &lt; now; FALHOU se último run com exceção Leitura de observabilidade pura - sem mutações nem audit\_log Diagrama relacionado: F7.6-D01 (outbox events). SlaBreachChecker e a tela de saúde/Grafana ficam fora da demonstração (4.11). Lacunas: nenhuma F7.6-ERRO-01 - 403 FGAC: system.observe ausente Escopo: erro - usuário sem system.observe tenta acessar /admin/jobs Atores: Admin (sem permissão), WebApp, OutboxController Pré-condições: token JWT válido; sem system.observe nas authorities Notas: @PreAuthorize("hasAuthority('system.observe')") - Spring Security rejeita antes do use case DRY → F7.1-ERRO-01 - padrão idêntico; capability system.observe Aplica-se a GET /admin/outbox e POST /admin/outbox/{id}/reentrega, tela /admin/jobs. Não há GET /admin/scheduled-jobs. Lacunas: nenhuma
 
 <!-- image -->
 
@@ -4529,6 +4567,8 @@ FONTE: Elaborado pelos autores (2026).
 
 CRITÉRIOS DE ACEITAÇÃO
 
+Fora da demonstração.
+
 Critério de contexto:
 
 Critério 1: Exibição dos KPIs
@@ -4567,9 +4607,7 @@ COMO qualquer usuário autenticado QUERO abrir  uma  paleta  de  busca  com  Ctr
 
 DADO QUE o usuário está em qualquer tela autenticada do sistema QUANDO pressiona Ctrl+K (ou ⌘ K no macOS) ENTÃO o DS/CommandPalette é exibido sobre a tela atual com scrim
 
-FONTE: Elaborado pelos autores (2026). CRITÉRIOS DE ACEITAÇÃO Critério de contexto: Critério 1: Abrir com atalho de teclado o input de busca recebe foco automaticamente o estado Empty é exibido Critério 2: Busca com debounce e loading DADO QUE o usuário digitou "joão" no input de busca QUANDO passam 200 ms sem nova tecla ENTÃO a API recebe GET /search?q=joão o estado Loading é exibido com skeleton rows durante a requisição Critério 3: Exibição de resultados agrupados por tipo DADO QUE a API retornou: 3 alunos, 2 solicitações, 1 evento para "joão" QUANDO os resultados são renderizados ENTÃO aparecem 3 seções: "Alunos" (3 itens), "Solicitações" (2 itens), "Eventos" (1 item) cada item exibe título, subtítulo e ícone do tipo Critério 4: Escopo por capability o índice "users" não retorna outros usuários (aluno sem capability user.manage\_all)
-
-DADO QUE um aluno faz a busca "João" QUANDO a API processa a requisição ENTÃO o índice "students" retorna apenas o próprio perfil do aluno (se houver match) o índice "requests" retorna apenas as solicitações do próprio aluno Critério 5: Navegação por teclado e abertura de item DADO QUE os resultados estão exibidos QUANDO o usuário pressiona ↓ duas vezes para selecionar o segundo resultado pressiona Enter ENTÃO a paleta fecha o usuário é redirecionado para a tela de detalhe do item selecionado Critério 6: Fechar com Esc DADO QUE a paleta está aberta com resultados QUANDO o usuário pressiona Esc ENTÃO a paleta fecha sem navegar o foco retorna ao elemento que estava ativo antes da abertura Critério 7: Mobile: tela cheia DADO QUE o usuário está em um dispositivo móvel (375px) QUANDO clica no input de busca na topbar ENTÃO a busca abre em tela cheia (não modal) com o DS/Input/Search expandido o botão "Cancelar" aparece ao lado do input QUANDO clica em "Cancelar" ENTÃO
+FONTE: Elaborado pelos autores (2026). CRITÉRIOS DE ACEITAÇÃO Critério de contexto: Critério 1: Abrir com atalho de teclado o input de busca recebe foco automaticamente o estado Empty é exibido Critério 2: Busca com debounce e loading DADO QUE o usuário digitou "joão" no input de busca QUANDO passam 200 ms sem nova tecla ENTÃO a API recebe GET /search?q=joão o estado Loading é exibido com skeleton rows durante a requisição Critério 3: Exibição de resultados agrupados por tipo DADO QUE a API retornou: 3 alunos, 2 solicitações, 1 evento para "joão" QUANDO os resultados são renderizados ENTÃO aparecem 3 seções: "Alunos" (3 itens), "Solicitações" (2 itens), "Eventos" (1 item) cada item exibe título, subtítulo e ícone do tipo Critério 4: Escopo por capability DADO QUE um aluno faz a busca "João" QUANDO a API processa a requisição ENTÃO GET /search?q= consulta Postgres (pg_trgm, V033), sem índice externo. O escopo é capability dominio.acao: aluno com request.view_own só vê o próprio cadastro e as próprias solicitações; sem user.manage_all a lista de usuários vem vazia e a tabela não é lida. Critério 5: Navegação por teclado e abertura de item DADO QUE os resultados estão exibidos QUANDO o usuário pressiona ↓ duas vezes para selecionar o segundo resultado pressiona Enter ENTÃO a paleta fecha o usuário é redirecionado para a tela de detalhe do item selecionado Critério 6: Fechar com Esc DADO QUE a paleta está aberta com resultados QUANDO o usuário pressiona Esc ENTÃO a paleta fecha sem navegar o foco retorna ao elemento que estava ativo antes da abertura Critério 7: Mobile: tela cheia DADO QUE o usuário está em um dispositivo móvel (375px) QUANDO clica no input de busca na topbar ENTÃO a busca abre em tela cheia (não modal) com o DS/Input/Search expandido o botão "Cancelar" aparece ao lado do input QUANDO clica em "Cancelar" ENTÃO
 
 retorna à tela anterior sem navegar Critério 8: Sem resultados encontrados DADO QUE o usuário digitou "xyzxyz123" e não há resultados QUANDO a API retorna array vazio ENTÃO o estado Empty é exibido com texto "Nenhum resultado encontrado para 'xyzxyz123'" DIAGRAMAS DE SEQUÊNCIA F8.1-D01 - Busca com debounce + fan-out paralelo + resultados agrupados (happy path) Escopo: happy path - usuário digita ≥ 2 chars; API retorna resultados em pelo menos um índice Atores: Usuário autenticado (qualquer perfil), WebApp Pré-condições: JWT válido; pg\_trgm habilitado em students, requests, events, users Notas: Passo 5-12: as 4 queries são executadas em paralelo dentro de SearchUseCase; cada uma aplica sua própria cláusula de capability antes de rodar (ver D02 para detalhe FGAC). O índice users só é consultado se o token carregar user.manage\_all; caso contrário retorna [] sem tocar a tabela. pg\_trgm  (GIN)  em  students.nome,  events.titulo  viabiliza  ILIKE  eficiente;  requests  busca  por número de protocolo e tipo.
 
@@ -4627,7 +4665,7 @@ DADO QUE o usuário navega pelo FAQ via Tab QUANDO pressiona Tab para focar na p
 
 Critério 3: Enviar ticket com sucesso
 
-DADO QUE o usuário preenche Assunto "Dúvida sobre prazo de aproveitamento" e Mensagem "..." QUANDO clica em "Enviar ticket" ENTÃO a API recebe POST /support/tickets o estado Submit é exibido com DS/AlertBanner success o banner inclui o número do protocolo gerado (ex.: "SUP-2026-042") o formulário é limpo mas permanece visível
+DADO QUE o usuário preenche Assunto "Dúvida sobre prazo de aproveitamento" e Mensagem "..." QUANDO clica em "Enviar ticket" ENTÃO a API recebe POST /requests com tipoCodigo=SUPORTE_TECNICO e protocolo PROT-… o estado Submit é exibido com DS/AlertBanner success o banner inclui o número do protocolo gerado o formulário é limpo mas permanece visível
 
 Critério 4: Campos obrigatórios
 
@@ -4643,7 +4681,7 @@ o cliente de e-mail padrão abre com o destinatário pré-preenchido DIAGRAMAS D
 
 <!-- image -->
 
-Notas: Passo 4: a ordenação por perfil é configurável pelo admin (RN-12); o parâmetro ?perfil= espelha o claim  role  do  JWT  -  o  controller  resolve  o  valor  a  partir  do  token,  o  usuário  não  o  envia manualmente. FAQ é read-only para todos os perfis; gerenciamento dos itens fica fora do escopo F8 (admin via US-F7). O primeiro item é expandido por padrão (defaultOpen: true) no componente DS/Accordion - é uma decisão de UI, não uma flag da API.
+Notas: Passo 4: o FAQ é o GET /suporte/faq da seção 4.11. FAQ é read-only para todos os perfis; gerenciamento dos itens fica fora do escopo F8 (admin via US-F7). O primeiro item é expandido por padrão (defaultOpen: true) no componente DS/Accordion - é uma decisão de UI, não uma flag da API.
 
 F8.2-D02 - Enviar ticket com sucesso (POST + TX + outbox + protocolo)
 
@@ -4651,15 +4689,15 @@ Escopo:  happy  path  -  usuário  submete  ticket;  backend  cria  request  SUP
 
 <!-- image -->
 
-Notas: Passos 5-8: transação atômica - falha em qualquer INSERT faz rollback completo; o outbox\_event garante que a notificação à secretaria será enviada mesmo em caso de falha pós-COMMIT. RequestType=SUPORTE\_TECNICO  reutiliza  o  workflow  engine  (RN-08,  fluxos  §9.2)  -  o  ticket entra na fila  de  triagem  da secretaria como qualquer outra solicitação. Alternativa MVP sem tipo configurado: INSERT direto em support\_thread. Dispatch do outbox (notificação secretaria): → transversal/10.1-outbox-notificacao.md  (não redesenhar aqui). Formulário  permanece  visível  após  sucesso;  apenas  limpo  (não  navega)  -  comportamento client-side, sem nova chamada de API.
+Notas: Passos 5-8: transação atômica - falha em qualquer INSERT faz rollback completo; o outbox\_event garante que a notificação à secretaria será enviada mesmo em caso de falha pós-COMMIT. RequestType=SUPORTE\_TECNICO  reutiliza  o  workflow  engine  (RN-08,  fluxos  §9.2)  -  o  ticket entra na fila  de  triagem  da secretaria como qualquer outra solicitação. O ticket é o POST /requests da seção 4.11. Dispatch do outbox (notificação secretaria): → transversal/10.1-outbox-notificacao.md  (não redesenhar aqui). Formulário  permanece  visível  após  sucesso;  apenas  limpo  (não  navega)  -  comportamento client-side, sem nova chamada de API.
 
-F8.2-D03 - Rate limit 429 (Bucket4j - 3 tickets/hora)
+F8.2-D03 - Rate limit 429. O rate limit é a janela em memória descrita em 4.11.
 
-Escopo:  erro  -  usuário  tenta  submeter  quarto  ticket  na  mesma  hora;  Bucket4j  rejeita  antes  de tocar o banco Atores: Usuário autenticado, WebApp Pré-condições: JWT válido; usuário já enviou 3 tickets na última hora
+Escopo:  erro  -  usuário  tenta  submeter  quarto  ticket  na  mesma  hora; a janela em memória descrita em 4.11 rejeita antes  de tocar o banco Atores: Usuário autenticado, WebApp Pré-condições: JWT válido; usuário já enviou 3 tickets na última hora
 
 <!-- image -->
 
-Notas: Passo 3: o Bucket4j intercepta antes de qualquer lógica de negócio - nem CreateTicketUseCase nem Postgres são tocados (RN-11). O header Retry-After (RFC 7807 + RFC 6585) acompanha o 429; o frontend lê retryAfterMinutes do body para exibir o countdown de X min. Rate limiting é por userId (não por IP) para evitar bloqueio de NAT compartilhado.
+Notas: Passo 3: a janela em memória descrita em 4.11 intercepta antes de qualquer lógica de negócio - nem CreateTicketUseCase nem Postgres são tocados (RN-11). O header Retry-After (RFC 7807 + RFC 6585) acompanha o 429; o frontend lê retryAfterMinutes do body para exibir o countdown de X min. Rate limiting é por userId (não por IP) para evitar bloqueio de NAT compartilhado.
 
 ## 9 MODELAGEM DO BANCO DE DADOS
 

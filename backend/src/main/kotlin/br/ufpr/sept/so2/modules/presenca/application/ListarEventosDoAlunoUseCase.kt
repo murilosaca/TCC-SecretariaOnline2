@@ -10,13 +10,15 @@ import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.OffsetDateTime
+import java.util.UUID
 
 @Service
 class ListarEventosDoAlunoUseCase(
     private val eventoRepository: EventoRepository,
+    private val publicoAlvoEvento: PublicoAlvoEvento,
 ) {
     @Transactional(readOnly = true)
-    fun execute(audience: String, pageable: Pageable): Page<Evento> {
+    fun execute(usuarioId: UUID, audience: String, pageable: Pageable): Page<Evento> {
         if (!audience.equals("me", ignoreCase = true)) {
             throw AcessoNegadoException("Neste momento só é possível listar os eventos disponíveis para você.")
         }
@@ -24,6 +26,7 @@ class ListarEventosDoAlunoUseCase(
         val sort = if (pageable.sort.isSorted) pageable.sort else Sort.by(Sort.Direction.DESC, "inicioEm")
         return eventoRepository.findAbertosParaAluno(
             OffsetDateTime.now(),
+            publicoAlvoEvento.cursoDe(usuarioId),
             PageRequest.of(pageable.pageNumber, size, sort),
         )
     }

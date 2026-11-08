@@ -11,6 +11,13 @@ vi.mock('../../api/solicitacoes', () => ({
   solicitacoesApi: {
     listarFilaCurso: (...args: unknown[]) => listarFilaCurso(...args),
     atribuirEmMassa: (...args: unknown[]) => atribuirEmMassa(...args),
+    listarTipos: () =>
+      Promise.resolve({
+        content: [
+          { codigo: 'DECLARACAO_SIMPLES', nome: 'Declaração simples', status: 'PUBLISHED' },
+          { codigo: 'ESTAGIO_NOVO', nome: 'Estágio novo', status: 'PUBLISHED' },
+        ],
+      }),
   },
 }))
 
@@ -110,5 +117,16 @@ describe('FilaCentral', () => {
     })
     renderFila()
     expect(await screen.findByRole('link', { name: 'Nova interna' })).toBeTruthy()
+  })
+
+  it('mostra no filtro um tipo publicado que não estava hardcoded', async () => {
+    listarFilaCurso.mockResolvedValue({
+      content: [],
+      page: { number: 0, size: 20, totalElements: 0, totalPages: 0 },
+      deliberadores: [],
+      _links: {},
+    })
+    renderFila()
+    expect(await screen.findByRole('option', { name: 'Estágio novo' })).toBeTruthy()
   })
 })

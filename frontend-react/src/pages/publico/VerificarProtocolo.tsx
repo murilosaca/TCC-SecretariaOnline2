@@ -62,7 +62,10 @@ export function VerificarProtocolo() {
   return (
     <section className="page">
       <h1>Verificar protocolo</h1>
-      <p className="lead">Consulta pública de metadados (RF-F0-006). Sem PDF e sem upload nesta fatia.</p>
+      <p className="lead">
+        Consulta pública de metadados (RF-F0-006). O PDF escolhido é comparado neste navegador e não
+        segue para o servidor.
+      </p>
       <article className="panel">
         <p>
           <strong>Protocolo</strong> {dados.protocolo}
@@ -77,11 +80,58 @@ export function VerificarProtocolo() {
         <p>
           <strong>Hash</strong> <code>{truncarHash(dados.hashSha256)}</code>
         </p>
+        {dados.hashSha256 && (
+          <details>
+            <summary>Hash completo</summary>
+            <code>{dados.hashSha256}</code>
+          </details>
+        )}
       </article>
+      {dados.hashSha256 && <ZonaHash esperado={dados.hashSha256} />}
       <p>
         <Link to="/publico/verificar-protocolo">Consultar outro protocolo</Link>
       </p>
     </section>
+  )
+}
+
+function ZonaHash({ esperado }: { esperado: string }) {
+  const [resultado, setResultado] = useState<'ok' | 'divergente' | null>(null)
+
+  async function comparar(file: File | undefined) {
+    if (!file) {
+      return
+    }
+    const digest = await crypto.subtle.digest('SHA-256', await file.arrayBuffer())
+    const hex = [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('')
+    setResultado(hex === esperado.trim().toLowerCase() ? 'ok' : 'divergente')
+  }
+
+  return (
+    <div className="panel">
+      <p>Compare o PDF recebido com o hash registrado. O arquivo permanece neste computador.</p>
+      <label>
+        Selecionar arquivo
+        <input
+          type="file"
+          accept="application/pdf,.pdf"
+          onChange={(event) => {
+            void comparar(event.target.files?.[0])
+          }}
+        />
+      </label>
+      {resultado === 'ok' && (
+        <div className="banner success" role="status" aria-live="assertive">
+          Hash confere. O documento é autêntico e não foi modificado.
+        </div>
+      )}
+      {resultado === 'divergente' && (
+        <div className="banner danger" role="alert" aria-live="assertive">
+          Atenção: o hash deste arquivo NÃO confere com o protocolo registrado. O documento pode ter
+          sido adulterado.
+        </div>
+      )}
+    </div>
   )
 }
 

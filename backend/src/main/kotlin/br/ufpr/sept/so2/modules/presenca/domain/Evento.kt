@@ -22,7 +22,7 @@ class Evento(
     var janelaSaidaFim: OffsetDateTime?,
     val createdAt: OffsetDateTime,
     var updatedAt: OffsetDateTime,
-    /** Nulo no evento criado pelo professor, que não escolhe curso (V025). */
+    /** Nulo só em evento legado, sem público-alvo. Evento novo informa o curso. */
     var idCurso: UUID? = null,
 ) {
     init {
@@ -116,8 +116,50 @@ class Evento(
         }
     }
 
+    /**
+     * Horários definidos na criação. A abertura ao vivo só gera o segredo
+     * e não reescreve um intervalo já agendado.
+     */
+    fun agendarJanelas(
+        entradaInicio: OffsetDateTime?,
+        entradaFim: OffsetDateTime?,
+        saidaInicio: OffsetDateTime?,
+        saidaFim: OffsetDateTime?,
+    ) {
+        val temEntrada = entradaInicio != null || entradaFim != null
+        val temSaida = saidaInicio != null || saidaFim != null
+        if (!temEntrada && !temSaida) {
+            return
+        }
+        if (attendanceMode.isDual()) {
+            if (entradaInicio == null || entradaFim == null || saidaInicio == null || saidaFim == null) {
+                throw DadoInvalidoException(JANELAS_DUAIS)
+            }
+        } else if (temSaida || entradaInicio == null || entradaFim == null) {
+            throw DadoInvalidoException(
+                if (temSaida) "Modo simples não tem janela de saída." else "Janela de entrada é obrigatória.",
+            )
+        }
+        validarJanela(entradaInicio, entradaFim, "entrada")
+        janelaEntradaInicio = entradaInicio
+        janelaEntradaFim = entradaFim
+        if (!attendanceMode.isDual()) {
+            return
+        }
+        validarJanela(saidaInicio!!, saidaFim!!, "saída")
+        if (!saidaInicio.isAfter(entradaFim)) {
+            throw DadoInvalidoException("A janela de saída deve começar depois da entrada.")
+        }
+        janelaSaidaInicio = saidaInicio
+        janelaSaidaFim = saidaFim
+    }
+
     fun abrirJanela(fase: FasePresenca, novoHash: String?, agora: OffsetDateTime, minutos: Int) {
         garantirAbertura(fase, novoHash, minutos)
+        val agendada = inicioJanela(fase) != null && fimJanela(fase) != null
+        if (agendada && agora.isAfter(fimJanela(fase))) {
+            throw ConflitoEstadoException("A janela agendada já encerrou.")
+        }
         pinHash = novoHash
         estado = EventoEstado.EM_ANDAMENTO
         if (fase == FasePresenca.SAIDA) {
@@ -125,7 +167,9 @@ class Evento(
         } else if (attendanceMode.isDual()) {
             fecharJanelaSeAberta(FasePresenca.SAIDA, agora)
         }
-        aplicarJanela(fase, agora, minutos)
+        if (!agendada) {
+            aplicarJanela(fase, agora, minutos)
+        }
         updatedAt = agora
     }
 
@@ -207,18 +251,17 @@ class Evento(
     }
 
     private fun fecharJanelaSeAberta(fase: FasePresenca, agora: OffsetDateTime) {
+        val inicio = inicioJanela(fase) ?: return
+        val fim = fimJanela(fase) ?: return
+        if (agora.isBefore(inicio) || agora.isAfter(fim)) {
+            return
+        }
         val fechada = agora.minusSeconds(1)
         if (fase == FasePresenca.SAIDA) {
-            if (janelaSaidaInicio == null) {
-                return
-            }
             if (janelaSaidaInicio!!.isAfter(fechada)) {
                 janelaSaidaInicio = fechada
             }
             janelaSaidaFim = fechada
-            return
-        }
-        if (janelaEntradaInicio == null) {
             return
         }
         if (janelaEntradaInicio!!.isAfter(fechada)) {
@@ -227,12 +270,22 @@ class Evento(
         janelaEntradaFim = fechada
     }
 
+    private fun validarJanela(inicio: OffsetDateTime, fim: OffsetDateTime, nome: String) {
+        if (!fim.isAfter(inicio)) {
+            throw DadoInvalidoException("A janela de $nome deve terminar depois de começar.")
+        }
+        if (inicio.isBefore(inicioEm) || fim.isAfter(fimEm)) {
+            throw DadoInvalidoException("A janela de $nome deve ficar dentro do horário do evento.")
+        }
+    }
+
     companion object {
         const val CONFIRMACAO_NEGADA = "Não foi possível confirmar a presença."
         const val EDICAO_NEGADA = "Evento concluído não pode ser editado."
         const val EXCLUSAO_NEGADA = "Só é possível excluir evento AGENDADO."
         const val EXCLUSAO_COM_PRESENCA = "Evento possui registros de presença"
         const val MODO_TRAVADO = "Modo de presença não pode mudar depois do início do evento."
+        const val JANELAS_DUAIS = "Janela de entrada e janela de saída são obrigatórias."
         const val JANELA_MINUTOS_PADRAO = 15
         const val QR_TTL_MINUTOS = 5L
 

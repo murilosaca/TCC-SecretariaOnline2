@@ -4,7 +4,7 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import { academicoApi } from '../../api/academico'
 import { ApiError } from '../../api/client'
 import { eventosApi } from '../../api/eventos'
-import type { AttendanceMode } from '../../models/evento'
+import { isDualMode, type AttendanceMode } from '../../models/evento'
 
 const MODOS: { valor: AttendanceMode; rotulo: string }[] = [
   { valor: 'SECRET_SINGLE', rotulo: 'SECRET_SINGLE — PIN, só entrada' },
@@ -22,6 +22,11 @@ export function EventoSecretariaFormulario() {
   const [cargaHoraria, setCargaHoraria] = useState(4)
   const [attendanceMode, setAttendanceMode] = useState<AttendanceMode>('QR_SINGLE')
   const [cursoId, setCursoId] = useState('')
+  const [entradaInicio, setEntradaInicio] = useState('')
+  const [entradaFim, setEntradaFim] = useState('')
+  const [saidaInicio, setSaidaInicio] = useState('')
+  const [saidaFim, setSaidaFim] = useState('')
+  const dual = isDualMode(attendanceMode)
 
   const cursos = useQuery({
     queryKey: ['cursos', 'evento-form'],
@@ -54,6 +59,17 @@ export function EventoSecretariaFormulario() {
         cargaHoraria,
         attendanceMode,
         cursoId,
+        ...(id
+          ? {}
+          : {
+              janelaEntrada: {
+                inicio: new Date(entradaInicio).toISOString(),
+                fim: new Date(entradaFim).toISOString(),
+              },
+              janelaSaida: dual
+                ? { inicio: new Date(saidaInicio).toISOString(), fim: new Date(saidaFim).toISOString() }
+                : undefined,
+            }),
       }
       return id ? eventosApi.atualizar(id, body) : eventosApi.criar(body)
     },
@@ -70,12 +86,33 @@ export function EventoSecretariaFormulario() {
       <header className="page-head">
         <div>
           <h1>{id ? 'Editar evento' : 'Novo evento'}</h1>
-          <p className="muted">Janela ao vivo de 15 min. Sem horário pré-agendado nesta fatia.</p>
+          <p className="muted">
+            A janela pode ser pré-agendada na criação. A abertura ao vivo continua gerando o PIN ou o QR.
+          </p>
         </div>
         <Link to="/secretaria/eventos" className="ghost-link">
           Voltar
         </Link>
       </header>
+
+      {cursos.isPending && (
+        <p className="muted" aria-busy="true">
+          Carregando cursos…
+        </p>
+      )}
+      {cursos.isError && (
+        <div className="banner danger" role="alert">
+          Não foi possível carregar os cursos.{' '}
+          <button type="button" onClick={() => cursos.refetch()}>
+            Tentar de novo
+          </button>
+        </div>
+      )}
+      {cursos.isSuccess && (cursos.data.content ?? []).length === 0 && (
+        <p className="empty" role="status">
+          Nenhum curso disponível.
+        </p>
+      )}
 
       {salvar.isError && (
         <div className="banner danger" role="alert">
@@ -130,6 +167,50 @@ export function EventoSecretariaFormulario() {
             ))}
           </select>
         </label>
+        {!id && (
+          <>
+            <label>
+              Janela de entrada — início
+              <input
+                type="datetime-local"
+                value={entradaInicio}
+                onChange={(event) => setEntradaInicio(event.target.value)}
+                required
+              />
+            </label>
+            <label>
+              Janela de entrada — fim
+              <input
+                type="datetime-local"
+                value={entradaFim}
+                onChange={(event) => setEntradaFim(event.target.value)}
+                required
+              />
+            </label>
+            {dual && (
+              <>
+                <label>
+                  Janela de saída — início
+                  <input
+                    type="datetime-local"
+                    value={saidaInicio}
+                    onChange={(event) => setSaidaInicio(event.target.value)}
+                    required
+                  />
+                </label>
+                <label>
+                  Janela de saída — fim
+                  <input
+                    type="datetime-local"
+                    value={saidaFim}
+                    onChange={(event) => setSaidaFim(event.target.value)}
+                    required
+                  />
+                </label>
+              </>
+            )}
+          </>
+        )}
         <button type="submit" disabled={salvar.isPending}>
           {salvar.isPending ? 'Salvando…' : 'Salvar'}
         </button>

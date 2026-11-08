@@ -2,11 +2,17 @@ package br.ufpr.sept.so2.modules.academico.api
 
 import br.ufpr.sept.so2.modules.academico.api.dto.AlunoRequest
 import br.ufpr.sept.so2.modules.academico.api.dto.AlunoResponse
+import br.ufpr.sept.so2.modules.academico.api.dto.DisciplinaOpcaoResponse
+import br.ufpr.sept.so2.modules.academico.api.dto.MatriculaLoteRequest
+import br.ufpr.sept.so2.modules.academico.api.dto.MatriculaLoteResponse
+import br.ufpr.sept.so2.modules.academico.api.dto.MatriculaOpcoesResponse
 import br.ufpr.sept.so2.modules.academico.application.AlunoApplicationService
+import br.ufpr.sept.so2.modules.academico.application.MatricularAlunoUseCase
 import br.ufpr.sept.so2.modules.iam.infrastructure.security.IamPrincipal
 import br.ufpr.sept.so2.shared.api.PageResponse
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.servlet.http.HttpServletRequest
 import jakarta.validation.Valid
 import org.springframework.data.domain.Pageable
 import org.springframework.data.web.PageableDefault
@@ -31,6 +37,7 @@ import java.util.function.Function
 @Tag(name = "Alunos", description = "Cadastro acadêmico de alunos (RF-F5-003)")
 class AlunoController(
     private val alunoApplicationService: AlunoApplicationService,
+    private val matricularAlunoUseCase: MatricularAlunoUseCase,
 ) {
     @GetMapping
     @PreAuthorize("hasAuthority('user.manage_students')")
@@ -60,7 +67,11 @@ class AlunoController(
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasAuthority('user.manage_students')")
     @Operation(summary = "Cadastrar aluno")
-    fun criar(@Valid @RequestBody request: AlunoRequest, authentication: Authentication): AlunoResponse =
+    fun criar(
+        @Valid @RequestBody request: AlunoRequest,
+        authentication: Authentication,
+        http: HttpServletRequest,
+    ): AlunoResponse =
         AlunoResponse.from(
             alunoApplicationService.criar(
                 principal(authentication).userId,
@@ -72,6 +83,7 @@ class AlunoController(
                 request.telefone,
                 request.idCurso!!,
                 request.situacao,
+                http.remoteAddr,
             ),
             true,
         )
@@ -83,6 +95,7 @@ class AlunoController(
         @PathVariable id: UUID,
         @Valid @RequestBody request: AlunoRequest,
         authentication: Authentication,
+        http: HttpServletRequest,
     ): AlunoResponse =
         AlunoResponse.from(
             alunoApplicationService.atualizar(
@@ -95,16 +108,60 @@ class AlunoController(
                 request.idCurso,
                 request.situacao,
                 request.ativo,
+                http.remoteAddr,
             ),
             true,
         )
+
+    @PostMapping("/{id}/reset-senha")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    @PreAuthorize("hasAuthority('user.manage_students')")
+    @Operation(summary = "Reset de senha por link de uso único, no curso da secretaria")
+    fun resetSenha(
+        @PathVariable id: UUID,
+        authentication: Authentication,
+        http: HttpServletRequest,
+    ) {
+        alunoApplicationService.resetarSenha(id, principal(authentication).userId, http.remoteAddr)
+    }
+
+    @GetMapping("/{id}/matriculas/opcoes")
+    @PreAuthorize("hasAuthority('user.manage_students')")
+    @Operation(summary = "Disciplinas ativas do curso do aluno no período vigente")
+    fun opcoesMatricula(@PathVariable id: UUID, authentication: Authentication): MatriculaOpcoesResponse {
+        val opcoes = matricularAlunoUseCase.opcoes(id, principal(authentication).userId)
+        return MatriculaOpcoesResponse(
+            opcoes.periodoId,
+            opcoes.periodoRotulo,
+            opcoes.disciplinas.map { DisciplinaOpcaoResponse(it.id, it.codigo, it.nome, it.vagas) },
+        )
+    }
+
+    @PostMapping("/{id}/matriculas")
+    @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasAuthority('user.manage_students')")
+    @Operation(summary = "Matricular o aluno em lote nas disciplinas do período vigente")
+    fun matricular(
+        @PathVariable id: UUID,
+        @Valid @RequestBody request: MatriculaLoteRequest,
+        authentication: Authentication,
+        http: HttpServletRequest,
+    ): MatriculaLoteResponse {
+        val resultado = matricularAlunoUseCase.execute(
+            id,
+            principal(authentication).userId,
+            request.disciplinaIds,
+            http.remoteAddr,
+        )
+        return MatriculaLoteResponse(resultado.periodoId, resultado.disciplinaIds)
+    }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PreAuthorize("hasAuthority('user.manage_students')")
     @Operation(summary = "Excluir cadastro de aluno")
-    fun excluir(@PathVariable id: UUID, authentication: Authentication) {
-        alunoApplicationService.excluir(id, principal(authentication).userId)
+    fun excluir(@PathVariable id: UUID, authentication: Authentication, http: HttpServletRequest) {
+        alunoApplicationService.excluir(id, principal(authentication).userId, http.remoteAddr)
     }
 
     companion object {

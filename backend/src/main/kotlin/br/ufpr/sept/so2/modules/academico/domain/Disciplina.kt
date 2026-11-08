@@ -15,6 +15,7 @@ class Disciplina(
     var ativa: Boolean,
     val createdAt: OffsetDateTime,
     var updatedAt: OffsetDateTime,
+    var vagas: Int = 0,
 ) {
     fun atualizar(
         codigo: String?,
@@ -23,6 +24,7 @@ class Disciplina(
         cargaHorariaTotal: Int?,
         creditos: Int?,
         ativa: Boolean?,
+        vagas: Int? = null,
     ) {
         if (codigo != null) {
             this.codigo = codigo
@@ -42,6 +44,14 @@ class Disciplina(
         if (ativa != null) {
             this.ativa = ativa
         }
+        if (vagas != null) {
+            this.vagas = vagas
+        }
         this.updatedAt = OffsetDateTime.now()
+    }
+
+    fun consumirVaga() {
+        vagas -= 1
+        updatedAt = OffsetDateTime.now()
     }
 }

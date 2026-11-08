@@ -26,6 +26,7 @@ class AbrirJanelaUseCase(
     private val outboxPort: OutboxPort,
     private val auditLogPort: AuditLogPort,
     private val objectMapper: ObjectMapper,
+    private val listarInelegiveis: ListarInelegiveisPresenca,
 ) {
     @Transactional
     fun execute(eventoId: UUID, anfitriaoId: UUID, fase: FasePresenca, ip: String?): SessaoHost {
@@ -78,6 +79,7 @@ class AbrirJanelaUseCase(
             segredo,
             presencaRepository.countByEvento(evento.id),
             hostPinPort.emitidoEm(evento.id).orElse(null),
+            listarInelegiveis.nomes(evento),
         )
 
     private fun payload(eventoId: UUID, anfitriaoId: UUID, fase: String?): String =
@@ -98,5 +100,6 @@ class AbrirJanelaUseCase(
         val segredo: String?,
         val presentes: Long,
         val segredoEmitidoEm: Instant? = null,
+        val inelegiveis: List<String> = emptyList(),
     )
 }

@@ -7,8 +7,8 @@ import br.ufpr.sept.so2.shared.domain.exception.DadoInvalidoException
 import java.util.UUID
 
 /**
- * Recorte por curso dos eventos da secretaria (F5.14). Quem opera sem
- * `event.view_curso` — o professor — continua sem recorte de curso.
+ * Recorte por curso dos eventos da secretaria (F5.14). O professor não usa
+ * este escopo: o público-alvo dele é qualquer curso ativo informado na criação.
  */
 internal object EventoAcesso {
     const val VIEW_CURSO = "event.view_curso"

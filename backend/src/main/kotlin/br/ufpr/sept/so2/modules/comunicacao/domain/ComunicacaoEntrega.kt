@@ -12,4 +12,5 @@ class ComunicacaoEntrega(
     var inApp: Boolean,
     var emailEnviado: Boolean,
     val createdAt: OffsetDateTime,
+    var emailAdiado: Boolean = false,
 )

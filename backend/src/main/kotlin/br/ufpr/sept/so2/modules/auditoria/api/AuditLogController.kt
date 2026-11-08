@@ -30,11 +30,12 @@ class AuditLogController(
     fun listar(
         @RequestParam(required = false) ator: String?,
         @RequestParam(required = false) acao: String?,
+        @RequestParam(required = false) entidade: String?,
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) de: LocalDate?,
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) ate: LocalDate?,
         @PageableDefault(size = ListarAuditLogUseCase.TAMANHO_PAGINA) pageable: Pageable,
     ): PageResponse<AuditLogItemResponse> {
-        val pagina = listarAuditLogUseCase.execute(ator, acao, de, ate, pageable)
+        val pagina = listarAuditLogUseCase.execute(ator, acao, de, ate, pageable, entidade)
         return PageResponse.of(paginaSpring(pagina))
     }
 

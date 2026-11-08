@@ -4,6 +4,9 @@ import br.ufpr.sept.so2.modules.formativas.application.ports.FormativaPorPresenc
 import br.ufpr.sept.so2.modules.iam.application.ports.AuditLogPort
 import br.ufpr.sept.so2.modules.iam.application.ports.OutboxPort
 import br.ufpr.sept.so2.modules.iam.application.ports.PasswordHasher
+import br.ufpr.sept.so2.modules.academico.application.ports.AlunoRepository
+import br.ufpr.sept.so2.modules.academico.domain.Aluno
+import br.ufpr.sept.so2.modules.academico.domain.AlunoSituacao
 import br.ufpr.sept.so2.modules.presenca.application.ports.EventoRepository
 import br.ufpr.sept.so2.modules.presenca.application.ports.PresencaRepository
 import br.ufpr.sept.so2.modules.presenca.domain.AttendanceMode
@@ -12,9 +15,13 @@ import br.ufpr.sept.so2.modules.presenca.domain.EventoEstado
 import br.ufpr.sept.so2.modules.presenca.domain.FasePresenca
 import br.ufpr.sept.so2.modules.presenca.domain.Presenca
 import br.ufpr.sept.so2.shared.domain.exception.ConflitoEstadoException
+import br.ufpr.sept.so2.shared.domain.exception.RecursoNaoEncontradoException
+import br.ufpr.sept.so2.shared.domain.valueobject.Email
+import br.ufpr.sept.so2.shared.domain.valueobject.Grr
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -62,7 +69,8 @@ class ConfirmarPresencaUseCaseTest : StringSpec({
         formativa: FormativaPorPresencaPort = mockk(relaxed = true),
         outbox: OutboxPort = mockk(relaxed = true),
         audit: AuditLogPort = mockk(relaxed = true),
-    ) = ConfirmarPresencaUseCase(eventos, presencas, hasher, outbox, audit, objectMapper, formativa)
+        publico: PublicoAlvoEvento = mockk(relaxed = true),
+    ) = ConfirmarPresencaUseCase(eventos, presencas, hasher, outbox, audit, objectMapper, formativa, publico)
 
     "DUAL na entrada não dispara formativa; saída dispara" {
         val dual = oficina(AttendanceMode.SECRET_DUAL)
@@ -71,7 +79,7 @@ class ConfirmarPresencaUseCaseTest : StringSpec({
         val formativa = mockk<FormativaPorPresencaPort>(relaxed = true)
         every { eventos.findById(eventoId) } returns Optional.of(dual)
         every { presencas.existsByEventoUsuarioFase(eventoId, usuarioId, FasePresenca.ENTRADA) } returns false
-        every { presencas.existsByEventoAndDeviceDeOutroUsuario(eventoId, "device-uuid-1", usuarioId) } returns false
+        every { presencas.vincularDispositivo(eventoId, "device-uuid-1", usuarioId) } returns true
         every { presencas.save(any()) } answers { firstArg() }
         every { presencas.findByEventoAndUsuario(eventoId, usuarioId) } returns emptyList()
 
@@ -90,7 +98,7 @@ class ConfirmarPresencaUseCaseTest : StringSpec({
         every { eventos.findById(eventoId) } returns Optional.of(saida)
         every { presencas.existsByEventoUsuarioFase(eventoId, usuarioId, FasePresenca.SAIDA) } returns false
         every { presencas.existsByEventoUsuarioFase(eventoId, usuarioId, FasePresenca.ENTRADA) } returns true
-        every { presencas.existsByEventoAndDeviceDeOutroUsuario(eventoId, "device-uuid-1", usuarioId) } returns false
+        every { presencas.vincularDispositivo(eventoId, "device-uuid-1", usuarioId) } returns true
         every { presencas.save(any()) } answers { firstArg() }
         every { presencas.findByEventoAndUsuario(eventoId, usuarioId) } returns listOf(
             Presenca.registrar(UUID.randomUUID(), eventoId, usuarioId, FasePresenca.ENTRADA, "device-uuid-1", OffsetDateTime.now()),
@@ -116,7 +124,7 @@ class ConfirmarPresencaUseCaseTest : StringSpec({
         val presencas = mockk<PresencaRepository>()
         every { eventos.findById(eventoId) } returns Optional.of(dual)
         every { presencas.existsByEventoUsuarioFase(eventoId, usuarioId, FasePresenca.SAIDA) } returns false
-        every { presencas.existsByEventoAndDeviceDeOutroUsuario(any(), any(), any()) } returns false
+        every { presencas.vincularDispositivo(any(), any(), any()) } returns true
         every { presencas.existsByEventoUsuarioFase(eventoId, usuarioId, FasePresenca.ENTRADA) } returns false
 
         shouldThrow<ConflitoEstadoException> {
@@ -132,4 +140,70 @@ class ConfirmarPresencaUseCaseTest : StringSpec({
         }
         verify(exactly = 0) { presencas.save(any()) }
     }
+
+    "evento de outro curso responde como não encontrado" {
+        val cursoEvento = UUID.fromString("01800000-0000-7000-8000-0000000000c1")
+        val outroCurso = UUID.fromString("01800000-0000-7000-8000-0000000000c2")
+        val evento = oficina(AttendanceMode.SECRET_SINGLE)
+        evento.idCurso = cursoEvento
+        val eventos = mockk<EventoRepository>()
+        val presencas = mockk<PresencaRepository>()
+        val alunos = mockk<AlunoRepository>()
+        every { eventos.findById(eventoId) } returns Optional.of(evento)
+        every { alunos.findByIdUsuario(usuarioId) } returns Optional.of(alunoDe(outroCurso))
+
+        shouldThrow<RecursoNaoEncontradoException> {
+            useCase(eventos, presencas, publico = PublicoAlvoEvento(alunos)).execute(
+                eventoId,
+                usuarioId,
+                "123456",
+                null,
+                "device-uuid-1",
+                "ENTRADA",
+                null,
+            )
+        }
+        verify(exactly = 0) { presencas.save(any()) }
+    }
+
+    "dispositivo de outro aluno neste evento é conflito" {
+        val evento = oficina(AttendanceMode.SECRET_SINGLE)
+        val eventos = mockk<EventoRepository>()
+        val presencas = mockk<PresencaRepository>()
+        every { eventos.findById(eventoId) } returns Optional.of(evento)
+        every { presencas.existsByEventoUsuarioFase(eventoId, usuarioId, FasePresenca.ENTRADA) } returns false
+        every { presencas.vincularDispositivo(eventoId, "device-uuid-1", usuarioId) } returns false
+
+        shouldThrow<ConflitoEstadoException> {
+            useCase(eventos, presencas).execute(
+                eventoId,
+                usuarioId,
+                "123456",
+                null,
+                "device-uuid-1",
+                "ENTRADA",
+                null,
+            )
+        }.message shouldBe "Este dispositivo já foi usado neste evento."
+        verify(exactly = 0) { presencas.save(any()) }
+    }
 })
+
+private fun alunoDe(cursoId: UUID): Aluno {
+    val agora = OffsetDateTime.now()
+    return Aluno(
+        UUID.fromString("01800000-0000-7000-8000-0000000000b1"),
+        "Ana",
+        null,
+        Grr.of("GRR20248801"),
+        Email.of("ana.curso@ufpr.br"),
+        null,
+        null,
+        cursoId,
+        AlunoSituacao.MATRICULADO,
+        true,
+        agora,
+        agora,
+        UUID.fromString("01800000-0000-7000-8000-0000000000a1"),
+    )
+}

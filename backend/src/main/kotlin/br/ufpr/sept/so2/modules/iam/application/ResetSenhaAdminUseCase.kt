@@ -14,8 +14,15 @@ import org.springframework.transaction.annotation.Transactional
 import java.util.UUID
 
 /**
- * F7.8: dispara o mesmo JWT 1-uso + Outbox PASSWORD_RESET do fluxo público.
- * O operador nunca vê o link nem a senha; o consumo é em /nova-senha (API /auth/redefinir-senha).
+ * F7.8: dispara JWT de uso único + Outbox. O operador nunca vê o link nem a senha.
+ * O consumo é em /nova-senha (API /auth/redefinir-senha).
+ *
+ * F5.6-D04: o diagrama pede senha temporária em texto no e-mail. RF-F7-001 e esta
+ * base proíbem senha em claro no audit, no log e na resposta HTTP. O reset da
+ * secretaria reusa este JWT de uso único. O outbox é PASSWORD_RESET_BY_ADMIN,
+ * distinto de PASSWORD_RESET (esqueci-minha-senha). O audit é user.password_reset,
+ * com operador e alvo, sem token e sem senha. A rota acadêmica exige só
+ * user.manage_students; não concede user.reset_password.
  */
 @Service
 class ResetSenhaAdminUseCase(
@@ -28,6 +35,21 @@ class ResetSenhaAdminUseCase(
 ) {
     @Transactional
     fun execute(operadorId: UUID, targetUserId: UUID, ip: String?) {
+        disparar(operadorId, targetUserId, ip, "PASSWORD_RESET", "iam.password_reset_admin")
+    }
+
+    @Transactional
+    fun executeParaSecretaria(operadorId: UUID, targetUserId: UUID, ip: String?) {
+        disparar(operadorId, targetUserId, ip, "PASSWORD_RESET_BY_ADMIN", "user.password_reset")
+    }
+
+    private fun disparar(
+        operadorId: UUID,
+        targetUserId: UUID,
+        ip: String?,
+        tipoOutbox: String,
+        tipoAudit: String,
+    ) {
         val usuario = usuarioRepository.findById(targetUserId)
             .orElseThrow { RecursoNaoEncontradoException("Usuário não encontrado.") }
         if (!usuario.ativo) {
@@ -35,17 +57,19 @@ class ResetSenhaAdminUseCase(
         }
         val token = jwtTokenService.emitResetToken(usuario)
         val url = settings.frontendBaseUrl.trimEnd('/') + "/nova-senha?token=" + token
-        val payload = toJson(
-            mapOf(
-                "usuarioId" to usuario.id.toString(),
-                "resetUrl" to url,
+        outboxPort.enqueue(
+            tipoOutbox,
+            toJson(
+                mapOf(
+                    "usuarioId" to usuario.id.toString(),
+                    "resetUrl" to url,
+                ),
             ),
         )
-        outboxPort.enqueue("PASSWORD_RESET", payload)
         auditLogPort.append(
-            "iam.password_reset_admin",
+            tipoAudit,
             operadorId,
-            """{"targetUserId":"$targetUserId","acao":"RESET_PASSWORD"}""",
+            """{"operadorId":"$operadorId","targetUserId":"$targetUserId"}""",
             ip,
         )
     }

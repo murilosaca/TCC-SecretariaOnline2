@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @RequestMapping("/publico/protocolos")
-@Tag(name = "Protocolo público", description = "Metadados sanitizados (RF-F0-006) — stub sem PDF")
+@Tag(name = "Protocolo público", description = "Metadados sanitizados (RF-F0-006). O PDF é conferido no navegador.")
 class ProtocoloPublicoController(
     private val consultarProtocoloPublicoUseCase: ConsultarProtocoloPublicoUseCase,
 ) {

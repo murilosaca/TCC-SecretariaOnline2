@@ -16,4 +16,5 @@ data class DisciplinaRequest(
     @field:Positive val cargaHorariaTotal: Int? = null,
     @field:Positive val creditos: Int? = null,
     val ativa: Boolean? = null,
+    @field:Min(0) val vagas: Int? = null,
 )

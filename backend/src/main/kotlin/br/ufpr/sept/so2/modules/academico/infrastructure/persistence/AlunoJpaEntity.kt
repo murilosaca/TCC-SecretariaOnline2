@@ -43,6 +43,9 @@ class AlunoJpaEntity : BaseEntity() {
     @Column(nullable = false)
     var ativo: Boolean = false
 
+    @Column(name = "id_usuario", unique = true)
+    var idUsuario: UUID? = null
+
     fun merge(aluno: Aluno) {
         nome = aluno.nome
         nomeSocial = aluno.nomeSocial
@@ -53,6 +56,7 @@ class AlunoJpaEntity : BaseEntity() {
         idCurso = aluno.idCurso
         situacao = aluno.situacao
         ativo = aluno.ativo
+        idUsuario = aluno.idUsuario
     }
 
     fun toDomain() = Aluno(
@@ -68,6 +72,7 @@ class AlunoJpaEntity : BaseEntity() {
         ativo,
         requireNotNull(createdAt),
         requireNotNull(updatedAt),
+        idUsuario,
     )
 
     companion object {

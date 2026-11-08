@@ -55,6 +55,9 @@ class SolicitacaoJpaEntity protected constructor() : BaseEntity() {
     @field:Column(name = "hash_sha256", length = 64)
     var hashSha256: String? = null
 
+    @field:Column(name = "protocolo_storage_key", length = 500)
+    var protocoloStorageKey: String? = null
+
     @field:Column(name = "deliberador_id")
     var deliberadorId: UUID? = null
 
@@ -71,6 +74,7 @@ class SolicitacaoJpaEntity protected constructor() : BaseEntity() {
         this.workflowSnapshot = solicitacao.workflowSnapshot
         this.prazoEm = solicitacao.prazoEm
         this.hashSha256 = solicitacao.hashSha256
+        this.protocoloStorageKey = solicitacao.protocoloStorageKey
         this.deliberadorId = solicitacao.deliberadorId
     }
 
@@ -93,6 +97,7 @@ class SolicitacaoJpaEntity protected constructor() : BaseEntity() {
             eventos,
             createdAt,
             updatedAt,
+            protocoloStorageKey,
         )
 
     fun toDomainSemEventos(): Solicitacao = toDomain(emptyList())

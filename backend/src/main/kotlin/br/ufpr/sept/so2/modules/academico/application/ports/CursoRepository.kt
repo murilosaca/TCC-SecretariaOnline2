@@ -27,5 +27,7 @@ interface CursoRepository {
 
     fun findIdsByCoordenador(idCoordenador: UUID): Set<UUID>
 
+    fun findAtivos(): List<Curso>
+
     fun deleteById(id: UUID)
 }

@@ -16,6 +16,7 @@ data class RelatorioCoordenador(
     val series: SeriesCoordenador,
     val pendencias: List<PendenciaCoordenador>,
     val cargaPorDeliberador: List<CargaDeliberador>,
+    val comparativo: List<PontoComparativo> = emptyList(),
 ) {
     data class KpisCoordenador(
         val tempoMedioDias: Double,
@@ -59,6 +60,12 @@ data class RelatorioCoordenador(
         val nome: String,
         val quantidade: Int,
         val tempoMedioDias: Double,
+    )
+
+    data class PontoComparativo(
+        val cursoSigla: String,
+        val horasValidadas: Int,
+        val taxaIndeferimento: Double,
     )
 
     companion object {

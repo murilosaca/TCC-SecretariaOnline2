@@ -92,7 +92,7 @@ class EventoSecretariaIT {
     }
 
     @Test
-    fun cursoForaDoEscopoRecebe403EProfessorContinuaSemCurso() {
+    fun cursoForaDoEscopoRecebe403EProfessorExigeCursoAtivo() {
         val token = usuariosIt.login(EMAIL_SEC)
         mockMvc.perform(
             get("/events")
@@ -119,8 +119,17 @@ class EventoSecretariaIT {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(criarBody("Oficina professor", null)),
         )
+            .andExpect(status().isUnprocessableEntity())
+            .andExpect(jsonPath("$.detail").value("Curso do evento é obrigatório."))
+
+        mockMvc.perform(
+            post("/events")
+                .header("Authorization", "Bearer $professor")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(criarBody("Oficina professor", cursoForaId)),
+        )
             .andExpect(status().isCreated)
-            .andExpect(jsonPath("$.idCurso").doesNotExist())
+            .andExpect(jsonPath("$.idCurso").value(cursoForaId.toString()))
             .andExpect(jsonPath("$._links.editar").doesNotExist())
     }
 

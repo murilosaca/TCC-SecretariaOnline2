@@ -4,19 +4,32 @@ export class ApiError extends Error {
   readonly status: number
   readonly retryAfterSeconds?: number
   readonly failedIds?: string[]
+  readonly type?: string
+  readonly disciplinaId?: string
 
-  constructor(status: number, message: string, retryAfterSeconds?: number, failedIds?: string[]) {
+  constructor(
+    status: number,
+    message: string,
+    retryAfterSeconds?: number,
+    failedIds?: string[],
+    type?: string,
+    disciplinaId?: string,
+  ) {
     super(message)
     this.status = status
     this.retryAfterSeconds = retryAfterSeconds
     this.failedIds = failedIds
+    this.type = type
+    this.disciplinaId = disciplinaId
   }
 }
 
 type ProblemBody = {
   detail?: string
+  type?: string
   retryAfterSeconds?: number
   failedIds?: string[]
+  disciplinaId?: string
 }
 
 const PUBLIC_AUTH = ['/auth/login', '/auth/recuperar-senha', '/auth/redefinir-senha', '/auth/refresh']
@@ -28,10 +41,15 @@ async function parse<T>(response: Response): Promise<T> {
     let message = `Falha HTTP ${response.status}`
     let retryAfterSeconds: number | undefined
     let failedIds: string[] | undefined
+    let type: string | undefined
+    let disciplinaId: string | undefined
     try {
       const body = (await response.json()) as ProblemBody
       if (typeof body.detail === 'string' && body.detail) {
         message = body.detail
+      }
+      if (typeof body.type === 'string') {
+        type = body.type
       }
       if (typeof body.retryAfterSeconds === 'number') {
         retryAfterSeconds = body.retryAfterSeconds
@@ -39,10 +57,13 @@ async function parse<T>(response: Response): Promise<T> {
       if (Array.isArray(body.failedIds)) {
         failedIds = body.failedIds.map(String)
       }
+      if (typeof body.disciplinaId === 'string') {
+        disciplinaId = body.disciplinaId
+      }
     } catch {
       /* corpo vazio ou não JSON */
     }
-    throw new ApiError(response.status, message, retryAfterSeconds, failedIds)
+    throw new ApiError(response.status, message, retryAfterSeconds, failedIds, type, disciplinaId)
   }
   if (response.status === 204 || response.status === 202) {
     const text = await response.text()

@@ -28,7 +28,10 @@ data class AlunoResponse(
             val links = linkedMapOf("self" to base)
             if (podeGerenciar) {
                 links["atualizar"] = base
+                links["edit"] = base
                 links["excluir"] = base
+                links["reset-password"] = "$base/reset-senha"
+                links["matricula"] = "$base/matriculas"
             }
             return AlunoResponse(
                 id = aluno.id,

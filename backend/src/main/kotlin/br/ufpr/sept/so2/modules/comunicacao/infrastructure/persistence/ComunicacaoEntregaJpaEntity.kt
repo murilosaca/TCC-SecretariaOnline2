@@ -35,6 +35,9 @@ class ComunicacaoEntregaJpaEntity : BaseEntity() {
     @Column(name = "email_enviado", nullable = false)
     var emailEnviado: Boolean = false
 
+    @Column(name = "email_adiado", nullable = false)
+    var emailAdiado: Boolean = false
+
     fun toDomain(): ComunicacaoEntrega = ComunicacaoEntrega(
         requireNotNull(id),
         requireNotNull(comunicacaoId),
@@ -44,6 +47,7 @@ class ComunicacaoEntregaJpaEntity : BaseEntity() {
         inApp,
         emailEnviado,
         requireNotNull(createdAt),
+        emailAdiado,
     )
 
     companion object {
@@ -55,6 +59,7 @@ class ComunicacaoEntregaJpaEntity : BaseEntity() {
             acaoHref = entrega.acaoHref
             inApp = entrega.inApp
             emailEnviado = entrega.emailEnviado
+            emailAdiado = entrega.emailAdiado
         }
     }
 }

@@ -5,6 +5,7 @@ import br.ufpr.sept.so2.modules.iam.infrastructure.security.IamPrincipal
 import br.ufpr.sept.so2.modules.presenca.api.dto.AtualizarEventoRequest
 import br.ufpr.sept.so2.modules.presenca.api.dto.ConfirmarPresencaRequest
 import br.ufpr.sept.so2.modules.presenca.api.dto.CriarEventoRequest
+import br.ufpr.sept.so2.modules.presenca.api.dto.CursoAlvoResponse
 import br.ufpr.sept.so2.modules.presenca.api.dto.EventoResponse
 import br.ufpr.sept.so2.modules.presenca.api.dto.HostSessaoResponse
 import br.ufpr.sept.so2.modules.presenca.api.dto.SessaoPresencaResponse
@@ -15,12 +16,14 @@ import br.ufpr.sept.so2.modules.presenca.application.CriarEventoUseCase
 import br.ufpr.sept.so2.modules.presenca.application.EncerrarEventoUseCase
 import br.ufpr.sept.so2.modules.presenca.application.EventoAcesso
 import br.ufpr.sept.so2.modules.presenca.application.ExcluirEventoUseCase
+import br.ufpr.sept.so2.modules.presenca.application.ListarCursosAlvoEventoUseCase
 import br.ufpr.sept.so2.modules.presenca.application.ListarEventosDaSecretariaUseCase
 import br.ufpr.sept.so2.modules.presenca.application.ListarEventosDoAlunoUseCase
 import br.ufpr.sept.so2.modules.presenca.application.ListarEventosDoAnfitriaoUseCase
 import br.ufpr.sept.so2.modules.presenca.application.ObterEventoUseCase
 import br.ufpr.sept.so2.modules.presenca.application.ObterSessaoHostUseCase
 import br.ufpr.sept.so2.modules.presenca.application.ObterSessaoPresencaUseCase
+import br.ufpr.sept.so2.modules.presenca.application.PublicoAlvoEvento
 import br.ufpr.sept.so2.modules.presenca.application.ports.CursoSiglaPort
 import br.ufpr.sept.so2.modules.presenca.application.ports.PresencaRepository
 import br.ufpr.sept.so2.modules.presenca.domain.Evento
@@ -71,6 +74,8 @@ class EventoController(
     private val cursoSiglaPort: CursoSiglaPort,
     private val cursoEscopoPort: CursoEscopoPort,
     private val assembler: PresencaAssembler,
+    private val listarCursosAlvoEventoUseCase: ListarCursosAlvoEventoUseCase,
+    private val publicoAlvoEvento: PublicoAlvoEvento,
 ) {
 
     @GetMapping(params = ["mine=true"])
@@ -140,7 +145,7 @@ class EventoController(
         val principal = principal(authentication)
         val agora = OffsetDateTime.now()
         return PageResponse.ofWithLinks(
-            listarEventosDoAlunoUseCase.execute(audience, pageable),
+            listarEventosDoAlunoUseCase.execute(principal.userId, audience, pageable),
             Function { evento ->
                 assembler.fromEvento(
                     evento,
@@ -168,6 +173,10 @@ class EventoController(
             request.attendanceMode,
             request.cursoId,
             principal.authorities,
+            request.janelaEntrada?.inicio,
+            request.janelaEntrada?.fim,
+            request.janelaSaida?.inicio,
+            request.janelaSaida?.fim,
         )
         return assembler.fromEvento(criado, emptyList(), principal.authorities, principal.userId, OffsetDateTime.now())
     }
@@ -209,6 +218,12 @@ class EventoController(
         excluirEventoUseCase.execute(id, principal.userId, principal.authorities)
         return ResponseEntity.noContent().build()
     }
+
+    @GetMapping("/cursos-alvo")
+    @PreAuthorize("hasAuthority('event.manage')")
+    @Operation(summary = "Cursos ativos para o público-alvo do evento")
+    fun cursosAlvo(): List<CursoAlvoResponse> =
+        listarCursosAlvoEventoUseCase.execute().map { CursoAlvoResponse(it.id, it.sigla, it.nome) }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('attendance.view_open','event.manage','event.host')")
@@ -345,10 +360,11 @@ class EventoController(
     }
 
     private fun garantirLeitura(evento: Evento, principal: IamPrincipal) {
-        if (PresencaAssembler.AUTHORITY_VIEW in principal.authorities) {
+        if (EventoAcesso.alcanca(evento, principal.userId, principal.authorities, cursoEscopoPort)) {
             return
         }
-        if (EventoAcesso.alcanca(evento, principal.userId, principal.authorities, cursoEscopoPort)) {
+        if (PresencaAssembler.AUTHORITY_VIEW in principal.authorities) {
+            publicoAlvoEvento.exigir(evento, principal.userId)
             return
         }
         throw AcessoNegadoException("Você não pode acessar este evento.")

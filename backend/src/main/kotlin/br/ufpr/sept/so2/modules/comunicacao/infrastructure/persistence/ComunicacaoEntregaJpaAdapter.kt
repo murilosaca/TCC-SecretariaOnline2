@@ -17,6 +17,7 @@ class ComunicacaoEntregaJpaAdapter(
         entity.acaoHref = entrega.acaoHref
         entity.inApp = entrega.inApp
         entity.emailEnviado = entrega.emailEnviado
+        entity.emailAdiado = entrega.emailAdiado
         return jpaRepository.save(entity).toDomain()
     }
 
@@ -27,4 +28,10 @@ class ComunicacaoEntregaJpaAdapter(
         jpaRepository.findByComunicacaoIdAndDestinatarioId(comunicacaoId, destinatarioId)
             .map { it.toDomain() }
             .orElse(null)
+
+    override fun findById(id: UUID): ComunicacaoEntrega? =
+        jpaRepository.findById(id).map { it.toDomain() }.orElse(null)
+
+    override fun findEmailAdiado(): List<ComunicacaoEntrega> =
+        jpaRepository.findByEmailAdiadoTrue().map { it.toDomain() }
 }

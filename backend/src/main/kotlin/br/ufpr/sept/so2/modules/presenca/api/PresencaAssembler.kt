@@ -101,6 +101,7 @@ class PresencaAssembler {
             token,
             tokenExpira,
             sessao.presentes,
+            sessao.inelegiveis,
             links,
         )
     }
@@ -145,7 +146,7 @@ class PresencaAssembler {
             links["host-session"] = "/events/${evento.id}/attendance/host-session"
             if (evento.estado != EventoEstado.CONCLUIDO) {
                 links["abrir-janela-entrada"] = "/events/${evento.id}/attendance/windows/entry"
-                if (evento.attendanceMode.isDual() && evento.janelaEntradaInicio != null) {
+                if (evento.attendanceMode.isDual() && evento.estado != EventoEstado.AGENDADO) {
                     links["abrir-janela-saida"] = "/events/${evento.id}/attendance/windows/exit"
                 }
                 if (evento.attendanceMode.isQr() && evento.faseDaJanelaAtiva(agora) != null) {

@@ -7,6 +7,7 @@ import br.ufpr.sept.so2.modules.iam.infrastructure.security.IamPrincipal
 import br.ufpr.sept.so2.shared.api.PageResponse
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.servlet.http.HttpServletRequest
 import jakarta.validation.Valid
 import org.springframework.data.domain.Pageable
 import org.springframework.data.web.PageableDefault
@@ -59,7 +60,11 @@ class DisciplinaController(
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasAuthority('subject.manage')")
     @Operation(summary = "Criar disciplina")
-    fun criar(@Valid @RequestBody request: DisciplinaRequest, authentication: Authentication): DisciplinaResponse =
+    fun criar(
+        @Valid @RequestBody request: DisciplinaRequest,
+        authentication: Authentication,
+        http: HttpServletRequest,
+    ): DisciplinaResponse =
         DisciplinaResponse.from(
             disciplinaApplicationService.criar(
                 principal(authentication).userId,
@@ -69,6 +74,8 @@ class DisciplinaController(
                 request.periodo!!,
                 request.cargaHorariaTotal!!,
                 request.creditos!!,
+                request.vagas ?: 0,
+                http.remoteAddr,
             ),
             true,
         )
@@ -80,6 +87,7 @@ class DisciplinaController(
         @PathVariable id: UUID,
         @Valid @RequestBody request: DisciplinaRequest,
         authentication: Authentication,
+        http: HttpServletRequest,
     ): DisciplinaResponse =
         DisciplinaResponse.from(
             disciplinaApplicationService.atualizar(
@@ -91,6 +99,8 @@ class DisciplinaController(
                 request.cargaHorariaTotal,
                 request.creditos,
                 request.ativa,
+                request.vagas,
+                http.remoteAddr,
             ),
             true,
         )
@@ -99,8 +109,8 @@ class DisciplinaController(
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PreAuthorize("hasAuthority('subject.manage')")
     @Operation(summary = "Excluir disciplina")
-    fun excluir(@PathVariable id: UUID, authentication: Authentication) {
-        disciplinaApplicationService.excluir(id, principal(authentication).userId)
+    fun excluir(@PathVariable id: UUID, authentication: Authentication, http: HttpServletRequest) {
+        disciplinaApplicationService.excluir(id, principal(authentication).userId, http.remoteAddr)
     }
 
     companion object {

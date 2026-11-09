@@ -23,6 +23,8 @@ export function Alunos() {
   const [editandoId, setEditandoId] = useState<string | null>(null)
   const [termo, setTermo] = useState('')
   const [erro, setErro] = useState<string | null>(null)
+  const [resetAluno, setResetAluno] = useState<Aluno | null>(null)
+  const [matriculaAluno, setMatriculaAluno] = useState<Aluno | null>(null)
 
   const cursos = useQuery({ queryKey: ['cursos', 0, 100], queryFn: () => academicoApi.listarCursos(0, 100) })
   const lista = useQuery({
@@ -33,6 +35,7 @@ export function Alunos() {
   const mostrarForm = editandoId != null || colecao.can('criar')
   const forbidden = lista.isError && lista.error instanceof ApiError && lista.error.status === 403
   const cursosIndisponiveis = cursos.isError
+  const grrInvalido = Boolean(erro?.toLowerCase().includes('grr'))
 
   const salvar = useMutation({
     mutationFn: () =>
@@ -40,9 +43,12 @@ export function Alunos() {
     onSuccess: () => {
       setForm(vazio)
       setEditandoId(null)
+      setErro(null)
       queryClient.invalidateQueries({ queryKey: ['alunos'] })
     },
-    onError: () => setErro('Falha ao salvar o aluno. Confira o GRR (GRR + 8 dígitos) e o e-mail.'),
+    onError: (error) => {
+      setErro(error instanceof ApiError ? error.message : 'Falha ao salvar o aluno. Confira o GRR e o e-mail.')
+    },
   })
 
   const excluir = useMutation({
@@ -51,13 +57,26 @@ export function Alunos() {
     onError: () => setErro('Falha ao excluir o aluno.'),
   })
 
+  const resetSenha = useMutation({
+    mutationFn: (aluno: Aluno) => academicoApi.resetSenhaAluno(aluno._links?.['reset-password'] ?? ''),
+    onSuccess: () => {
+      setResetAluno(null)
+      setErro(null)
+    },
+    onError: (error) => {
+      setErro(error instanceof ApiError ? error.message : 'Falha ao enviar o link de redefinição.')
+    },
+  })
+
   function onSubmit(event: FormEvent) {
     event.preventDefault()
+    setErro(null)
     salvar.mutate()
   }
 
   function editar(aluno: Aluno) {
     setEditandoId(aluno.id)
+    setErro(null)
     setForm({
       nome: aluno.nome,
       nomeSocial: aluno.nomeSocial ?? '',
@@ -74,7 +93,7 @@ export function Alunos() {
     <section className="page">
       <header className="page-head">
         <h1>Alunos</h1>
-        <p>Cadastro acadêmico com GRR. O campo idade do legado foi descartado (RF-F5-003).</p>
+        <p>Cadastro acadêmico com GRR. A senha de acesso não é exibida para a secretaria.</p>
       </header>
       {forbidden && (
         <p className="empty" role="status">
@@ -107,7 +126,13 @@ export function Alunos() {
           </label>
           <label>
             GRR
-            <input value={form.grr} onChange={(e) => setForm({ ...form, grr: e.target.value })} placeholder="GRR20241234" required />
+            <input
+              value={form.grr}
+              onChange={(e) => setForm({ ...form, grr: e.target.value })}
+              placeholder="GRR20241234"
+              aria-invalid={grrInvalido || undefined}
+              required
+            />
           </label>
           <label>
             E-mail institucional
@@ -170,7 +195,7 @@ export function Alunos() {
               <th>Nome</th>
               <th>E-mail</th>
               <th>Situação</th>
-              <th></th>
+              <th>Ações</th>
             </tr>
           </thead>
           <tbody>
@@ -180,10 +205,28 @@ export function Alunos() {
                 aluno={aluno}
                 onEditar={editar}
                 onExcluir={() => excluir.mutate(aluno.id)}
+                onReset={() => setResetAluno(aluno)}
+                onMatricula={() => setMatriculaAluno(aluno)}
               />
             ))}
           </tbody>
         </table>
+      )}
+      {resetAluno && (
+        <div className="banner warning" role="alertdialog" aria-labelledby="reset-aluno-titulo">
+          <p id="reset-aluno-titulo">
+            Enviar link de redefinição para <strong>{resetAluno.nome}</strong>? A senha não será exibida.
+          </p>
+          <button type="button" disabled={resetSenha.isPending} onClick={() => resetSenha.mutate(resetAluno)}>
+            Confirmar envio
+          </button>
+          <button type="button" className="ghost" onClick={() => setResetAluno(null)}>
+            Cancelar
+          </button>
+        </div>
+      )}
+      {matriculaAluno && (
+        <DrawerMatricula aluno={matriculaAluno} onClose={() => setMatriculaAluno(null)} />
       )}
     </section>
   )
@@ -193,12 +236,17 @@ function AlunoLinha({
   aluno,
   onEditar,
   onExcluir,
+  onReset,
+  onMatricula,
 }: {
   aluno: Aluno
   onEditar: (aluno: Aluno) => void
   onExcluir: () => void
+  onReset: () => void
+  onMatricula: () => void
 }) {
   const actions = useActions(aluno._links)
+  const semAcao = !actions.can('edit') && !actions.can('reset-password') && !actions.can('matricula')
   return (
     <tr>
       <td>{aluno.grr}</td>
@@ -206,9 +254,19 @@ function AlunoLinha({
       <td>{aluno.emailInstitucional}</td>
       <td>{aluno.situacao}</td>
       <td className="actions">
-        {actions.can('atualizar') && (
+        {actions.can('edit') && (
           <button type="button" className="ghost" onClick={() => onEditar(aluno)}>
             Editar
+          </button>
+        )}
+        {actions.can('reset-password') && (
+          <button type="button" className="ghost" onClick={onReset}>
+            Reset senha
+          </button>
+        )}
+        {actions.can('matricula') && (
+          <button type="button" className="ghost" onClick={onMatricula}>
+            Matricular
           </button>
         )}
         {actions.can('excluir') && (
@@ -216,7 +274,85 @@ function AlunoLinha({
             Excluir
           </button>
         )}
+        {semAcao && <span title="Sem permissão para este curso">Sem permissão para este curso</span>}
       </td>
     </tr>
+  )
+}
+
+function DrawerMatricula({ aluno, onClose }: { aluno: Aluno; onClose: () => void }) {
+  const queryClient = useQueryClient()
+  const [selecionadas, setSelecionadas] = useState<string[]>([])
+  const [erro, setErro] = useState<string | null>(null)
+  const opcoes = useQuery({
+    queryKey: ['matricula-opcoes', aluno.id],
+    queryFn: () => academicoApi.opcoesMatricula(aluno.id),
+  })
+  const matricular = useMutation({
+    mutationFn: () => academicoApi.matricularAluno(aluno._links?.matricula ?? '', selecionadas),
+    onSuccess: () => {
+      setErro(null)
+      queryClient.invalidateQueries({ queryKey: ['matricula-opcoes', aluno.id] })
+      onClose()
+    },
+    onError: (error) => {
+      setErro(error instanceof ApiError ? error.message : 'Falha ao matricular.')
+    },
+  })
+  const semPeriodo = opcoes.data != null && !opcoes.data.periodoId
+  const semDisciplina = opcoes.data != null && opcoes.data.disciplinas.length === 0
+
+  function alternar(id: string) {
+    setSelecionadas((atual) => (atual.includes(id) ? atual.filter((item) => item !== id) : [...atual, id]))
+  }
+
+  return (
+    <>
+      <div className="drawer-backdrop" onClick={onClose} />
+      <aside className="drawer" role="dialog" aria-modal="true" aria-labelledby="matricula-titulo">
+        <h2 id="matricula-titulo">Matricular {aluno.nome}</h2>
+        <p>Disciplinas do curso no período vigente. A secretaria confirma o lote; sem vaga, nada é gravado.</p>
+        {opcoes.isLoading && <p className="muted">Carregando disciplinas…</p>}
+        {opcoes.isError && (
+          <div className="banner danger" role="alert">
+            Não foi possível carregar as disciplinas para matrícula.
+          </div>
+        )}
+        {erro && (
+          <div className="banner danger" role="alert">
+            {erro}
+          </div>
+        )}
+        {semPeriodo && <p className="empty">Não há período letivo vigente.</p>}
+        {!semPeriodo && semDisciplina && <p className="empty">Nenhuma disciplina ativa neste curso.</p>}
+        {opcoes.data?.periodoRotulo && <p>Período {opcoes.data.periodoRotulo}</p>}
+        {opcoes.data && opcoes.data.disciplinas.length > 0 && (
+          <ul>
+            {opcoes.data.disciplinas.map((disciplina) => (
+              <li key={disciplina.id}>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={selecionadas.includes(disciplina.id)}
+                    onChange={() => alternar(disciplina.id)}
+                  />
+                  {disciplina.codigo} — {disciplina.nome} ({disciplina.vagas} vagas)
+                </label>
+              </li>
+            ))}
+          </ul>
+        )}
+        <button
+          type="button"
+          disabled={matricular.isPending || selecionadas.length === 0 || semPeriodo}
+          onClick={() => matricular.mutate()}
+        >
+          Confirmar matrícula
+        </button>
+        <button type="button" className="ghost" onClick={onClose}>
+          Fechar
+        </button>
+      </aside>
+    </>
   )
 }

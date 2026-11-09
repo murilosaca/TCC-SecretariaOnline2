@@ -49,6 +49,8 @@ class CursoJpaAdapter(
     override fun findIdsByCoordenador(idCoordenador: UUID): Set<UUID> =
         jpaRepository.findByIdCoordenador(idCoordenador).mapNotNull { it.id }.toSet()
 
+    override fun findAtivos(): List<Curso> = jpaRepository.findByAtivoTrue().map { it.toDomain() }
+
     override fun deleteById(id: UUID) {
         jpaRepository.deleteById(id)
     }

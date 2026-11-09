@@ -11,6 +11,14 @@ interface PresencaRepository {
 
     fun existsByEventoAndDeviceDeOutroUsuario(eventoId: UUID, deviceUuid: String, usuarioId: UUID): Boolean
 
+    /**
+     * Amarra o dispositivo ao aluno neste evento. O mesmo aluno pode usar o
+     * aparelho nas duas fases. Outro aluno no mesmo aparelho devolve false.
+     */
+    fun vincularDispositivo(eventoId: UUID, deviceUuid: String, usuarioId: UUID): Boolean
+
+    fun usuariosComFase(eventoId: UUID, fase: FasePresenca): Set<UUID>
+
     fun findByEventoAndUsuario(eventoId: UUID, usuarioId: UUID): List<Presenca>
 
     fun countByEvento(eventoId: UUID): Long

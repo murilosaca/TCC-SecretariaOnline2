@@ -17,6 +17,7 @@ data class HostSessaoResponse(
     val token: String? = null,
     val tokenExpira: OffsetDateTime? = null,
     val presentes: Long,
+    val inelegiveis: List<String> = emptyList(),
     @get:JsonProperty("_links")
     val links: Map<String, String>,
 )

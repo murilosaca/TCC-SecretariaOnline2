@@ -16,5 +16,7 @@ interface DisciplinaRepository {
 
     fun findByCursoAndCodigo(idCurso: UUID, codigo: String): Disciplina?
 
+    fun lockByIds(ids: Collection<UUID>): List<Disciplina>
+
     fun deleteById(id: UUID)
 }

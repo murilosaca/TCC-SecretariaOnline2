@@ -2,14 +2,18 @@ package br.ufpr.sept.so2.modules.solicitacoes.application
 
 import br.ufpr.sept.so2.modules.academico.application.ports.AlunoRepository
 import br.ufpr.sept.so2.modules.academico.application.ports.CursoEscopoPort
+import br.ufpr.sept.so2.modules.arquivos.application.ports.ObjectStoragePort
 import br.ufpr.sept.so2.modules.iam.application.ports.AuditLogPort
 import br.ufpr.sept.so2.modules.iam.application.ports.OutboxPort
 import br.ufpr.sept.so2.modules.iam.application.ports.UsuarioRepository
 import br.ufpr.sept.so2.modules.iam.domain.IdentificadorLogin
 import br.ufpr.sept.so2.modules.solicitacoes.application.ports.ProtocoloSequenciaPort
+import br.ufpr.sept.so2.modules.solicitacoes.application.ports.SolicitacaoAnexoRepository
 import br.ufpr.sept.so2.modules.solicitacoes.application.ports.SolicitacaoRepository
 import br.ufpr.sept.so2.modules.solicitacoes.application.ports.TipoSolicitacaoRepository
+import br.ufpr.sept.so2.modules.solicitacoes.domain.AnexoPdf
 import br.ufpr.sept.so2.modules.solicitacoes.domain.Solicitacao
+import br.ufpr.sept.so2.modules.solicitacoes.domain.SolicitacaoAnexo
 import br.ufpr.sept.so2.modules.solicitacoes.infrastructure.SuporteTecnicoSeed
 import br.ufpr.sept.so2.shared.domain.exception.AcessoNegadoException
 import br.ufpr.sept.so2.shared.domain.exception.DadoInvalidoException
@@ -36,15 +40,19 @@ class CriarSolicitacaoUseCase(
     private val alunoRepository: AlunoRepository,
     private val cursoEscopoPort: CursoEscopoPort,
     private val usuarioRepository: UsuarioRepository,
+    private val anexoRepository: SolicitacaoAnexoRepository,
+    private val objectStoragePort: ObjectStoragePort,
 ) {
 
     @Transactional
+    @JvmOverloads
     fun execute(
         atorId: UUID,
         tipoCodigo: String,
         payload: Map<String, Any?>?,
         ip: String?,
         onBehalfOf: UUID? = null,
+        anexo: AnexoSolicitacao? = null,
     ): Solicitacao {
         val titularId = titularDe(atorId, onBehalfOf)
         val tipo = tipoRepository.findByCodigo(tipoCodigo)
@@ -53,6 +61,9 @@ class CriarSolicitacaoUseCase(
             throw RecursoNaoEncontradoException("Tipo de solicitação não encontrado.")
         }
         formSchemaValidator.validar(tipo.formSchema, payload)
+        val anexoValidado = anexo?.let {
+            AnexoPdf.validar(it.nome, it.contentType, it.bytes, it.sha256Informado)
+        }
         val workflow = workflowJsonParser.parse(tipo.workflowJson)
         val agora = OffsetDateTime.now()
         val ano = agora.atZoneSameInstant(FUSO_SEPT).year
@@ -68,6 +79,23 @@ class CriarSolicitacaoUseCase(
             agora,
         )
         val persistida = solicitacaoRepository.save(solicitacao)
+        if (anexo != null && anexoValidado != null) {
+            val anexoId = Uuids.v7()
+            val key = "solicitacoes/${persistida.id}/anexo-$anexoId.pdf"
+            objectStoragePort.putObject(key, "application/pdf", anexo.bytes)
+            anexoRepository.save(
+                SolicitacaoAnexo(
+                    anexoId,
+                    persistida.id,
+                    anexo.nome.trim().ifBlank { "anexo.pdf" },
+                    "application/pdf",
+                    anexo.bytes.size,
+                    anexoValidado,
+                    key,
+                    agora,
+                ),
+            )
+        }
         val evento = toJson(
             mapOf(
                 "solicitacaoId" to persistida.id.toString(),

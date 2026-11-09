@@ -26,6 +26,17 @@ export interface Evento {
   _links?: HateoasLinks
 }
 
+export interface JanelaHorario {
+  inicio: string
+  fim: string
+}
+
+export interface CursoAlvo {
+  id: string
+  sigla: string
+  nome: string
+}
+
 export interface CriarEventoRequest {
   titulo: string
   inicioEm: string
@@ -33,6 +44,8 @@ export interface CriarEventoRequest {
   cargaHoraria: number
   attendanceMode: AttendanceMode
   cursoId?: string
+  janelaEntrada?: JanelaHorario
+  janelaSaida?: JanelaHorario
 }
 
 export interface AtualizarEventoRequest {
@@ -55,6 +68,7 @@ export interface HostSessao {
   token?: string | null
   tokenExpira?: string | null
   presentes: number
+  inelegiveis?: string[]
   _links?: HateoasLinks
 }
 

@@ -61,6 +61,13 @@ export function Cursos() {
       setErro(err instanceof ApiError ? err.message : 'Falha ao excluir o curso.'),
   })
 
+  const desativar = useMutation({
+    mutationFn: (id: string) => academicoApi.definirAtivoCurso(id, false),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['cursos'] }),
+    onError: (err) =>
+      setErro(err instanceof ApiError ? err.message : 'Falha ao desativar o curso.'),
+  })
+
   function onSubmit(event: FormEvent) {
     event.preventDefault()
     salvar.mutate()
@@ -190,6 +197,7 @@ export function Cursos() {
                 curso={curso}
                 onEditar={editar}
                 onExcluir={() => excluir.mutate(curso.id)}
+                onDesativar={() => desativar.mutate(curso.id)}
               />
             ))}
           </tbody>
@@ -203,16 +211,21 @@ function CursoLinha({
   curso,
   onEditar,
   onExcluir,
+  onDesativar,
 }: {
   curso: Curso
   onEditar: (curso: Curso) => void
   onExcluir: () => void
+  onDesativar: () => void
 }) {
   const actions = useActions(curso._links)
   const secretarios = curso.secretariosIds?.length ?? 0
   return (
     <tr>
-      <td>{curso.sigla}</td>
+      <td>
+        {curso.sigla}
+        {!curso.ativo && <span className="muted"> (inativo)</span>}
+      </td>
       <td>{curso.nome}</td>
       <td>{curso.codigo}</td>
       <td>{curso.horasFormativasMinimas}</td>
@@ -221,6 +234,11 @@ function CursoLinha({
         {actions.can('atualizar') && (
           <button type="button" className="ghost" onClick={() => onEditar(curso)}>
             Editar
+          </button>
+        )}
+        {actions.can('desativar') && (
+          <button type="button" className="ghost" onClick={onDesativar}>
+            Desativar
           </button>
         )}
         {actions.can('excluir') && (

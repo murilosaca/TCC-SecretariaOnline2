@@ -2,6 +2,7 @@ package br.ufpr.sept.so2.modules.presenca.domain
 
 import br.ufpr.sept.so2.shared.domain.exception.AcessoNegadoException
 import br.ufpr.sept.so2.shared.domain.exception.ConflitoEstadoException
+import br.ufpr.sept.so2.shared.domain.exception.DadoInvalidoException
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -183,8 +184,77 @@ class EventoTest : StringSpec({
 
     "AGENDADO com presenca nao exclui" {
         val agendado = evento(AttendanceMode.SECRET_SINGLE, estado = EventoEstado.AGENDADO)
-        shouldThrow<br.ufpr.sept.so2.shared.domain.exception.DadoInvalidoException> {
+        shouldThrow<DadoInvalidoException> {
             agendado.garantirExclusao(true)
         }.message shouldBe "Evento possui registros de presença"
+    }
+
+    "janela agendada não é substituída e a saída futura permanece" {
+        val dual = Evento.criar(
+            UUID.fromString("01800000-0000-7000-8000-0000000000e5"),
+            anfitriao,
+            "Dual agendado",
+            agora,
+            agora.plusHours(3),
+            4,
+            AttendanceMode.SECRET_DUAL,
+            agora,
+        )
+        val entradaFim = agora.plusMinutes(15)
+        val saidaInicio = agora.plusHours(2)
+        dual.agendarJanelas(agora, entradaFim, saidaInicio, agora.plusHours(3))
+        dual.abrirJanela(FasePresenca.ENTRADA, "hash-e", agora.plusMinutes(1), 15)
+        dual.janelaEntradaInicio shouldBe agora
+        dual.janelaEntradaFim shouldBe entradaFim
+        dual.janelaSaidaInicio shouldBe saidaInicio
+        dual.janelaAtiva(FasePresenca.ENTRADA, agora.plusMinutes(1)) shouldBe true
+        dual.janelaAtiva(FasePresenca.SAIDA, agora.plusMinutes(1)) shouldBe false
+    }
+
+    "janela fora do evento ou saída antes da entrada é rejeitada" {
+        val single = Evento.criar(
+            UUID.fromString("01800000-0000-7000-8000-0000000000e6"),
+            anfitriao,
+            "Simples",
+            agora,
+            agora.plusHours(2),
+            2,
+            AttendanceMode.SECRET_SINGLE,
+            agora,
+        )
+        shouldThrow<DadoInvalidoException> {
+            single.agendarJanelas(agora.minusMinutes(5), agora.plusMinutes(10), null, null)
+        }.message shouldBe "A janela de entrada deve ficar dentro do horário do evento."
+
+        val dual = Evento.criar(
+            UUID.fromString("01800000-0000-7000-8000-0000000000e7"),
+            anfitriao,
+            "Dual inválido",
+            agora,
+            agora.plusHours(3),
+            2,
+            AttendanceMode.SECRET_DUAL,
+            agora,
+        )
+        shouldThrow<DadoInvalidoException> {
+            dual.agendarJanelas(agora, agora.plusMinutes(30), agora.plusMinutes(20), agora.plusHours(1))
+        }.message shouldBe "A janela de saída deve começar depois da entrada."
+    }
+
+    "janela agendada já encerrada não abre" {
+        val dual = Evento.criar(
+            UUID.fromString("01800000-0000-7000-8000-0000000000e8"),
+            anfitriao,
+            "Encerrada",
+            agora,
+            agora.plusHours(3),
+            2,
+            AttendanceMode.SECRET_DUAL,
+            agora,
+        )
+        dual.agendarJanelas(agora, agora.plusMinutes(10), agora.plusHours(2), agora.plusHours(3))
+        shouldThrow<ConflitoEstadoException> {
+            dual.abrirJanela(FasePresenca.ENTRADA, "hash", agora.plusMinutes(20), 15)
+        }.message shouldBe "A janela agendada já encerrou."
     }
 })

@@ -3,10 +3,13 @@ package br.ufpr.sept.so2.modules.academico.api
 import br.ufpr.sept.so2.modules.academico.api.dto.PeriodoLetivoRequest
 import br.ufpr.sept.so2.modules.academico.api.dto.PeriodoLetivoResponse
 import br.ufpr.sept.so2.modules.academico.application.PeriodoLetivoApplicationService
+import br.ufpr.sept.so2.modules.iam.infrastructure.security.IamPrincipal
 import br.ufpr.sept.so2.shared.api.PageResponse
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.servlet.http.HttpServletRequest
 import jakarta.validation.Valid
+import org.springframework.security.core.Authentication
 import org.springframework.data.domain.Pageable
 import org.springframework.data.web.PageableDefault
 import org.springframework.http.HttpStatus
@@ -56,13 +59,19 @@ class PeriodoLetivoController(
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasAuthority('calendar.manage')")
     @Operation(summary = "Criar período letivo")
-    fun criar(@Valid @RequestBody request: PeriodoLetivoRequest): PeriodoLetivoResponse =
+    fun criar(
+        @Valid @RequestBody request: PeriodoLetivoRequest,
+        authentication: Authentication,
+        http: HttpServletRequest,
+    ): PeriodoLetivoResponse =
         PeriodoLetivoResponse.from(
             periodoLetivoApplicationService.criar(
                 request.ano!!,
                 request.semestre!!,
                 request.inicio!!,
                 request.fim!!,
+                principal(authentication).userId,
+                http.remoteAddr,
             ),
             true,
         )
@@ -70,7 +79,12 @@ class PeriodoLetivoController(
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('calendar.manage')")
     @Operation(summary = "Atualizar período letivo")
-    fun atualizar(@PathVariable id: UUID, @Valid @RequestBody request: PeriodoLetivoRequest): PeriodoLetivoResponse =
+    fun atualizar(
+        @PathVariable id: UUID,
+        @Valid @RequestBody request: PeriodoLetivoRequest,
+        authentication: Authentication,
+        http: HttpServletRequest,
+    ): PeriodoLetivoResponse =
         PeriodoLetivoResponse.from(
             periodoLetivoApplicationService.atualizar(
                 id,
@@ -79,6 +93,8 @@ class PeriodoLetivoController(
                 request.inicio,
                 request.fim,
                 request.ativo,
+                principal(authentication).userId,
+                http.remoteAddr,
             ),
             true,
         )
@@ -87,7 +103,12 @@ class PeriodoLetivoController(
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PreAuthorize("hasAuthority('calendar.manage')")
     @Operation(summary = "Excluir período letivo")
-    fun excluir(@PathVariable id: UUID) {
-        periodoLetivoApplicationService.excluir(id)
+    fun excluir(@PathVariable id: UUID, authentication: Authentication, http: HttpServletRequest) {
+        periodoLetivoApplicationService.excluir(id, principal(authentication).userId, http.remoteAddr)
+    }
+
+    companion object {
+        private fun principal(authentication: Authentication): IamPrincipal =
+            authentication.principal as IamPrincipal
     }
 }

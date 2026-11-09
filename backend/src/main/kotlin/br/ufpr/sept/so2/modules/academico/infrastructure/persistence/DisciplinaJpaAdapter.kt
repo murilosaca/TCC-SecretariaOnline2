@@ -46,6 +46,13 @@ class DisciplinaJpaAdapter(
     override fun findByCursoAndCodigo(idCurso: UUID, codigo: String): Disciplina? =
         jpaRepository.findFirstByIdCursoAndCodigoIgnoreCase(idCurso, codigo).map { it.toDomain() }.orElse(null)
 
+    override fun lockByIds(ids: Collection<UUID>): List<Disciplina> {
+        if (ids.isEmpty()) {
+            return emptyList()
+        }
+        return jpaRepository.lockByIds(ids).map { it.toDomain() }
+    }
+
     override fun deleteById(id: UUID) {
         jpaRepository.deleteById(id)
     }

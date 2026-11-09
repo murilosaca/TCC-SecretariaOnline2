@@ -29,6 +29,9 @@ class AlunoJpaAdapter(
     override fun findByEmailInstitucional(email: String): Optional<Aluno> =
         jpaRepository.findByEmailInstitucionalIgnoreCase(email).map { it.toDomain() }
 
+    override fun findByIdUsuario(idUsuario: UUID): Optional<Aluno> =
+        jpaRepository.findByIdUsuario(idUsuario).map { it.toDomain() }
+
     override fun findAll(idCurso: UUID?, termo: String?, cursoIds: Collection<UUID>?, pageable: Pageable): Page<Aluno> {
         if (cursoIds != null && cursoIds.isEmpty()) {
             return Page.empty(pageable)

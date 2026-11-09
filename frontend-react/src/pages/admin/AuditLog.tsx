@@ -6,9 +6,10 @@ import { auditApi, type AuditLogItem } from '../../api/audit'
 export function AuditLog() {
   const [ator, setAtor] = useState('')
   const [acao, setAcao] = useState('')
+  const [entidade, setEntidade] = useState('')
   const [de, setDe] = useState('')
   const [ate, setAte] = useState('')
-  const [filtros, setFiltros] = useState({ ator: '', acao: '', de: '', ate: '' })
+  const [filtros, setFiltros] = useState({ ator: '', acao: '', entidade: '', de: '', ate: '' })
   const [aberto, setAberto] = useState<AuditLogItem | null>(null)
 
   const lista = useQuery({
@@ -17,6 +18,7 @@ export function AuditLog() {
       auditApi.listar({
         ator: filtros.ator || undefined,
         acao: filtros.acao || undefined,
+        entidade: filtros.entidade || undefined,
         de: filtros.de || undefined,
         ate: filtros.ate || undefined,
         size: 50,
@@ -35,7 +37,7 @@ export function AuditLog() {
 
   function aplicar(event: FormEvent) {
     event.preventDefault()
-    setFiltros({ ator, acao, de, ate })
+    setFiltros({ ator, acao, entidade, de, ate })
   }
 
   return (
@@ -51,6 +53,8 @@ export function AuditLog() {
         <input id="audit-ator" value={ator} onChange={(event) => setAtor(event.target.value)} />
         <label htmlFor="audit-acao">Ação</label>
         <input id="audit-acao" value={acao} onChange={(event) => setAcao(event.target.value)} />
+        <label htmlFor="audit-entidade">Entidade</label>
+        <input id="audit-entidade" value={entidade} onChange={(event) => setEntidade(event.target.value)} />
         <label htmlFor="audit-de">De</label>
         <input id="audit-de" type="date" value={de} onChange={(event) => setDe(event.target.value)} />
         <label htmlFor="audit-ate">Até</label>

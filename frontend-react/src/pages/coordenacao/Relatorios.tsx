@@ -65,6 +65,7 @@ export function Relatorios() {
   const quickTiles = QUICK_TILES.filter((t) => actions.can(t.rel))
 
   const carga = consulta.data?.cargaPorDeliberador ?? []
+  const comparativo = consulta.data?.comparativo ?? []
   const cargaPagina = carga.slice(drillPagina * DRILL_PAGE, drillPagina * DRILL_PAGE + DRILL_PAGE)
   const totalPaginas = Math.max(1, Math.ceil(carga.length / DRILL_PAGE))
 
@@ -206,6 +207,19 @@ export function Relatorios() {
                 valores: { taxa: Math.round(p.taxaAprovacao * 100) },
               }))}
               series={[{ chave: 'taxa', rotulo: 'Taxa (%)', cor: '#0f4c81' }]}
+            />
+            <SerieChart
+              titulo="Comparativo entre cursos"
+              resumo={
+                comparativo.length === 0
+                  ? 'Nenhum curso na sua coordenação.'
+                  : comparativo.map((ponto) => ponto.cursoSigla).join(', ')
+              }
+              pontos={comparativo.map((ponto) => ({
+                rotulo: ponto.cursoSigla,
+                valores: { horas: ponto.horasValidadas },
+              }))}
+              series={[{ chave: 'horas', rotulo: 'Horas validadas', cor: '#0f4c81' }]}
             />
             <SerieChart
               titulo="Carga por deliberador"

@@ -13,11 +13,13 @@ import java.util.UUID
 class ObterSessaoPresencaUseCase(
     private val eventoRepository: EventoRepository,
     private val presencaRepository: PresencaRepository,
+    private val publicoAlvoEvento: PublicoAlvoEvento,
 ) {
     @Transactional(readOnly = true)
     fun execute(eventoId: UUID, usuarioId: UUID): SessaoPresenca {
         val evento = eventoRepository.findById(eventoId)
             .orElseThrow { RecursoNaoEncontradoException("Evento não encontrado.") }
+        publicoAlvoEvento.exigir(evento, usuarioId)
         val fases = presencaRepository.findByEventoAndUsuario(eventoId, usuarioId).map { it.fase }
         return SessaoPresenca(evento, fases)
     }

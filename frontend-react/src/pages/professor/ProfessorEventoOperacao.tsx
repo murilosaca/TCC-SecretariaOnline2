@@ -5,7 +5,7 @@ import { ApiError } from '../../api/client'
 import { eventosApi } from '../../api/eventos'
 import { HostActionBar } from '../../components/HostActionBar'
 import { QrDisplay } from '../../components/QrDisplay'
-import { isQrMode } from '../../models/evento'
+import { isDualMode, isQrMode } from '../../models/evento'
 import type { HostSessao } from '../../models/evento'
 
 export function ProfessorEventoOperacao({
@@ -151,12 +151,30 @@ function Painel({
         <p className="empty" role="status">
           {sessao.estado === 'CONCLUIDO'
             ? 'Evento encerrado. A janela de validação foi fechada.'
-            : qr
-              ? 'Abra a janela para exibir o QR.'
-              : 'Abra a janela de entrada para exibir o PIN.'}
+            : sessao.estado === 'EM_ANDAMENTO' && !sessao.janelaAtiva
+              ? 'A janela já foi aberta. O segredo aparece no horário agendado.'
+              : qr
+                ? 'Abra a janela para exibir o QR.'
+                : 'Abra a janela de entrada para exibir o PIN.'}
         </p>
       )}
       <p className="muted">Presentes: {sessao.presentes}</p>
+      {isDualMode(sessao.attendanceMode) && (
+        <div>
+          <p className="muted">Inelegíveis: {sessao.inelegiveis?.length ?? 0}</p>
+          {(sessao.inelegiveis ?? []).length === 0 ? (
+            <p className="empty" role="status">
+              Nenhum aluno inelegível.
+            </p>
+          ) : (
+            <ul>
+              {(sessao.inelegiveis ?? []).map((nome, indice) => (
+                <li key={`${nome}-${indice}`}>{nome}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
       {erro && (
         <p className="field-error" role="alert">
           {erro}

@@ -18,6 +18,13 @@ export interface AuditLogPage {
 }
 
 export const auditApi = {
-  listar: (params: { ator?: string; acao?: string; de?: string; ate?: string; page?: number; size?: number }) =>
-    api.get<AuditLogPage>('/audit-log', params),
+  listar: (params: {
+    ator?: string
+    acao?: string
+    entidade?: string
+    de?: string
+    ate?: string
+    page?: number
+    size?: number
+  }) => api.get<AuditLogPage>('/audit-log', params),
 }

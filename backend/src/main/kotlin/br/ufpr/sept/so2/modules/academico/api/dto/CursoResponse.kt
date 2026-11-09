@@ -31,6 +31,9 @@ data class CursoResponse(
             if (podeGerenciar) {
                 links["atualizar"] = base
                 links["excluir"] = base
+                if (curso.ativo) {
+                    links["desativar"] = base
+                }
             }
             if (podeVerDisciplinas) {
                 links["disciplinas"] = "/academico/disciplinas?idCurso=${curso.id}"

@@ -1,6 +1,7 @@
 package br.ufpr.sept.so2.modules.comunicacao.api
 
 import br.ufpr.sept.so2.modules.comunicacao.application.ListarOutboxUseCase
+import br.ufpr.sept.so2.shared.domain.SegredoRedigido
 import br.ufpr.sept.so2.modules.comunicacao.application.OutboxDispatcherMonitor.JobCard
 import br.ufpr.sept.so2.modules.comunicacao.application.ReentregarOutboxUseCase
 import br.ufpr.sept.so2.modules.iam.application.ports.OutboxEvento
@@ -91,7 +92,7 @@ data class OutboxEventoResponse(
         }
 
         private fun resumir(payload: String): String {
-            val texto = payload.replace(Regex("\\s+"), " ").trim()
+            val texto = SegredoRedigido.json(payload).replace(Regex("\\s+"), " ").trim()
             return if (texto.length <= 120) texto else texto.take(117) + "..."
         }
     }

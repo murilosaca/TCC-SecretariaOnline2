@@ -14,7 +14,14 @@ class ListarAuditLogUseCase(
     private val consulta: AuditLogConsultaPort,
 ) {
     @Transactional(readOnly = true)
-    fun execute(ator: String?, acao: String?, de: LocalDate?, ate: LocalDate?, pageable: Pageable): AuditLogPagina {
+    fun execute(
+        ator: String?,
+        acao: String?,
+        de: LocalDate?,
+        ate: LocalDate?,
+        pageable: Pageable,
+        entidade: String? = null,
+    ): AuditLogPagina {
         val hoje = LocalDate.now(ZoneOffset.UTC)
         var fim = ate ?: hoje
         var inicio = de ?: fim.minusYears(1)
@@ -29,8 +36,8 @@ class ListarAuditLogUseCase(
         val ateExclusivo = fim.plusDays(1).atStartOfDay().atOffset(ZoneOffset.UTC)
         val tamanho = pageable.pageSize.coerceIn(1, TAMANHO_PAGINA)
         val numero = pageable.pageNumber.coerceAtLeast(0)
-        val total = consulta.contar(ator, acao, desde, ateExclusivo)
-        val itens = consulta.listar(ator, acao, desde, ateExclusivo, numero * tamanho, tamanho)
+        val total = consulta.contar(ator, acao, entidade, desde, ateExclusivo)
+        val itens = consulta.listar(ator, acao, entidade, desde, ateExclusivo, numero * tamanho, tamanho)
         return AuditLogPagina(itens, numero, tamanho, total)
     }
 

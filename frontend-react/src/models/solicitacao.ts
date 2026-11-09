@@ -67,6 +67,7 @@ export type Solicitacao = {
   createdAt: string
   updatedAt: string
   thumbnailUrl?: string | null
+  anexos?: Array<{ nome: string; tamanho: number; sha256: string; downloadUrl: string }>
   eventos: SolicitacaoEvento[]
   _links?: HateoasLinks
 }

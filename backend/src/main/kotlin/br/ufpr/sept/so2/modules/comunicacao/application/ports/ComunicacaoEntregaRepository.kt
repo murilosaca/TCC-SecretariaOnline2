@@ -9,4 +9,8 @@ interface ComunicacaoEntregaRepository {
     fun findVisiveis(destinatarioId: UUID): List<ComunicacaoEntrega>
 
     fun findByComunicacaoEDestinatario(comunicacaoId: UUID, destinatarioId: UUID): ComunicacaoEntrega?
+
+    fun findById(id: UUID): ComunicacaoEntrega?
+
+    fun findEmailAdiado(): List<ComunicacaoEntrega>
 }

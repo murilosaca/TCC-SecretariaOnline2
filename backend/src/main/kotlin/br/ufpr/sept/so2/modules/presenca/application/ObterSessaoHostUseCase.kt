@@ -14,6 +14,7 @@ class ObterSessaoHostUseCase(
     private val eventoRepository: EventoRepository,
     private val presencaRepository: PresencaRepository,
     private val hostPinPort: HostPinPort,
+    private val listarInelegiveis: ListarInelegiveisPresenca,
 ) {
     @Transactional(readOnly = true)
     fun execute(eventoId: UUID, anfitriaoId: UUID): AbrirJanelaUseCase.SessaoHost {
@@ -23,6 +24,12 @@ class ObterSessaoHostUseCase(
         val ativa = evento.faseDaJanelaAtiva(OffsetDateTime.now()) != null
         val segredo = if (ativa) hostPinPort.obter(eventoId).orElse(null) else null
         val emitidoEm = if (ativa && segredo != null) hostPinPort.emitidoEm(eventoId).orElse(null) else null
-        return AbrirJanelaUseCase.SessaoHost(evento, segredo, presencaRepository.countByEvento(eventoId), emitidoEm)
+        return AbrirJanelaUseCase.SessaoHost(
+            evento,
+            segredo,
+            presencaRepository.countByEvento(eventoId),
+            emitidoEm,
+            listarInelegiveis.nomes(evento),
+        )
     }
 }

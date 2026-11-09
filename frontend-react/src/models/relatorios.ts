@@ -56,6 +56,7 @@ export type CoordinatorReport = {
   }
   pendencias: PendenciaRelatorio[]
   cargaPorDeliberador: CargaDeliberador[]
+  comparativo?: { cursoSigla: string; horasValidadas: number; taxaIndeferimento: number }[]
   _links: HateoasLinks
 }
 

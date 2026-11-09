@@ -43,6 +43,7 @@ export interface Disciplina {
   periodo: number
   cargaHorariaTotal: number
   creditos: number
+  vagas: number
   ativa: boolean
   _links?: HateoasLinks
 }
@@ -54,6 +55,7 @@ export interface DisciplinaRequest {
   periodo: number
   cargaHorariaTotal: number
   creditos: number
+  vagas?: number
   ativa?: boolean
 }
 
@@ -71,6 +73,19 @@ export interface Aluno {
   situacao: AlunoSituacao
   ativo: boolean
   _links?: HateoasLinks
+}
+
+export interface DisciplinaOpcao {
+  id: string
+  codigo: string
+  nome: string
+  vagas: number
+}
+
+export interface MatriculaOpcoes {
+  periodoId?: string | null
+  periodoRotulo?: string | null
+  disciplinas: DisciplinaOpcao[]
 }
 
 export interface AlunoRequest {

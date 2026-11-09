@@ -31,6 +31,9 @@ class DisciplinaJpaEntity : BaseEntity() {
     @Column(nullable = false)
     var ativa: Boolean = false
 
+    @Column(nullable = false)
+    var vagas: Int = 0
+
     fun merge(disciplina: Disciplina) {
         codigo = disciplina.codigo
         nome = disciplina.nome
@@ -38,6 +41,7 @@ class DisciplinaJpaEntity : BaseEntity() {
         cargaHorariaTotal = disciplina.cargaHorariaTotal
         creditos = disciplina.creditos
         ativa = disciplina.ativa
+        vagas = disciplina.vagas
     }
 
     fun toDomain() = Disciplina(
@@ -51,6 +55,7 @@ class DisciplinaJpaEntity : BaseEntity() {
         ativa,
         requireNotNull(createdAt),
         requireNotNull(updatedAt),
+        vagas,
     )
 
     companion object {
@@ -63,6 +68,7 @@ class DisciplinaJpaEntity : BaseEntity() {
             cargaHorariaTotal = disciplina.cargaHorariaTotal
             creditos = disciplina.creditos
             ativa = disciplina.ativa
+            vagas = disciplina.vagas
         }
     }
 }

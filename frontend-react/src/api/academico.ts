@@ -1,6 +1,7 @@
 import type {
   Aluno,
   AlunoRequest,
+  MatriculaOpcoes,
   ContatoSecretaria,
   Curso,
   CursoRequest,
@@ -17,6 +18,7 @@ export const academicoApi = {
     api.get<PageResponse<Curso>>('/academico/cursos', { page, size }),
   criarCurso: (body: CursoRequest) => api.post<Curso>('/academico/cursos', body),
   atualizarCurso: (id: string, body: CursoRequest) => api.put<Curso>(`/academico/cursos/${id}`, body),
+  definirAtivoCurso: (id: string, ativo: boolean) => api.patch<Curso>(`/academico/cursos/${id}`, { ativo }),
   excluirCurso: (id: string) => api.delete(`/academico/cursos/${id}`),
 
   listarDisciplinas: (idCurso?: string, page = 0, size = 20) =>
@@ -31,6 +33,11 @@ export const academicoApi = {
   criarAluno: (body: AlunoRequest) => api.post<Aluno>('/academico/alunos', body),
   atualizarAluno: (id: string, body: AlunoRequest) => api.put<Aluno>(`/academico/alunos/${id}`, body),
   excluirAluno: (id: string) => api.delete(`/academico/alunos/${id}`),
+  resetSenhaAluno: (path: string) => api.post<void>(path),
+  opcoesMatricula: (alunoId: string) =>
+    api.get<MatriculaOpcoes>(`/academico/alunos/${alunoId}/matriculas/opcoes`),
+  matricularAluno: (path: string, disciplinaIds: string[]) =>
+    api.post<{ periodoId: string; disciplinaIds: string[] }>(path, { disciplinaIds }),
 
   contato: () => api.get<ContatoSecretaria>('/publico/contato'),
 

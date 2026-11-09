@@ -28,6 +28,7 @@ class ConfirmarPresencaUseCase(
     private val auditLogPort: AuditLogPort,
     private val objectMapper: ObjectMapper,
     private val formativaPorPresencaPort: FormativaPorPresencaPort,
+    private val publicoAlvoEvento: PublicoAlvoEvento,
 ) {
     @Transactional
     fun execute(
@@ -42,10 +43,11 @@ class ConfirmarPresencaUseCase(
         val evento = eventoRepository.findById(eventoId)
             .orElseThrow { RecursoNaoEncontradoException("Evento não encontrado.") }
         val fase = FasePresenca.from(faseRaw)
+        publicoAlvoEvento.exigir(evento, usuarioId)
         if (presencaRepository.existsByEventoUsuarioFase(eventoId, usuarioId, fase)) {
             throw ConflitoEstadoException("A presença desta fase já foi confirmada.")
         }
-        if (presencaRepository.existsByEventoAndDeviceDeOutroUsuario(eventoId, deviceUuid, usuarioId)) {
+        if (!presencaRepository.vincularDispositivo(eventoId, deviceUuid, usuarioId)) {
             throw ConflitoEstadoException("Este dispositivo já foi usado neste evento.")
         }
         if (fase == FasePresenca.SAIDA &&

@@ -82,7 +82,14 @@ class AcademicoDevDataLoader(
         agora: OffsetDateTime,
         situacao: AlunoSituacao = AlunoSituacao.MATRICULADO,
     ) {
-        if (alunoRepository.findByGrr(grr).isPresent) {
+        val usuarioId = usuarioRepository.findByEmail(email).orElse(null)?.id
+        val existente = alunoRepository.findByGrr(grr)
+        if (existente.isPresent) {
+            val aluno = existente.get()
+            if (aluno.idUsuario == null && usuarioId != null) {
+                aluno.vincularUsuario(usuarioId)
+                alunoRepository.save(aluno)
+            }
             return
         }
         alunoRepository.save(
@@ -99,6 +106,7 @@ class AcademicoDevDataLoader(
                 true,
                 agora,
                 agora,
+                usuarioId,
             ),
         )
     }

@@ -20,13 +20,21 @@ interface EventoJpaRepository : JpaRepository<EventoJpaEntity, UUID> {
         """
             SELECT e FROM EventoJpaEntity e
             WHERE e.estado = 'EM_ANDAMENTO'
-              AND e.janelaEntradaInicio IS NOT NULL
-              AND e.janelaEntradaFim IS NOT NULL
-              AND e.janelaEntradaInicio <= :agora
-              AND e.janelaEntradaFim >= :agora
+              AND (
+                (e.janelaEntradaInicio IS NOT NULL AND e.janelaEntradaFim IS NOT NULL
+                  AND e.janelaEntradaInicio <= :agora AND e.janelaEntradaFim >= :agora)
+                OR
+                (e.janelaSaidaInicio IS NOT NULL AND e.janelaSaidaFim IS NOT NULL
+                  AND e.janelaSaidaInicio <= :agora AND e.janelaSaidaFim >= :agora)
+              )
+              AND (e.idCurso IS NULL OR e.idCurso = :cursoId)
             """,
     )
-    fun findAbertosParaAluno(@Param("agora") agora: OffsetDateTime, pageable: Pageable): Page<EventoJpaEntity>
+    fun findAbertosParaAluno(
+        @Param("agora") agora: OffsetDateTime,
+        @Param("cursoId") cursoId: UUID?,
+        pageable: Pageable,
+    ): Page<EventoJpaEntity>
 
     @Query(
         """

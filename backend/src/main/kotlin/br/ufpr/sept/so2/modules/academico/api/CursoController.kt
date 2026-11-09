@@ -1,12 +1,15 @@
 package br.ufpr.sept.so2.modules.academico.api
 
+import br.ufpr.sept.so2.modules.academico.api.dto.AtivoCursoRequest
 import br.ufpr.sept.so2.modules.academico.api.dto.CursoRequest
 import br.ufpr.sept.so2.modules.academico.api.dto.CursoResponse
 import br.ufpr.sept.so2.modules.academico.application.CursoApplicationService
+import br.ufpr.sept.so2.modules.academico.application.DefinirAtivoCursoUseCase
 import br.ufpr.sept.so2.modules.iam.infrastructure.security.IamPrincipal
 import br.ufpr.sept.so2.shared.api.PageResponse
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.servlet.http.HttpServletRequest
 import jakarta.validation.Valid
 import org.springframework.data.domain.Pageable
 import org.springframework.data.web.PageableDefault
@@ -15,6 +18,7 @@ import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
@@ -30,6 +34,7 @@ import java.util.function.Function
 @Tag(name = "Cursos", description = "Cadastro de cursos (RF-F5-004-a)")
 class CursoController(
     private val cursoApplicationService: CursoApplicationService,
+    private val definirAtivoCursoUseCase: DefinirAtivoCursoUseCase,
 ) {
     @GetMapping
     @PreAuthorize("hasAuthority('course.manage')")
@@ -73,7 +78,11 @@ class CursoController(
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasAuthority('course.manage')")
     @Operation(summary = "Criar curso")
-    fun criar(@Valid @RequestBody request: CursoRequest, authentication: Authentication): CursoResponse {
+    fun criar(
+        @Valid @RequestBody request: CursoRequest,
+        authentication: Authentication,
+        http: HttpServletRequest,
+    ): CursoResponse {
         val usuarioId = principal(authentication).userId
         val horas = request.horasFormativasMinimas ?: 120
         val curso = cursoApplicationService.criar(
@@ -84,6 +93,7 @@ class CursoController(
             request.idCoordenador,
             horas,
             request.secretariosIds,
+            http.remoteAddr,
         )
         return CursoResponse.from(
             curso,
@@ -100,6 +110,7 @@ class CursoController(
         @PathVariable id: UUID,
         @Valid @RequestBody request: CursoRequest,
         authentication: Authentication,
+        http: HttpServletRequest,
     ): CursoResponse {
         val usuarioId = principal(authentication).userId
         val curso = cursoApplicationService.atualizar(
@@ -112,7 +123,27 @@ class CursoController(
             request.horasFormativasMinimas,
             request.ativo,
             request.secretariosIds,
+            http.remoteAddr,
         )
+        return CursoResponse.from(
+            curso,
+            cursoApplicationService.secretariosIds(curso.id),
+            cursoApplicationService.estaNoEscopo(usuarioId, curso.id),
+            podeVerDisciplinas(authentication),
+        )
+    }
+
+    @PatchMapping("/{id}")
+    @PreAuthorize("hasAuthority('course.manage')")
+    @Operation(summary = "Ativar ou desativar o curso sem apagar o histórico")
+    fun definirAtivo(
+        @PathVariable id: UUID,
+        @Valid @RequestBody request: AtivoCursoRequest,
+        authentication: Authentication,
+        http: HttpServletRequest,
+    ): CursoResponse {
+        val usuarioId = principal(authentication).userId
+        val curso = definirAtivoCursoUseCase.execute(id, usuarioId, requireNotNull(request.ativo), http.remoteAddr)
         return CursoResponse.from(
             curso,
             cursoApplicationService.secretariosIds(curso.id),
@@ -125,8 +156,8 @@ class CursoController(
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PreAuthorize("hasAuthority('course.manage')")
     @Operation(summary = "Excluir curso")
-    fun excluir(@PathVariable id: UUID, authentication: Authentication) {
-        cursoApplicationService.excluir(id, principal(authentication).userId)
+    fun excluir(@PathVariable id: UUID, authentication: Authentication, http: HttpServletRequest) {
+        cursoApplicationService.excluir(id, principal(authentication).userId, http.remoteAddr)
     }
 
     companion object {

@@ -53,7 +53,24 @@ class ListarFilaDeliberacaoUseCase(
             .flatMap(WorkflowDefinicao::estadosComAcoesDeliberativas)
             .toSet()
 
+    fun tipoPermiteLote(tipoCodigo: String?): Boolean {
+        if (tipoCodigo.isNullOrBlank() || tipoCodigo.equals(TIPO_IMAGEM, ignoreCase = true)) {
+            return false
+        }
+        val tipo = tipoRepository.findByCodigo(tipoCodigo.trim()).orElse(null) ?: return false
+        if (!tipo.isPublished()) {
+            return false
+        }
+        return try {
+            workflowJsonParser.parse(tipo.workflowJson).permiteLote
+        } catch (_: Exception) {
+            false
+        }
+    }
+
     companion object {
+        const val TIPO_IMAGEM: String = "AUTORIZACAO_IMAGEM"
+
         private fun limitar(pageable: Pageable): Pageable {
             val size = minOf(maxOf(pageable.pageSize, 1), 100)
             val sort = if (pageable.sort.isSorted) {

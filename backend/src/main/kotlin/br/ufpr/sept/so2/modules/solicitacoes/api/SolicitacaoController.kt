@@ -6,13 +6,21 @@ import br.ufpr.sept.so2.modules.solicitacoes.api.dto.BulkAtribuirRequest
 import br.ufpr.sept.so2.modules.solicitacoes.api.dto.BulkDeliberarRequest
 import br.ufpr.sept.so2.modules.solicitacoes.api.dto.CriarSolicitacaoRequest
 import br.ufpr.sept.so2.modules.solicitacoes.api.dto.DeliberadorOpcaoResponse
+import br.ufpr.sept.so2.modules.solicitacoes.api.dto.DeliberarLoteRequest
+import br.ufpr.sept.so2.modules.solicitacoes.api.dto.EditarPayloadRequest
+import br.ufpr.sept.so2.modules.solicitacoes.api.dto.ProtocoloPdfResponse
 import br.ufpr.sept.so2.modules.solicitacoes.api.dto.SolicitacaoFilaPageResponse
 import br.ufpr.sept.so2.modules.solicitacoes.api.dto.SolicitacaoResponse
 import br.ufpr.sept.so2.modules.solicitacoes.api.dto.TransicionarSolicitacaoRequest
+import br.ufpr.sept.so2.modules.solicitacoes.application.AnexoSolicitacao
 import br.ufpr.sept.so2.modules.solicitacoes.application.AtribuirDeliberadoresBulkUseCase
 import br.ufpr.sept.so2.modules.solicitacoes.application.CriarSolicitacaoUseCase
 import br.ufpr.sept.so2.modules.solicitacoes.application.DeliberarImagemLoteUseCase
+import br.ufpr.sept.so2.modules.solicitacoes.application.DeliberarSolicitacaoLoteUseCase
 import br.ufpr.sept.so2.modules.solicitacoes.application.DeliberarSolicitacaoUseCase
+import br.ufpr.sept.so2.modules.solicitacoes.application.EditarPayloadSolicitacaoUseCase
+import br.ufpr.sept.so2.modules.solicitacoes.application.GerarProtocoloUseCase
+import br.ufpr.sept.so2.modules.solicitacoes.application.ReenviarSolicitacaoUseCase
 import br.ufpr.sept.so2.modules.solicitacoes.application.ListarAutorizacoesImagemUseCase
 import br.ufpr.sept.so2.modules.solicitacoes.application.ListarFilaCursoUseCase
 import br.ufpr.sept.so2.modules.solicitacoes.application.ListarFilaDeliberacaoUseCase
@@ -42,6 +50,8 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.RequestPart
+import org.springframework.web.multipart.MultipartFile
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import java.time.LocalDate
@@ -60,6 +70,10 @@ class SolicitacaoController(
     private val deliberarSolicitacaoUseCase: DeliberarSolicitacaoUseCase,
     private val atribuirDeliberadoresBulkUseCase: AtribuirDeliberadoresBulkUseCase,
     private val deliberarImagemLoteUseCase: DeliberarImagemLoteUseCase,
+    private val deliberarSolicitacaoLoteUseCase: DeliberarSolicitacaoLoteUseCase,
+    private val editarPayloadSolicitacaoUseCase: EditarPayloadSolicitacaoUseCase,
+    private val reenviarSolicitacaoUseCase: ReenviarSolicitacaoUseCase,
+    private val gerarProtocoloUseCase: GerarProtocoloUseCase,
     private val listarAutorizacoesImagemUseCase: ListarAutorizacoesImagemUseCase,
     private val solicitacaoCursoEscopo: SolicitacaoCursoEscopo,
     private val usuarioRepository: UsuarioRepository,
@@ -117,9 +131,15 @@ class SolicitacaoController(
             } else {
                 null
             }
+            val extrasFilaDeliberacao = if (listarFilaDeliberacaoUseCase.tipoPermiteLote(tipo)) {
+                mapOf("bulk-deliberate" to "/requests/deliberacao-lote")
+            } else {
+                emptyMap()
+            }
             return PageResponse.ofWithLinks(
                 listarFilaDeliberacaoUseCase.execute(tipo, somenteAtraso, pageable, filtroSolicitantes),
                 Function { item -> assembler.from(item, principal.authorities, false) },
+                extrasFilaDeliberacao,
             )
         }
 
@@ -244,7 +264,25 @@ class SolicitacaoController(
         ).map { assembler.from(it, principal.authorities, false) }
     }
 
-    @PostMapping
+    @PatchMapping("/deliberacao-lote")
+    @PreAuthorize("hasAuthority('request.deliberate')")
+    @Operation(summary = "Deliberar em lote só se o workflow publicado tiver batch")
+    fun deliberarLote(
+        @Valid @RequestBody request: DeliberarLoteRequest,
+        authentication: Authentication,
+        http: HttpServletRequest,
+    ): List<SolicitacaoResponse> {
+        val principal = principal(authentication)
+        return deliberarSolicitacaoLoteUseCase.execute(
+            principal.userId,
+            request.ids,
+            request.action,
+            request.parecer,
+            clientIp(http),
+        ).map { assembler.from(it, principal.authorities, false) }
+    }
+
+    @PostMapping(consumes = [MediaType.APPLICATION_JSON_VALUE])
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Abrir solicitação a partir do form_schema")
@@ -254,15 +292,7 @@ class SolicitacaoController(
         http: HttpServletRequest,
     ): SolicitacaoResponse {
         val principal = principal(authentication)
-        if (request.tipoCodigo == SuporteTecnicoSeed.CODIGO && request.onBehalfOf == null) {
-            ticketSuporteRateLimit.verificar(principal.userId)
-        } else if (request.onBehalfOf == null) {
-            if (!principal.authorities.contains("request.open")) {
-                throw AcessoNegadoException("Você não tem permissão para esta operação.")
-            }
-        } else if (!principal.authorities.contains("request.internal_open")) {
-            throw AcessoNegadoException("Você não tem permissão para esta operação.")
-        }
+        autorizarAbertura(principal, request)
         return assembler.from(
             criarSolicitacaoUseCase.execute(
                 principal.userId,
@@ -273,6 +303,43 @@ class SolicitacaoController(
             ),
             principal.authorities,
             true,
+            principal.userId,
+        )
+    }
+
+    @PostMapping(consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
+    @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Abrir solicitação com anexo PDF")
+    fun criarComAnexo(
+        @RequestPart("solicitacao") @Valid request: CriarSolicitacaoRequest,
+        @RequestPart(name = "anexo", required = false) anexo: MultipartFile?,
+        @RequestParam(name = "sha256", required = false) sha256: String?,
+        authentication: Authentication,
+        http: HttpServletRequest,
+    ): SolicitacaoResponse {
+        val principal = principal(authentication)
+        autorizarAbertura(principal, request)
+        val arquivo = anexo?.takeIf { !it.isEmpty }?.let {
+            AnexoSolicitacao(
+                it.originalFilename ?: "anexo.pdf",
+                it.contentType ?: "application/pdf",
+                it.bytes,
+                sha256,
+            )
+        }
+        return assembler.from(
+            criarSolicitacaoUseCase.execute(
+                principal.userId,
+                request.tipoCodigo,
+                request.payload,
+                clientIp(http),
+                request.onBehalfOf,
+                arquivo,
+            ),
+            principal.authorities,
+            true,
+            principal.userId,
         )
     }
 
@@ -289,7 +356,55 @@ class SolicitacaoController(
             obterSolicitacaoUseCase.execute(id, principal.userId, principal.authorities, token),
             principal.authorities,
             true,
+            principal.userId,
         )
+    }
+
+    @PatchMapping("/{id}")
+    @PreAuthorize("hasAuthority('request.view_own')")
+    @Operation(summary = "Editar o payload enquanto a solicitação está em ajuste")
+    fun editar(
+        @PathVariable("id") id: UUID,
+        @RequestBody request: EditarPayloadRequest,
+        authentication: Authentication,
+        http: HttpServletRequest,
+    ): SolicitacaoResponse {
+        val principal = principal(authentication)
+        return assembler.from(
+            editarPayloadSolicitacaoUseCase.execute(id, principal.userId, request.payload, clientIp(http)),
+            principal.authorities,
+            true,
+            principal.userId,
+        )
+    }
+
+    @PostMapping("/{id}/reenviar")
+    @PreAuthorize("hasAuthority('request.view_own')")
+    @Operation(summary = "Reenviar solicitação em ajuste (RESUBMIT)")
+    fun reenviar(
+        @PathVariable("id") id: UUID,
+        authentication: Authentication,
+        http: HttpServletRequest,
+    ): SolicitacaoResponse {
+        val principal = principal(authentication)
+        return assembler.from(
+            reenviarSolicitacaoUseCase.execute(id, principal.userId, clientIp(http)),
+            principal.authorities,
+            true,
+            principal.userId,
+        )
+    }
+
+    @PostMapping("/{id}/protocolo")
+    @PreAuthorize("hasAuthority('request.view_own')")
+    @Operation(summary = "Gerar o PDF do protocolo e devolver URL pré-assinada")
+    fun protocolo(
+        @PathVariable("id") id: UUID,
+        authentication: Authentication,
+    ): ProtocoloPdfResponse {
+        val principal = principal(authentication)
+        val emitido = gerarProtocoloUseCase.execute(id, principal.userId)
+        return ProtocoloPdfResponse(emitido.downloadUrl, emitido.hashSha256)
     }
 
     @PostMapping("/{id}/transitions")
@@ -316,6 +431,18 @@ class SolicitacaoController(
             principal.authorities,
             true,
         )
+    }
+
+    private fun autorizarAbertura(principal: IamPrincipal, request: CriarSolicitacaoRequest) {
+        if (request.tipoCodigo == SuporteTecnicoSeed.CODIGO && request.onBehalfOf == null) {
+            ticketSuporteRateLimit.verificar(principal.userId)
+        } else if (request.onBehalfOf == null) {
+            if (!principal.authorities.contains("request.open")) {
+                throw AcessoNegadoException("Você não tem permissão para esta operação.")
+            }
+        } else if (!principal.authorities.contains("request.internal_open")) {
+            throw AcessoNegadoException("Você não tem permissão para esta operação.")
+        }
     }
 
     companion object {

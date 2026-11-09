@@ -66,6 +66,14 @@ export const solicitacoesApi = {
     api.patch<Solicitacao[]>('/requests/bulk', { ids, deliberadorId }),
   criar: (tipoCodigo: string, payload: Record<string, unknown>, onBehalfOf?: string) =>
     api.post<Solicitacao>('/requests', { tipoCodigo, payload, onBehalfOf }),
+  criarComAnexo: (form: FormData) => api.postForm<Solicitacao>('/requests', form),
+  editarPayload: (path: string, payload: Record<string, unknown>) =>
+    api.patch<Solicitacao>(path, { payload }),
+  reenviar: (path: string) => api.post<Solicitacao>(path),
+  gerarProtocolo: (path: string) =>
+    api.post<{ downloadUrl: string; hashSha256: string }>(path),
+  deliberarLote: (path: string, ids: string[], action: string, parecer: string) =>
+    api.patch<Solicitacao[]>(path, { ids, action, parecer }),
   deliberarImagemLote: (ids: string[], decisao: 'DEFERIDA' | 'INDEFERIDA', justificativa?: string) =>
     api.patch<Solicitacao[]>('/requests/bulk-deliberate', { ids, decisao, justificativa }),
   listarAutorizacoesImagem: (page = 0, size = 50) =>

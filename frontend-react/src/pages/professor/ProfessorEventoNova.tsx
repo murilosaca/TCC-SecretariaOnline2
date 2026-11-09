@@ -1,91 +1,72 @@
 import { FormEvent, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { ApiError } from '../../api/client'
 import { eventosApi } from '../../api/eventos'
-import { rotuloCodigo } from '../../lib/rotulos'
-import type { AttendanceMode } from '../../models/evento'
+import { isDualMode, type AttendanceMode } from '../../models/evento'
 
-const MODOS: AttendanceMode[] = ['SECRET_SINGLE', 'SECRET_DUAL', 'QR_SINGLE', 'QR_DUAL']
-
-const DESCRICOES_MODO: { modo: AttendanceMode; texto: string }[] = [
-  {
-    modo: 'SECRET_SINGLE',
-    texto: 'O aluno digita um PIN apenas na entrada do evento.',
-  },
-  {
-    modo: 'SECRET_DUAL',
-    texto: 'PIN na entrada e outro na saída, para comprovar permanência.',
-  },
-  {
-    modo: 'QR_SINGLE',
-    texto: 'O aluno escaneia um QR Code apenas na entrada.',
-  },
-  {
-    modo: 'QR_DUAL',
-    texto: 'QR na entrada e outro na saída, para comprovar permanência.',
-  },
+const MODOS: { valor: AttendanceMode; rotulo: string }[] = [
+  { valor: 'SECRET_SINGLE', rotulo: 'SECRET_SINGLE — PIN, só entrada' },
+  { valor: 'SECRET_DUAL', rotulo: 'SECRET_DUAL — PIN, entrada e saída' },
+  { valor: 'QR_SINGLE', rotulo: 'QR_SINGLE — token QR, só entrada' },
+  { valor: 'QR_DUAL', rotulo: 'QR_DUAL — token QR, entrada e saída' },
 ]
 
-function cargaHorariaDeIntervalo(inicioEm: string, fimEm: string): number | null {
-  if (!inicioEm || !fimEm) {
-    return null
-  }
-  const ms = new Date(fimEm).getTime() - new Date(inicioEm).getTime()
-  if (!(ms > 0)) {
-    return null
-  }
-  return Math.max(1, Math.ceil(ms / (1000 * 60 * 60)))
+function paraIso(valor: string): string {
+  return new Date(valor).toISOString()
 }
 
 export function ProfessorEventoNova() {
   const navigate = useNavigate()
   const [titulo, setTitulo] = useState('')
+  const [cursoId, setCursoId] = useState('')
   const [inicioEm, setInicioEm] = useState('')
   const [fimEm, setFimEm] = useState('')
+  const [cargaHoraria, setCargaHoraria] = useState(4)
   const [attendanceMode, setAttendanceMode] = useState<AttendanceMode>('SECRET_SINGLE')
+  const [entradaInicio, setEntradaInicio] = useState('')
+  const [entradaFim, setEntradaFim] = useState('')
+  const [saidaInicio, setSaidaInicio] = useState('')
+  const [saidaFim, setSaidaFim] = useState('')
+  const dual = isDualMode(attendanceMode)
 
-  const cargaHoraria = cargaHorariaDeIntervalo(inicioEm, fimEm)
+  const cursos = useQuery({
+    queryKey: ['eventos', 'cursos-alvo'],
+    queryFn: () => eventosApi.cursosAlvo(),
+  })
 
   const criar = useMutation({
-    mutationFn: () => {
-      if (cargaHoraria == null) {
-        throw new Error('Informe início e fim válidos para calcular a carga horária.')
-      }
-      return eventosApi.criar({
+    mutationFn: () =>
+      eventosApi.criar({
         titulo: titulo.trim(),
-        inicioEm: new Date(inicioEm).toISOString(),
-        fimEm: new Date(fimEm).toISOString(),
+        inicioEm: paraIso(inicioEm),
+        fimEm: paraIso(fimEm),
         cargaHoraria,
         attendanceMode,
-      })
-    },
+        cursoId,
+        janelaEntrada: { inicio: paraIso(entradaInicio), fim: paraIso(entradaFim) },
+        janelaSaida: dual ? { inicio: paraIso(saidaInicio), fim: paraIso(saidaFim) } : undefined,
+      }),
     onSuccess: (evento) => navigate(`/professor/eventos/${evento.id}`, { replace: true }),
   })
 
   function onSubmit(event: FormEvent) {
     event.preventDefault()
-    if (cargaHoraria == null) {
-      return
-    }
     criar.mutate()
   }
 
   return (
     <section className="page">
-      <p>
-        <Link to="/professor/eventos" className="ghost-link">
-          ← Eventos
-        </Link>
-      </p>
       <header className="page-head">
         <div>
           <h1>Novo evento</h1>
           <p className="muted">
-            Defina agenda e modo de presença. O PIN ou o QR só aparecem no painel de operação ao abrir a
-            janela.
+            Proof of Stay v4.1. O PIN ou o token QR só aparecem na host-session depois de abrir a janela.
           </p>
         </div>
+        <Link to="/professor/eventos" className="ghost-link">
+          Voltar
+        </Link>
       </header>
 
       {criar.isError && (
@@ -93,78 +74,116 @@ export function ProfessorEventoNova() {
           {criar.error instanceof ApiError ? criar.error.message : 'Não foi possível criar o evento.'}
         </div>
       )}
-
-      <div className="evento-nova-layout">
-        <form className="attendance-card card" onSubmit={onSubmit}>
-          <label>
-            Título
-            <input value={titulo} onChange={(event) => setTitulo(event.target.value)} required maxLength={200} />
-          </label>
-          <label>
-            Início
-            <input
-              type="datetime-local"
-              value={inicioEm}
-              onChange={(event) => setInicioEm(event.target.value)}
-              required
-            />
-          </label>
-          <label>
-            Fim
-            <input
-              type="datetime-local"
-              value={fimEm}
-              onChange={(event) => setFimEm(event.target.value)}
-              required
-            />
-          </label>
-          <div className="campo-calculado">
-            <span className="campo-calculado-rotulo">Carga horária</span>
-            <p className="campo-calculado-valor" aria-live="polite">
-              {cargaHoraria == null
-                ? 'Calculada automaticamente a partir do início e do fim.'
-                : `${cargaHoraria}h`}
-            </p>
-          </div>
-          <label>
-            Modo de presença
-            <select
-              value={attendanceMode}
-              onChange={(event) => setAttendanceMode(event.target.value as AttendanceMode)}
-            >
-              {MODOS.map((modo) => (
-                <option key={modo} value={modo}>
-                  {rotuloCodigo(modo)}
-                </option>
-              ))}
-            </select>
-          </label>
-          {attendanceMode.endsWith('_DUAL') && (
-            <p className="muted">
-              Janelas de entrada e saída são abertas ao vivo no painel de operação (15 min cada).
-            </p>
-          )}
-          <button type="submit" disabled={criar.isPending || cargaHoraria == null}>
-            {criar.isPending ? 'Salvando…' : 'Salvar'}
+      {cursos.isPending && (
+        <p className="muted" aria-busy="true">
+          Carregando cursos…
+        </p>
+      )}
+      {cursos.isError && (
+        <div className="banner danger" role="alert">
+          Não foi possível carregar os cursos do público-alvo.{' '}
+          <button type="button" onClick={() => cursos.refetch()}>
+            Tentar de novo
           </button>
-        </form>
+        </div>
+      )}
+      {cursos.isSuccess && cursos.data.length === 0 && (
+        <p className="empty" role="status">
+          Nenhum curso ativo para o público-alvo.
+        </p>
+      )}
 
-        <aside className="panel evento-nova-ajuda" aria-labelledby="modos-presenca-titulo">
-          <h2 id="modos-presenca-titulo">Modos de presença</h2>
-          <p className="muted">
-            Escolha conforme o nível de comprovação necessário. Modos duplos pedem validação na entrada e
-            na saída (Proof of Stay).
-          </p>
-          <dl className="evento-modos-lista">
-            {DESCRICOES_MODO.map((item) => (
-              <div key={item.modo}>
-                <dt>{rotuloCodigo(item.modo)}</dt>
-                <dd>{item.texto}</dd>
-              </div>
+      <form className="attendance-card card" onSubmit={onSubmit}>
+        <label>
+          Título
+          <input value={titulo} onChange={(event) => setTitulo(event.target.value)} required maxLength={200} />
+        </label>
+        <label>
+          Curso do público-alvo
+          <select required value={cursoId} onChange={(event) => setCursoId(event.target.value)}>
+            <option value="">Selecione</option>
+            {(cursos.data ?? []).map((curso) => (
+              <option key={curso.id} value={curso.id}>
+                {curso.sigla} — {curso.nome}
+              </option>
             ))}
-          </dl>
-        </aside>
-      </div>
+          </select>
+        </label>
+        <label>
+          Início
+          <input type="datetime-local" value={inicioEm} onChange={(event) => setInicioEm(event.target.value)} required />
+        </label>
+        <label>
+          Fim
+          <input type="datetime-local" value={fimEm} onChange={(event) => setFimEm(event.target.value)} required />
+        </label>
+        <label>
+          Carga horária
+          <input
+            type="number"
+            min={1}
+            value={cargaHoraria}
+            onChange={(event) => setCargaHoraria(Number(event.target.value))}
+            required
+          />
+        </label>
+        <label>
+          Modo de presença
+          <select
+            value={attendanceMode}
+            onChange={(event) => setAttendanceMode(event.target.value as AttendanceMode)}
+          >
+            {MODOS.map((modo) => (
+              <option key={modo.valor} value={modo.valor}>
+                {modo.rotulo}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Janela de entrada — início
+          <input
+            type="datetime-local"
+            value={entradaInicio}
+            onChange={(event) => setEntradaInicio(event.target.value)}
+            required
+          />
+        </label>
+        <label>
+          Janela de entrada — fim
+          <input
+            type="datetime-local"
+            value={entradaFim}
+            onChange={(event) => setEntradaFim(event.target.value)}
+            required
+          />
+        </label>
+        {dual && (
+          <>
+            <label>
+              Janela de saída — início
+              <input
+                type="datetime-local"
+                value={saidaInicio}
+                onChange={(event) => setSaidaInicio(event.target.value)}
+                required
+              />
+            </label>
+            <label>
+              Janela de saída — fim
+              <input
+                type="datetime-local"
+                value={saidaFim}
+                onChange={(event) => setSaidaFim(event.target.value)}
+                required
+              />
+            </label>
+          </>
+        )}
+        <button type="submit" disabled={criar.isPending || !cursos.isSuccess || cursos.data.length === 0}>
+          {criar.isPending ? 'Salvando…' : 'Salvar'}
+        </button>
+      </form>
     </section>
   )
 }

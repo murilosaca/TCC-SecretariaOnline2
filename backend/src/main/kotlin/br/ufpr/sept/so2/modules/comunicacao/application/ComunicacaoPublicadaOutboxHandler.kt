@@ -54,12 +54,10 @@ class ComunicacaoPublicadaOutboxHandler(
 
     private fun entregar(comunicacao: Comunicacao, destinatario: DestinatarioComunicacao, agora: LocalTime) {
         val preferencia = preferenciaRepository.findByUsuarioId(destinatario.usuarioId).orElse(null)
-        val canais = CanaisEntrega.resolver(
-            comunicacao.prioridade,
-            preferencia?.let { dePreferencia(it, comunicacao.prioridade) },
-            agora,
-        )
-        if (canais.isEmpty()) {
+        val preferenciaEntrega = preferencia?.let { dePreferencia(it, comunicacao.prioridade) }
+        val canais = CanaisEntrega.resolver(comunicacao.prioridade, preferenciaEntrega, agora)
+        val adiar = deveAdiar(preferenciaEntrega, canais, agora)
+        if (canais.isEmpty() && !adiar) {
             return
         }
         val entrega = garantir(comunicacao, destinatario.usuarioId, CanalEntrega.IN_APP in canais)
@@ -67,9 +65,26 @@ class ComunicacaoPublicadaOutboxHandler(
             val (assunto, corpo) = MailComTemplate(comunicacao.titulo, comunicacao.corpo)
             mailPort.send(MailMessage(destinatario.email, assunto, corpo))
             entrega.emailEnviado = true
+            entrega.emailAdiado = false
             entregaRepository.save(entrega)
             LOG.info("Comunicado enviado por e-mail a {}", EmailMascarado.de(destinatario.email))
+            return
         }
+        if (adiar) {
+            entrega.emailAdiado = true
+            entregaRepository.save(entrega)
+        }
+    }
+
+    private fun deveAdiar(
+        preferencia: PreferenciaEntrega?,
+        canais: Set<CanalEntrega>,
+        agora: LocalTime,
+    ): Boolean {
+        if (preferencia == null || !preferencia.emailLigado || CanalEntrega.EMAIL in canais) {
+            return false
+        }
+        return preferencia.digestResumo || CanaisEntrega.emDnd(preferencia, agora)
     }
 
     private fun garantir(comunicacao: Comunicacao, destinatarioId: UUID, inApp: Boolean): ComunicacaoEntrega {

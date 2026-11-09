@@ -11,6 +11,7 @@ import br.ufpr.sept.so2.shared.domain.exception.PerfilEmUsoException
 import br.ufpr.sept.so2.shared.domain.exception.RateLimitExcedidoException
 import br.ufpr.sept.so2.shared.domain.exception.RecursoNaoEncontradoException
 import br.ufpr.sept.so2.shared.domain.exception.SchemaInvalidoException
+import br.ufpr.sept.so2.shared.domain.exception.SemVagasException
 import br.ufpr.sept.so2.shared.domain.exception.TipoSolicitacaoEmUsoException
 import br.ufpr.sept.so2.shared.domain.exception.TokenAcaoInvalidoException
 import br.ufpr.sept.so2.shared.domain.exception.TokenResetInvalidoException
@@ -82,6 +83,19 @@ class GlobalExceptionHandler {
     @ExceptionHandler(SenhaReutilizadaException::class)
     fun handleSenhaReutilizada(ex: SenhaReutilizadaException): ProblemDetail =
         problemDetail(HttpStatus.UNPROCESSABLE_ENTITY, "Senha reutilizada", ex.message, "senha-reutilizada")
+
+    @ExceptionHandler(SemVagasException::class)
+    fun handleSemVagas(ex: SemVagasException): ProblemDetail {
+        val detail = problemDetail(
+            HttpStatus.UNPROCESSABLE_ENTITY,
+            "Sem vagas",
+            ex.message,
+            "no-vacancies",
+        )
+        detail.setProperty("disciplinaId", ex.disciplinaId.toString())
+        detail.setProperty("nome", ex.disciplinaNome)
+        return detail
+    }
 
     @ExceptionHandler(DadoInvalidoException::class)
     fun handleInvalid(ex: DadoInvalidoException): ProblemDetail =

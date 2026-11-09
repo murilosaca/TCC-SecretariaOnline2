@@ -23,8 +23,8 @@ class EventoJpaAdapter(
 
     override fun findById(id: UUID): Optional<Evento> = jpaRepository.findById(id).map { it.toDomain() }
 
-    override fun findAbertosParaAluno(agora: OffsetDateTime, pageable: Pageable): Page<Evento> =
-        jpaRepository.findAbertosParaAluno(agora, pageable).map { it.toDomain() }
+    override fun findAbertosParaAluno(agora: OffsetDateTime, cursoId: UUID?, pageable: Pageable): Page<Evento> =
+        jpaRepository.findAbertosParaAluno(agora, cursoId, pageable).map { it.toDomain() }
 
     override fun findEmAndamentoComJanelaNoDia(inicioDia: OffsetDateTime, fimDia: OffsetDateTime): List<Evento> =
         jpaRepository.findEmAndamentoComJanelaNoDia(inicioDia, fimDia).map { it.toDomain() }

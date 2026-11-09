@@ -2415,16 +2415,32 @@ textarea:focus {
 
 .thumb-48.placeholder {
   background: var(--line);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  line-height: 1.1;
+  text-align: center;
+  overflow: hidden;
+  vertical-align: middle;
 }
 
 .row-invalid {
   background: #fde8e8;
 }
 
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 35%);
+  z-index: 20;
+}
+
 .drawer {
   position: fixed;
   top: 0;
   right: 0;
+  z-index: 21;
   width: min(28rem, 100%);
   height: 100%;
   padding: 1rem;

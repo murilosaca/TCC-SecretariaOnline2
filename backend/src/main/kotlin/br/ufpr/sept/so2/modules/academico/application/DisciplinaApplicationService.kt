@@ -4,9 +4,11 @@ import br.ufpr.sept.so2.modules.academico.application.ports.CursoEscopoPort
 import br.ufpr.sept.so2.modules.academico.application.ports.CursoRepository
 import br.ufpr.sept.so2.modules.academico.application.ports.DisciplinaRepository
 import br.ufpr.sept.so2.modules.academico.domain.Disciplina
+import br.ufpr.sept.so2.modules.iam.application.ports.AuditLogPort
 import br.ufpr.sept.so2.shared.domain.exception.ConflitoEstadoException
 import br.ufpr.sept.so2.shared.domain.exception.RecursoNaoEncontradoException
 import br.ufpr.sept.so2.shared.infrastructure.Uuids
+import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
@@ -20,6 +22,8 @@ class DisciplinaApplicationService(
     private val disciplinaRepository: DisciplinaRepository,
     private val cursoRepository: CursoRepository,
     private val cursoEscopoPort: CursoEscopoPort,
+    private val auditLogPort: AuditLogPort,
+    private val objectMapper: ObjectMapper,
 ) {
     @Transactional(readOnly = true)
     fun listar(usuarioId: UUID, idCurso: UUID?, pageable: Pageable): Pair<Page<Disciplina>, Set<UUID>> {
@@ -52,6 +56,8 @@ class DisciplinaApplicationService(
         periodo: Int,
         cargaHorariaTotal: Int,
         creditos: Int,
+        vagas: Int,
+        ip: String?,
     ): Disciplina {
         exigirCursoNoEscopo(usuarioId, idCurso)
         cursoRepository.findById(idCurso)
@@ -72,8 +78,17 @@ class DisciplinaApplicationService(
             ativa = true,
             createdAt = agora,
             updatedAt = agora,
+            vagas = vagas,
         )
-        return disciplinaRepository.save(disciplina)
+        val salva = disciplinaRepository.save(disciplina)
+        auditLogPort.appendDiff(
+            "disciplina.criada",
+            usuarioId,
+            null,
+            AuditMutacao.json(objectMapper, "disciplinaId", salva.id, AuditMutacao.entre(emptyMap(), foto(salva))),
+            ip,
+        )
+        return salva
     }
 
     fun atualizar(
@@ -85,16 +100,57 @@ class DisciplinaApplicationService(
         carga: Int?,
         creditos: Int?,
         ativa: Boolean?,
+        vagas: Int?,
+        ip: String?,
     ): Disciplina {
         val disciplina = buscarPorId(id, usuarioId)
-        disciplina.atualizar(codigo?.trim()?.uppercase(), nome, periodo, carga, creditos, ativa)
-        return disciplinaRepository.save(disciplina)
+        val antes = foto(disciplina)
+        disciplina.atualizar(codigo?.trim()?.uppercase(), nome, periodo, carga, creditos, ativa, vagas)
+        val salva = disciplinaRepository.save(disciplina)
+        registrarDiff(usuarioId, salva.id, antes, foto(salva), ip)
+        return salva
     }
 
-    fun excluir(id: UUID, usuarioId: UUID) {
-        buscarPorId(id, usuarioId)
+    fun excluir(id: UUID, usuarioId: UUID, ip: String?) {
+        val disciplina = buscarPorId(id, usuarioId)
         disciplinaRepository.deleteById(id)
+        auditLogPort.append(
+            "disciplina.excluida",
+            usuarioId,
+            objectMapper.writeValueAsString(mapOf("disciplinaId" to disciplina.id.toString())),
+            ip,
+        )
     }
+
+    private fun registrarDiff(
+        atorId: UUID,
+        id: UUID,
+        antes: Map<String, String?>,
+        depois: Map<String, String?>,
+        ip: String?,
+    ) {
+        val alteracoes = AuditMutacao.entre(antes, depois)
+        if (alteracoes.isEmpty()) {
+            return
+        }
+        auditLogPort.appendDiff(
+            "disciplina.atualizada",
+            atorId,
+            objectMapper.writeValueAsString(antes),
+            AuditMutacao.json(objectMapper, "disciplinaId", id, alteracoes),
+            ip,
+        )
+    }
+
+    private fun foto(disciplina: Disciplina): Map<String, String?> = linkedMapOf(
+        "codigo" to disciplina.codigo,
+        "nome" to disciplina.nome,
+        "periodo" to disciplina.periodo.toString(),
+        "cargaHorariaTotal" to disciplina.cargaHorariaTotal.toString(),
+        "creditos" to disciplina.creditos.toString(),
+        "ativa" to disciplina.ativa.toString(),
+        "vagas" to disciplina.vagas.toString(),
+    )
 
     private fun exigirCursoNoEscopo(usuarioId: UUID, idCurso: UUID) {
         if (idCurso !in cursoEscopoPort.cursoIdsDoUsuario(usuarioId)) {

@@ -21,6 +21,7 @@ class EncerrarEventoUseCase(
     private val outboxPort: OutboxPort,
     private val auditLogPort: AuditLogPort,
     private val objectMapper: ObjectMapper,
+    private val listarInelegiveis: ListarInelegiveisPresenca,
 ) {
     @Transactional
     fun execute(eventoId: UUID, anfitriaoId: UUID, ip: String?): AbrirJanelaUseCase.SessaoHost {
@@ -33,7 +34,13 @@ class EncerrarEventoUseCase(
         val payload = payload(eventoId, anfitriaoId)
         outboxPort.enqueue("evento.encerrado", payload)
         auditLogPort.append("evento.encerrado", anfitriaoId, payload, ip)
-        return AbrirJanelaUseCase.SessaoHost(evento, null, presencaRepository.countByEvento(eventoId), null)
+        return AbrirJanelaUseCase.SessaoHost(
+            evento,
+            null,
+            presencaRepository.countByEvento(eventoId),
+            null,
+            listarInelegiveis.nomes(evento),
+        )
     }
 
     private fun payload(eventoId: UUID, anfitriaoId: UUID): String =

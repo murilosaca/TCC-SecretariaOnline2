@@ -1,10 +1,12 @@
 package br.ufpr.sept.so2.modules.solicitacoes.api
 
 import br.ufpr.sept.so2.modules.arquivos.application.ports.ObjectStoragePort
+import br.ufpr.sept.so2.modules.solicitacoes.api.dto.AnexoSolicitacaoResponse
 import br.ufpr.sept.so2.modules.solicitacoes.api.dto.RequestTypeResponse
 import br.ufpr.sept.so2.modules.solicitacoes.api.dto.SolicitacaoEventoResponse
 import br.ufpr.sept.so2.modules.solicitacoes.api.dto.SolicitacaoResponse
 import br.ufpr.sept.so2.modules.solicitacoes.application.WorkflowJsonParser
+import br.ufpr.sept.so2.modules.solicitacoes.application.ports.SolicitacaoAnexoRepository
 import br.ufpr.sept.so2.modules.solicitacoes.application.ports.SolicitanteResumoPort
 import br.ufpr.sept.so2.modules.solicitacoes.domain.Solicitacao
 import br.ufpr.sept.so2.modules.solicitacoes.domain.TipoSolicitacao
@@ -15,6 +17,7 @@ import java.time.Duration
 import java.time.OffsetDateTime
 import java.time.temporal.ChronoUnit
 import java.util.LinkedHashMap
+import java.util.UUID
 
 @Component
 class SolicitacaoAssembler(
@@ -22,9 +25,16 @@ class SolicitacaoAssembler(
     private val workflowJsonParser: WorkflowJsonParser,
     private val solicitanteResumoPort: SolicitanteResumoPort,
     private val objectStoragePort: ObjectStoragePort,
+    private val anexoRepository: SolicitacaoAnexoRepository,
 ) {
 
-    fun from(solicitacao: Solicitacao, authorities: List<String>, detalhe: Boolean): SolicitacaoResponse {
+    @JvmOverloads
+    fun from(
+        solicitacao: Solicitacao,
+        authorities: List<String>,
+        detalhe: Boolean,
+        usuarioId: UUID? = null,
+    ): SolicitacaoResponse {
         val agora = OffsetDateTime.now()
         val vencido = solicitacao.prazoVencido(agora)
         val self = "/requests/" + solicitacao.id
@@ -49,6 +59,15 @@ class SolicitacaoAssembler(
         }
         if (podeBulkDeliberar(solicitacao, authorities)) {
             links["bulk_deliberate"] = "/requests/bulk-deliberate"
+        }
+        if (usuarioId != null && solicitacao.pertenceA(usuarioId)) {
+            if ("RESUBMIT" in acoesDoAluno(solicitacao)) {
+                links["editar"] = self
+                links["reenviar"] = "$self/reenviar"
+            }
+            if (solicitacao.estado == ESTADO_DELIBERADA) {
+                links["gerar-protocolo"] = "$self/protocolo"
+            }
         }
         val eventos = if (detalhe) {
             solicitacao.eventos.map(SolicitacaoEventoResponse::from)
@@ -81,6 +100,7 @@ class SolicitacaoAssembler(
             createdAt = solicitacao.createdAt,
             updatedAt = solicitacao.updatedAt,
             thumbnailUrl = thumbnail(solicitacao, solicitante),
+            anexos = if (detalhe) anexos(solicitacao) else emptyList(),
             eventos = eventos,
             links = links,
         )
@@ -126,6 +146,23 @@ class SolicitacaoAssembler(
         return podeTriar && acoes.isNotEmpty()
     }
 
+    private fun anexos(solicitacao: Solicitacao): List<AnexoSolicitacaoResponse> =
+        anexoRepository.findBySolicitacaoId(solicitacao.id).map { anexo ->
+            AnexoSolicitacaoResponse(
+                anexo.nome,
+                anexo.tamanho,
+                anexo.sha256,
+                objectStoragePort.presignGetUrl(anexo.storageKey, Duration.ofMinutes(15), anexo.nome),
+            )
+        }
+
+    private fun acoesDoAluno(solicitacao: Solicitacao): Set<String> =
+        try {
+            workflowJsonParser.parse(solicitacao.workflowSnapshot).acoesDe(solicitacao.estado)
+        } catch (_: Exception) {
+            emptySet()
+        }
+
     private fun acoesDoEstado(solicitacao: Solicitacao): Set<String> =
         try {
             workflowJsonParser.parse(solicitacao.workflowSnapshot)
@@ -152,6 +189,7 @@ class SolicitacaoAssembler(
         const val AUTHORITY_IMAGEM = "image_authorization.review"
         const val TIPO_IMAGEM = "AUTORIZACAO_IMAGEM"
         const val ESTADO_ABERTA_IMAGEM = "ABERTA"
+        const val ESTADO_DELIBERADA = "DELIBERADA"
         private val MAPA: TypeReference<Map<String, Any?>> = object : TypeReference<Map<String, Any?>>() {}
 
         fun slaStatus(prazoEm: OffsetDateTime?, agora: OffsetDateTime): String? {

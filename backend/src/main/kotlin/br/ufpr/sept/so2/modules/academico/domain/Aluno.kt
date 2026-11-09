@@ -19,6 +19,7 @@ class Aluno(
     var ativo: Boolean,
     val createdAt: OffsetDateTime,
     var updatedAt: OffsetDateTime,
+    var idUsuario: UUID? = null,
 ) {
     fun atualizar(
         nome: String?,
@@ -45,5 +46,10 @@ class Aluno(
             this.ativo = ativo
         }
         this.updatedAt = OffsetDateTime.now()
+    }
+
+    fun vincularUsuario(usuarioId: UUID) {
+        idUsuario = usuarioId
+        updatedAt = OffsetDateTime.now()
     }
 }

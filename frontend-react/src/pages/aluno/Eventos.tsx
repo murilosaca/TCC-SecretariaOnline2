@@ -78,6 +78,7 @@ function Linha({ item }: { item: Evento }) {
       </td>
       <td>
         <span className={`badge estado-${item.estado.toLowerCase()}`}>{rotuloEstado(item.estado)}</span>
+        {item.janelaAtiva && <span className="badge">Janela aberta</span>}
       </td>
       <td>{item.cargaHoraria}h</td>
       <td>{rotuloSituacao(item.situacaoPresenca)}</td>

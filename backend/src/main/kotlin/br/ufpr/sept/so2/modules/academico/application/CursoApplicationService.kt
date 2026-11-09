@@ -7,10 +7,12 @@ import br.ufpr.sept.so2.modules.academico.application.ports.CursoSecretarioRepos
 import br.ufpr.sept.so2.modules.academico.application.ports.DisciplinaRepository
 import br.ufpr.sept.so2.modules.academico.application.ports.UsuarioExistenciaPort
 import br.ufpr.sept.so2.modules.academico.domain.Curso
+import br.ufpr.sept.so2.modules.iam.application.ports.AuditLogPort
 import br.ufpr.sept.so2.shared.domain.exception.ConflitoEstadoException
 import br.ufpr.sept.so2.shared.domain.exception.DadoInvalidoException
 import br.ufpr.sept.so2.shared.domain.exception.RecursoNaoEncontradoException
 import br.ufpr.sept.so2.shared.infrastructure.Uuids
+import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
@@ -28,6 +30,8 @@ class CursoApplicationService(
     private val alunoRepository: AlunoRepository,
     private val disciplinaRepository: DisciplinaRepository,
     private val usuarioExistenciaPort: UsuarioExistenciaPort,
+    private val auditLogPort: AuditLogPort,
+    private val objectMapper: ObjectMapper,
 ) {
     @Transactional(readOnly = true)
     fun listar(usuarioId: UUID, pageable: Pageable): Pair<Page<Curso>, Set<UUID>> {
@@ -65,6 +69,7 @@ class CursoApplicationService(
         idCoordenador: UUID?,
         horasFormativasMinimas: Int,
         secretariosIds: List<UUID>?,
+        ip: String?,
     ): Curso {
         if (cursoRepository.existsBySigla(sigla)) {
             throw ConflitoEstadoException("Já existe curso com a sigla $sigla")
@@ -90,6 +95,13 @@ class CursoApplicationService(
         secretarios.addAll(secretariosIds.orEmpty())
         secretarios.add(usuarioId)
         cursoSecretarioRepository.replaceAll(persistido.id, secretarios)
+        auditLogPort.appendDiff(
+            "curso.criado",
+            usuarioId,
+            null,
+            AuditMutacao.json(objectMapper, "cursoId", persistido.id, AuditMutacao.entre(emptyMap(), foto(persistido, secretarios))),
+            ip,
+        )
         return persistido
     }
 
@@ -103,8 +115,10 @@ class CursoApplicationService(
         horas: Int?,
         ativo: Boolean?,
         secretariosIds: List<UUID>?,
+        ip: String?,
     ): Curso {
         val curso = buscarPorId(id, usuarioId)
+        val antes = foto(curso, cursoSecretarioRepository.findUsuarioIdsByCursoId(id))
         val novaSigla = sigla?.trim()?.uppercase()
         val novoCodigo = codigo?.trim()?.uppercase()
         if (novaSigla != null && novaSigla != curso.sigla && cursoRepository.existsBySigla(novaSigla)) {
@@ -122,10 +136,12 @@ class CursoApplicationService(
             secretarios.add(usuarioId)
             cursoSecretarioRepository.replaceAll(persistido.id, secretarios)
         }
+        val depoisSecretarios = cursoSecretarioRepository.findUsuarioIdsByCursoId(persistido.id)
+        registrarDiff(usuarioId, persistido.id, antes, foto(persistido, depoisSecretarios), ip)
         return persistido
     }
 
-    fun excluir(id: UUID, usuarioId: UUID) {
+    fun excluir(id: UUID, usuarioId: UUID, ip: String?) {
         buscarPorId(id, usuarioId)
         val temAlunos = alunoRepository.findByIdCursoIn(listOf(id)).isNotEmpty()
         val temDisciplinas = disciplinaRepository.findAll(id, setOf(id), PageRequest.of(0, 1)).hasContent()
@@ -136,7 +152,43 @@ class CursoApplicationService(
         }
         cursoSecretarioRepository.deleteByCursoId(id)
         cursoRepository.deleteById(id)
+        auditLogPort.append(
+            "curso.excluido",
+            usuarioId,
+            objectMapper.writeValueAsString(mapOf("cursoId" to id.toString())),
+            ip,
+        )
     }
+
+    private fun registrarDiff(
+        atorId: UUID,
+        id: UUID,
+        antes: Map<String, String?>,
+        depois: Map<String, String?>,
+        ip: String?,
+    ) {
+        val alteracoes = AuditMutacao.entre(antes, depois)
+        if (alteracoes.isEmpty()) {
+            return
+        }
+        auditLogPort.appendDiff(
+            "curso.atualizado",
+            atorId,
+            objectMapper.writeValueAsString(antes),
+            AuditMutacao.json(objectMapper, "cursoId", id, alteracoes),
+            ip,
+        )
+    }
+
+    private fun foto(curso: Curso, secretarios: Collection<UUID>): Map<String, String?> = linkedMapOf(
+        "nome" to curso.nome,
+        "sigla" to curso.sigla,
+        "codigo" to curso.codigo,
+        "idCoordenador" to curso.idCoordenador?.toString(),
+        "horasFormativasMinimas" to curso.horasFormativasMinimas.toString(),
+        "ativo" to curso.ativo.toString(),
+        "secretarios" to secretarios.map { it.toString() }.sorted().joinToString(","),
+    )
 
     private fun exigirNoEscopo(usuarioId: UUID, cursoId: UUID) {
         if (cursoId !in cursoEscopoPort.cursoIdsDoUsuario(usuarioId)) {

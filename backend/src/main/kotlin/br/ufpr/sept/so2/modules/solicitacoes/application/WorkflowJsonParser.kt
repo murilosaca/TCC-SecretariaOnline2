@@ -22,7 +22,8 @@ class WorkflowJsonParser(
                     .forEachRemaining { acao -> acoes[acao.key] = acao.value.asText() }
                 transicoes[estado.key] = acoes
             }
-            return WorkflowDefinicao(inicial, transicoes)
+            val permiteLote = root.path("batch").isBoolean && root.path("batch").asBoolean(false)
+            return WorkflowDefinicao(inicial, transicoes, permiteLote)
         } catch (ex: DadoInvalidoException) {
             throw ex
         } catch (_: Exception) {

@@ -28,6 +28,9 @@ class DespacharOutboxUseCase(
             TemplateMensagemAtual.definir(mensagem)
             handlerPara(evento.tipo).handle(evento)
             outboxPort.markSent(evento.id)
+        } catch (ex: TemplateAusenteException) {
+            outboxPort.markFailed(evento.id, evento.tentativas + 1, ex.message)
+            LOG.warn("Outbox {} id={} FAILED: {}", evento.tipo, evento.id, ex.message)
         } catch (ex: Exception) {
             registrarFalha(evento, ex)
         } finally {

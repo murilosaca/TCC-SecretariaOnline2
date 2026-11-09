@@ -23,6 +23,8 @@ export function NovaSolicitacao() {
   const [termoAluno, setTermoAluno] = useState('')
   const [termoDebounced, setTermoDebounced] = useState('')
   const [aluno, setAluno] = useState<Aluno | null>(null)
+  const [arquivo, setArquivo] = useState<File | null>(null)
+  const [erroArquivo, setErroArquivo] = useState<string | null>(null)
 
   const tipos = useQuery({
     queryKey: ['request-types'],
@@ -51,10 +53,46 @@ export function NovaSolicitacao() {
   })
 
   const criar = useMutation({
-    mutationFn: () =>
-      solicitacoesApi.criar(tipoCodigo as string, values, interna ? aluno?.id : undefined),
+    mutationFn: async () => {
+      const titular = interna ? aluno?.id : undefined
+      if (!arquivo || !tipoCodigo) {
+        return solicitacoesApi.criar(tipoCodigo as string, values, titular)
+      }
+      const hash = await sha256Hex(await arquivo.arrayBuffer())
+      const form = new FormData()
+      form.append(
+        'solicitacao',
+        new Blob([JSON.stringify({ tipoCodigo, payload: values, onBehalfOf: titular })], {
+          type: 'application/json',
+        }),
+      )
+      form.append('anexo', arquivo)
+      form.append('sha256', hash)
+      return solicitacoesApi.criarComAnexo(form)
+    },
     onSuccess: (criada) => navigate(`/solicitacoes/${criada.id}`, { replace: true }),
   })
+
+  function aoArquivo(file: File | undefined) {
+    if (!file) {
+      setArquivo(null)
+      setErroArquivo(null)
+      return
+    }
+    const pdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
+    if (!pdf) {
+      setArquivo(null)
+      setErroArquivo('O anexo deve ser um PDF.')
+      return
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setArquivo(null)
+      setErroArquivo('O arquivo excede o tamanho máximo de 10 MB.')
+      return
+    }
+    setErroArquivo(null)
+    setArquivo(file)
+  }
 
   function escolherTipo(tipo: RequestType) {
     setTipoCodigo(tipo.codigo)
@@ -171,6 +209,20 @@ export function NovaSolicitacao() {
             errors={errors}
             onChange={(name, value) => setValues((atual) => ({ ...atual, [name]: value }))}
           />
+          <label>
+            Anexo PDF
+            <input
+              type="file"
+              accept="application/pdf,.pdf"
+              onChange={(event) => aoArquivo(event.target.files?.[0])}
+            />
+          </label>
+          {erroArquivo && (
+            <p className="field-error" role="alert">
+              {erroArquivo}
+            </p>
+          )}
+          {arquivo && <p className="muted">{arquivo.name}</p>}
           <div className="wizard-actions">
             <button type="button" className="ghost" onClick={() => setPasso(1)}>
               Voltar
@@ -196,6 +248,11 @@ export function NovaSolicitacao() {
               </div>
             ))}
           </dl>
+          {arquivo && (
+            <p>
+              <strong>Anexo:</strong> {arquivo.name}
+            </p>
+          )}
           <div className="wizard-actions">
             <button type="button" className="ghost" onClick={() => setPasso(2)}>
               Voltar
@@ -212,6 +269,11 @@ export function NovaSolicitacao() {
       )}
     </section>
   )
+}
+
+async function sha256Hex(buffer: ArrayBuffer): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', buffer)
+  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('')
 }
 
 function formatar(valor: unknown): string {

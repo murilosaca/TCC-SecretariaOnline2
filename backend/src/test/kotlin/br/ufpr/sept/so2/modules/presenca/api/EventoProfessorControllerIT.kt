@@ -1,5 +1,10 @@
 package br.ufpr.sept.so2.modules.presenca.api
 
+import br.ufpr.sept.so2.modules.academico.application.ports.AlunoRepository
+import br.ufpr.sept.so2.modules.academico.application.ports.CursoRepository
+import br.ufpr.sept.so2.modules.academico.domain.Aluno
+import br.ufpr.sept.so2.modules.academico.domain.AlunoSituacao
+import br.ufpr.sept.so2.modules.academico.domain.Curso
 import br.ufpr.sept.so2.modules.iam.application.ports.PasswordHasher
 import br.ufpr.sept.so2.modules.iam.application.ports.UsuarioRepository
 import br.ufpr.sept.so2.modules.iam.domain.Usuario
@@ -22,6 +27,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.time.OffsetDateTime
+import java.util.UUID
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -37,9 +43,18 @@ class EventoProfessorControllerIT {
     @Autowired
     private lateinit var passwordHasher: PasswordHasher
 
+    @Autowired
+    private lateinit var cursoRepository: CursoRepository
+
+    @Autowired
+    private lateinit var alunoRepository: AlunoRepository
+
+    private lateinit var cursoId: UUID
+
     @BeforeEach
     fun seed() {
         val agora = OffsetDateTime.now()
+        cursoId = garantirCurso(agora)
         criarUsuarioSeAusente(
             "it.professor@ufpr.br",
             "GRR20249910",
@@ -61,6 +76,8 @@ class EventoProfessorControllerIT {
             agora,
             listOf("dashboard.view_own", "attendance.view_open", "attendance.check_in"),
         )
+        val aluno = usuarioRepository.findByEmail("it.presenca@ufpr.br").orElseThrow()
+        garantirAluno(aluno.id, agora)
     }
 
     @Test
@@ -73,7 +90,7 @@ class EventoProfessorControllerIT {
             post("/events")
                 .header("Authorization", "Bearer $professor")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(criarBody("Oficina IT professor", inicio, fim)),
+                .content(criarBody("Oficina IT professor", inicio, fim, cursoId = cursoId)),
         )
             .andExpect(status().isCreated)
             .andExpect(jsonPath("$.attendanceMode").value("SECRET_SINGLE"))
@@ -138,7 +155,7 @@ class EventoProfessorControllerIT {
                 post("/events")
                     .header("Authorization", "Bearer $professor")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(criarBody("Oficina IT encerrar", inicio, inicio.plusHours(2))),
+                    .content(criarBody("Oficina IT encerrar", inicio, inicio.plusHours(2), cursoId = cursoId)),
             )
                 .andExpect(status().isCreated)
                 .andReturn()
@@ -216,7 +233,7 @@ class EventoProfessorControllerIT {
                 post("/events")
                     .header("Authorization", "Bearer $professor")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(criarBody("Oficina IT saida", inicio, inicio.plusHours(1))),
+                    .content(criarBody("Oficina IT saida", inicio, inicio.plusHours(1), cursoId = cursoId)),
             )
                 .andExpect(status().isCreated)
                 .andReturn()
@@ -441,7 +458,7 @@ class EventoProfessorControllerIT {
             post("/events")
                 .header("Authorization", "Bearer $professor")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(criarBody(titulo, inicio, inicio.plusHours(2), modo)),
+                .content(criarBody(titulo, inicio, inicio.plusHours(2), modo, cursoId)),
         )
             .andExpect(status().isCreated)
             .andExpect(jsonPath("$.attendanceMode").value(modo))
@@ -483,6 +500,44 @@ class EventoProfessorControllerIT {
         )
     }
 
+    private fun garantirCurso(agora: OffsetDateTime): UUID {
+        val existente = cursoRepository.findByCodigo("EVPR")
+        if (existente.isPresent) {
+            return existente.get().id
+        }
+        return cursoRepository.save(
+            Curso(Uuids.v7(), "Curso presença", "EVPR", "EVPR", null, 120, true, agora, agora),
+        ).id
+    }
+
+    private fun garantirAluno(usuarioId: UUID, agora: OffsetDateTime) {
+        val existente = alunoRepository.findByGrr("GRR20249901")
+        if (existente.isPresent) {
+            val aluno = existente.get()
+            aluno.atualizar(null, aluno.nomeSocial, aluno.emailPessoal, aluno.telefone, cursoId, null, null)
+            aluno.vincularUsuario(usuarioId)
+            alunoRepository.save(aluno)
+            return
+        }
+        alunoRepository.save(
+            Aluno(
+                Uuids.v7(),
+                "Aluno IT presença",
+                null,
+                Grr.of("GRR20249901"),
+                Email.of("it.presenca@ufpr.br"),
+                null,
+                null,
+                cursoId,
+                AlunoSituacao.MATRICULADO,
+                true,
+                agora,
+                agora,
+                usuarioId,
+            ),
+        )
+    }
+
     private fun login(email: String): String =
         TOKENS.getOrPut(email) {
             val result = mockMvc.perform(
@@ -509,8 +564,9 @@ class EventoProfessorControllerIT {
             inicio: OffsetDateTime,
             fim: OffsetDateTime,
             modo: String = "SECRET_SINGLE",
+            cursoId: UUID,
         ): String =
-            "{\"titulo\":\"$titulo\",\"inicioEm\":\"$inicio\",\"fimEm\":\"$fim\",\"cargaHoraria\":4,\"attendanceMode\":\"$modo\"}"
+            "{\"titulo\":\"$titulo\",\"inicioEm\":\"$inicio\",\"fimEm\":\"$fim\",\"cargaHoraria\":4,\"attendanceMode\":\"$modo\",\"cursoId\":\"$cursoId\"}"
 
         private fun extract(json: String, startToken: String, endToken: String): String {
             val start = json.indexOf(startToken)

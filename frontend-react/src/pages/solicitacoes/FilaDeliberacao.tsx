@@ -1,45 +1,56 @@
-import { useState } from 'react'
+import { FormEvent, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ApiError } from '../../api/client'
 import { solicitacoesApi } from '../../api/solicitacoes'
 import { useActions } from '../../hooks/useActions'
-import { rotuloCodigo } from '../../lib/rotulos'
 import type { Solicitacao } from '../../models/solicitacao'
-
-const PRAZO_OPCOES = [
-  { value: '', label: 'Todos' },
-  { value: 'atrasadas', label: 'Somente atrasadas' },
-] as const
 
 export function FilaDeliberacao() {
   const location = useLocation()
   const confirmacao = (location.state as { confirmacao?: string } | null)?.confirmacao
+  const queryClient = useQueryClient()
   const [tipo, setTipo] = useState('')
-  const [prazo, setPrazo] = useState('')
-
-  const catalogoTipos = useQuery({
-    queryKey: ['solicitacoes', 'deliberar', 'catalogo-tipos'],
-    queryFn: () => solicitacoesApi.listarParaDeliberar({ size: 100 }),
-    retry: false,
+  const [atraso, setAtraso] = useState(false)
+  const [selecionadas, setSelecionadas] = useState<string[]>([])
+  const [parecer, setParecer] = useState('')
+  const [acao, setAcao] = useState('DEFER')
+  const [erroLote, setErroLote] = useState<string | null>(null)
+  const tipos = useQuery({
+    queryKey: ['request-types', 'filtro'],
+    queryFn: () => solicitacoesApi.listarTipos(0, 100),
   })
+  const publicados = (tipos.data?.content ?? []).filter((tipo) => tipo.status !== 'DRAFT')
 
   const lista = useQuery({
-    queryKey: ['solicitacoes', 'deliberar', tipo, prazo],
+    queryKey: ['solicitacoes', 'deliberar', tipo, atraso],
     queryFn: () =>
       solicitacoesApi.listarParaDeliberar({
         tipo: tipo || undefined,
-        atraso: prazo === 'atrasadas' || undefined,
+        atraso: atraso || undefined,
       }),
   })
 
-  const forbidden =
-    (lista.isError && lista.error instanceof ApiError && lista.error.status === 403) ||
-    (catalogoTipos.isError &&
-      catalogoTipos.error instanceof ApiError &&
-      catalogoTipos.error.status === 403)
+  const fila = useActions(lista.data?._links)
+  const forbidden = lista.isError && lista.error instanceof ApiError && lista.error.status === 403
+  const lote = useMutation({
+    mutationFn: () =>
+      solicitacoesApi.deliberarLote(fila.href('bulk-deliberate') ?? '', selecionadas, acao, parecer),
+    onSuccess: async () => {
+      setSelecionadas([])
+      setParecer('')
+      setErroLote(null)
+      await queryClient.invalidateQueries({ queryKey: ['solicitacoes', 'deliberar'] })
+    },
+    onError: (error) => {
+      setErroLote(error instanceof ApiError ? error.message : 'Falha ao deliberar o lote.')
+    },
+  })
 
-  const tiposOpcoes = tiposDaFila(catalogoTipos.data?.content, tipo)
+  function onFiltro(event: FormEvent) {
+    event.preventDefault()
+    void lista.refetch()
+  }
 
   return (
     <section className="page">
@@ -47,8 +58,8 @@ export function FilaDeliberacao() {
         <div>
           <h1>Fila de deliberação</h1>
           <p className="muted">
-            Solicitações que aguardam sua decisão, com prazo e indicador de SLA. Use os filtros para
-            priorizar por tipo ou atrasos.
+            Pedidos que aguardam sua decisão, com prazo e SLA. Os botões só aparecem quando a ação é
+            permitida no estado atual.
           </p>
         </div>
       </header>
@@ -74,37 +85,61 @@ export function FilaDeliberacao() {
       )}
 
       {!forbidden && (
-        <div className="filter-bar filter-bar-compact" aria-label="Filtros da fila">
+        <form className="filter-bar" onSubmit={onFiltro}>
           <label>
             Tipo
-            <select
-              value={tipo}
-              aria-label="Filtrar por tipo"
-              onChange={(event) => setTipo(event.target.value)}
-            >
+            <select value={tipo} onChange={(event) => setTipo(event.target.value)}>
               <option value="">Todos</option>
-              {tiposOpcoes.map((item) => (
+              {tipos.isLoading && <option value="" disabled>Carregando tipos…</option>}
+              {publicados.map((item) => (
                 <option key={item.codigo} value={item.codigo}>
                   {item.nome}
                 </option>
               ))}
             </select>
+            {tipos.isError && <span className="field-error">Não foi possível carregar os tipos.</span>}
           </label>
+          <label className="checkbox-row">
+            <input
+              type="checkbox"
+              checked={atraso}
+              onChange={(event) => setAtraso(event.target.checked)}
+            />
+            Somente atrasadas
+          </label>
+          <button type="submit">Filtrar</button>
+        </form>
+      )}
+
+      {erroLote && (
+        <div className="banner danger" role="alert">
+          {erroLote}
+        </div>
+      )}
+      {fila.can('bulk-deliberate') && (
+        <form
+          className="panel"
+          onSubmit={(event) => {
+            event.preventDefault()
+            lote.mutate()
+          }}
+        >
+          <h2>Deliberar selecionadas</h2>
           <label>
-            Prazo
-            <select
-              value={prazo}
-              aria-label="Filtrar por prazo"
-              onChange={(event) => setPrazo(event.target.value)}
-            >
-              {PRAZO_OPCOES.map((opcao) => (
-                <option key={opcao.value || 'todos'} value={opcao.value}>
-                  {opcao.label}
-                </option>
-              ))}
+            Ação
+            <select value={acao} onChange={(event) => setAcao(event.target.value)}>
+              <option value="DEFER">Deferir</option>
+              <option value="INDEFER">Indeferir</option>
             </select>
           </label>
-        </div>
+          <label>
+            Parecer
+            <textarea value={parecer} onChange={(event) => setParecer(event.target.value)} />
+          </label>
+          <button type="submit" disabled={lote.isPending || selecionadas.length === 0}>
+            {lote.isPending ? 'Deliberando…' : 'Deliberar selecionadas'}
+          </button>
+        </form>
       )}
 
       {lista.isLoading && (
@@ -112,10 +147,16 @@ export function FilaDeliberacao() {
           Carregando fila…
         </p>
       )}
-      {lista.data && (
+      {lista.data && lista.data.content.length === 0 && (
+        <p className="empty" role="status">
+          Nenhuma solicitação aguardando deliberação.
+        </p>
+      )}
+      {lista.data && lista.data.content.length > 0 && (
         <table>
           <thead>
             <tr>
+              {fila.can('bulk-deliberate') && <th scope="col">Seleção</th>}
               <th scope="col">Número</th>
               <th scope="col">Aluno</th>
               <th scope="col">Tipo</th>
@@ -125,17 +166,19 @@ export function FilaDeliberacao() {
             </tr>
           </thead>
           <tbody>
-            {lista.data.content.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="tabela-vazio" role="status">
-                  {prazo === 'atrasadas'
-                    ? 'Nenhuma solicitação atrasada aguardando deliberação.'
-                    : 'Nenhuma solicitação aguardando deliberação.'}
-                </td>
-              </tr>
-            ) : (
-              lista.data.content.map((item) => <Linha key={item.id} item={item} />)
-            )}
+            {lista.data.content.map((item) => (
+              <Linha
+                key={item.id}
+                item={item}
+                selecionavel={fila.can('bulk-deliberate')}
+                marcada={selecionadas.includes(item.id)}
+                onMarcar={(marcada) =>
+                  setSelecionadas((atual) =>
+                    marcada ? [...atual, item.id] : atual.filter((id) => id !== item.id),
+                  )
+                }
+              />
+            ))}
           </tbody>
         </table>
       )}
@@ -143,38 +186,39 @@ export function FilaDeliberacao() {
   )
 }
 
-function tiposDaFila(
-  itens: Solicitacao[] | undefined,
-  tipoSelecionado: string,
-): { codigo: string; nome: string }[] {
-  const map = new Map<string, string>()
-  for (const item of itens ?? []) {
-    if (!item.tipoCodigo) continue
-    map.set(item.tipoCodigo, item.tipoNome || rotuloCodigo(item.tipoCodigo))
-  }
-  if (tipoSelecionado && !map.has(tipoSelecionado)) {
-    map.set(tipoSelecionado, rotuloCodigo(tipoSelecionado))
-  }
-  return [...map.entries()]
-    .map(([codigo, nome]) => ({ codigo, nome }))
-    .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
-}
-
-function Linha({ item }: { item: Solicitacao }) {
+function Linha({
+  item,
+  selecionavel,
+  marcada,
+  onMarcar,
+}: {
+  item: Solicitacao
+  selecionavel: boolean
+  marcada: boolean
+  onMarcar: (marcada: boolean) => void
+}) {
   const actions = useActions(item._links)
   const prazo = new Date(item.prazoEm).toLocaleDateString('pt-BR')
   return (
     <tr>
+      {selecionavel && (
+        <td>
+          <input
+            type="checkbox"
+            aria-label={`Selecionar ${item.protocolo}`}
+            checked={marcada}
+            onChange={(event) => onMarcar(event.target.checked)}
+          />
+        </td>
+      )}
       <td>{item.protocolo}</td>
       <td>{item.solicitanteNome || '—'}</td>
       <td>{item.tipoNome}</td>
       <td className={item.prazoVencido ? 'sla-danger' : undefined}>{prazo}</td>
-      <td className={item.sla === 'ATRASADO' ? 'sla-danger' : undefined}>
-        {rotuloCodigo(item.sla)}
-      </td>
+      <td className={item.sla === 'ATRASADO' ? 'sla-danger' : undefined}>{item.sla}</td>
       <td className="actions">
         {actions.can('deliberar') && (
-          <Link to={`/solicitacoes/${item.id}/deliberar`} className="button-link">
+          <Link to={`/solicitacoes/${item.id}/deliberar`} className="ghost-link">
             Deliberar
           </Link>
         )}

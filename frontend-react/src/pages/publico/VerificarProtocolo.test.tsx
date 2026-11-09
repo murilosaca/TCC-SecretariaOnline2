@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../../api/client'
@@ -65,5 +65,42 @@ describe('VerificarProtocolo', () => {
     expect(screen.getByText('EM_ANALISE')).toBeTruthy()
     expect(screen.getByText('abcd1234…9012')).toBeTruthy()
     expect(screen.queryByText(/Tela prevista/)).toBeNull()
+    expect(screen.getByLabelText('Selecionar arquivo')).toBeTruthy()
+  })
+
+  it('compara o PDF no navegador e não consulta a API de novo', async () => {
+    const bytes = new TextEncoder().encode('%PDF-local')
+    const digest = await crypto.subtle.digest('SHA-256', bytes)
+    const hex = [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('')
+    protocolo.mockResolvedValue({
+      protocolo: 'PROT-2026-00001',
+      tipoNome: 'Declaração simples',
+      estado: 'DELIBERADA',
+      hashSha256: hex,
+    })
+    renderProtocolo('/publico/verificar-protocolo/PROT-2026-00001')
+    const input = await screen.findByLabelText('Selecionar arquivo')
+    fireEvent.change(input, { target: { files: [new File([bytes], 'protocolo.pdf', { type: 'application/pdf' })] } })
+    await waitFor(() => {
+      expect(screen.getByText(/Hash confere/)).toBeTruthy()
+    })
+    expect(protocolo).toHaveBeenCalledTimes(1)
+
+    fireEvent.change(input, {
+      target: { files: [new File(['outro'], 'outro.pdf', { type: 'application/pdf' })] },
+    })
+    await waitFor(() => {
+      expect(screen.getByText(/NÃO confere/)).toBeTruthy()
+    })
+    expect(protocolo).toHaveBeenCalledTimes(1)
+  })
+
+  it('não oferece arquivo quando o protocolo não existe', async () => {
+    protocolo.mockRejectedValue(new ApiError(404, 'não encontrado'))
+    renderProtocolo('/publico/verificar-protocolo/PROT-2026-00099')
+    await waitFor(() => {
+      expect(screen.getByText(/Nenhum protocolo encontrado/)).toBeTruthy()
+    })
+    expect(screen.queryByLabelText('Selecionar arquivo')).toBeNull()
   })
 })

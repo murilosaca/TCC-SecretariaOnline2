@@ -110,6 +110,18 @@ export function AutorizacoesImagem() {
   )
 }
 
+function Miniatura({ url, nome }: { url?: string | null; nome: string }) {
+  const [quebrada, setQuebrada] = useState(false)
+  if (!url || quebrada) {
+    return (
+      <span className="thumb-48 placeholder" role="img" aria-label={`Sem foto de ${nome}`}>
+        Sem foto
+      </span>
+    )
+  }
+  return <img className="thumb-48" src={url} alt={nome} onError={() => setQuebrada(true)} />
+}
+
 function Linha({
   item,
   marcado,
@@ -124,11 +136,7 @@ function Linha({
   return (
     <tr>
       <td>
-        {item.thumbnailUrl ? (
-          <img className="thumb-48" src={item.thumbnailUrl} alt={nome} />
-        ) : (
-          <span className="thumb-48 placeholder" role="img" aria-label={nome} />
-        )}
+        <Miniatura url={item.thumbnailUrl} nome={nome} />
       </td>
       <td>
         {acoes.can('bulk_deliberate') && (

@@ -23,6 +23,8 @@ interface CursoJpaRepository : JpaRepository<CursoJpaEntity, UUID> {
 
     fun findByIdCoordenador(idCoordenador: UUID): List<CursoJpaEntity>
 
+    fun findByAtivoTrue(): List<CursoJpaEntity>
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @QueryHints(QueryHint(name = "jakarta.persistence.lock.timeout", value = "3000"))
     @Query("select c from CursoJpaEntity c where c.id = :id")

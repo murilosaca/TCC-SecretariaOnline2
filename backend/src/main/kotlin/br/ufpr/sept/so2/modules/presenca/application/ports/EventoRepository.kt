@@ -12,7 +12,7 @@ interface EventoRepository {
 
     fun findById(id: UUID): Optional<Evento>
 
-    fun findAbertosParaAluno(agora: OffsetDateTime, pageable: Pageable): Page<Evento>
+    fun findAbertosParaAluno(agora: OffsetDateTime, cursoId: UUID?, pageable: Pageable): Page<Evento>
 
     fun findEmAndamentoComJanelaNoDia(inicioDia: OffsetDateTime, fimDia: OffsetDateTime): List<Evento>
 

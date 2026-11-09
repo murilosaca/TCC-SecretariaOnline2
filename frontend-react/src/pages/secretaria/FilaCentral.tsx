@@ -23,6 +23,11 @@ export function FilaCentral() {
   const [deliberadorId, setDeliberadorId] = useState('')
   const [erroAcao, setErroAcao] = useState<string | null>(null)
   const queryClient = useQueryClient()
+  const tipos = useQuery({
+    queryKey: ['request-types', 'filtro'],
+    queryFn: () => solicitacoesApi.listarTipos(0, 100),
+  })
+  const publicados = (tipos.data?.content ?? []).filter((tipo) => tipo.status !== 'DRAFT')
 
   useEffect(() => {
     setEstadoDraft(estado)
@@ -135,8 +140,14 @@ export function FilaCentral() {
             Tipo
             <select value={tipoDraft} onChange={(e) => setTipoDraft(e.target.value)}>
               <option value="">Todos</option>
-              <option value="DECLARACAO_SIMPLES">Declaração simples</option>
+              {tipos.isLoading && <option value="" disabled>Carregando tipos…</option>}
+              {publicados.map((tipo) => (
+                <option key={tipo.codigo} value={tipo.codigo}>
+                  {tipo.nome}
+                </option>
+              ))}
             </select>
+            {tipos.isError && <span className="field-error">Não foi possível carregar os tipos.</span>}
           </label>
           <label>
             Curso (UUID)

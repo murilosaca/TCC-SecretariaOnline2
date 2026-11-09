@@ -14,6 +14,8 @@ interface ComunicacaoEntregaJpaRepository : JpaRepository<ComunicacaoEntregaJpaE
     fun findByDestinatarioIdAndInAppTrue(destinatarioId: UUID): List<ComunicacaoEntregaJpaEntity>
 
     fun findByComunicacaoIdAndDestinatarioId(comunicacaoId: UUID, destinatarioId: UUID): Optional<ComunicacaoEntregaJpaEntity>
+
+    fun findByEmailAdiadoTrue(): List<ComunicacaoEntregaJpaEntity>
 }
 
 interface TurmaJpaRepository : JpaRepository<TurmaJpaEntity, UUID> {

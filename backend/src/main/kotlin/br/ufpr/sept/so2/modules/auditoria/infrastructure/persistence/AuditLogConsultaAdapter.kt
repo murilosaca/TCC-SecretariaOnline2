@@ -17,8 +17,14 @@ class AuditLogConsultaAdapter(
     private val objectMapper: ObjectMapper,
 ) : AuditLogConsultaPort {
 
-    override fun contar(ator: String?, acao: String?, de: OffsetDateTime, ateExclusivo: OffsetDateTime): Long {
-        val filtro = Filtro(ator, acao, de, ateExclusivo)
+    override fun contar(
+        ator: String?,
+        acao: String?,
+        entidade: String?,
+        de: OffsetDateTime,
+        ateExclusivo: OffsetDateTime,
+    ): Long {
+        val filtro = Filtro(ator, acao, entidade, de, ateExclusivo)
         val sql = "SELECT COUNT(*) FROM audit_log a LEFT JOIN usuario u ON u.id = a.ator_id ${filtro.where}"
         return jdbcTemplate.queryForObject(sql, Long::class.java, *filtro.args) ?: 0L
     }
@@ -26,12 +32,13 @@ class AuditLogConsultaAdapter(
     override fun listar(
         ator: String?,
         acao: String?,
+        entidade: String?,
         de: OffsetDateTime,
         ateExclusivo: OffsetDateTime,
         offset: Int,
         limite: Int,
     ): List<AuditLogItem> {
-        val filtro = Filtro(ator, acao, de, ateExclusivo)
+        val filtro = Filtro(ator, acao, entidade, de, ateExclusivo)
         val sql = """
             SELECT a.id, a.tipo, a.ator_id, u.nome AS ator_nome, a.ip, a.created_at,
                    a.payload_antes, COALESCE(a.payload_depois, a.payload) AS payload_depois
@@ -102,6 +109,7 @@ class AuditLogConsultaAdapter(
     private class Filtro(
         ator: String?,
         acao: String?,
+        entidade: String?,
         de: OffsetDateTime,
         ateExclusivo: OffsetDateTime,
     ) {
@@ -118,6 +126,14 @@ class AuditLogConsultaAdapter(
             if (!acao.isNullOrBlank()) {
                 clausulas.add("LOWER(a.tipo) = ?")
                 valores.add(acao.trim().lowercase())
+            }
+            val termo = entidade?.trim()?.lowercase()?.replace("%", "")?.replace("_", "")
+            if (!termo.isNullOrBlank()) {
+                clausulas.add(
+                    "(LOWER(COALESCE(a.payload_depois, a.payload, '')) LIKE ? OR LOWER(COALESCE(a.payload_depois, a.payload, '')) LIKE ?)",
+                )
+                valores.add("%\"entidade\":\"$termo\"%")
+                valores.add("%\"kind\":\"$termo\"%")
             }
             where = "WHERE " + clausulas.joinToString(" AND ")
             args = valores.toTypedArray()

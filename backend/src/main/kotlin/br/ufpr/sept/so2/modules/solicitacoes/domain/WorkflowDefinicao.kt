@@ -9,9 +9,10 @@ import java.util.LinkedHashMap
  * Máquina de estados extraída de `workflow_json`.
  * Mapa: estado → (ação → estado destino).
  */
-class WorkflowDefinicao(
+class WorkflowDefinicao @JvmOverloads constructor(
     inicial: String?,
     transicoes: Map<String, Map<String, String>?>?,
+    val permiteLote: Boolean = false,
 ) {
     val inicial: String
     private val transicoes: Map<String, Map<String, String>>

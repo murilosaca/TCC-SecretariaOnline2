@@ -23,7 +23,7 @@ class RequestTypeController(
 ) {
 
     @GetMapping
-    @PreAuthorize("hasAuthority('request.open')")
+    @PreAuthorize("hasAnyAuthority('request.open', 'request.triage', 'request.deliberate')")
     @Operation(summary = "Listar tipos elegíveis (publicados)")
     fun listar(@PageableDefault(size = 20) pageable: Pageable): PageResponse<RequestTypeResponse> =
         PageResponse.ofWithLinks(

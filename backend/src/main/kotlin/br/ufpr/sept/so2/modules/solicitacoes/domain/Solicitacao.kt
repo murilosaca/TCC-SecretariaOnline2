@@ -3,7 +3,7 @@ package br.ufpr.sept.so2.modules.solicitacoes.domain
 import java.time.OffsetDateTime
 import java.util.UUID
 
-class Solicitacao(
+class Solicitacao @JvmOverloads constructor(
     val id: UUID,
     val tipoId: UUID,
     val tipoCodigo: String,
@@ -12,16 +12,25 @@ class Solicitacao(
     val solicitanteId: UUID,
     val protocolo: Protocolo,
     estado: String,
-    val payloadJson: String?,
+    payloadJson: String?,
     val formSchemaSnapshot: String?,
     val workflowSnapshot: String?,
     val prazoEm: OffsetDateTime?,
-    val hashSha256: String?,
+    hashSha256: String?,
     deliberadorId: UUID?,
     eventos: List<SolicitacaoEvento>?,
     val createdAt: OffsetDateTime?,
     updatedAt: OffsetDateTime?,
+    protocoloStorageKey: String? = null,
 ) {
+    var payloadJson: String? = payloadJson
+        private set
+
+    var hashSha256: String? = hashSha256
+        private set
+
+    var protocoloStorageKey: String? = protocoloStorageKey
+        private set
     var estado: String = estado
         private set
 
@@ -79,6 +88,17 @@ class Solicitacao(
             """{"para":"$novoDeliberadorId"}""",
             agora,
         )
+    }
+
+    fun substituirPayload(novoPayload: String, agora: OffsetDateTime) {
+        payloadJson = novoPayload
+        updatedAt = agora
+    }
+
+    fun registrarProtocolo(hash: String, storageKey: String, agora: OffsetDateTime) {
+        hashSha256 = hash
+        protocoloStorageKey = storageKey
+        updatedAt = agora
     }
 
     fun pertenceA(usuarioId: UUID): Boolean = solicitanteId == usuarioId

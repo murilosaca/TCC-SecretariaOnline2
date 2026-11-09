@@ -38,6 +38,7 @@ class NoOpOutboxHandler : OutboxEventoHandler {
         "tcc.atualizado",
         "egressos.graduated",
         "diploma.delivery_confirmed",
+        "solicitacao.reenviada",
         "diploma.pdf_uploaded",
         "presenca.confirmada",
         "evento.janela_aberta",
@@ -46,7 +47,6 @@ class NoOpOutboxHandler : OutboxEventoHandler {
         "solicitacao.aberta_interna",
         "solicitacao.imagem_deliberada",
         "importacao.concluida",
-        "exportacao.pronta",
         "suporte.ticket_aberto",
     )
 

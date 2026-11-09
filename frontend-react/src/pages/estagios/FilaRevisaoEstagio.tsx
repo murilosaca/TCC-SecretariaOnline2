@@ -62,7 +62,9 @@ export function FilaRevisaoEstagio() {
               <th scope="col">Aluno</th>
               <th scope="col">Empresa</th>
               <th scope="col">Documento pendente</th>
-              <th scope="col">Ações</th>
+              <th scope="col" className="col-acoes">
+                Ações
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -83,25 +85,27 @@ function Linha({ item }: { item: Estagio }) {
       <td>{item.alunoNome || '—'}</td>
       <td>{item.empresa}</td>
       <td>{item.documentoPendente ? rotuloTipoDocumento(item.documentoPendente) : '—'}</td>
-      <td className="actions">
-        {actions.can('revisar') && (
-          <Link
-            to={`/estagios/${item.id}`}
-            state={{ from: { href: '/estagios?to=me', label: '← Revisão de estágios' } }}
-            className="ghost-link"
-          >
-            Revisar
-          </Link>
-        )}
-        {!actions.can('revisar') && actions.can('self') && (
-          <Link
-            to={`/estagios/${item.id}`}
-            state={{ from: { href: '/estagios?to=me', label: '← Revisão de estágios' } }}
-            className="ghost-link"
-          >
-            Abrir
-          </Link>
-        )}
+      <td className="col-acoes">
+        <div className="actions actions-centered">
+          {actions.can('revisar') && (
+            <Link
+              to={`/estagios/${item.id}`}
+              state={{ from: { href: '/estagios?to=me', label: '← Revisão de estágios' } }}
+              className="button-link ghost"
+            >
+              Revisar
+            </Link>
+          )}
+          {!actions.can('revisar') && actions.can('self') && (
+            <Link
+              to={`/estagios/${item.id}`}
+              state={{ from: { href: '/estagios?to=me', label: '← Revisão de estágios' } }}
+              className="button-link ghost"
+            >
+              Abrir
+            </Link>
+          )}
+        </div>
       </td>
     </tr>
   )

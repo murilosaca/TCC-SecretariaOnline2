@@ -52,7 +52,9 @@ export function Formativas() {
               <th scope="col">Origem</th>
               <th scope="col">Estado</th>
               <th scope="col">Data</th>
-              <th scope="col">Ações</th>
+              <th scope="col" className="col-acoes">
+                Ações
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -85,12 +87,14 @@ function Linha({ item }: { item: Formativa }) {
         <span className={`badge estado-${item.estado.toLowerCase()}`}>{rotuloEstadoFormativa(item.estado)}</span>
       </td>
       <td>{data}</td>
-      <td className="actions">
-        {actions.can('self') && (
-          <Link to={`/formativas/${item.id}`} className="ghost-link">
-            Abrir
-          </Link>
-        )}
+      <td className="col-acoes">
+        <div className="actions actions-centered">
+          {actions.can('self') && (
+            <Link to={`/formativas/${item.id}`} className="button-link ghost">
+              Abrir
+            </Link>
+          )}
+        </div>
       </td>
     </tr>
   )

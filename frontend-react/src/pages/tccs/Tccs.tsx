@@ -71,7 +71,9 @@ export function Tccs() {
               <th scope="col">Orientador</th>
               <th scope="col">Situação</th>
               <th scope="col">Defesa</th>
-              <th scope="col">Ações</th>
+              <th scope="col" className="col-acoes">
+                Ações
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -103,12 +105,14 @@ function Linha({ item }: { item: Tcc }) {
         <span className={`badge estado-${item.estado.toLowerCase()}`}>{rotuloEstadoTcc(item.estado)}</span>
       </td>
       <td>{dataBr(item.dataDefesa)}</td>
-      <td className="actions">
-        {actions.can('self') && (
-          <Link to={`/tccs/${item.id}`} className="ghost-link">
-            Abrir
-          </Link>
-        )}
+      <td className="col-acoes">
+        <div className="actions actions-centered">
+          {actions.can('self') && (
+            <Link to={`/tccs/${item.id}`} className="button-link ghost">
+              Abrir
+            </Link>
+          )}
+        </div>
       </td>
     </tr>
   )

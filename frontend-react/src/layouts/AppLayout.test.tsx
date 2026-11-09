@@ -84,15 +84,20 @@ describe('AppLayout', () => {
     expect(screen.getByRole('button', { name: 'Configurações' })).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Trabalho' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Atendimentos' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Formativas' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Estágios' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Gestão' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Administração' })).toBeNull()
 
     expect(screen.queryByRole('link', { name: 'Formativas' })).toBeNull()
     expandir('Acadêmico')
     expect(screen.getByRole('link', { name: 'Formativas' })).toBeTruthy()
+
+    expandir('Comunicação')
+    expect(screen.getByRole('link', { name: 'Comunicados' }).getAttribute('href')).toBe('/comunicacao')
   })
 
-  it('itens de cada grupo ficam em ordem alfabética pt-BR', () => {
+  it('itens de cada grupo ficam na ordem declarada em NAV_GRUPOS', () => {
     renderNav({
       inicio: '/inicio',
       certificados: '/certificados',
@@ -101,7 +106,9 @@ describe('AppLayout', () => {
       formativas: '/formativas',
       solicitacoes: '/solicitacoes',
       tccs: '/tccs',
+      'eventos-professor': '/professor/eventos',
       deliberar: '/solicitacoes?to=me',
+      'tccs-revisao': '/tccs?to=me',
       'fila-solicitacoes': '/solicitacoes',
       'nova-interna': '/solicitacoes/nova',
       atrasados: '/secretaria/atrasados',
@@ -118,25 +125,41 @@ describe('AppLayout', () => {
     const academico = [...screen.getByRole('group', { name: 'Acadêmico' }).querySelectorAll('a')].map(
       (el) => el.textContent,
     )
-    expect(academico).toEqual([...academico].sort((a, b) => a!.localeCompare(b!, 'pt-BR')))
+    expect(academico).toEqual([
+      'Certificados',
+      'Estágios',
+      'Eventos',
+      'Formativas',
+      'Solicitações',
+      'TCCs',
+    ])
 
     expandir('Atendimentos')
     const atendimentos = [
       ...screen.getByRole('group', { name: 'Atendimentos' }).querySelectorAll('a'),
     ].map((el) => el.textContent)
-    expect(atendimentos).toEqual([...atendimentos].sort((a, b) => a!.localeCompare(b!, 'pt-BR')))
+    expect(atendimentos).toEqual([
+      'Eventos',
+      'Solicitações',
+      'Revisão de TCCs',
+      'Atendimentos presenciais',
+      'Autorizações de imagem',
+      'Fila de solicitações',
+      'Nova interna',
+      'Solicitações atrasadas',
+    ])
 
     expandir('Gestão')
     const gestao = [...screen.getByRole('group', { name: 'Gestão' }).querySelectorAll('a')].map(
       (el) => el.textContent,
     )
-    expect(gestao).toEqual([...gestao].sort((a, b) => a!.localeCompare(b!, 'pt-BR')))
+    expect(gestao).toEqual(['Alunos', 'Cursos', 'Disciplinas'])
 
     expandir('Configurações')
     const configuracoes = [
       ...screen.getByRole('group', { name: 'Configurações' }).querySelectorAll('a'),
     ].map((el) => el.textContent)
-    expect(configuracoes).toEqual([...configuracoes].sort((a, b) => a!.localeCompare(b!, 'pt-BR')))
+    expect(configuracoes).toEqual(['Contato', 'Perfil', 'Suporte'])
   })
 
   it('abre o grupo da rota ativa automaticamente', () => {
@@ -243,14 +266,16 @@ describe('AppLayout', () => {
     expect(screen.queryByText('Revisão de TCCs')).toBeNull()
   })
 
-  it('nav do membro CAAF mostra Pool CAAF e Revisão CAAF', () => {
+  it('nav do membro CAAF mostra Pool CAAF e Revisão CAAF em Formativas', () => {
     renderNav({
       inicio: '/inicio',
       'revisao-caaf': '/formativas?to=me',
       'comissoes-caaf': '/comissoes/caaf',
       contato: '/contato',
     })
-    expandir('Trabalho')
+    expect(screen.queryByRole('button', { name: 'Trabalho' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Estágios' })).toBeNull()
+    expandir('Formativas')
     expect(screen.getByText('Pool CAAF')).toBeTruthy()
     expect(screen.getByText('Revisão CAAF')).toBeTruthy()
     expect(screen.queryByText('Atribuição de estágios')).toBeNull()
@@ -266,21 +291,37 @@ describe('AppLayout', () => {
       'tccs-revisao': '/tccs?to=me',
       contato: '/contato',
     })
+    expect(screen.queryByRole('button', { name: 'Trabalho' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Formativas' })).toBeNull()
     expandir('Atendimentos')
-    expandir('Trabalho')
+    expandir('Estágios')
     expect(screen.getByRole('link', { name: 'Solicitações' }).getAttribute('href')).toBe(
       '/solicitacoes?to=me',
     )
     expect(screen.getByRole('link', { name: 'Eventos' }).getAttribute('href')).toBe('/professor/eventos')
+    expect(screen.getByText('Revisão de TCCs')).toBeTruthy()
     expect(screen.getByText('Revisão de estágios')).toBeTruthy()
     expect(screen.getByText('Atribuição de estágios')).toBeTruthy()
-    expect(screen.getByText('Revisão de TCCs')).toBeTruthy()
     expect(screen.queryByText('TCCs')).toBeNull()
     expect(screen.queryByText('Cursos')).toBeNull()
-    expect(screen.queryByText('Estágios')).toBeNull()
     expect(screen.queryByText('Cadastro de estágios')).toBeNull()
     expect(screen.queryByText('Cadastro de TCCs')).toBeNull()
     expect(screen.queryByText('Configurar curso')).toBeNull()
+  })
+
+  it('professor sem COE não vê o grupo Estágios', () => {
+    renderNav({
+      inicio: '/inicio',
+      deliberar: '/solicitacoes?to=me',
+      'eventos-professor': '/professor/eventos',
+      'tccs-revisao': '/tccs?to=me',
+      contato: '/contato',
+    })
+    expect(screen.queryByRole('button', { name: 'Estágios' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Formativas' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Coordenação' })).toBeNull()
+    expandir('Atendimentos')
+    expect(screen.getByText('Revisão de TCCs')).toBeTruthy()
   })
 
   it('mostra cadastro de estágios só quando o rel da secretaria existe', () => {

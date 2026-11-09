@@ -84,7 +84,7 @@ function Linha({ item }: { item: Evento }) {
       <td>{rotuloSituacao(item.situacaoPresenca)}</td>
       <td className="actions">
         {actions.can('sessao') && (
-          <Link to={`/eventos/${item.id}/presenca`} className="ghost-link">
+          <Link to={`/eventos/${item.id}/presenca`} className="button-link ghost">
             Presença
           </Link>
         )}

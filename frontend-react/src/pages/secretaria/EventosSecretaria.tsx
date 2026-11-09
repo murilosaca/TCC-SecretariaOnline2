@@ -142,12 +142,12 @@ function Linha({ item, onExcluir, pending }: { item: Evento; onExcluir: () => vo
       <td>{item.cursoSigla ?? '—'}</td>
       <td className="actions">
         {actions.can('host-session') && (
-          <Link to={`/secretaria/eventos/${item.id}/operacao`} className="ghost-link">
+          <Link to={`/secretaria/eventos/${item.id}/operacao`} className="button-link ghost">
             Operação
           </Link>
         )}
         {actions.can('editar') && (
-          <Link to={`/secretaria/eventos/${item.id}`} className="ghost-link">
+          <Link to={`/secretaria/eventos/${item.id}`} className="button-link ghost">
             Editar
           </Link>
         )}

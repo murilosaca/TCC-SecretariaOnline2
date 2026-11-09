@@ -37,33 +37,39 @@ const NAV_GRUPOS: NavGrupo[] = [
     id: 'comunicacao',
     titulo: 'Comunicação',
     itens: [
-      { rel: 'comunicacao', label: 'Comunicação' },
-      { rel: 'meus-atendimentos', label: 'Meus atendimentos' },
+      { rel: 'comunicacao', label: 'Comunicados' },
       { rel: 'publicar-comunicado', label: 'Publicar comunicado' },
+      { rel: 'meus-atendimentos', label: 'Meus atendimentos' },
     ],
   },
   {
     id: 'atendimentos',
     titulo: 'Atendimentos',
     itens: [
+      { rel: 'eventos-professor', label: 'Eventos' },
+      { rel: 'deliberar', label: 'Solicitações' },
+      { rel: 'tccs-revisao', label: 'Revisão de TCCs' },
       { rel: 'atendimentos', label: 'Atendimentos presenciais' },
       { rel: 'autorizacoes-imagem', label: 'Autorizações de imagem' },
-      { rel: 'deliberar', label: 'Solicitações' },
       { rel: 'fila-solicitacoes', label: 'Fila de solicitações' },
       { rel: 'nova-interna', label: 'Nova interna' },
       { rel: 'atrasados', label: 'Solicitações atrasadas' },
     ],
   },
   {
-    id: 'trabalho',
-    titulo: 'Trabalho',
+    id: 'formativas',
+    titulo: 'Formativas',
     itens: [
-      { rel: 'eventos-professor', label: 'Eventos' },
       { rel: 'comissoes-caaf', label: 'Pool CAAF' },
-      { rel: 'comissoes-coe', label: 'Atribuição de estágios' },
       { rel: 'revisao-caaf', label: 'Revisão CAAF' },
+    ],
+  },
+  {
+    id: 'estagios',
+    titulo: 'Estágios',
+    itens: [
+      { rel: 'comissoes-coe', label: 'Atribuição de estágios' },
       { rel: 'estagios-revisao', label: 'Revisão de estágios' },
-      { rel: 'tccs-revisao', label: 'Revisão de TCCs' },
     ],
   },
   {
@@ -147,9 +153,7 @@ export function AppLayout() {
 
   const gruposVisiveis = NAV_GRUPOS.map((grupo) => ({
     ...grupo,
-    itens: grupo.itens
-      .filter((item) => actions.can(item.rel))
-      .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR')),
+    itens: grupo.itens.filter((item) => actions.can(item.rel)),
   })).filter((grupo) => grupo.itens.length > 0)
 
   const matchesNav = gruposVisiveis.flatMap((grupo) =>

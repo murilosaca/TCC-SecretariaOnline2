@@ -812,7 +812,7 @@ function MeusEventosBloco({
                         {podeDetalhe && (
                           <Link
                             to={item._links?.self ?? `/professor/eventos/${item.id}`}
-                            className="button-link"
+                            className="button-link ghost"
                           >
                             Detalhe
                           </Link>
@@ -820,7 +820,7 @@ function MeusEventosBloco({
                         {podeOperar && (
                           <Link
                             to={item._links?.operar ?? `/professor/eventos/${item.id}/operacao`}
-                            className="button-link"
+                            className="button-link ghost"
                           >
                             Operar evento
                           </Link>

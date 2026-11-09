@@ -232,7 +232,9 @@ export function EstagiosSecretaria() {
               <th scope="col">Vigência</th>
               <th scope="col">Situação</th>
               <th scope="col">Orientador</th>
-              <th scope="col">Ações</th>
+              <th scope="col" className="col-acoes">
+                Ações
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -258,12 +260,14 @@ function Linha({ item, onEditar }: { item: Estagio; onEditar: (item: Estagio) =>
         <span className={`badge estado-${item.situacao.toLowerCase()}`}>{rotuloSituacaoEstagio(item.situacao)}</span>
       </td>
       <td>{item.idOrientador ? item.orientadorRotulo ?? 'Atribuído' : 'Sem orientador'}</td>
-      <td className="actions">
-        {actions.can('editar') && (
-          <button type="button" className="ghost" onClick={() => onEditar(item)}>
-            Editar
-          </button>
-        )}
+      <td className="col-acoes">
+        <div className="actions actions-centered">
+          {actions.can('editar') && (
+            <button type="button" className="ghost" onClick={() => onEditar(item)}>
+              Editar
+            </button>
+          )}
+        </div>
       </td>
     </tr>
   )

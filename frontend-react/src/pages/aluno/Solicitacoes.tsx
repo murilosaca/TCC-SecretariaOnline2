@@ -126,12 +126,12 @@ function Linha({ item }: { item: Solicitacao }) {
       <td className={item.sla === 'ATRASADO' ? 'sla-danger' : undefined}>{item.sla}</td>
       <td className="actions">
         {actions.can('self') && (
-          <Link to={`/solicitacoes/${item.id}`} className="ghost-link">
+          <Link to={`/solicitacoes/${item.id}`} className="button-link ghost">
             Abrir
           </Link>
         )}
         {actions.can('deliberar') && (
-          <Link to={`/solicitacoes/${item.id}/deliberar`} className="ghost-link">
+          <Link to={`/solicitacoes/${item.id}/deliberar`} className="button-link ghost">
             Deliberar
           </Link>
         )}

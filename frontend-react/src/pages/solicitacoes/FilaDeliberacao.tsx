@@ -258,12 +258,12 @@ function Linha({
       </td>
       <td className="actions">
         {actions.can('deliberar') && (
-          <Link to={`/solicitacoes/${item.id}/deliberar`} className="button-link">
+          <Link to={`/solicitacoes/${item.id}/deliberar`} className="button-link ghost">
             Deliberar
           </Link>
         )}
         {!actions.can('deliberar') && actions.can('self') && (
-          <Link to={`/solicitacoes/${item.id}/deliberar`} className="ghost-link">
+          <Link to={`/solicitacoes/${item.id}/deliberar`} className="button-link ghost">
             Abrir
           </Link>
         )}

@@ -65,7 +65,7 @@ describe('PoolCoe', () => {
   it('mostra loading, empty e 403 honesto', async () => {
     pool.mockReturnValue(new Promise(() => undefined))
     const { unmount } = renderPage()
-    expect(screen.getByText('Carregando pool da COE…')).toBeTruthy()
+    expect(screen.getByText('Carregando atribuição de estágios…')).toBeTruthy()
     unmount()
 
     pool.mockResolvedValue(vazio)
@@ -78,7 +78,7 @@ describe('PoolCoe', () => {
     pool.mockRejectedValue(new ApiError(403, 'negado'))
     renderPage()
     await waitFor(() => {
-      expect(screen.getByText('Pool da COE indisponível para esta sessão.')).toBeTruthy()
+      expect(screen.getByText('Atribuição de estágios indisponível para esta sessão.')).toBeTruthy()
     })
   })
 
@@ -103,7 +103,7 @@ describe('PoolCoe', () => {
     await waitFor(() => {
       expect(screen.getByText('Pool COE SEPT')).toBeTruthy()
     })
-    expect(screen.getByText('No pool')).toBeTruthy()
+    expect(screen.getByText('Nenhum')).toBeTruthy()
     expect(screen.getByText('Atribuir a mim')).toBeTruthy()
     expect(screen.queryByText('Aprovar selecionados')).toBeNull()
     expect(screen.queryByText('Aprovar')).toBeNull()
@@ -133,10 +133,11 @@ describe('PoolCoe', () => {
       expect(screen.getByText('Aluno Dev')).toBeTruthy()
     })
     fireEvent.click(screen.getByRole('checkbox', { name: 'Selecionar estágio de Aluno Dev' }))
-    expect(screen.getByRole('button', { name: 'Atribuir selecionados' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Atribuir selecionados a mim' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Atribuir selecionados a outro' })).toBeTruthy()
     expect(screen.queryByText('Aprovar selecionados')).toBeNull()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Atribuir selecionados' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Atribuir selecionados a outro' }))
     expect(screen.getByRole('dialog', { name: 'Atribuir orientador' })).toBeTruthy()
     expect(screen.getByText('Carga alta')).toBeTruthy()
     fireEvent.click(screen.getByRole('radio', { name: /coe.dev@ufpr.br/ }))

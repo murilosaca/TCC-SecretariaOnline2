@@ -5,6 +5,7 @@ import { ApiError } from '../../api/client'
 import { eventosApi } from '../../api/eventos'
 import { HostActionBar } from '../../components/HostActionBar'
 import { QrDisplay } from '../../components/QrDisplay'
+import { rotuloCodigo } from '../../lib/rotulos'
 import { isDualMode, isQrMode } from '../../models/evento'
 import type { HostSessao } from '../../models/evento'
 
@@ -77,7 +78,12 @@ export function ProfessorEventoOperacao({
       <header className="page-head">
         <div>
           <h1>{sessao.data?.titulo ?? 'Operação do evento'}</h1>
-          <p className="muted">Painel ao vivo · {sessao.data?.attendanceMode ?? 'Proof of Stay'} (RF-F3-002-b).</p>
+          <p className="muted">
+            Painel ao vivo ·{' '}
+            {sessao.data?.attendanceMode
+              ? rotuloCodigo(sessao.data.attendanceMode)
+              : 'Proof of Stay'}
+          </p>
         </div>
         <Link to={voltarPara ?? `${basePath}/${id}`} className="ghost-link">
           Voltar ao evento
@@ -134,8 +140,8 @@ function Painel({
   const qr = isQrMode(sessao.attendanceMode)
   return (
     <div className="attendance-card card">
-      <p className={`badge estado-${sessao.estado.toLowerCase()}`}>{sessao.estado}</p>
-      <p className="muted">{sessao.attendanceMode}</p>
+      <p className={`badge estado-${sessao.estado.toLowerCase()}`}>{rotuloCodigo(sessao.estado)}</p>
+      <p className="muted">{rotuloCodigo(sessao.attendanceMode)}</p>
       {sessao.janelaAtiva && sessao.janelaExpira && (
         <p className="countdown" aria-live="polite">
           {formatarCountdown(sessao.janelaExpira)}

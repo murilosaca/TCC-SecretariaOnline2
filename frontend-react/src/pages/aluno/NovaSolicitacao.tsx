@@ -39,7 +39,9 @@ export function NovaSolicitacao() {
     () => publicados.find((tipo) => tipo.codigo === tipoCodigo) ?? null,
     [publicados, tipoCodigo],
   )
-  const fields = fieldsFromSchema(tipoSelecionado?.formSchema)
+  const fields = fieldsFromSchema(tipoSelecionado?.formSchema).map((field) =>
+    field.name === 'declaracao' ? { ...field, title: 'Solicitação' } : field,
+  )
 
   useEffect(() => {
     const timer = window.setTimeout(() => setTermoDebounced(termoAluno.trim()), 300)
@@ -114,14 +116,16 @@ export function NovaSolicitacao() {
 
   return (
     <section className="page wizard">
+      <p>
+        <Link to="/solicitacoes" className="ghost-link">
+          ← Solicitações
+        </Link>
+      </p>
       <header className="page-head">
         <div>
           <h1>Nova solicitação</h1>
-          <p className="muted">Wizard genérico dirigido pelo form_schema do RequestType (RF-F1-005-b).</p>
+          <p className="muted">Escolha o tipo, preencha o formulário e revise antes de confirmar.</p>
         </div>
-        <Link to="/solicitacoes" className="ghost-link">
-          Voltar à lista
-        </Link>
       </header>
 
       <ol className="stepper" aria-label="Passos do wizard">

@@ -64,7 +64,7 @@ describe('ConfigurarCurso', () => {
       horasFormativasMinimas: 150,
     })
     renderPage()
-    const horas = await screen.findByLabelText('Horas formativas mínimas')
+    const horas = await screen.findByLabelText('Mínimo de horas')
     fireEvent.change(horas, { target: { value: '150' } })
     fireEvent.click(screen.getByRole('button', { name: 'Salvar' }))
     await waitFor(() => {
@@ -94,7 +94,7 @@ describe('ConfigurarCurso', () => {
   it('bloqueia salvar com horas inválidas', async () => {
     obterConfig.mockResolvedValue(atual)
     renderPage()
-    const horas = await screen.findByLabelText('Horas formativas mínimas')
+    const horas = await screen.findByLabelText('Mínimo de horas')
     fireEvent.change(horas, { target: { value: '-10' } })
     expect(screen.getByText('Valor deve ser entre 0 e 1000')).toBeTruthy()
     expect((screen.getByRole('button', { name: 'Salvar' }) as HTMLButtonElement).disabled).toBe(true)
@@ -105,6 +105,6 @@ describe('ConfigurarCurso', () => {
     obterConfig.mockRejectedValue(new ApiError(403, 'Você não é coordenador deste curso.'))
     renderPage('curso-ec')
     expect(await screen.findByText('Você não é coordenador deste curso')).toBeTruthy()
-    expect(screen.queryByLabelText('Horas formativas mínimas')).toBeNull()
+    expect(screen.queryByLabelText('Mínimo de horas')).toBeNull()
   })
 })

@@ -107,7 +107,11 @@ function Linha({ item }: { item: Estagio }) {
       </td>
       <td className="actions">
         {actions.can('self') && (
-          <Link to={`/estagios/${item.id}`} className="ghost-link">
+          <Link
+            to={`/estagios/${item.id}`}
+            state={{ from: { href: '/estagios', label: '← Estágios' } }}
+            className="ghost-link"
+          >
             Abrir
           </Link>
         )}

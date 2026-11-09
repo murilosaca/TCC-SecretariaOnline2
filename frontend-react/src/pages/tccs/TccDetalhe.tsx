@@ -119,70 +119,95 @@ export function TccDetalhe() {
             </div>
           )}
 
-          <section>
-            <h2>Banca</h2>
-            <table>
-              <thead>
-                <tr>
-                  <th scope="col">Nome</th>
-                  <th scope="col">Papel</th>
-                </tr>
-              </thead>
-              <tbody>
-                {item.membros.map((membro) => (
-                  <tr key={membro.id}>
-                    <td>{membro.rotulo || '—'}</td>
-                    <td>{rotuloPapelBanca(membro.papel)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </section>
+          <div className="tcc-resumo-grid">
+            <section className="panel tcc-resumo-card" aria-labelledby="tcc-banca-titulo">
+              <h2 id="tcc-banca-titulo">Banca</h2>
+              {item.membros.length === 0 ? (
+                <p className="empty" role="status">
+                  Nenhum membro na banca.
+                </p>
+              ) : (
+                item.membros.map((membro) => (
+                  <dl key={membro.id} className="resumo tcc-banca-membro">
+                    <div>
+                      <dt>Nome</dt>
+                      <dd>{membro.rotulo || '—'}</dd>
+                    </div>
+                    <div>
+                      <dt>Papel</dt>
+                      <dd>{rotuloPapelBanca(membro.papel)}</dd>
+                    </div>
+                  </dl>
+                ))
+              )}
+            </section>
 
-          <section>
-            <h2>Datas-chave</h2>
-            <p>
-              Defesa: <strong>{dataBr(item.dataDefesa)}</strong>
-            </p>
-            <p>
-              Limite de entrega: <strong>{dataBr(item.dataEntrega)}</strong>
-              {prazo && <span className="badge prazo-proximo">Prazo próximo</span>}
-            </p>
-          </section>
+            <section className="panel tcc-resumo-card" aria-labelledby="tcc-datas-titulo">
+              <h2 id="tcc-datas-titulo">Datas-chave</h2>
+              <dl className="resumo">
+                <div>
+                  <dt>Defesa</dt>
+                  <dd>{dataBr(item.dataDefesa)}</dd>
+                </div>
+                <div>
+                  <dt>Limite de entrega</dt>
+                  <dd>
+                    {dataBr(item.dataEntrega)}
+                    {prazo && <span className="badge prazo-proximo">Prazo próximo</span>}
+                  </dd>
+                </div>
+              </dl>
+            </section>
 
-          {actions.can('download') && (
-            <div className="action-bar">
-              <button type="button" className="ghost" onClick={() => void baixar()} disabled={baixando}>
-                {baixando ? 'Baixando…' : 'Baixar TCC'}
-              </button>
-            </div>
-          )}
-
-          {actions.can('upload-final') && (
-            <form onSubmit={onEnviar}>
-              <h2>Versão final</h2>
-              <label>
-                PDF
-                <input
-                  type="file"
-                  accept="application/pdf"
-                  onChange={(event) => setArquivo(event.target.files?.[0] ?? null)}
-                />
-              </label>
-              <button type="submit" disabled={!arquivo || pending}>
-                {enviar.isPending ? 'Enviando…' : 'Enviar versão final'}
-              </button>
-            </form>
-          )}
+            <section className="panel tcc-resumo-card" aria-labelledby="tcc-versao-titulo">
+              <h2 id="tcc-versao-titulo">Versão final</h2>
+              {actions.can('upload-final') && (
+                <form className="tcc-versao-form" onSubmit={onEnviar}>
+                  <div className="arquivo-campo">
+                    <span className="arquivo-campo-rotulo">PDF</span>
+                    <label className="arquivo-picker">
+                      <input
+                        type="file"
+                        className="sr-only"
+                        accept="application/pdf"
+                        onChange={(event) => setArquivo(event.target.files?.[0] ?? null)}
+                      />
+                      <span className="arquivo-picker-btn">Escolher arquivo</span>
+                    </label>
+                    <span className={`arquivo-nome${arquivo ? '' : ' muted'}`}>
+                      {arquivo ? arquivo.name : 'Nenhum arquivo selecionado.'}
+                    </span>
+                  </div>
+                  <button type="submit" disabled={!arquivo || pending}>
+                    {enviar.isPending ? 'Enviando…' : 'Enviar versão final'}
+                  </button>
+                </form>
+              )}
+              {actions.can('download') && !actions.can('upload-final') && (
+                <div className="tcc-versao-download">
+                  {item.nomeArquivo && <p className="arquivo-nome">{item.nomeArquivo}</p>}
+                  <button type="button" onClick={() => void baixar()} disabled={baixando}>
+                    {baixando ? 'Baixando…' : 'Baixar TCC'}
+                  </button>
+                </div>
+              )}
+              {!actions.can('upload-final') && !actions.can('download') && (
+                <p className="empty" role="status">
+                  Nenhuma versão final disponível.
+                </p>
+              )}
+            </section>
+          </div>
 
           {actions.can('avaliar') && (
             <form
+              className="panel tcc-avaliacao-form"
               onSubmit={(event) => {
                 event.preventDefault()
               }}
             >
               <h2>Avaliação</h2>
-              <label>
+              <label className="tcc-nota-campo">
                 Nota
                 <input
                   type="number"
@@ -221,23 +246,41 @@ export function TccDetalhe() {
             </form>
           )}
 
-          <section>
-            <h2>Avaliações</h2>
-            {item.avaliacoes.length === 0 && <p className="empty">Nenhuma avaliação registrada.</p>}
-            {item.avaliacoes.length > 0 && (
-              <ol className="timeline">
+          <section className="tcc-avaliacoes" aria-labelledby="tcc-avaliacoes-titulo">
+            <h2 id="tcc-avaliacoes-titulo">Avaliações</h2>
+            {item.avaliacoes.length === 0 ? (
+              <p className="empty" role="status">
+                Nenhuma avaliação registrada.
+              </p>
+            ) : (
+              <div className="tcc-avaliacoes-lista">
                 {item.avaliacoes.map((avaliacao) => (
-                  <li key={avaliacao.id}>
-                    <strong>{rotuloResultadoTcc(avaliacao.resultado)}</strong>
-                    {' · '}
-                    {rotuloPapelBanca(avaliacao.papel)}
-                    {avaliacao.autorRotulo ? ` · ${avaliacao.autorRotulo}` : ''}
-                    {' · nota '}
-                    {avaliacao.nota}
-                    <p>{avaliacao.parecer}</p>
-                  </li>
+                  <article
+                    key={avaliacao.id}
+                    className={`panel tcc-avaliacao-card resultado-${avaliacao.resultado.toLowerCase()}`}
+                  >
+                    <header className="tcc-avaliacao-card-head">
+                      <h3>{rotuloResultadoTcc(avaliacao.resultado)}</h3>
+                      <p className="tcc-avaliacao-nota" aria-label={`Nota ${avaliacao.nota}`}>
+                        {avaliacao.nota}
+                      </p>
+                    </header>
+                    <dl className="resumo">
+                      <div>
+                        <dt>Papel</dt>
+                        <dd>{rotuloPapelBanca(avaliacao.papel)}</dd>
+                      </div>
+                      {avaliacao.autorRotulo && (
+                        <div>
+                          <dt>Avaliador</dt>
+                          <dd>{avaliacao.autorRotulo}</dd>
+                        </div>
+                      )}
+                    </dl>
+                    <p className="tcc-avaliacao-parecer">{avaliacao.parecer}</p>
+                  </article>
                 ))}
-              </ol>
+              </div>
             )}
           </section>
         </>

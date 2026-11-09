@@ -63,8 +63,8 @@ export function Seguranca() {
     <section className="page">
       <h1>Segurança</h1>
       <PerfilNav />
-      <div className="settings-stack">
-        <form className="panel auth-form" onSubmit={onSubmit} noValidate>
+      <div className="settings-stack seguranca-stack">
+        <form className="panel auth-form seguranca-card" onSubmit={onSubmit} noValidate>
           <h2>Trocar senha</h2>
           {banner && (
             <div className="banner success" role="status">
@@ -87,16 +87,30 @@ export function Seguranca() {
               </span>
             )}
           </label>
-          <label>
-            Nova senha
-            <input
-              type="password"
-              autoComplete="new-password"
-              value={novaSenha}
-              onChange={(event) => setNovaSenha(event.target.value)}
-              aria-describedby="requisitos-senha"
-            />
-          </label>
+          <div className="seguranca-senha-dupla">
+            <label>
+              Nova senha
+              <input
+                type="password"
+                autoComplete="new-password"
+                value={novaSenha}
+                onChange={(event) => setNovaSenha(event.target.value)}
+                aria-describedby="requisitos-senha"
+              />
+            </label>
+            <label>
+              Confirmar nova senha
+              <input
+                type="password"
+                autoComplete="new-password"
+                value={confirmacao}
+                onChange={(event) => setConfirmacao(event.target.value)}
+                className={erroConfirmacao ? 'invalid' : undefined}
+                aria-invalid={Boolean(erroConfirmacao)}
+              />
+              {erroConfirmacao && <span className="field-error">{erroConfirmacao}</span>}
+            </label>
+          </div>
           <div className="password-meter" aria-hidden="true">
             {[1, 2, 3, 4].map((nivel) => (
               <span key={nivel} className={`meter-seg ${score >= nivel ? `lv${score}` : ''}`} />
@@ -109,23 +123,11 @@ export function Seguranca() {
               </li>
             ))}
           </ul>
-          <label>
-            Confirmar nova senha
-            <input
-              type="password"
-              autoComplete="new-password"
-              value={confirmacao}
-              onChange={(event) => setConfirmacao(event.target.value)}
-              className={erroConfirmacao ? 'invalid' : undefined}
-              aria-invalid={Boolean(erroConfirmacao)}
-            />
-            {erroConfirmacao && <span className="field-error">{erroConfirmacao}</span>}
-          </label>
           <button type="submit" disabled={!podeSalvar || trocar.isPending}>
             {trocar.isPending ? 'Salvando…' : 'Salvar senha'}
           </button>
         </form>
-        <section className="panel">
+        <section className="panel seguranca-card">
           <h2>Sessões ativas</h2>
           {sessoes.isLoading && <p className="muted">Carregando sessões…</p>}
           {sessoes.isError && (

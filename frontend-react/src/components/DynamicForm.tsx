@@ -8,12 +8,22 @@ type Props = {
   onChange: (name: string, value: unknown) => void
 }
 
+function ehTextoLongo(field: FormField): boolean {
+  if (field.name === 'observacao' || field.name === 'mensagem' || field.name === 'declaracao') {
+    return true
+  }
+  if (field.name === 'finalidade' || field.name === 'assunto') {
+    return false
+  }
+  return (field.maxLength ?? 0) > 280
+}
+
 export function DynamicForm({ fields, values, errors, disabled, onChange }: Props) {
   if (fields.length === 0) {
     return <p className="muted">Este tipo não define campos no formulário.</p>
   }
   return (
-    <div className="grid">
+    <div className="grid dynamic-form-stack">
       {fields.map((field) => {
         const error = errors[field.name]
         const value = values[field.name]
@@ -65,13 +75,13 @@ export function DynamicForm({ fields, values, errors, disabled, onChange }: Prop
                 value={value == null ? '' : String(value)}
                 onChange={(event) => onChange(field.name, event.target.value)}
               />
-            ) : (field.maxLength ?? 0) > 180 ? (
+            ) : ehTextoLongo(field) ? (
               <textarea
                 id={inputId}
                 disabled={disabled}
                 className={error ? 'invalid' : undefined}
                 maxLength={field.maxLength}
-                rows={4}
+                rows={field.name === 'observacao' || field.name === 'mensagem' ? 6 : 4}
                 value={value == null ? '' : String(value)}
                 onChange={(event) => onChange(field.name, event.target.value)}
               />

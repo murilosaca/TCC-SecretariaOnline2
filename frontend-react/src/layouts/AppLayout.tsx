@@ -60,7 +60,7 @@ const NAV_GRUPOS: NavGrupo[] = [
     itens: [
       { rel: 'eventos-professor', label: 'Eventos' },
       { rel: 'comissoes-caaf', label: 'Pool CAAF' },
-      { rel: 'comissoes-coe', label: 'Pool COE' },
+      { rel: 'comissoes-coe', label: 'Atribuição de estágios' },
       { rel: 'revisao-caaf', label: 'Revisão CAAF' },
       { rel: 'estagios-revisao', label: 'Revisão de estágios' },
       { rel: 'tccs-revisao', label: 'Revisão de TCCs' },

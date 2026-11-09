@@ -798,6 +798,12 @@ button.light {
   color: white;
 }
 
+a.button-link.ghost {
+  background: transparent;
+  color: var(--brand);
+  border: 1px solid var(--brand);
+}
+
 .badge {
   display: inline-block;
   padding: 0.15rem 0.5rem;
@@ -986,7 +992,10 @@ textarea:focus {
 }
 
 .detalhe > .solicitacao-detalhes + .solicitacao-timeline,
-.detalhe > .solicitacao-timeline + .painel-decisao {
+.detalhe > .solicitacao-detalhes + .panel,
+.detalhe > .solicitacao-timeline + .solicitacao-timeline,
+.detalhe > .solicitacao-timeline + .painel-decisao,
+.detalhe > .panel + .solicitacao-timeline {
   margin-top: 1.25rem;
 }
 
@@ -1333,6 +1342,117 @@ textarea:focus {
   padding: 1.2rem 1.3rem;
 }
 
+.evento-detalhe-card {
+  width: fit-content;
+  max-width: 100%;
+  margin-top: 1.25rem;
+}
+
+.config-curso-card {
+  margin-top: 1.25rem;
+  display: grid;
+  gap: 1.25rem;
+}
+
+.config-curso-card > h2 {
+  margin: 0;
+}
+
+.config-curso-topo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+  align-items: stretch;
+  justify-content: flex-start;
+}
+
+.config-curso-bloco {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 0.65rem;
+  width: fit-content;
+  max-width: 100%;
+  align-content: start;
+}
+
+.config-curso-bloco > h3 {
+  margin: 0;
+  font-size: 1rem;
+  min-height: 1.5rem;
+}
+
+.config-curso-bloco > label,
+.config-curso-regimento > label {
+  display: grid;
+  gap: 0.4rem;
+  align-content: start;
+}
+
+.config-curso-bloco input[type='number'],
+.config-curso-bloco select {
+  width: fit-content;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.config-curso-bloco input[type='number'] {
+  width: 6.5rem;
+}
+
+.config-curso-bloco #duracao-calendario {
+  width: 9.5rem;
+}
+
+.config-curso-banca-campos {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 0.75rem 1rem;
+  align-items: start;
+  justify-content: start;
+}
+
+.config-curso-banca-campos > label {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.config-curso-banca-campos #banca-membros {
+  width: 4.5rem;
+}
+
+.config-curso-banca-campos #banca-modalidade {
+  width: 8.5rem;
+}
+
+.config-curso-regimento {
+  min-width: 0;
+}
+
+.config-curso-regimento textarea {
+  width: 100%;
+  min-height: 10rem;
+}
+
+.config-curso-card .field-error {
+  margin: 0;
+  color: var(--danger);
+  font-size: 0.9rem;
+}
+
+.config-curso-card .action-bar {
+  margin-top: 0.25rem;
+}
+
+@media (max-width: 900px) {
+  .config-curso-topo {
+    flex-direction: column;
+  }
+
+  .config-curso-bloco {
+    width: 100%;
+  }
+}
+
 .evento-nova-layout {
   display: grid;
   grid-template-columns: minmax(0, 30rem) minmax(16rem, 1fr);
@@ -1455,6 +1575,216 @@ textarea:focus {
 
 .attendance-card button[type='submit'] {
   margin-top: 1rem;
+}
+
+.form-card-compact {
+  width: min(28rem, 100%);
+  display: grid;
+  gap: 1rem;
+}
+
+.form-card-compact > button[type='submit'] {
+  margin-top: 0.35rem;
+  justify-self: start;
+}
+
+.dynamic-form-stack {
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+.arquivo-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  max-width: 100%;
+  font-size: 0.9rem;
+}
+
+.arquivo-campo-rotulo {
+  color: var(--ink);
+}
+
+.arquivo-picker {
+  display: inline-flex;
+  width: fit-content;
+  cursor: pointer;
+}
+
+.arquivo-picker-btn {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0.4rem 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--card);
+  font: inherit;
+}
+
+.arquivo-picker:focus-within .arquivo-picker-btn {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.arquivo-nome {
+  display: block;
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+
+.tcc-resumo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 0.25rem;
+  align-items: stretch;
+}
+
+.tcc-resumo-card {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.tcc-resumo-card > h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.tcc-resumo-card .resumo {
+  gap: 0.85rem;
+}
+
+.tcc-banca-membro + .tcc-banca-membro {
+  padding-top: 0.85rem;
+  border-top: 1px solid color-mix(in srgb, var(--border, #d8dee6) 80%, transparent);
+}
+
+.tcc-resumo-card .badge.prazo-proximo {
+  margin-inline-start: 0.45rem;
+}
+
+.tcc-versao-form,
+.tcc-versao-download {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.tcc-versao-form > button[type='submit'],
+.tcc-versao-download > button {
+  margin-top: 0.15rem;
+}
+
+@media (max-width: 980px) {
+  .tcc-resumo-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.tcc-avaliacao-form {
+  margin-top: 1.25rem;
+  display: grid;
+  gap: 1rem;
+  width: min(36rem, 100%);
+}
+
+.tcc-avaliacao-form > h2 {
+  margin: 0;
+}
+
+.tcc-avaliacao-form > label {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.tcc-nota-campo input {
+  width: 7.5rem;
+  min-height: 3.25rem;
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-align: center;
+  padding: 0.35rem 0.6rem;
+}
+
+.tcc-avaliacao-form .action-bar {
+  margin-top: 0.75rem;
+}
+
+.tcc-avaliacoes {
+  margin-top: 1.5rem;
+}
+
+.tcc-avaliacoes > h2 {
+  margin: 0 0 0.85rem;
+}
+
+.tcc-avaliacoes-lista {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: start;
+}
+
+.tcc-avaliacao-card {
+  display: grid;
+  gap: 0.85rem;
+  min-width: 0;
+  width: 100%;
+}
+
+@media (max-width: 980px) {
+  .tcc-avaliacoes-lista {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .tcc-avaliacoes-lista {
+    grid-template-columns: 1fr;
+  }
+}
+
+.tcc-avaliacao-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.tcc-avaliacao-card-head > h3 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.tcc-avaliacao-nota {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  color: var(--brand);
+}
+
+.tcc-avaliacao-card.resultado-aprovado .tcc-avaliacao-nota {
+  color: #1b6b34;
+}
+
+.tcc-avaliacao-card.resultado-reprovado .tcc-avaliacao-nota {
+  color: var(--danger);
+}
+
+.tcc-avaliacao-card.resultado-correcoes_solicitadas .tcc-avaliacao-nota {
+  color: #c98400;
+}
+
+.tcc-avaliacao-parecer {
+  margin: 0;
+  white-space: pre-wrap;
 }
 
 .countdown {
@@ -1588,6 +1918,13 @@ textarea:focus {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #fff;
+}
+
+.bulk-bar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
 }
 
 .overlay {
@@ -1963,6 +2300,43 @@ textarea:focus {
 .settings-stack {
   display: grid;
   gap: 1rem;
+}
+
+.seguranca-stack {
+  width: fit-content;
+  max-width: 100%;
+}
+
+.seguranca-card {
+  width: min(32rem, 100%);
+  box-sizing: border-box;
+}
+
+.seguranca-card table {
+  width: 100%;
+  margin-top: 0.25rem;
+}
+
+.seguranca-card.auth-form > button[type='submit'] {
+  width: fit-content;
+  align-self: flex-start;
+}
+
+.seguranca-senha-dupla {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  align-items: start;
+}
+
+.seguranca-senha-dupla > label {
+  min-width: 0;
+}
+
+@media (max-width: 560px) {
+  .seguranca-senha-dupla {
+    grid-template-columns: 1fr;
+  }
 }
 
 .notificacoes-grid {

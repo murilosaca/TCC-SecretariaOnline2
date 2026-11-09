@@ -59,7 +59,7 @@ describe('AppLayout', () => {
     expect(screen.queryByText('Revisão de estágios')).toBeNull()
     expect(screen.queryByText('Cadastro de estágios')).toBeNull()
     expect(screen.queryByText('Cadastro de TCCs')).toBeNull()
-    expect(screen.queryByText('Pool COE')).toBeNull()
+    expect(screen.queryByText('Atribuição de estágios')).toBeNull()
   })
 
   it('nav do aluno agrupa Acadêmico, Comunicação e Configurações', () => {
@@ -238,7 +238,7 @@ describe('AppLayout', () => {
     expect(screen.queryByText('Cadastro de estágios')).toBeNull()
     expect(screen.queryByText('Cadastro de TCCs')).toBeNull()
     expect(screen.queryByText('Revisão de estágios')).toBeNull()
-    expect(screen.queryByText('Pool COE')).toBeNull()
+    expect(screen.queryByText('Atribuição de estágios')).toBeNull()
     expect(screen.queryByText('TCCs')).toBeNull()
     expect(screen.queryByText('Revisão de TCCs')).toBeNull()
   })
@@ -253,7 +253,7 @@ describe('AppLayout', () => {
     expandir('Trabalho')
     expect(screen.getByText('Pool CAAF')).toBeTruthy()
     expect(screen.getByText('Revisão CAAF')).toBeTruthy()
-    expect(screen.queryByText('Pool COE')).toBeNull()
+    expect(screen.queryByText('Atribuição de estágios')).toBeNull()
   })
 
   it('nav do professor mostra Solicitações e Eventos e não mostra Cursos', () => {
@@ -273,7 +273,7 @@ describe('AppLayout', () => {
     )
     expect(screen.getByRole('link', { name: 'Eventos' }).getAttribute('href')).toBe('/professor/eventos')
     expect(screen.getByText('Revisão de estágios')).toBeTruthy()
-    expect(screen.getByText('Pool COE')).toBeTruthy()
+    expect(screen.getByText('Atribuição de estágios')).toBeTruthy()
     expect(screen.getByText('Revisão de TCCs')).toBeTruthy()
     expect(screen.queryByText('TCCs')).toBeNull()
     expect(screen.queryByText('Cursos')).toBeNull()
@@ -295,7 +295,7 @@ describe('AppLayout', () => {
     )
     expect(screen.queryByText('Estágios')).toBeNull()
     expect(screen.queryByText('Revisão de estágios')).toBeNull()
-    expect(screen.queryByText('Pool COE')).toBeNull()
+    expect(screen.queryByText('Atribuição de estágios')).toBeNull()
     expect(screen.queryByText('Cadastro de TCCs')).toBeNull()
   })
 

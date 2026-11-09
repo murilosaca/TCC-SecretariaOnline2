@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useLocation, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ApiError } from '../../api/client'
 import { estagiosApi } from '../../api/estagios'
@@ -17,8 +17,22 @@ import type { DocumentoEstagio } from '../../models/estagio'
 
 const PARECER_REPROVAR_MIN = 20
 
+type VoltarOrigem = { href: string; label: string }
+
+function voltarDaOrigem(state: unknown): VoltarOrigem | null {
+  const from = (state as { from?: Partial<VoltarOrigem> } | null)?.from
+  if (!from || typeof from.href !== 'string' || typeof from.label !== 'string') {
+    return null
+  }
+  if (!from.href.startsWith('/') || from.href.startsWith('//')) {
+    return null
+  }
+  return { href: from.href, label: from.label }
+}
+
 export function EstagioDetalhe() {
   const { id = '' } = useParams()
+  const location = useLocation()
   const { links } = useAuth()
   const menu = useActions(links)
   const queryClient = useQueryClient()
@@ -78,9 +92,10 @@ export function EstagioDetalhe() {
   const item = detalhe.data
   const actions = useActions(item?._links)
   const voltar =
-    menu.can('estagios-revisao') && !menu.can('estagios')
-      ? { href: '/estagios?to=me', label: '← Fila de revisão' }
-      : { href: '/estagios', label: '← Estágios' }
+    voltarDaOrigem(location.state) ??
+    (menu.can('estagios-revisao') && !menu.can('estagios')
+      ? { href: '/estagios?to=me', label: '← Revisão de estágios' }
+      : { href: '/estagios', label: '← Estágios' })
   const pending = enviar.isPending || parecer.isPending || encerrar.isPending
 
   return (

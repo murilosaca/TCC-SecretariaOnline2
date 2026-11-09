@@ -60,22 +60,23 @@ export function PoolCoe() {
     <section className="page">
       <header className="page-head">
         <div>
-          <h1>Comissão COE</h1>
+          <h1>Atribuição de estágios</h1>
           <p className="muted">
-            Pool coletivo de estágios. Atribua orientador a si ou a um colega. O parecer continua
-            individual em Revisão de estágios.
+            Escolha o professor orientador de cada estágio pendente — você pode assumir a orientação
+            ou indicar um colega da COE. O parecer sobre documentos continua individual em Revisão de
+            estágios.
           </p>
         </div>
       </header>
 
       {forbidden && (
         <p className="empty" role="status">
-          Pool da COE indisponível para esta sessão.
+          Atribuição de estágios indisponível para esta sessão.
         </p>
       )}
       {pool.isError && !forbidden && (
         <div className="banner danger" role="alert">
-          Não foi possível carregar o pool da COE.{' '}
+          Não foi possível carregar a atribuição de estágios.{' '}
           <button type="button" onClick={() => pool.refetch()}>
             Tentar de novo
           </button>
@@ -91,7 +92,7 @@ export function PoolCoe() {
       )}
       {pool.isLoading && (
         <p className="muted" aria-busy="true">
-          Carregando pool da COE…
+          Carregando atribuição de estágios…
         </p>
       )}
 
@@ -124,9 +125,18 @@ export function PoolCoe() {
               <p>
                 {selecionados.length} {selecionados.length === 1 ? 'estágio selecionado' : 'estágios selecionados'}
               </p>
-              <button type="button" onClick={() => setQuadro(selecionados)} disabled={atribuir.isPending}>
-                Atribuir selecionados
-              </button>
+              <div className="bulk-bar-actions">
+                <button
+                  type="button"
+                  onClick={() => atribuir.mutate({ ids: selecionados, assigneeId: pool.data.meuId })}
+                  disabled={atribuir.isPending}
+                >
+                  Atribuir selecionados a mim
+                </button>
+                <button type="button" onClick={() => setQuadro(selecionados)} disabled={atribuir.isPending}>
+                  Atribuir selecionados a outro
+                </button>
+              </div>
             </div>
           )}
           {quadro && (
@@ -147,7 +157,7 @@ function Kpis({ kpis }: { kpis: CoePool['kpis'] }) {
   return (
     <div className="kpi-row">
       <article className="kpi-card">
-        <p className="kpi-label">Pool total</p>
+        <p className="kpi-label">Sem orientador</p>
         <p className="kpi-value">{kpis.poolTotal}</p>
       </article>
       <article className="kpi-card">
@@ -204,7 +214,9 @@ function Tabela({
           <th scope="col">Início</th>
           <th scope="col">Documento pendente</th>
           <th scope="col">Responsável</th>
-          <th scope="col">Ações</th>
+          <th scope="col" className="col-acoes">
+            Ações
+          </th>
         </tr>
       </thead>
       <tbody>
@@ -257,26 +269,32 @@ function Linha({
       <td>{dataBr(item.inicio)}</td>
       <td>{item.documentoPendente ? rotuloTipoDocumento(item.documentoPendente) : '—'}</td>
       <td>
-        {item.noPool && <span className="badge no-pool">No pool</span>}
+        {item.noPool && <span className="badge no-pool">Nenhum</span>}
         {item.comigo && <span className="badge comigo">Comigo</span>}
         {!item.noPool && !item.comigo && (item.orientadorRotulo ?? '—')}
       </td>
-      <td className="actions">
-        {actions.can('self') && (
-          <Link to={`/estagios/${item.id}`} className="ghost-link">
-            Abrir
-          </Link>
-        )}
-        {podeAtribuir && item.noPool && (
-          <button type="button" className="ghost" onClick={() => onAtribuirAMim(item.id)} disabled={pending}>
-            Atribuir a mim
-          </button>
-        )}
-        {podeAtribuir && (
-          <button type="button" className="ghost" onClick={() => onAbrirQuadro([item.id])} disabled={pending}>
-            Atribuir…
-          </button>
-        )}
+      <td className="col-acoes">
+        <div className="actions actions-centered">
+          {actions.can('self') && (
+            <Link
+              to={`/estagios/${item.id}`}
+              state={{ from: { href: '/comissoes/coe', label: '← Atribuição de estágios' } }}
+              className="button-link ghost"
+            >
+              Detalhes
+            </Link>
+          )}
+          {podeAtribuir && item.noPool && (
+            <button type="button" className="ghost" onClick={() => onAtribuirAMim(item.id)} disabled={pending}>
+              Atribuir a mim
+            </button>
+          )}
+          {podeAtribuir && (
+            <button type="button" className="ghost" onClick={() => onAbrirQuadro([item.id])} disabled={pending}>
+              Atribuir a outro
+            </button>
+          )}
+        </div>
       </td>
     </tr>
   )

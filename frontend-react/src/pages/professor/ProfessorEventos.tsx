@@ -90,12 +90,12 @@ function Linha({ item }: { item: Evento }) {
       <td>{item.cargaHoraria}h</td>
       <td className="actions">
         {actions.can('self') && (
-          <Link to={`/professor/eventos/${item.id}`} className="ghost-link">
-            Abrir
+          <Link to={`/professor/eventos/${item.id}`} className="button-link">
+            Detalhes
           </Link>
         )}
         {actions.can('host-session') && (
-          <Link to={`/professor/eventos/${item.id}/operacao`} className="ghost-link">
+          <Link to={`/professor/eventos/${item.id}/operacao`} className="button-link">
             Operação
           </Link>
         )}

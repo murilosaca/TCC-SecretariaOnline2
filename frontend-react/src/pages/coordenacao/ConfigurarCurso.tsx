@@ -121,10 +121,15 @@ export function ConfigurarCurso() {
   return (
     <section className="page">
       <header className="page-head">
-        <h1>Configurar curso</h1>
-        <p className="muted">
-          {consulta.data ? `${consulta.data.nome} · ${consulta.data.sigla}` : 'Parâmetros da coordenação (F6.1).'}
-        </p>
+        <div>
+          <h1>Configurar curso</h1>
+          <p className="muted">
+            Defina as regras acadêmicas do curso
+            {consulta.data ? ` ${consulta.data.nome} (${consulta.data.sigla})` : ''}
+            : horas formativas mínimas, duração do calendário letivo, composição da banca de TCC e texto
+            do regimento. As alterações passam a valer nos fluxos do SO2 após salvar.
+          </p>
+        </div>
       </header>
 
       {consulta.isLoading && (
@@ -171,84 +176,90 @@ export function ConfigurarCurso() {
       )}
 
       {consulta.data && (
-        <form className="form-cards" onSubmit={onSubmit}>
-          <article className="card">
-            <h2>Horas formativas</h2>
-            <label htmlFor="horas-minimas">
-              Horas formativas mínimas
-              <input
-                id="horas-minimas"
-                type="number"
-                min={0}
-                max={1000}
-                value={form.horasFormativasMinimas}
-                disabled={!podeSalvar}
-                onChange={(e) => setForm({ ...form, horasFormativasMinimas: e.target.value })}
-                aria-invalid={!horasOk}
-                aria-describedby={!horasOk ? 'horas-erro' : undefined}
-              />
-            </label>
-            {!horasOk && (
-              <p id="horas-erro" className="banner danger" role="alert">
-                Valor deve ser entre 0 e 1000
-              </p>
-            )}
-          </article>
+        <form className="panel config-curso-card" onSubmit={onSubmit} aria-labelledby="config-curso-titulo">
+          <h2 id="config-curso-titulo">Configurações</h2>
 
-          <article className="card">
-            <h2>Calendário letivo</h2>
-            <label htmlFor="duracao-calendario">
-              Duração (semanas)
-              <select
-                id="duracao-calendario"
-                value={form.duracaoCalendario}
-                disabled={!podeSalvar}
-                onChange={(e) => setForm({ ...form, duracaoCalendario: e.target.value })}
-              >
-                <option value="15">15 semanas</option>
-                <option value="18">18 semanas</option>
-              </select>
-            </label>
-          </article>
-
-          <article className="card">
-            <h2>Banca de TCC</h2>
-            <div className="grid">
-              <label htmlFor="banca-membros">
-                Membros externos
-                <select
-                  id="banca-membros"
-                  value={form.bancaMembrosExternos}
+          <div className="config-curso-topo">
+            <section className="config-curso-bloco" aria-labelledby="horas-titulo">
+              <h3 id="horas-titulo">Horas formativas</h3>
+              <label htmlFor="horas-minimas">
+                Mínimo de horas
+                <input
+                  id="horas-minimas"
+                  type="number"
+                  min={0}
+                  max={1000}
+                  value={form.horasFormativasMinimas}
                   disabled={!podeSalvar}
-                  onChange={(e) => setForm({ ...form, bancaMembrosExternos: e.target.value })}
+                  onChange={(e) => setForm({ ...form, horasFormativasMinimas: e.target.value })}
+                  aria-invalid={!horasOk}
+                  aria-describedby={!horasOk ? 'horas-erro' : undefined}
+                />
+              </label>
+              {!horasOk && (
+                <p id="horas-erro" className="field-error" role="alert">
+                  Valor deve ser entre 0 e 1000
+                </p>
+              )}
+            </section>
+
+            <section className="config-curso-bloco" aria-labelledby="calendario-titulo">
+              <h3 id="calendario-titulo">Calendário letivo</h3>
+              <label htmlFor="duracao-calendario">
+                Duração (semanas)
+                <select
+                  id="duracao-calendario"
+                  value={form.duracaoCalendario}
+                  disabled={!podeSalvar}
+                  onChange={(e) => setForm({ ...form, duracaoCalendario: e.target.value })}
                 >
-                  <option value="1">1</option>
-                  <option value="2">2</option>
+                  <option value="15">15 semanas</option>
+                  <option value="18">18 semanas</option>
                 </select>
               </label>
-              <label htmlFor="banca-modalidade">
-                Modalidade
-                <select
-                  id="banca-modalidade"
-                  value={form.bancaModalidade}
-                  disabled={!podeSalvar}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      bancaModalidade: e.target.value as ConfigCurso['bancaModalidade'],
-                    })
-                  }
-                >
-                  <option value="PRESENCIAL">Presencial</option>
-                  <option value="REMOTO">Remoto</option>
-                  <option value="HIBRIDO">Híbrido</option>
-                </select>
-              </label>
-            </div>
-          </article>
+            </section>
 
-          <article className="card">
-            <h2>Regimento</h2>
+            <section className="config-curso-bloco" aria-labelledby="banca-titulo">
+              <h3 id="banca-titulo">Banca de TCC</h3>
+              <div className="config-curso-banca-campos">
+                <label htmlFor="banca-membros">
+                  Membros externos
+                  <select
+                    id="banca-membros"
+                    value={form.bancaMembrosExternos}
+                    disabled={!podeSalvar}
+                    onChange={(e) => setForm({ ...form, bancaMembrosExternos: e.target.value })}
+                  >
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                  </select>
+                </label>
+                <label htmlFor="banca-modalidade">
+                  Modalidade
+                  <select
+                    id="banca-modalidade"
+                    value={form.bancaModalidade}
+                    disabled={!podeSalvar}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        bancaModalidade: e.target.value as ConfigCurso['bancaModalidade'],
+                      })
+                    }
+                  >
+                    <option value="PRESENCIAL">Presencial</option>
+                    <option value="REMOTO">Remoto</option>
+                    <option value="HIBRIDO">Híbrido</option>
+                  </select>
+                </label>
+              </div>
+            </section>
+          </div>
+
+          <section className="config-curso-regimento" aria-labelledby="regimento-titulo">
+            <h3 id="regimento-titulo" className="sr-only">
+              Regimento
+            </h3>
             <label htmlFor="regimento">
               Texto do regimento
               <textarea
@@ -260,9 +271,9 @@ export function ConfigurarCurso() {
                 onChange={(e) => setForm({ ...form, regimento: e.target.value })}
               />
             </label>
-          </article>
+          </section>
 
-          <div className="actions">
+          <div className="action-bar">
             <button type="submit" disabled={!podeSalvar || !dirty || !horasOk || salvar.isPending}>
               Salvar
             </button>

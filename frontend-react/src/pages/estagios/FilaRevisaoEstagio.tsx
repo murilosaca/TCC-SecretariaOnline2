@@ -20,7 +20,10 @@ export function FilaRevisaoEstagio() {
       <header className="page-head">
         <div>
           <h1>Revisão de estágios</h1>
-          <p className="muted">Parecer um documento por vez. Não há aprovação em lote.</p>
+          <p className="muted">
+            Analise os documentos enviados pelos alunos e registre o parecer de cada um. A avaliação é
+            sempre individual — não há aprovação em lote.
+          </p>
         </div>
       </header>
 
@@ -82,12 +85,20 @@ function Linha({ item }: { item: Estagio }) {
       <td>{item.documentoPendente ? rotuloTipoDocumento(item.documentoPendente) : '—'}</td>
       <td className="actions">
         {actions.can('revisar') && (
-          <Link to={`/estagios/${item.id}`} className="ghost-link">
+          <Link
+            to={`/estagios/${item.id}`}
+            state={{ from: { href: '/estagios?to=me', label: '← Revisão de estágios' } }}
+            className="ghost-link"
+          >
             Revisar
           </Link>
         )}
         {!actions.can('revisar') && actions.can('self') && (
-          <Link to={`/estagios/${item.id}`} className="ghost-link">
+          <Link
+            to={`/estagios/${item.id}`}
+            state={{ from: { href: '/estagios?to=me', label: '← Revisão de estágios' } }}
+            className="ghost-link"
+          >
             Abrir
           </Link>
         )}

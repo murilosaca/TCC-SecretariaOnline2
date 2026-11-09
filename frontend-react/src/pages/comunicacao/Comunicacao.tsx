@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ApiError } from '../../api/client'
 import { comunicacoesApi, type FiltroComunicacao } from '../../api/comunicacoes'
+import { useAuth } from '../../auth/AuthContext'
 import { useActions } from '../../hooks/useActions'
 import type { BadgesComunicacao, ComunicacaoItem, TipoComunicacao } from '../../models/comunicacao'
 import { MarkdownPreview } from './MarkdownPreview'
@@ -52,6 +53,8 @@ function IconeTipo({ tipo }: { tipo: TipoComunicacao }) {
 
 export function Comunicacao() {
   const location = useLocation()
+  const { links } = useAuth()
+  const actions = useActions(links)
   const aviso = (location.state as { aviso?: string } | null)?.aviso
   const [aba, setAba] = useState('TODOS')
   const [lido, setLido] = useState('')
@@ -66,8 +69,20 @@ export function Comunicacao() {
   return (
     <section className="page">
       <header className="page-head">
-        <div>
-          <h1>Comunicação</h1>
+        <div className="page-head-lead">
+          <div className="page-head-title-row">
+            <h1>Comunicação</h1>
+            {actions.can('publicar-comunicado') && (
+              <div className="dashboard-atalhos">
+                <Link
+                  to={actions.href('publicar-comunicado') ?? '/comunicacao/publicar'}
+                  className="button-link"
+                >
+                  Publicar comunicado
+                </Link>
+              </div>
+            )}
+          </div>
           <p className="muted">Avisos institucionais, mensagens da turma e inbox de ações.</p>
         </div>
       </header>

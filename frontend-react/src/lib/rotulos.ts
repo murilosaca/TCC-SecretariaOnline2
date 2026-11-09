@@ -17,11 +17,19 @@ const ROTULOS: Record<string, string> = {
   PENDENTE: 'Pendente',
   PARCIAL: 'Parcial',
   COMPLETA: 'Completa',
+  SECRET_SINGLE: 'PIN Único',
+  SECRET_DUAL: 'PIN Duplo',
+  QR_SINGLE: 'QR Único',
+  QR_DUAL: 'QR Duplo',
   // Formativas
   PENDENTE_CONFIRMACAO: 'Aguardando confirmação',
   AGUARDANDO_CAAF: 'Aguardando CAAF',
   APROVADA: 'Aprovada',
   CANCELADA: 'Cancelada',
+  // Tipos de solicitação (filtros / fallbacks)
+  DECLARACAO_SIMPLES: 'Declaração simples',
+  AUTORIZACAO_IMAGEM: 'Autorização de uso de imagem',
+  SUPORTE_TECNICO: 'Suporte técnico',
   // SLA / misc
   ATRASADO: 'Atrasado',
   NO_PRAZO: 'No prazo',

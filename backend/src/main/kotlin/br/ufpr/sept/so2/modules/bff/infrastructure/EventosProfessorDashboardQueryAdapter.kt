@@ -44,7 +44,8 @@ class EventosProfessorDashboardQueryAdapter(
 
         private fun toResumo(evento: Evento): MeuEventoResumo {
             val links = linkedMapOf("self" to "/professor/eventos/${evento.id}")
-            if (evento.estado == EventoEstado.EM_ANDAMENTO) {
+            // Painel de operação existe em AGENDADO e EM_ANDAMENTO (abrir janela / operar).
+            if (evento.estado == EventoEstado.AGENDADO || evento.estado == EventoEstado.EM_ANDAMENTO) {
                 links["operar"] = "/professor/eventos/${evento.id}/operacao"
             }
             return MeuEventoResumo(

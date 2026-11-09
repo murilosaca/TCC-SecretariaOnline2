@@ -48,7 +48,7 @@ const NAV_GRUPOS: NavGrupo[] = [
     itens: [
       { rel: 'atendimentos', label: 'Atendimentos presenciais' },
       { rel: 'autorizacoes-imagem', label: 'Autorizações de imagem' },
-      { rel: 'deliberar', label: 'Deliberação' },
+      { rel: 'deliberar', label: 'Solicitações' },
       { rel: 'fila-solicitacoes', label: 'Fila de solicitações' },
       { rel: 'nova-interna', label: 'Nova interna' },
       { rel: 'atrasados', label: 'Solicitações atrasadas' },
@@ -58,7 +58,7 @@ const NAV_GRUPOS: NavGrupo[] = [
     id: 'trabalho',
     titulo: 'Trabalho',
     itens: [
-      { rel: 'eventos-professor', label: 'Eventos (prof.)' },
+      { rel: 'eventos-professor', label: 'Eventos' },
       { rel: 'comissoes-caaf', label: 'Pool CAAF' },
       { rel: 'comissoes-coe', label: 'Pool COE' },
       { rel: 'revisao-caaf', label: 'Revisão CAAF' },
@@ -121,7 +121,7 @@ const NAV_GRUPOS: NavGrupo[] = [
 /**
  * Pontuação de match path+query. 0 = não casa.
  * Query mais específica vence (ex.: /solicitacoes?to=me > /solicitacoes),
- * evitando abrir Gestão ao ir em Atendimentos → Deliberação (?to=me).
+ * evitando abrir Gestão ao ir em Atendimentos → Solicitações (?to=me).
  */
 function pontuacaoHref(href: string, pathname: string, search: string): number {
   const [path, query = ''] = href.split('?')

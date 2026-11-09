@@ -167,6 +167,9 @@ class SecretaryDashboardApplicationService(
                 result["fila-solicitacoes"] = "/solicitacoes"
                 result["atrasados"] = "/secretaria/atrasados"
             }
+            if ("event.view_curso" in caps) {
+                result["eventos"] = "/secretaria/eventos"
+            }
             if ("diploma.register" in caps) {
                 result["diplomas"] = "/secretaria/diplomas"
             }

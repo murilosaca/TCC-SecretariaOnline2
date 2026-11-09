@@ -56,7 +56,14 @@ const alunoDash = {
   ultimasSolicitacoes: [],
   proximosEventos: [],
   pendenciasFormativas: [],
-  _links: { self: '/bff/dashboard/aluno', novaSolicitacao: '/solicitacoes/nova' },
+  _links: {
+    self: '/bff/dashboard/aluno',
+    solicitacoes: '/solicitacoes',
+    novaSolicitacao: '/solicitacoes/nova',
+    eventos: '/eventos',
+    formativas: '/formativas',
+    certificados: '/certificados',
+  },
 }
 
 const professorDash = {
@@ -123,6 +130,10 @@ describe('Inicio', () => {
     expect(dashboardProfessor).not.toHaveBeenCalled()
     expect(dashboardSecretaria).not.toHaveBeenCalled()
     expect(screen.getByRole('link', { name: 'Nova solicitação' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Ver solicitações' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Ver eventos' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Ver certificados' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Ver formativas' })).toBeTruthy()
   })
 
   it('professor puro carrega o BFF do professor com filas e operar', async () => {
@@ -137,9 +148,14 @@ describe('Inicio', () => {
     expect(dashboardSecretaria).not.toHaveBeenCalled()
     expect(screen.getByRole('heading', { level: 2, name: 'Fila de solicitações' })).toBeTruthy()
     expect(screen.getByRole('heading', { level: 2, name: 'Meus eventos hoje' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Detalhe' })).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Operar evento' })).toBeTruthy()
+    expect(screen.getAllByText('Em andamento')).toHaveLength(1)
     expect(screen.queryByRole('heading', { level: 2, name: 'Formativas CAAF' })).toBeNull()
     expect(screen.getByText('1 solicitação urgente')).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Ver fila de deliberação' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Ver meus eventos' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Ver solicitações urgentes' })).toBeTruthy()
   })
 
   it('bloco CAAF só aparece com _links.formativasCaaf', async () => {
@@ -191,6 +207,9 @@ describe('Inicio', () => {
         self: '/bff/dashboard/secretary',
         cursos: '/secretaria/cursos',
         alunos: '/secretaria/alunos',
+        'fila-solicitacoes': '/solicitacoes',
+        atrasados: '/secretaria/atrasados',
+        eventos: '/secretaria/eventos',
       },
     })
     renderPage()
@@ -204,6 +223,9 @@ describe('Inicio', () => {
     expect(screen.getAllByText('0').length).toBeGreaterThanOrEqual(2)
     expect(screen.getByRole('link', { name: 'Cursos' })).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Alunos' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Ver fila de solicitações' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Ver solicitações atrasadas' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Ver eventos da secretaria' })).toBeTruthy()
     expect(screen.queryByRole('link', { name: 'Importações' })).toBeNull()
     expect(screen.getByText(/Não há período letivo vigente/)).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Atualizar' }))

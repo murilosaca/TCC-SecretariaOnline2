@@ -7,12 +7,17 @@ import type { HubComunicacao } from '../../models/comunicacao'
 
 const listar = vi.fn()
 const marcarLida = vi.fn()
+let sessionLinks: Record<string, string> = {}
 
 vi.mock('../../api/comunicacoes', () => ({
   comunicacoesApi: {
     listar: (...args: unknown[]) => listar(...args),
     marcarLida: (...args: unknown[]) => marcarLida(...args),
   },
+}))
+
+vi.mock('../../auth/AuthContext', () => ({
+  useAuth: () => ({ links: sessionLinks }),
 }))
 
 const badges = { todos: 1, institucional: 1, turma: 0, inbox: 0 }
@@ -40,6 +45,27 @@ describe('Comunicacao', () => {
   beforeEach(() => {
     listar.mockReset()
     marcarLida.mockReset()
+    sessionLinks = {}
+  })
+
+  it('esconde atalho de publicar sem _links.publicar-comunicado', async () => {
+    listar.mockResolvedValue(hub([]))
+    renderPage()
+    await waitFor(() => {
+      expect(screen.getByText('Nenhuma comunicação encontrada.')).toBeTruthy()
+    })
+    expect(screen.queryByRole('link', { name: 'Publicar comunicado' })).toBeNull()
+  })
+
+  it('mostra atalho de publicar com _links.publicar-comunicado', async () => {
+    sessionLinks = { 'publicar-comunicado': '/comunicacao/publicar' }
+    listar.mockResolvedValue(hub([]))
+    renderPage()
+    await waitFor(() => {
+      expect(screen.getByRole('link', { name: 'Publicar comunicado' }).getAttribute('href')).toBe(
+        '/comunicacao/publicar',
+      )
+    })
   })
 
   it('mostra empty state quando o filtro não devolve nada', async () => {

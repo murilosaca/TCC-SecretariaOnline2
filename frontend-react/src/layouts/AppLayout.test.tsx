@@ -36,7 +36,7 @@ function expandir(titulo: string) {
 }
 
 describe('AppLayout', () => {
-  it('nav do aluno não mostra Cursos, Eventos prof. nem Revisão CAAF', () => {
+  it('nav do aluno não mostra Cursos, Eventos do professor nem Revisão CAAF', () => {
     renderNav({
       inicio: '/inicio',
       solicitacoes: '/solicitacoes',
@@ -54,7 +54,7 @@ describe('AppLayout', () => {
     expect(screen.getByText('TCCs')).toBeTruthy()
     expect(screen.queryByText('Revisão de TCCs')).toBeNull()
     expect(screen.queryByText('Cursos')).toBeNull()
-    expect(screen.queryByText('Eventos (prof.)')).toBeNull()
+    expect(screen.getByRole('link', { name: 'Eventos' }).getAttribute('href')).toBe('/eventos')
     expect(screen.queryByText('Revisão CAAF')).toBeNull()
     expect(screen.queryByText('Revisão de estágios')).toBeNull()
     expect(screen.queryByText('Cadastro de estágios')).toBeNull()
@@ -159,7 +159,7 @@ describe('AppLayout', () => {
     )
   })
 
-  it('em Deliberação (?to=me) abre Atendimentos e não Gestão', () => {
+  it('em Solicitações (?to=me) abre Atendimentos e não Gestão', () => {
     renderNav(
       {
         inicio: '/inicio',
@@ -175,11 +175,11 @@ describe('AppLayout', () => {
       'true',
     )
     expect(screen.getByRole('button', { name: 'Gestão' }).getAttribute('aria-expanded')).toBe('false')
-    expect(screen.getByRole('link', { name: 'Deliberação' }).className).toContain('active')
+    expect(screen.getByRole('link', { name: 'Solicitações' }).className).toContain('active')
     expect(screen.getByRole('link', { name: 'Fila de solicitações' }).className).not.toContain('active')
   })
 
-  it('em Nova interna só ela fica ativa (não Fila nem Deliberação)', () => {
+  it('em Nova interna só ela fica ativa (não Fila nem Solicitações)', () => {
     renderNav(
       {
         inicio: '/inicio',
@@ -193,10 +193,10 @@ describe('AppLayout', () => {
     )
     expect(screen.getByRole('link', { name: 'Nova interna' }).className).toContain('active')
     expect(screen.getByRole('link', { name: 'Fila de solicitações' }).className).not.toContain('active')
-    expect(screen.getByRole('link', { name: 'Deliberação' }).className).not.toContain('active')
+    expect(screen.getByRole('link', { name: 'Solicitações' }).className).not.toContain('active')
   })
 
-  it('na Fila de solicitações Deliberação não fica ativa', () => {
+  it('na Fila de solicitações o item Solicitações não fica ativo', () => {
     renderNav(
       {
         inicio: '/inicio',
@@ -209,11 +209,11 @@ describe('AppLayout', () => {
       '/solicitacoes',
     )
     expect(screen.getByRole('link', { name: 'Fila de solicitações' }).className).toContain('active')
-    expect(screen.getByRole('link', { name: 'Deliberação' }).className).not.toContain('active')
+    expect(screen.getByRole('link', { name: 'Solicitações' }).className).not.toContain('active')
     expect(screen.getByRole('link', { name: 'Nova interna' }).className).not.toContain('active')
   })
 
-  it('nav da secretaria mostra Cursos/Alunos e não mostra Solicitações do aluno', () => {
+  it('nav da secretaria mostra Cursos/Alunos e Solicitações da fila deliberativa', () => {
     renderNav({
       inicio: '/inicio',
       deliberar: '/solicitacoes?to=me',
@@ -228,10 +228,10 @@ describe('AppLayout', () => {
     expect(screen.getByText('Cursos')).toBeTruthy()
     expect(screen.getByText('Alunos')).toBeTruthy()
     expect(screen.getByText('Calendário acadêmico')).toBeTruthy()
-    expect(screen.getByText('Deliberação')).toBeTruthy()
-    expect(screen.queryByText('Solicitações')).toBeNull()
+    expect(screen.getByRole('link', { name: 'Solicitações' }).getAttribute('href')).toBe(
+      '/solicitacoes?to=me',
+    )
     expect(screen.queryByText('Revisão CAAF')).toBeNull()
-    expect(screen.queryByText('Eventos (prof.)')).toBeNull()
     expect(screen.queryByText('Atendimentos presenciais')).toBeNull()
     expect(screen.queryByText('Egressos')).toBeNull()
     expect(screen.queryByText('Estágios')).toBeNull()
@@ -256,10 +256,9 @@ describe('AppLayout', () => {
     expect(screen.queryByText('Pool COE')).toBeNull()
   })
 
-  it('nav do professor mostra Deliberação e Eventos prof. e não mostra Cursos', () => {
+  it('nav do professor mostra Solicitações e Eventos e não mostra Cursos', () => {
     renderNav({
       inicio: '/inicio',
-      solicitacoes: '/solicitacoes',
       deliberar: '/solicitacoes?to=me',
       'eventos-professor': '/professor/eventos',
       'estagios-revisao': '/estagios?to=me',
@@ -269,8 +268,10 @@ describe('AppLayout', () => {
     })
     expandir('Atendimentos')
     expandir('Trabalho')
-    expect(screen.getByText('Deliberação')).toBeTruthy()
-    expect(screen.getByText('Eventos (prof.)')).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Solicitações' }).getAttribute('href')).toBe(
+      '/solicitacoes?to=me',
+    )
+    expect(screen.getByRole('link', { name: 'Eventos' }).getAttribute('href')).toBe('/professor/eventos')
     expect(screen.getByText('Revisão de estágios')).toBeTruthy()
     expect(screen.getByText('Pool COE')).toBeTruthy()
     expect(screen.getByText('Revisão de TCCs')).toBeTruthy()
@@ -313,7 +314,10 @@ describe('AppLayout', () => {
       '/secretaria/atendimentos',
     )
     expect(screen.getByRole('link', { name: 'Egressos' }).getAttribute('href')).toBe('/secretaria/egressos')
-    expect(screen.queryByText('Eventos (prof.)')).toBeNull()
+    expect(screen.queryByRole('link', { name: 'Eventos' })).toBeTruthy()
+    expect(
+      screen.getAllByRole('link', { name: 'Eventos' }).every((link) => link.getAttribute('href') !== '/professor/eventos'),
+    ).toBe(true)
   })
 
   it('aluno vê meus atendimentos só com o rel', () => {

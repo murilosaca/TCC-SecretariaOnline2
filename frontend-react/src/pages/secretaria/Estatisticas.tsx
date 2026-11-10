@@ -10,6 +10,7 @@ import {
   resumoSolicitacoesPorEstado,
   resumoSolicitacoesPorTipo,
 } from '../../components/SerieChart'
+import { rotuloCodigo } from '../../lib/rotulos'
 import type { ItemSolicitacaoRelatorio } from '../../models/relatorios'
 
 const STALE_MS = 5 * 60 * 1000
@@ -261,7 +262,7 @@ function DrillDownSolicitacoes({
                 <tr key={item.id}>
                   <td>{item.protocolo}</td>
                   <td>{item.tipoNome}</td>
-                  <td>{item.estado}</td>
+                  <td>{rotuloCodigo(item.estado)}</td>
                   <td>{item.cursoSigla}</td>
                   <td>{new Date(item.createdAt).toLocaleString('pt-BR')}</td>
                 </tr>

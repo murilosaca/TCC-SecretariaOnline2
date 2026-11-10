@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { ApiError } from '../../api/client'
 import { eventosApi } from '../../api/eventos'
 import { useActions } from '../../hooks/useActions'
+import { rotuloCodigo } from '../../lib/rotulos'
 import type { Evento } from '../../models/evento'
 
 export function ProfessorEventos() {
@@ -18,8 +19,8 @@ export function ProfessorEventos() {
     <section className="page">
       <header className="page-head">
         <div>
-          <h1>Eventos que hospedo</h1>
-          <p className="muted">Gerencie a oficina e a janela de presença (RF-F3-002).</p>
+          <h1>Eventos</h1>
+          <p className="muted">Gerencie eventos e as suas janelas de presença.</p>
         </div>
         {actions.can('novoEvento') && (
           <Link to="/professor/eventos/nova" className="button-link">
@@ -82,19 +83,19 @@ function Linha({ item }: { item: Evento }) {
       <td>
         {new Date(item.inicioEm).toLocaleString('pt-BR')} — {new Date(item.fimEm).toLocaleString('pt-BR')}
       </td>
-      <td>{item.attendanceMode}</td>
+      <td>{rotuloCodigo(item.attendanceMode)}</td>
       <td>
-        <span className={`badge estado-${item.estado.toLowerCase()}`}>{item.estado}</span>
+        <span className={`badge estado-${item.estado.toLowerCase()}`}>{rotuloCodigo(item.estado)}</span>
       </td>
       <td>{item.cargaHoraria}h</td>
       <td className="actions">
         {actions.can('self') && (
-          <Link to={`/professor/eventos/${item.id}`} className="ghost-link">
-            Abrir
+          <Link to={`/professor/eventos/${item.id}`} className="button-link ghost">
+            Detalhes
           </Link>
         )}
         {actions.can('host-session') && (
-          <Link to={`/professor/eventos/${item.id}/operacao`} className="ghost-link">
+          <Link to={`/professor/eventos/${item.id}/operacao`} className="button-link ghost">
             Operação
           </Link>
         )}

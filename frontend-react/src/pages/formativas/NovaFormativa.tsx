@@ -80,7 +80,7 @@ export function NovaFormativa() {
         </div>
       )}
 
-      <form className="panel" onSubmit={onSubmit}>
+      <form className="panel form-card-compact" onSubmit={onSubmit}>
         <label>
           Atividade
           <select value={tipoId} onChange={(event) => setTipoId(event.target.value)}>
@@ -96,14 +96,21 @@ export function NovaFormativa() {
           Horas
           <input inputMode="numeric" value={horas} onChange={(event) => setHoras(event.target.value)} />
         </label>
-        <label>
-          Comprovante
-          <input
-            type="file"
-            accept="application/pdf,image/jpeg,image/png"
-            onChange={(event) => setArquivo(event.target.files?.[0] ?? null)}
-          />
-        </label>
+        <div className="arquivo-campo">
+          <span className="arquivo-campo-rotulo">Comprovante</span>
+          <label className="arquivo-picker">
+            <input
+              type="file"
+              className="sr-only"
+              accept="application/pdf,image/jpeg,image/png"
+              onChange={(event) => setArquivo(event.target.files?.[0] ?? null)}
+            />
+            <span className="arquivo-picker-btn">Escolher arquivo</span>
+          </label>
+          <span className={`arquivo-nome${arquivo ? '' : ' muted'}`}>
+            {arquivo ? arquivo.name : 'Nenhum arquivo selecionado.'}
+          </span>
+        </div>
         <button type="submit" disabled={!podeEnviar}>
           {enviar.isPending ? 'Enviando…' : 'Enviar'}
         </button>

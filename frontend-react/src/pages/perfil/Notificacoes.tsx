@@ -13,12 +13,18 @@ import { PerfilNav } from './PerfilNav'
 
 type Formulario = {
   canais: Record<PrioridadeNotificacao, CanalPreferencia>
+  dndAtivo: boolean
   dndInicio: string
   dndFim: string
   digest: 'IMEDIATO' | 'RESUMO'
 }
 
+const DND_PADRAO_INICIO = '22:00'
+const DND_PADRAO_FIM = '07:00'
+
 function dePreferencia(pref: NotificacaoPreferencia): Formulario {
+  const dndInicio = pref.dndInicio ?? ''
+  const dndFim = pref.dndFim ?? ''
   return {
     canais: {
       CRITICAL: { ...pref.canais.CRITICAL },
@@ -26,8 +32,9 @@ function dePreferencia(pref: NotificacaoPreferencia): Formulario {
       MEDIUM: { ...pref.canais.MEDIUM },
       LOW: { ...pref.canais.LOW },
     },
-    dndInicio: pref.dndInicio ?? '',
-    dndFim: pref.dndFim ?? '',
+    dndAtivo: Boolean(dndInicio || dndFim),
+    dndInicio,
+    dndFim,
     digest: pref.digest,
   }
 }
@@ -64,8 +71,8 @@ export function Notificacoes() {
       }
       return perfilApi.salvarNotificacoes(href, {
         canais: form.canais,
-        dndInicio: form.dndInicio || null,
-        dndFim: form.dndFim || null,
+        dndInicio: form.dndAtivo && form.dndInicio ? form.dndInicio : null,
+        dndFim: form.dndAtivo && form.dndFim ? form.dndFim : null,
         digest: form.digest,
       })
     },
@@ -94,6 +101,22 @@ export function Notificacoes() {
         },
       },
     })
+  }
+
+  function alternarDnd(ativo: boolean) {
+    if (!form) {
+      return
+    }
+    if (ativo) {
+      setForm({
+        ...form,
+        dndAtivo: true,
+        dndInicio: form.dndInicio || DND_PADRAO_INICIO,
+        dndFim: form.dndFim || DND_PADRAO_FIM,
+      })
+      return
+    }
+    setForm({ ...form, dndAtivo: false, dndInicio: '', dndFim: '' })
   }
 
   function onSubmit(event: FormEvent) {
@@ -128,7 +151,6 @@ export function Notificacoes() {
   return (
     <section className="page">
       <h1>Notificações</h1>
-      <p className="lead">Canais por prioridade, horário de não perturbe e modo de entrega. Sem push.</p>
       <PerfilNav />
       {toast && (
         <div className="banner success" role="status">
@@ -141,83 +163,104 @@ export function Notificacoes() {
         </div>
       )}
       <form className="settings-stack" onSubmit={onSubmit}>
+        <div className="notificacoes-grid">
         <section className="panel">
           <h2>Canais</h2>
-          <table>
-            <thead>
-              <tr>
-                <th>Prioridade</th>
-                <th>E-mail</th>
-                <th>No aplicativo</th>
-              </tr>
-            </thead>
-            <tbody>
-              {PRIORIDADES.map((prioridade) => (
-                <tr key={prioridade.id}>
-                  <th scope="row">{prioridade.label}</th>
-                  <td>
-                    <CanalSwitch
-                      rotulo={`E-mail para prioridade ${prioridade.id}`}
-                      ligado={form.canais[prioridade.id].email}
-                      bloqueado={prioridade.id === 'CRITICAL'}
-                      onToggle={() => alternar(prioridade.id, 'email')}
-                    />
-                  </td>
-                  <td>
-                    <CanalSwitch
-                      rotulo={`No aplicativo para prioridade ${prioridade.id}`}
-                      ligado={form.canais[prioridade.id].inApp}
-                      bloqueado={prioridade.id === 'CRITICAL'}
-                      onToggle={() => alternar(prioridade.id, 'inApp')}
-                    />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <p className="muted notificacoes-ajuda">Escolha onde receber cada nível de prioridade.</p>
+          <ul className="canais-lista">
+            {PRIORIDADES.map((prioridade) => (
+              <li key={prioridade.id} className="canais-item">
+                <div className="canais-meta">
+                  <span className="canais-titulo">{prioridade.label}</span>
+                  <span className="muted">{prioridade.descricao}</span>
+                </div>
+                <div className="canais-chips" role="group" aria-label={`Canais para ${prioridade.label}`}>
+                  <CanalChip
+                    rotulo={`E-mail para prioridade ${prioridade.id}`}
+                    texto="E-mail"
+                    ligado={form.canais[prioridade.id].email}
+                    bloqueado={prioridade.id === 'CRITICAL'}
+                    onToggle={() => alternar(prioridade.id, 'email')}
+                  />
+                  <CanalChip
+                    rotulo={`No aplicativo para prioridade ${prioridade.id}`}
+                    texto="No app"
+                    ligado={form.canais[prioridade.id].inApp}
+                    bloqueado={prioridade.id === 'CRITICAL'}
+                    onToggle={() => alternar(prioridade.id, 'inApp')}
+                  />
+                </div>
+              </li>
+            ))}
+          </ul>
         </section>
-        <section className="panel">
-          <h2>Não perturbe</h2>
-          <div className="grid">
-            <label>
-              Início
-              <input
-                type="time"
-                value={form.dndInicio}
-                onChange={(event) => setForm({ ...form, dndInicio: event.target.value })}
-              />
-            </label>
-            <label>
-              Fim
-              <input
-                type="time"
-                value={form.dndFim}
-                onChange={(event) => setForm({ ...form, dndFim: event.target.value })}
-              />
-            </label>
-          </div>
-        </section>
+
         <section className="panel">
           <h2>Entrega</h2>
-          <label className="checkbox-row">
+          <fieldset className="entrega-opcoes">
+            <legend className="sr-only">Modo de entrega</legend>
+            <label className="entrega-opcao">
+              <input
+                type="radio"
+                name="digest"
+                checked={form.digest === 'IMEDIATO'}
+                onChange={() => setForm({ ...form, digest: 'IMEDIATO' })}
+              />
+              <span className="entrega-opcao-texto">
+                <span className="entrega-opcao-titulo">Imediato</span>
+                <span className="muted">Recebe cada notificação assim que ela acontece.</span>
+              </span>
+            </label>
+            <label className="entrega-opcao">
+              <input
+                type="radio"
+                name="digest"
+                checked={form.digest === 'RESUMO'}
+                onChange={() => setForm({ ...form, digest: 'RESUMO' })}
+              />
+              <span className="entrega-opcao-texto">
+                <span className="entrega-opcao-titulo">Resumo</span>
+                <span className="muted">Agrupa avisos em um resumo periódico, em vez de um a um.</span>
+              </span>
+            </label>
+          </fieldset>
+
+          <label className="checkbox-row notificacoes-dnd-toggle">
             <input
-              type="radio"
-              name="digest"
-              checked={form.digest === 'IMEDIATO'}
-              onChange={() => setForm({ ...form, digest: 'IMEDIATO' })}
+              type="checkbox"
+              checked={form.dndAtivo}
+              onChange={(event) => alternarDnd(event.target.checked)}
             />
-            Imediato
+            Usar horário de não perturbe
           </label>
-          <label className="checkbox-row">
-            <input
-              type="radio"
-              name="digest"
-              checked={form.digest === 'RESUMO'}
-              onChange={() => setForm({ ...form, digest: 'RESUMO' })}
-            />
-            Resumo
-          </label>
+          <p className="muted notificacoes-ajuda">
+            {form.dndAtivo
+              ? 'Nesse intervalo, notificações não críticas ficam em silêncio.'
+              : 'Desmarcado: você pode ser notificado o dia todo.'}
+          </p>
+          {form.dndAtivo && (
+            <div className="grid">
+              <label>
+                Início
+                <input
+                  type="time"
+                  value={form.dndInicio}
+                  onChange={(event) => setForm({ ...form, dndInicio: event.target.value })}
+                />
+              </label>
+              <label>
+                Fim
+                <input
+                  type="time"
+                  value={form.dndFim}
+                  onChange={(event) => setForm({ ...form, dndFim: event.target.value })}
+                />
+              </label>
+            </div>
+          )}
         </section>
+        </div>
+
         {actions.can('update') && (
           <div className="form-footer">
             <button
@@ -241,25 +284,30 @@ export function Notificacoes() {
   )
 }
 
-function CanalSwitch({
+function CanalChip({
   rotulo,
+  texto,
   ligado,
   bloqueado,
   onToggle,
 }: {
   rotulo: string
+  texto: string
   ligado: boolean
   bloqueado: boolean
   onToggle: () => void
 }) {
   return (
-    <input
-      type="checkbox"
+    <button
+      type="button"
       role="switch"
       aria-label={rotulo}
-      checked={ligado}
+      aria-checked={ligado}
+      className={ligado ? 'canal-chip is-on' : 'canal-chip'}
       disabled={bloqueado}
-      onChange={onToggle}
-    />
+      onClick={onToggle}
+    >
+      {texto}
+    </button>
   )
 }

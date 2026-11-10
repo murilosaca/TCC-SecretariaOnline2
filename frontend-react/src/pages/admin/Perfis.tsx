@@ -55,7 +55,17 @@ export function Perfis() {
           }}
         >
           <label htmlFor="perfil-nome">Novo perfil</label>
-          <input id="perfil-nome" value={nome} onChange={(event) => setNome(event.target.value)} />
+          <input
+            id="perfil-nome"
+            value={nome}
+            onChange={(event) => setNome(event.target.value)}
+            placeholder="ex.: membro_caaf"
+            aria-describedby="perfil-nome-ajuda"
+          />
+          <p id="perfil-nome-ajuda" className="muted">
+            Perfis novos usam nome técnico em minúsculas com underline (ex.: caaf, membro_caaf). A descrição pode ser
+            livre. Perfis de sistema (ALUNO, PROFESSOR…) já vêm prontos e não se criam por aqui.
+          </p>
           <label htmlFor="perfil-desc">Descrição</label>
           <input id="perfil-desc" value={descricao} onChange={(event) => setDescricao(event.target.value)} />
           <button type="submit">Novo</button>

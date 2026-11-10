@@ -3,15 +3,12 @@ import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-do
 import { ApiError } from '../../api/client'
 import { useAuth } from '../../auth/AuthContext'
 import { destinoPosLogin } from '../../lib/destinoPosLogin'
-import { normalizarProtocolo, protocoloValido } from '../../lib/protocoloPublico'
 
 export function Login() {
   const { login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [params] = useSearchParams()
-  const [protocolo, setProtocolo] = useState('')
-  const [erroProtocolo, setErroProtocolo] = useState<string | null>(null)
   const senhaRef = useRef<HTMLInputElement>(null)
   const [identificador, setIdentificador] = useState('')
   const [senha, setSenha] = useState('')
@@ -68,15 +65,14 @@ export function Login() {
   }
 
   return (
-    <section className="page">
+    <section className="page auth-page">
       <h1>Entrar</h1>
-      <p className="lead">Acesso ao Secretaria Online 2 (RF-F0-001).</p>
       {aviso && (
         <div className={`banner ${avisoTipo}`} role="status" aria-live="polite">
           {aviso}
         </div>
       )}
-      <form className="panel auth-form" onSubmit={onSubmit} noValidate>
+      <form className="auth-form" onSubmit={onSubmit} noValidate>
         <label>
           E-mail ou GRR
           <input
@@ -115,50 +111,14 @@ export function Login() {
           </span>
           {erroCampo.senha && <span className="field-error">{erroCampo.senha}</span>}
         </label>
-        <p>
-          <Link to="/recuperar-senha">Esqueci minha senha</Link>
-        </p>
-        <button type="submit" disabled={enviando}>
+        <button type="submit" className="auth-submit" disabled={enviando}>
           {enviando ? 'Entrando...' : 'Entrar'}
         </button>
       </form>
-      <form
-        className="panel auth-form"
-        onSubmit={(event) => {
-          event.preventDefault()
-          const valor = normalizarProtocolo(protocolo)
-          if (!protocoloValido(valor)) {
-            setErroProtocolo('Informe um protocolo no formato PROT-AAAA-NNNNN.')
-            return
-          }
-          setErroProtocolo(null)
-          navigate(`/publico/verificar-protocolo/${valor}`)
-        }}
-      >
-        <label>
-          Verificar protocolo
-          <input
-            name="protocolo"
-            placeholder="PROT-2026-00001"
-            value={protocolo}
-            onChange={(event) => setProtocolo(event.target.value)}
-            aria-invalid={Boolean(erroProtocolo)}
-          />
-          {erroProtocolo && <span className="field-error">{erroProtocolo}</span>}
-        </label>
-        <button type="submit">Consultar protocolo</button>
-        <p className="muted">
-          Em desenvolvimento, abra uma declaração simples em /solicitacoes/nova para obter um número
-          PROT-AAAA-NNNNN. Certificado digital: use o hash do PDF em /publico/verificar-certificado/:hash.
-        </p>
-      </form>
-      <p className="muted auth-links">
+      <nav className="auth-secondary" aria-label="Ações secundárias">
+        <Link to="/recuperar-senha">Esqueci minha senha</Link>
         <Link to="/contato">Contato</Link>
-        {' · '}
-        <Link to="/publico/verificar-protocolo">Verificar protocolo</Link>
-        {' · '}
-        <Link to="/publico/verificar-certificado/demo">Verificar certificado</Link>
-      </p>
+      </nav>
     </section>
   )
 }

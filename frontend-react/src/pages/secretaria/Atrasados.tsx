@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { ApiError } from '../../api/client'
 import { solicitacoesApi } from '../../api/solicitacoes'
 import { useActions } from '../../hooks/useActions'
+import { rotuloCodigo } from '../../lib/rotulos'
 import type { Solicitacao } from '../../models/solicitacao'
 
 export function Atrasados() {
@@ -147,14 +148,14 @@ function Linha({ item }: { item: Solicitacao }) {
       <td>{item.protocolo}</td>
       <td>{item.solicitanteNome || '—'}</td>
       <td>{item.tipoNome}</td>
-      <td>{item.estado}</td>
+      <td>{rotuloCodigo(item.estado)}</td>
       <td>{item.deliberadorNome || '—'}</td>
       <td className="sla-danger">
         Atrasado{item.diasAtraso != null ? ` (${item.diasAtraso}d)` : ''}
       </td>
       <td className="actions">
         {actions.can('deliberar') && (
-          <Link to={`/solicitacoes/${item.id}/deliberar`} className="ghost-link">
+          <Link to={`/solicitacoes/${item.id}/deliberar`} className="button-link ghost">
             Deliberar
           </Link>
         )}

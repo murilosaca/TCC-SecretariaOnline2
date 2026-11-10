@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { solicitacoesApi } from '../../api/solicitacoes'
 import { useActions } from '../../hooks/useActions'
+import { rotuloCodigo } from '../../lib/rotulos'
 import type { Solicitacao } from '../../models/solicitacao'
 
 export function Solicitacoes() {
@@ -30,7 +31,10 @@ export function Solicitacoes() {
       <header className="page-head">
         <div>
           <h1>Minhas solicitações</h1>
-          <p className="muted">Acompanhe o andamento e o prazo de cada pedido (RF-F1-005-a).</p>
+          <p className="muted">
+            Acompanhe os pedidos abertos junto à secretaria: situação, prazo e SLA de cada
+            solicitação.
+          </p>
         </div>
         {actions.can('novaSolicitacao') && (
           <Link to="/solicitacoes/nova" className="button-link">
@@ -79,10 +83,7 @@ export function Solicitacoes() {
           Carregando solicitações…
         </p>
       )}
-      {lista.data && lista.data.content.length === 0 && (
-        <p className="empty">Nenhuma solicitação encontrada.</p>
-      )}
-      {lista.data && lista.data.content.length > 0 && (
+      {lista.data && (
         <table>
           <thead>
             <tr>
@@ -95,9 +96,15 @@ export function Solicitacoes() {
             </tr>
           </thead>
           <tbody>
-            {lista.data.content.map((item) => (
-              <Linha key={item.id} item={item} />
-            ))}
+            {lista.data.content.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="tabela-vazio" role="status">
+                  Nenhuma solicitação encontrada.
+                </td>
+              </tr>
+            ) : (
+              lista.data.content.map((item) => <Linha key={item.id} item={item} />)
+            )}
           </tbody>
         </table>
       )}
@@ -113,18 +120,18 @@ function Linha({ item }: { item: Solicitacao }) {
       <td>{item.protocolo}</td>
       <td>{item.tipoNome}</td>
       <td>
-        <span className={`badge estado-${item.estado.toLowerCase()}`}>{item.estado}</span>
+        <span className={`badge estado-${item.estado.toLowerCase()}`}>{rotuloCodigo(item.estado)}</span>
       </td>
       <td className={item.prazoVencido ? 'sla-danger' : undefined}>{prazo}</td>
       <td className={item.sla === 'ATRASADO' ? 'sla-danger' : undefined}>{item.sla}</td>
       <td className="actions">
         {actions.can('self') && (
-          <Link to={`/solicitacoes/${item.id}`} className="ghost-link">
+          <Link to={`/solicitacoes/${item.id}`} className="button-link ghost">
             Abrir
           </Link>
         )}
         {actions.can('deliberar') && (
-          <Link to={`/solicitacoes/${item.id}/deliberar`} className="ghost-link">
+          <Link to={`/solicitacoes/${item.id}/deliberar`} className="button-link ghost">
             Deliberar
           </Link>
         )}

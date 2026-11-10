@@ -27,7 +27,7 @@ class SolicitacoesDashboardQueryAdapter(
             .content
             .map { toResumo(it, agora) }
         val pendencias = solicitacaoRepository
-            .findMinhas(solicitanteId, ESTADO_PENDENCIA, null, null, PageRequest.of(0, 3, recente))
+            .findMinhas(solicitanteId, ESTADO_PENDENCIA, null, null, PageRequest.of(0, PENDENCIAS_LIMITE, recente))
             .content
             .map(::toPendencia)
         return SolicitacoesDashboard(contarAbertas(solicitanteId), pendencias, ultimas)
@@ -44,6 +44,8 @@ class SolicitacoesDashboardQueryAdapter(
     companion object {
         private val ESTADOS_ABERTOS = setOf("EM_ANALISE", "EM_AJUSTE")
         private const val ESTADO_PENDENCIA = "EM_AJUSTE"
+        /** Front mostra 3 + "Mostrar mais"; BFF envia folga para a expansão. */
+        private const val PENDENCIAS_LIMITE = 20
 
         private fun toResumo(solicitacao: Solicitacao, agora: OffsetDateTime): SolicitacaoResumo =
             SolicitacaoResumo(

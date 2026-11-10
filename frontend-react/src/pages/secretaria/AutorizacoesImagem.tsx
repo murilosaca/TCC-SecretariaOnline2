@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ApiError } from '../../api/client'
 import { solicitacoesApi } from '../../api/solicitacoes'
 import { useActions } from '../../hooks/useActions'
+import { rotuloCodigo } from '../../lib/rotulos'
 import type { Solicitacao } from '../../models/solicitacao'
 
 export function AutorizacoesImagem() {
@@ -151,7 +152,7 @@ function Linha({
       <td>{item.solicitanteGrr ?? '—'}</td>
       <td>{item.cursoSigla ?? item.cursoNome ?? '—'}</td>
       <td>{item.createdAt?.slice(0, 10)}</td>
-      <td>{item.estado}</td>
+      <td>{rotuloCodigo(item.estado)}</td>
     </tr>
   )
 }

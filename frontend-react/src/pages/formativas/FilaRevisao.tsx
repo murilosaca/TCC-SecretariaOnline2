@@ -67,7 +67,9 @@ export function FilaRevisao() {
               <th scope="col">Atividade</th>
               <th scope="col">Horas</th>
               <th scope="col">Estado</th>
-              <th scope="col">Ações</th>
+              <th scope="col" className="col-acoes">
+                Ações
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -91,17 +93,19 @@ function Linha({ item }: { item: Formativa }) {
       <td>
         <span className={`badge estado-${item.estado.toLowerCase()}`}>{rotuloEstadoFormativa(item.estado)}</span>
       </td>
-      <td className="actions">
-        {actions.can('revisar') && (
-          <Link to={`/formativas/${item.id}/revisar`} className="ghost-link">
-            Revisar
-          </Link>
-        )}
-        {!actions.can('revisar') && actions.can('self') && (
-          <Link to={`/formativas/${item.id}/revisar`} className="ghost-link">
-            Abrir
-          </Link>
-        )}
+      <td className="col-acoes">
+        <div className="actions actions-centered">
+          {actions.can('revisar') && (
+            <Link to={`/formativas/${item.id}/revisar`} className="button-link ghost">
+              Revisar
+            </Link>
+          )}
+          {!actions.can('revisar') && actions.can('self') && (
+            <Link to={`/formativas/${item.id}/revisar`} className="button-link ghost">
+              Abrir
+            </Link>
+          )}
+        </div>
       </td>
     </tr>
   )

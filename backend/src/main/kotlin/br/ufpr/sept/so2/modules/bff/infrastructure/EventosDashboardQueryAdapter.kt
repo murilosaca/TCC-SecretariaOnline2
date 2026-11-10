@@ -22,11 +22,12 @@ class EventosDashboardQueryAdapter(
         val doDia = eventoRepository.findEmAndamentoComJanelaNoDia(inicioDia, fimDia)
             .sortedBy { it.inicioEm }
             .map { toResumo(it, agora) }
+        // KPI "hoje" usa o total; a lista manda mais itens para o front pré-visualizar 3 + "Mostrar mais".
         return EventosDashboard(doDia.size, doDia.take(PROXIMOS_LIMITE))
     }
 
     companion object {
-        private const val PROXIMOS_LIMITE = 3
+        private const val PROXIMOS_LIMITE = 20
 
         private fun toResumo(evento: Evento, agora: OffsetDateTime): EventoResumo =
             EventoResumo(

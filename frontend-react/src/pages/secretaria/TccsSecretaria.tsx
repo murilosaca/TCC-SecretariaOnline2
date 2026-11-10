@@ -5,6 +5,7 @@ import { ApiError } from '../../api/client'
 import { tccsApi } from '../../api/tccs'
 import { UsuarioPicker } from '../../components/UsuarioPicker'
 import { useActions } from '../../hooks/useActions'
+import { rotuloEstadoTcc } from '../../lib/tcc'
 import type { Tcc } from '../../models/tcc'
 
 const vazio = {
@@ -278,7 +279,9 @@ export function TccsSecretaria() {
               <th scope="col">Defesa</th>
               <th scope="col">Situação</th>
               <th scope="col">Estado</th>
-              <th scope="col">Ações</th>
+              <th scope="col" className="col-acoes">
+                Ações
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -304,13 +307,15 @@ function Linha({ item, onEditar }: { item: Tcc; onEditar: (item: Tcc) => void })
       <td>
         <span className={`badge estado-${item.situacao.toLowerCase()}`}>{item.situacao}</span>
       </td>
-      <td>{item.estado}</td>
-      <td className="actions">
-        {actions.can('editar') && (
-          <button type="button" className="ghost" onClick={() => onEditar(item)}>
-            Editar
-          </button>
-        )}
+      <td>{rotuloEstadoTcc(item.estado)}</td>
+      <td className="col-acoes">
+        <div className="actions actions-centered">
+          {actions.can('editar') && (
+            <button type="button" className="ghost" onClick={() => onEditar(item)}>
+              Editar
+            </button>
+          )}
+        </div>
       </td>
     </tr>
   )

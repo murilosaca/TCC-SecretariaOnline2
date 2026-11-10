@@ -5,6 +5,7 @@ import { solicitacoesApi } from '../../api/solicitacoes'
 import { useAuth } from '../../auth/AuthContext'
 import { PainelDeliberacao } from '../../components/PainelDeliberacao'
 import { fieldsFromSchema } from '../../lib/formSchema'
+import { rotuloCodigo } from '../../lib/rotulos'
 
 export function DeliberarSolicitacao() {
   const { id = '' } = useParams()
@@ -38,6 +39,14 @@ export function DeliberarSolicitacao() {
 
   const item = detalhe.data
   const campos = fieldsFromSchema(item?.formSchema)
+  const camposPayload =
+    campos.length > 0
+      ? campos
+      : Object.keys(item?.payload ?? {}).map((name) => ({ name, title: name }))
+  const camposFormulario = [
+    ...camposPayload.filter((campo) => campo.name !== 'observacao'),
+    ...camposPayload.filter((campo) => campo.name === 'observacao'),
+  ]
   const forbidden = detalhe.isError && detalhe.error instanceof ApiError && detalhe.error.status === 403
   const tokenInvalido = detalhe.isError && detalhe.error instanceof ApiError && detalhe.error.status === 401
 
@@ -99,14 +108,8 @@ export function DeliberarSolicitacao() {
       {item && (
         <>
           <header className="page-head">
-            <div>
-              <h1>{item.protocolo}</h1>
-              <p className="muted">
-                {item.tipoNome}
-                {item.solicitanteNome ? ` · ${item.solicitanteNome}` : ''}
-              </p>
-            </div>
-            <span className={`badge estado-${item.estado.toLowerCase()}`}>{item.estado}</span>
+            <h1>{item.tipoNome}</h1>
+            <span className={`badge estado-${item.estado.toLowerCase()}`}>{rotuloCodigo(item.estado)}</span>
           </header>
 
           {transicionar.isError && (
@@ -117,14 +120,33 @@ export function DeliberarSolicitacao() {
             </div>
           )}
 
-          <div className="detalhe-grid">
-            <article className="panel">
-              <h2>Dados</h2>
-              <dl className="resumo">
-                {(campos.length > 0
-                  ? campos
-                  : Object.keys(item.payload).map((name) => ({ name, title: name }))
-                ).map((campo) => (
+          <article className="panel solicitacao-detalhes solicitacao-detalhes-deliberacao">
+            <h2>Detalhes</h2>
+            <dl className="resumo resumo-horizontal">
+              <div>
+                <dt>Solicitante</dt>
+                <dd>{item.solicitanteNome || '—'}</dd>
+              </div>
+              <div>
+                <dt>Aberta em</dt>
+                <dd>{new Date(item.createdAt).toLocaleString('pt-BR')}</dd>
+              </div>
+              <div>
+                <dt>Prazo</dt>
+                <dd className={item.prazoVencido ? 'sla-danger' : undefined}>
+                  {new Date(item.prazoEm).toLocaleString('pt-BR')}
+                </dd>
+              </div>
+              <div>
+                <dt>SLA</dt>
+                <dd className={item.sla === 'ATRASADO' ? 'sla-danger' : undefined}>
+                  {rotuloCodigo(item.sla)}
+                </dd>
+              </div>
+            </dl>
+            {camposFormulario.length > 0 && (
+              <dl className="resumo resumo-horizontal solicitacao-detalhes-formulario">
+                {camposFormulario.map((campo) => (
                   <div key={campo.name}>
                     <dt>{campo.title}</dt>
                     <dd>
@@ -135,36 +157,22 @@ export function DeliberarSolicitacao() {
                   </div>
                 ))}
               </dl>
-            </article>
-            <aside className="panel">
-              <h2>Metadados</h2>
-              <p>
-                <strong>Prazo:</strong>{' '}
-                <span className={item.prazoVencido ? 'sla-danger' : undefined}>
-                  {new Date(item.prazoEm).toLocaleString('pt-BR')}
-                </span>
-              </p>
-              <p>
-                <strong>SLA:</strong> {item.sla}
-              </p>
-              <p>
-                <strong>Aberta em:</strong> {new Date(item.createdAt).toLocaleString('pt-BR')}
-              </p>
-            </aside>
-          </div>
+            )}
+          </article>
 
-          <section className="panel">
-            <h2>Linha do tempo</h2>
+          <section className="panel solicitacao-timeline" aria-labelledby="timeline-titulo">
+            <h2 id="timeline-titulo">Linha do tempo</h2>
             {item.eventos.length === 0 && <p className="empty">Nenhum evento registrado.</p>}
             {item.eventos.length > 0 && (
               <ol className="timeline">
                 {item.eventos.map((evento) => (
                   <li key={evento.id}>
-                    <strong>{evento.tipo}</strong>
+                    <strong>{rotuloCodigo(evento.tipo)}</strong>
                     <span className="muted">
                       {' '}
-                      {evento.estadoDe ? `${evento.estadoDe} → ` : ''}
-                      {evento.estadoPara}
+                      {evento.estadoDe
+                        ? `${rotuloCodigo(evento.estadoDe)} → ${rotuloCodigo(evento.estadoPara)}`
+                        : rotuloCodigo(evento.estadoPara)}
                     </span>
                     <div className="muted">{new Date(evento.createdAt).toLocaleString('pt-BR')}</div>
                     {evento.parecer && <p>{evento.parecer}</p>}

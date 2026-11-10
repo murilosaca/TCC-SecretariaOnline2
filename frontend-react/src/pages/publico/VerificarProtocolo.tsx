@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { ApiError } from '../../api/client'
 import { publicoApi } from '../../api/publico'
 import { normalizarProtocolo, protocoloValido, truncarHash } from '../../lib/protocoloPublico'
+import { rotuloCodigo } from '../../lib/rotulos'
 
 export function VerificarProtocolo() {
   const { id } = useParams()
@@ -75,7 +76,7 @@ export function VerificarProtocolo() {
         </p>
         <p>
           <strong>Estado</strong>{' '}
-          <span className={`badge estado-${dados.estado.toLowerCase()}`}>{dados.estado}</span>
+          <span className={`badge estado-${dados.estado.toLowerCase()}`}>{rotuloCodigo(dados.estado)}</span>
         </p>
         <p>
           <strong>Hash</strong> <code>{truncarHash(dados.hashSha256)}</code>

@@ -299,7 +299,9 @@ class PerfilAcessoJpaAdapter(
     private fun nomeCustom(nome: String): String {
         val limpo = nome.trim()
         if (!NOME.matches(limpo)) {
-            throw DadoInvalidoException("Nome de perfil em snake_case.")
+            throw DadoInvalidoException(
+                "Nome inválido. Use só letras minúsculas, números e underline (_), sem espaços. Exemplos: caaf, membro_caaf.",
+            )
         }
         if (CatalogoPapeis.SISTEMA.contains(limpo.uppercase())) {
             throw ConflitoEstadoException("Nome reservado a perfil de sistema.")

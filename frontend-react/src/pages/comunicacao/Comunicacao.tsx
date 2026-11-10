@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ApiError } from '../../api/client'
 import { comunicacoesApi, type FiltroComunicacao } from '../../api/comunicacoes'
+import { useAuth } from '../../auth/AuthContext'
 import { useActions } from '../../hooks/useActions'
 import type { BadgesComunicacao, ComunicacaoItem, TipoComunicacao } from '../../models/comunicacao'
 import { MarkdownPreview } from './MarkdownPreview'
@@ -20,8 +21,40 @@ const ROTULO_TIPO: Record<TipoComunicacao, string> = {
   INBOX: 'Inbox',
 }
 
+function IconeTipo({ tipo }: { tipo: TipoComunicacao }) {
+  if (tipo === 'INSTITUCIONAL') {
+    return (
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+        <path d="M3 21h18" />
+        <path d="M5 21V7l7-4 7 4v14" />
+        <path d="M9 21v-6h6v6" />
+        <path d="M9 10h.01M15 10h.01M9 14h.01M15 14h.01" />
+      </svg>
+    )
+  }
+  if (tipo === 'TURMA') {
+    return (
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+        <circle cx="9" cy="7" r="4" />
+        <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+      </svg>
+    )
+  }
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+      <path d="M22 12H2" />
+      <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11Z" />
+      <path d="M6 16h.01M10 16h4" />
+    </svg>
+  )
+}
+
 export function Comunicacao() {
   const location = useLocation()
+  const { links } = useAuth()
+  const actions = useActions(links)
   const aviso = (location.state as { aviso?: string } | null)?.aviso
   const [aba, setAba] = useState('TODOS')
   const [lido, setLido] = useState('')
@@ -36,8 +69,20 @@ export function Comunicacao() {
   return (
     <section className="page">
       <header className="page-head">
-        <div>
-          <h1>Comunicação</h1>
+        <div className="page-head-lead">
+          <div className="page-head-title-row">
+            <h1>Comunicação</h1>
+            {actions.can('publicar-comunicado') && (
+              <div className="dashboard-atalhos">
+                <Link
+                  to={actions.href('publicar-comunicado') ?? '/comunicacao/publicar'}
+                  className="button-link"
+                >
+                  Publicar comunicado
+                </Link>
+              </div>
+            )}
+          </div>
           <p className="muted">Avisos institucionais, mensagens da turma e inbox de ações.</p>
         </div>
       </header>
@@ -63,7 +108,7 @@ export function Comunicacao() {
         ))}
       </div>
 
-      <div className="grid">
+      <div className="filter-bar filter-bar-compact">
         <label>
           Lido
           <select value={lido} onChange={(event) => setLido(event.target.value)}>
@@ -98,16 +143,15 @@ export function Comunicacao() {
           </button>
         </div>
       )}
-      {lista.data && lista.data.content.length === 0 && (
-        <p className="empty" role="status">
-          Nenhuma comunicação encontrada.
-        </p>
-      )}
-      {lista.data && lista.data.content.length > 0 && (
+      {lista.data && (
         <ul className="comunicacao-lista">
-          {lista.data.content.map((item) => (
-            <Linha key={item.id} item={item} />
-          ))}
+          {lista.data.content.length === 0 ? (
+            <li className="comunicacao-item tabela-vazio" role="status">
+              Nenhuma comunicação encontrada.
+            </li>
+          ) : (
+            lista.data.content.map((item) => <Linha key={item.id} item={item} />)
+          )}
         </ul>
       )}
     </section>
@@ -151,7 +195,7 @@ function Linha({ item }: { item: ComunicacaoItem }) {
     <li className={lidaLocal ? 'comunicacao-item' : 'comunicacao-item nao-lida'}>
       <button type="button" className="comunicacao-row" aria-expanded={aberto} onClick={() => void abrir()}>
         <span className="tipo-icone" aria-hidden="true">
-          {ROTULO_TIPO[item.tipo].slice(0, 1)}
+          <IconeTipo tipo={item.tipo} />
         </span>
         <span className="sr-only">{ROTULO_TIPO[item.tipo]}</span>
         <span className="comunicacao-titulo">{item.titulo}</span>

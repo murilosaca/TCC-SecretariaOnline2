@@ -1,22 +1,22 @@
-import { FormEvent, useEffect, useState } from 'react'
+import { FormEvent, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { ApiError } from '../../api/client'
 import { comunicacoesApi } from '../../api/comunicacoes'
 import type { PrioridadeComunicacao } from '../../models/comunicacao'
 import { MarkdownPreview } from './MarkdownPreview'
+import { MarkdownToolbar } from './MarkdownToolbar'
 
 const PRIORIDADES: PrioridadeComunicacao[] = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']
 
 export function PublicarComunicado() {
   const navigate = useNavigate()
+  const corpoRef = useRef<HTMLTextAreaElement>(null)
   const [titulo, setTitulo] = useState('')
   const [corpo, setCorpo] = useState('')
   const [audiencia, setAudiencia] = useState('')
   const [prioridade, setPrioridade] = useState<PrioridadeComunicacao>('MEDIUM')
   const [expiraEm, setExpiraEm] = useState('')
-  const [painel, setPainel] = useState<'editor' | 'preview'>('editor')
-  const [estreito, setEstreito] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
 
   const audiencias = useQuery({
@@ -32,17 +32,6 @@ export function PublicarComunicado() {
       setErro(error instanceof ApiError ? error.message : 'Não foi possível publicar o comunicado.')
     },
   })
-
-  useEffect(() => {
-    if (typeof window.matchMedia !== 'function') {
-      return
-    }
-    const consulta = window.matchMedia('(max-width: 767px)')
-    const aplicar = () => setEstreito(consulta.matches)
-    aplicar()
-    consulta.addEventListener('change', aplicar)
-    return () => consulta.removeEventListener('change', aplicar)
-  }, [])
 
   const podePublicar = titulo.trim().length > 0 && corpo.trim().length > 0
 
@@ -66,15 +55,15 @@ export function PublicarComunicado() {
     })
   }
 
-  const mostraEditor = !estreito || painel === 'editor'
-  const mostraPreview = !estreito || painel === 'preview'
-
   return (
     <section className="page">
       <header className="page-head">
         <div>
           <h1>Publicar comunicado</h1>
-          <p className="muted">Markdown para uma turma ou um curso sob sua responsabilidade.</p>
+          <p className="muted">
+            Redija um aviso para a turma ou o curso sob sua responsabilidade. O preview abaixo mostra como a
+            mensagem aparecerá no hub de comunicação.
+          </p>
         </div>
       </header>
 
@@ -110,30 +99,31 @@ export function PublicarComunicado() {
           <input value={titulo} onChange={(event) => setTitulo(event.target.value)} maxLength={200} />
         </label>
 
-        {estreito && (
-          <div className="tabs" role="tablist" aria-label="Editor e pré-visualização">
-            <button type="button" role="tab" aria-selected={painel === 'editor'} onClick={() => setPainel('editor')}>
-              Editor
-            </button>
-            <button type="button" role="tab" aria-selected={painel === 'preview'} onClick={() => setPainel('preview')}>
-              Preview
-            </button>
-          </div>
-        )}
-
-        <div className="editor-split">
-          {mostraEditor && (
-            <label>
-              Corpo
-              <textarea
-                className="comunicacao-editor"
-                value={corpo}
-                onChange={(event) => setCorpo(event.target.value)}
-                maxLength={20000}
-              />
-            </label>
-          )}
-          {mostraPreview && <MarkdownPreview texto={corpo} />}
+        <div className="comunicacao-editor-wrap">
+          <span className="comunicacao-editor-label" id="corpo-label">
+            Corpo
+          </span>
+          <p className="muted caption" id="corpo-ajuda">
+            O corpo usa Markdown: títulos, negrito, listas e links. Use a barra de formatação ou consulte o{' '}
+            <a href="https://www.markdownguide.org/basic-syntax/" target="_blank" rel="noreferrer">
+              guia básico de Markdown
+            </a>
+            .
+          </p>
+          <MarkdownToolbar value={corpo} onChange={setCorpo} textareaRef={corpoRef} />
+          <textarea
+            ref={corpoRef}
+            className="comunicacao-editor"
+            aria-labelledby="corpo-label"
+            aria-describedby="corpo-ajuda"
+            value={corpo}
+            onChange={(event) => setCorpo(event.target.value)}
+            maxLength={20000}
+          />
+          <span className="comunicacao-editor-label" id="preview-label">
+            Pré-visualização
+          </span>
+          <MarkdownPreview texto={corpo} />
         </div>
 
         <div className="grid">
@@ -167,6 +157,9 @@ export function PublicarComunicado() {
         <button type="submit" disabled={!podePublicar || publicar.isPending}>
           {publicar.isPending ? 'Publicando…' : 'Publicar'}
         </button>
+        <p className="muted caption">
+          A audiência define o tipo no hub: turma vira comunicado de Turma; curso vira Institucional.
+        </p>
       </form>
     </section>
   )

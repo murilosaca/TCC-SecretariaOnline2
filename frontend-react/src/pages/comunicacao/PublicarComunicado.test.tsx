@@ -47,7 +47,7 @@ describe('PublicarComunicado', () => {
     expect(botao.hasAttribute('disabled')).toBe(false)
   })
 
-  it('não oferece audiência de broadcast', async () => {
+  it('não lista audiência de broadcast', async () => {
     renderPage()
     await screen.findByRole('option', { name: 'Turma ADS 2026/1' })
     expect(screen.getByRole('option', { name: 'Curso TADS' })).toBeTruthy()
@@ -58,11 +58,23 @@ describe('PublicarComunicado', () => {
   it('atualiza a pré-visualização de Markdown', async () => {
     renderPage()
     fireEvent.change(await screen.findByLabelText('Corpo'), {
-      target: { value: '## Título\n**negrito**' },
+      target: { value: '## Título\n**negrito**\n*itálico*\n- item' },
     })
     expect(screen.getByRole('heading', { level: 2, name: 'Título' })).toBeTruthy()
-    expect(screen.getByText('negrito').tagName).toBe('STRONG')
+    expect(screen.getByText('negrito').closest('strong')).toBeTruthy()
+    expect(screen.getByText('itálico').closest('em')).toBeTruthy()
+    expect(screen.getByText('item').closest('ul')).toBeTruthy()
     const preview = screen.getByRole('region', { name: 'Pré-visualização' })
     expect(preview.querySelector('textarea')).toBeNull()
+  })
+
+  it('toolbar insere Markdown no corpo', async () => {
+    renderPage()
+    const corpo = (await screen.findByLabelText('Corpo')) as HTMLTextAreaElement
+    fireEvent.change(corpo, { target: { value: 'aviso' } })
+    corpo.setSelectionRange(0, 5)
+    fireEvent.click(screen.getByRole('button', { name: 'Negrito' }))
+    expect(corpo.value).toBe('**aviso**')
+    expect(screen.getByText('aviso').closest('strong')).toBeTruthy()
   })
 })

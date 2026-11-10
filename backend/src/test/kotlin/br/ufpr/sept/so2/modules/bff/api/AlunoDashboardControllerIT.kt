@@ -139,7 +139,11 @@ class AlunoDashboardControllerIT {
             .andExpect(jsonPath("$.pendenciasFormativas").isArray)
             .andExpect(jsonPath("$.ultimasSolicitacoes[0].protocolo", startsWith("PROT-")))
             .andExpect(jsonPath("$._links.self").value("/bff/dashboard/aluno"))
+            .andExpect(jsonPath("$._links.solicitacoes").value("/solicitacoes"))
             .andExpect(jsonPath("$._links.novaSolicitacao").value("/solicitacoes/nova"))
+            .andExpect(jsonPath("$._links.eventos").value("/eventos"))
+            .andExpect(jsonPath("$._links.formativas").value("/formativas"))
+            .andExpect(jsonPath("$._links.certificados").value("/certificados"))
             .andExpect(jsonPath("$._links.novaFormativa").doesNotExist())
     }
 

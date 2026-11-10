@@ -265,7 +265,9 @@ function Tabela({
           <th scope="col">Horas</th>
           <th scope="col">Submissão</th>
           <th scope="col">Responsável</th>
-          <th scope="col">Ações</th>
+          <th scope="col" className="col-acoes">
+            Ações
+          </th>
         </tr>
       </thead>
       <tbody>
@@ -326,22 +328,24 @@ function Linha({
         {item.comigo && <span className="badge comigo">Comigo</span>}
         {!item.noPool && !item.comigo && (item.responsavelRotulo ?? '—')}
       </td>
-      <td className="actions">
-        {actions.can('revisar') && (
-          <Link to={`/formativas/${item.id}/revisar`} className="ghost-link">
-            Revisar
-          </Link>
-        )}
-        {podeAtribuir && item.noPool && (
-          <button type="button" className="ghost" onClick={() => onAtribuirAMim(item.id)} disabled={pending}>
-            Atribuir a mim
-          </button>
-        )}
-        {podeAtribuir && (
-          <button type="button" className="ghost" onClick={() => onAbrirQuadro([item.id])} disabled={pending}>
-            Atribuir…
-          </button>
-        )}
+      <td className="col-acoes">
+        <div className="actions actions-centered">
+          {actions.can('revisar') && (
+            <Link to={`/formativas/${item.id}/revisar`} className="button-link ghost">
+              Revisar
+            </Link>
+          )}
+          {podeAtribuir && item.noPool && (
+            <button type="button" className="ghost" onClick={() => onAtribuirAMim(item.id)} disabled={pending}>
+              Atribuir a mim
+            </button>
+          )}
+          {podeAtribuir && (
+            <button type="button" className="ghost" onClick={() => onAbrirQuadro([item.id])} disabled={pending}>
+              Atribuir…
+            </button>
+          )}
+        </div>
       </td>
     </tr>
   )

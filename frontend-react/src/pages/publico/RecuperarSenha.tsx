@@ -41,21 +41,23 @@ export function RecuperarSenha() {
   }
 
   return (
-    <section className="page">
+    <section className="page auth-page">
       <p>
         <Link to="/login" className="ghost-link">
           ← Voltar
         </Link>
       </p>
       <h1>Recuperar senha</h1>
-      <p className="lead">Informe o e-mail cadastrado. A resposta é a mesma exista ou não a conta.</p>
+      <p className="lead">
+        Informe o e-mail cadastrado. Enviaremos um link se a conta existir.
+      </p>
       {aviso && (
         <div className={`banner ${avisoTipo}`} role="status" aria-live="polite">
           {aviso}
         </div>
       )}
       {!sucesso && (
-        <form className="panel auth-form" onSubmit={onSubmit} noValidate>
+        <form className="auth-form" onSubmit={onSubmit} noValidate>
           <label>
             E-mail
             <input
@@ -71,7 +73,7 @@ export function RecuperarSenha() {
             />
             {erroCampo && <span className="field-error">{erroCampo}</span>}
           </label>
-          <button type="submit" disabled={enviando}>
+          <button type="submit" className="auth-submit" disabled={enviando}>
             {enviando ? 'Enviando...' : 'Enviar link'}
           </button>
         </form>

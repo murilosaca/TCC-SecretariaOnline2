@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { Link } from 'react-router-dom'
 import { academicoApi } from '../../api/academico'
 
 export function Contato() {
@@ -8,9 +9,14 @@ export function Contato() {
   })
 
   return (
-    <section className="page">
-      <h1>Contato da secretaria</h1>
-      <p className="lead">Informações públicas, sem autenticação (RF-F0-004).</p>
+    <section className="page auth-page">
+      <p>
+        <Link to="/login" className="ghost-link">
+          ← Voltar
+        </Link>
+      </p>
+      <h1>Contato</h1>
+      <p className="lead">Secretaria Acadêmica — SEPT/UFPR</p>
       {isLoading && <p className="muted">Carregando…</p>}
       {isError && (
         <div className="banner danger" role="alert">
@@ -18,15 +24,30 @@ export function Contato() {
         </div>
       )}
       {data && (
-        <article className="panel">
-          <h2>{data.nome}</h2>
-          <p>{data.endereco}</p>
-          <p>Telefone: {data.telefone}</p>
-          <p>
-            E-mail: <a href={`mailto:${data.email}`}>{data.email}</a>
-          </p>
-          <p>Horário: {data.horario}</p>
-        </article>
+        <dl className="auth-contact">
+          <div>
+            <dt>Unidade</dt>
+            <dd>{data.nome}</dd>
+          </div>
+          <div>
+            <dt>Endereço</dt>
+            <dd>{data.endereco}</dd>
+          </div>
+          <div>
+            <dt>Telefone</dt>
+            <dd>{data.telefone}</dd>
+          </div>
+          <div>
+            <dt>E-mail</dt>
+            <dd>
+              <a href={`mailto:${data.email}`}>{data.email}</a>
+            </dd>
+          </div>
+          <div>
+            <dt>Horário</dt>
+            <dd>{data.horario}</dd>
+          </div>
+        </dl>
       )}
     </section>
   )

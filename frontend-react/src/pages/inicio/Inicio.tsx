@@ -1,3 +1,4 @@
+import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { ApiError } from '../../api/client'
@@ -6,6 +7,7 @@ import { useAuth } from '../../auth/AuthContext'
 import { useActions } from '../../hooks/useActions'
 import { blocoKpi, blocoLista } from '../../lib/dashboardBlocks'
 import { painelDe } from '../../lib/dashboardPortal'
+import { rotuloCodigo } from '../../lib/rotulos'
 import { InicioSecretaria } from './InicioSecretaria'
 import type {
   FilaSolicitacaoProfessor,
@@ -105,31 +107,33 @@ function InicioAluno() {
 
       {dashboard.data && (
         <>
-          <KpiRowAluno loading={dashboard.isLoading} kpis={dashboard.data.kpis} />
+          <KpiRowAluno loading={dashboard.isLoading} kpis={dashboard.data.kpis} actions={actions} />
 
           <div className="dashboard-main">
-            <div className="dashboard-col">
-              <PendenciasBloco
-                loading={dashboard.isLoading}
-                itens={dashboard.data.pendencias}
-                onRetry={() => dashboard.refetch()}
-              />
-              <FormativasPendenciasBloco
-                loading={dashboard.isLoading}
-                itens={dashboard.data.pendenciasFormativas}
-                onRetry={() => dashboard.refetch()}
-              />
-              <SolicitacoesBloco
-                loading={dashboard.isLoading}
-                itens={dashboard.data.ultimasSolicitacoes}
-                onRetry={() => dashboard.refetch()}
-              />
+            <div className="dashboard-split">
+              <div className="dashboard-col">
+                <PendenciasBloco
+                  loading={dashboard.isLoading}
+                  itens={dashboard.data.pendencias}
+                  onRetry={() => dashboard.refetch()}
+                />
+                <FormativasPendenciasBloco
+                  loading={dashboard.isLoading}
+                  itens={dashboard.data.pendenciasFormativas}
+                  onRetry={() => dashboard.refetch()}
+                />
+              </div>
               <EventosBloco
                 loading={dashboard.isLoading}
                 itens={dashboard.data.proximosEventos}
                 onRetry={() => dashboard.refetch()}
               />
             </div>
+            <SolicitacoesBloco
+              loading={dashboard.isLoading}
+              itens={dashboard.data.ultimasSolicitacoes}
+              onRetry={() => dashboard.refetch()}
+            />
           </div>
         </>
       )}
@@ -148,31 +152,32 @@ function InicioProfessor() {
   return (
     <section className="page dashboard" aria-labelledby="dashboard-titulo">
       <header className="page-head">
-        <div>
-          {dashboard.isLoading ? (
-            <div className="skeleton skeleton-title" aria-hidden="true" />
-          ) : dashboard.data ? (
-            <>
+        <div className="page-head-lead">
+          <div className="page-head-title-row">
+            {dashboard.isLoading ? (
+              <div className="skeleton skeleton-title" aria-hidden="true" />
+            ) : dashboard.data ? (
               <h1 id="dashboard-titulo">Olá, {dashboard.data.saudacao.nome}</h1>
-              <p className="muted caption">Portal do professor · SEPT/UFPR</p>
-            </>
-          ) : (
-            <>
+            ) : (
               <h1 id="dashboard-titulo">Início</h1>
-              <p className="muted caption">Secretaria Online 2 · SEPT/UFPR</p>
-            </>
-          )}
-        </div>
-        <div className="page-head">
-          {actions.can('deliberar') && (
-            <Link to={actions.href('deliberar') ?? '/solicitacoes?to=me'} className="button-link">
-              Deliberar
-            </Link>
-          )}
-          {actions.can('eventos') && (
-            <Link to={actions.href('eventos') ?? '/professor/eventos'} className="ghost-link">
-              Meus eventos
-            </Link>
+            )}
+            <div className="dashboard-atalhos">
+              {actions.can('deliberar') && (
+                <Link to={actions.href('deliberar') ?? '/solicitacoes?to=me'} className="button-link">
+                  Deliberar
+                </Link>
+              )}
+              {actions.can('eventos') && (
+                <Link to={actions.href('eventos') ?? '/professor/eventos'} className="button-link">
+                  Meus eventos
+                </Link>
+              )}
+            </div>
+          </div>
+          {dashboard.isLoading ? null : dashboard.data ? (
+            <p className="muted caption">Portal do professor · SEPT/UFPR</p>
+          ) : (
+            <p className="muted caption">Secretaria Online 2 · SEPT/UFPR</p>
           )}
         </div>
       </header>
@@ -217,31 +222,39 @@ function InicioProfessor() {
                   onRetry={() => dashboard.refetch()}
                 />
               )}
-              {actions.can('estagios') && (
-                <FilaItensBloco
-                  titulo="Estágios sob responsabilidade"
-                  tituloId="estagios-professor-titulo"
-                  loading={dashboard.isLoading}
-                  itens={dashboard.data.estagiosPendentes}
-                  empty="Nenhum estágio pendente de parecer."
-                  errorMsg="Não foi possível carregar os estágios no momento."
-                  verTodosHref={actions.href('estagios')}
-                  onRetry={() => dashboard.refetch()}
-                />
-              )}
-              {actions.can('tccs') && (
-                <FilaItensBloco
-                  titulo="TCCs sob responsabilidade"
-                  tituloId="tccs-professor-titulo"
-                  loading={dashboard.isLoading}
-                  itens={dashboard.data.tccsPendentes}
-                  empty="Nenhum TCC pendente de avaliação."
-                  errorMsg="Não foi possível carregar os TCCs no momento."
-                  verTodosHref={actions.href('tccs')}
-                  onRetry={() => dashboard.refetch()}
-                />
-              )}
             </div>
+            {(actions.can('estagios') || actions.can('tccs')) && (
+              <div
+                className={
+                  actions.can('estagios') && actions.can('tccs') ? 'dashboard-split' : undefined
+                }
+              >
+                {actions.can('estagios') && (
+                  <FilaItensBloco
+                    titulo="Estágios sob responsabilidade"
+                    tituloId="estagios-professor-titulo"
+                    loading={dashboard.isLoading}
+                    itens={dashboard.data.estagiosPendentes}
+                    empty="Nenhum estágio pendente de parecer."
+                    errorMsg="Não foi possível carregar os estágios no momento."
+                    verTodosHref={actions.href('estagios')}
+                    onRetry={() => dashboard.refetch()}
+                  />
+                )}
+                {actions.can('tccs') && (
+                  <FilaItensBloco
+                    titulo="TCCs sob responsabilidade"
+                    tituloId="tccs-professor-titulo"
+                    loading={dashboard.isLoading}
+                    itens={dashboard.data.tccsPendentes}
+                    empty="Nenhum TCC pendente de avaliação."
+                    errorMsg="Não foi possível carregar os TCCs no momento."
+                    verTodosHref={actions.href('tccs')}
+                    onRetry={() => dashboard.refetch()}
+                  />
+                )}
+              </div>
+            )}
           </div>
         </>
       )}
@@ -249,59 +262,13 @@ function InicioProfessor() {
   )
 }
 
-function KpiRowAluno({ loading, kpis }: { loading: boolean; kpis?: KpisDashboard }) {
-  if (loading) {
-    return (
-      <div className="kpi-row" aria-busy="true">
-        <div className="skeleton skeleton-kpi" />
-        <div className="skeleton skeleton-kpi" />
-        <div className="skeleton skeleton-kpi" />
-        <div className="skeleton skeleton-kpi" />
-      </div>
-    )
-  }
-  if (!kpis) {
-    return null
-  }
-  const horas = kpis.horasFormativas
-  return (
-    <div className="kpi-row">
-      <article className="kpi-card">
-        <p className="kpi-label">Horas formativas</p>
-        {horas ? (
-          <>
-            <p className="kpi-value">
-              {horas.validadas} / {horas.requeridas} h
-            </p>
-            <progress
-              className="kpi-progress"
-              max={horas.requeridas}
-              value={horas.validadas}
-              aria-label="Progresso de horas formativas"
-            />
-          </>
-        ) : (
-          <p className="muted">Indisponível neste momento.</p>
-        )}
-      </article>
-      <KpiNumerico
-        label="Solicitações"
-        valor={kpis.solicitacoesAbertas}
-        estado={blocoKpi(kpis.solicitacoesAbertas)}
-      />
-      <KpiNumerico label="Eventos hoje" valor={kpis.eventosHoje} estado={blocoKpi(kpis.eventosHoje)} />
-      <KpiNumerico label="Certificados" valor={kpis.certificados} estado={blocoKpi(kpis.certificados)} />
-    </div>
-  )
-}
-
-function KpiRowProfessor({
+function KpiRowAluno({
   loading,
   kpis,
   actions,
 }: {
   loading: boolean
-  kpis?: KpisProfessorDashboard
+  kpis?: KpisDashboard
   actions: ReturnType<typeof useActions>
 }) {
   if (loading) {
@@ -317,22 +284,106 @@ function KpiRowProfessor({
   if (!kpis) {
     return null
   }
-  const sla = kpis.slaUrgentes
+  const horas = kpis.horasFormativas
+  const hrefFormativas = actions.href('formativas')
   return (
     <div className="kpi-row">
+      <article className="kpi-card">
+        <p className="kpi-label">Horas formativas</p>
+        {horas ? (
+          <>
+            <p className="kpi-value">
+              {horas.validadas} / {horas.requeridas} h
+            </p>
+            <progress
+              className="kpi-progress"
+              max={horas.requeridas}
+              value={horas.validadas}
+              aria-label="Progresso de horas formativas"
+            />
+            {hrefFormativas ? (
+              <Link className="kpi-ver-link" to={hrefFormativas} aria-label="Ver formativas">
+                Ver…
+              </Link>
+            ) : null}
+          </>
+        ) : (
+          <p className="muted">Indisponível neste momento.</p>
+        )}
+      </article>
+      <KpiNumerico
+        label="Solicitações"
+        valor={kpis.solicitacoesAbertas}
+        estado={blocoKpi(kpis.solicitacoesAbertas)}
+        href={actions.href('solicitacoes')}
+        ariaLabel="Ver solicitações"
+      />
+      <KpiNumerico
+        label="Eventos hoje"
+        valor={kpis.eventosHoje}
+        estado={blocoKpi(kpis.eventosHoje)}
+        href={actions.href('eventos')}
+        ariaLabel="Ver eventos"
+      />
+      <KpiNumerico
+        label="Certificados"
+        valor={kpis.certificados}
+        estado={blocoKpi(kpis.certificados)}
+        href={actions.href('certificados')}
+        ariaLabel="Ver certificados"
+      />
+    </div>
+  )
+}
+
+function KpiRowProfessor({
+  loading,
+  kpis,
+  actions,
+}: {
+  loading: boolean
+  kpis?: KpisProfessorDashboard
+  actions: ReturnType<typeof useActions>
+}) {
+  if (loading) {
+    return (
+      <div className="kpi-row kpi-row-professor" aria-busy="true">
+        <div className="skeleton skeleton-kpi" />
+        <div className="skeleton skeleton-kpi" />
+        <div className="skeleton skeleton-kpi" />
+      </div>
+    )
+  }
+  if (!kpis) {
+    return null
+  }
+  const sla = kpis.slaUrgentes
+  const hrefDeliberar = actions.href('deliberar')
+  return (
+    <div className="kpi-row kpi-row-professor">
       <KpiNumerico
         label="Pendentes deliberar"
         valor={kpis.pendentesDeliberar}
         estado={blocoKpi(kpis.pendentesDeliberar)}
+        href={hrefDeliberar}
+        ariaLabel="Ver fila de deliberação"
       />
       {actions.can('formativasCaaf') && (
         <KpiNumerico
           label="Formativas revisão"
           valor={kpis.formativasRevisao}
           estado={blocoKpi(kpis.formativasRevisao)}
+          href={actions.href('formativasCaaf')}
+          ariaLabel="Ver formativas da CAAF"
         />
       )}
-      <KpiNumerico label="Eventos hoje" valor={kpis.eventosHoje} estado={blocoKpi(kpis.eventosHoje)} />
+      <KpiNumerico
+        label="Eventos hoje"
+        valor={kpis.eventosHoje}
+        estado={blocoKpi(kpis.eventosHoje)}
+        href={actions.href('eventos')}
+        ariaLabel="Ver meus eventos"
+      />
       <article className="kpi-card">
         <p className="kpi-label">SLA urgentes</p>
         {sla == null ? (
@@ -345,11 +396,11 @@ function KpiRowProfessor({
                 {sla === 1 ? '1 solicitação urgente' : `${sla} solicitações urgentes`}
               </p>
             )}
-            {actions.can('deliberar') && sla > 0 && (
-              <Link to={actions.href('deliberar') ?? '/solicitacoes?to=me'} className="ghost-link">
-                Ver fila
+            {hrefDeliberar ? (
+              <Link className="kpi-ver-link" to={hrefDeliberar} aria-label="Ver solicitações urgentes">
+                Ver…
               </Link>
-            )}
+            ) : null}
           </>
         )}
       </article>
@@ -361,10 +412,14 @@ function KpiNumerico({
   label,
   valor,
   estado,
+  href,
+  ariaLabel,
 }: {
   label: string
   valor: number | null
   estado: ReturnType<typeof blocoKpi>
+  href?: string
+  ariaLabel?: string
 }) {
   return (
     <article className="kpi-card">
@@ -372,9 +427,45 @@ function KpiNumerico({
       {estado === 'error' ? (
         <p className="muted">Indisponível neste momento.</p>
       ) : (
-        <p className="kpi-value">{valor}</p>
+        <>
+          <p className="kpi-value">{valor}</p>
+          {href ? (
+            <Link className="kpi-ver-link" to={href} aria-label={ariaLabel ?? `Ver ${label}`}>
+              Ver…
+            </Link>
+          ) : null}
+        </>
       )}
     </article>
+  )
+}
+
+const LISTA_PREVIEW = 3
+
+function ListaComMostrarMais({
+  total,
+  children,
+}: {
+  total: number
+  children: (visiveis: number) => ReactNode
+}) {
+  const [expandido, setExpandido] = useState(false)
+  const temMais = total > LISTA_PREVIEW
+  const visiveis = expandido || !temMais ? total : LISTA_PREVIEW
+
+  return (
+    <>
+      {children(visiveis)}
+      {temMais && (
+        <button
+          type="button"
+          className="mostrar-mais"
+          onClick={() => setExpandido((atual) => !atual)}
+        >
+          {expandido ? 'Mostrar menos' : 'Mostrar mais'}
+        </button>
+      )}
+    </>
   )
 }
 
@@ -406,15 +497,22 @@ function PendenciasBloco({
       )}
       {!loading && estado === 'empty' && <p className="empty">Nenhuma pendência no momento.</p>}
       {!loading && estado === 'ok' && itens && (
-        <ul className="pendencia-list">
-          {itens.map((item) => (
-            <li key={item.id}>
-              <Link to={item.href}>
-                {item.titulo} <span className={`badge estado-${item.estado.toLowerCase()}`}>{item.estado}</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <ListaComMostrarMais total={itens.length}>
+          {(visiveis) => (
+            <ul className="pendencia-list">
+              {itens.slice(0, visiveis).map((item) => (
+                <li key={item.id}>
+                  <Link to={item.href}>
+                    {item.titulo}{' '}
+                    <span className={`badge estado-${item.estado.toLowerCase()}`}>
+                      {rotuloCodigo(item.estado)}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </ListaComMostrarMais>
       )}
     </section>
   )
@@ -454,7 +552,7 @@ function FormativasPendenciasBloco({
           {itens.map((item) => (
             <li key={item.id}>
               <Link to={item.href}>
-                {item.titulo} <span className={`badge estado-${item.estado.toLowerCase()}`}>{item.estado}</span>
+                {item.titulo} <span className={`badge estado-${item.estado.toLowerCase()}`}>{rotuloCodigo(item.estado)}</span>
               </Link>
             </li>
           ))}
@@ -509,7 +607,7 @@ function SolicitacoesBloco({
                 </td>
                 <td>{item.tipoNome}</td>
                 <td>
-                  <span className={`badge estado-${item.estado.toLowerCase()}`}>{item.estado}</span>
+                  <span className={`badge estado-${item.estado.toLowerCase()}`}>{rotuloCodigo(item.estado)}</span>
                 </td>
                 <td className={item.slaVencido ? 'sla-danger' : undefined}>
                   {new Date(item.prazoEm).toLocaleDateString('pt-BR')}
@@ -551,24 +649,30 @@ function EventosBloco({
       )}
       {!loading && estado === 'empty' && <p className="empty">Nenhum evento com janela aberta hoje.</p>}
       {!loading && estado === 'ok' && itens && (
-        <ul className="pendencia-list">
-          {itens.map((item) => (
-            <li key={item.id}>
-              <Link to={item.href} className="evento-card">
-                <span>{item.titulo}</span>
-                <span className="evento-card-meta">
-                  <time dateTime={item.inicioEm}>
-                    {new Date(item.inicioEm).toLocaleString('pt-BR', {
-                      dateStyle: 'short',
-                      timeStyle: 'short',
-                    })}
-                  </time>
-                  {item.janelaAtiva && <span className="badge estado-em_andamento">Janela aberta</span>}
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <ListaComMostrarMais total={itens.length}>
+          {(visiveis) => (
+            <ul className="pendencia-list">
+              {itens.slice(0, visiveis).map((item) => (
+                <li key={item.id}>
+                  <Link to={item.href} className="evento-card">
+                    <span>{item.titulo}</span>
+                    <span className="evento-card-meta">
+                      <time dateTime={item.inicioEm}>
+                        {new Date(item.inicioEm).toLocaleString('pt-BR', {
+                          dateStyle: 'short',
+                          timeStyle: 'short',
+                        })}
+                      </time>
+                      {item.janelaAtiva && (
+                        <span className="badge estado-em_andamento">Janela aberta</span>
+                      )}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </ListaComMostrarMais>
       )}
     </section>
   )
@@ -600,8 +704,7 @@ function FilaDeliberacaoBloco({
           </button>
         </div>
       )}
-      {!loading && estado === 'empty' && <p className="empty">Nenhuma solicitação para deliberar.</p>}
-      {!loading && estado === 'ok' && itens && (
+      {!loading && (estado === 'empty' || estado === 'ok') && itens && (
         <table>
           <thead>
             <tr>
@@ -612,21 +715,29 @@ function FilaDeliberacaoBloco({
             </tr>
           </thead>
           <tbody>
-            {itens.map((item) => (
-              <tr key={item.id}>
-                <td>
-                  <Link to={item.href}>{item.protocolo}</Link>
-                  {item.urgente && <span className="badge estado-em_ajuste"> Urgente</span>}
-                </td>
-                <td>{item.tipoNome}</td>
-                <td>
-                  <span className={`badge estado-${item.estado.toLowerCase()}`}>{item.estado}</span>
-                </td>
-                <td className={item.slaVencido ? 'sla-danger' : undefined}>
-                  {item.prazoEm ? new Date(item.prazoEm).toLocaleDateString('pt-BR') : '—'}
+            {itens.length === 0 ? (
+              <tr>
+                <td colSpan={4} className="tabela-vazio" role="status">
+                  Nenhuma solicitação para deliberar.
                 </td>
               </tr>
-            ))}
+            ) : (
+              itens.map((item) => (
+                <tr key={item.id}>
+                  <td>
+                    <Link to={item.href}>{item.protocolo}</Link>
+                    {item.urgente && <span className="badge estado-em_ajuste"> Urgente</span>}
+                  </td>
+                  <td>{item.tipoNome}</td>
+                  <td>
+                    <span className={`badge estado-${item.estado.toLowerCase()}`}>{rotuloCodigo(item.estado)}</span>
+                  </td>
+                  <td className={item.slaVencido ? 'sla-danger' : undefined}>
+                    {item.prazoEm ? new Date(item.prazoEm).toLocaleDateString('pt-BR') : '—'}
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       )}
@@ -660,50 +771,68 @@ function MeusEventosBloco({
           </button>
         </div>
       )}
-      {!loading && estado === 'empty' && <p className="empty">Nenhum evento seu hoje.</p>}
-      {!loading && estado === 'ok' && itens && (
-        <ul className="pendencia-list">
-          {itens.map((item) => {
-            const itemActions = {
-              can: (rel: string) => Boolean(item._links?.[rel]),
-              href: (rel: string) => item._links?.[rel],
-            }
-            return (
-              <li key={item.id}>
-                <div className="evento-card">
-                  <span>{item.titulo}</span>
-                  <span className="evento-card-meta">
-                    <time dateTime={item.inicioEm}>
-                      {new Date(item.inicioEm).toLocaleString('pt-BR', {
-                        dateStyle: 'short',
-                        timeStyle: 'short',
-                      })}
-                    </time>
-                    <span className={`badge estado-${item.estado.toLowerCase()}`}>{item.estado}</span>
-                    {item.estado === 'EM_ANDAMENTO' && (
-                      <span className="badge estado-em_andamento">Em andamento</span>
-                    )}
-                  </span>
-                  <span className="evento-card-meta">
-                    {itemActions.can('self') && (
-                      <Link to={itemActions.href('self') ?? `/professor/eventos/${item.id}`} className="ghost-link">
-                        Detalhe
-                      </Link>
-                    )}
-                    {itemActions.can('operar') && (
-                      <Link
-                        to={itemActions.href('operar') ?? `/professor/eventos/${item.id}/operacao`}
-                        className="button-link"
-                      >
-                        Operar evento
-                      </Link>
-                    )}
-                  </span>
-                </div>
-              </li>
-            )
-          })}
-        </ul>
+      {!loading && (estado === 'empty' || estado === 'ok') && itens && (
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Nome</th>
+              <th scope="col">Data e hora</th>
+              <th scope="col" className="col-acoes">
+                Ações
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {itens.length === 0 ? (
+              <tr>
+                <td colSpan={3} className="tabela-vazio" role="status">
+                  Nenhum evento seu hoje.
+                </td>
+              </tr>
+            ) : (
+              itens.map((item) => {
+                const podeDetalhe = Boolean(item._links?.self)
+                const podeOperar = Boolean(item._links?.operar)
+                return (
+                  <tr key={item.id}>
+                    <td>
+                      {item.titulo}{' '}
+                      <span className={`badge estado-${item.estado.toLowerCase()}`}>{rotuloCodigo(item.estado)}</span>
+                    </td>
+                    <td>
+                      <time dateTime={item.inicioEm}>
+                        {new Date(item.inicioEm).toLocaleString('pt-BR', {
+                          dateStyle: 'short',
+                          timeStyle: 'short',
+                        })}
+                      </time>
+                    </td>
+                    <td className="col-acoes">
+                      <div className="actions actions-centered">
+                        {podeDetalhe && (
+                          <Link
+                            to={item._links?.self ?? `/professor/eventos/${item.id}`}
+                            className="button-link ghost"
+                          >
+                            Detalhe
+                          </Link>
+                        )}
+                        {podeOperar && (
+                          <Link
+                            to={item._links?.operar ?? `/professor/eventos/${item.id}/operacao`}
+                            className="button-link ghost"
+                          >
+                            Operar evento
+                          </Link>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })
+            )}
+          </tbody>
+        </table>
       )}
     </section>
   )
@@ -751,7 +880,7 @@ function FilaItensBloco({
           {itens.map((item) => (
             <li key={item.id}>
               <Link to={item.href}>
-                {item.titulo} <span className={`badge estado-${item.estado.toLowerCase()}`}>{item.estado}</span>
+                {item.titulo} <span className={`badge estado-${item.estado.toLowerCase()}`}>{rotuloCodigo(item.estado)}</span>
               </Link>
             </li>
           ))}

@@ -221,7 +221,6 @@ export function Perfil() {
   return (
     <section className="page">
       <h1>Perfil</h1>
-      <p className="lead">Dados pessoais. GRR e e-mail institucional são somente leitura.</p>
       <PerfilNav />
       {toast && (
         <div className="banner success" role="status">

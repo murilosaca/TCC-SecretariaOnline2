@@ -37,6 +37,7 @@ describe('Formativas', () => {
     await waitFor(() => {
       expect(screen.getByText(/Nenhuma atividade formativa/)).toBeTruthy()
     })
+    expect(screen.getByRole('columnheader', { name: 'Atividade' })).toBeTruthy()
     expect(screen.queryByRole('link', { name: 'Nova atividade' })).toBeNull()
     primeira.unmount()
 

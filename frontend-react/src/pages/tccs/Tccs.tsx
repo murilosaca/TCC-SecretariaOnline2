@@ -63,12 +63,7 @@ export function Tccs() {
           Carregando TCCs…
         </p>
       )}
-      {lista.data && lista.data.content.length === 0 && (
-        <p className="empty" role="status">
-          {estado ? 'Nenhum TCC com essa situação.' : 'Nenhum TCC registrado. Consulte a secretaria.'}
-        </p>
-      )}
-      {lista.data && lista.data.content.length > 0 && (
+      {lista.data && (
         <table>
           <thead>
             <tr>
@@ -76,13 +71,23 @@ export function Tccs() {
               <th scope="col">Orientador</th>
               <th scope="col">Situação</th>
               <th scope="col">Defesa</th>
-              <th scope="col">Ações</th>
+              <th scope="col" className="col-acoes">
+                Ações
+              </th>
             </tr>
           </thead>
           <tbody>
-            {lista.data.content.map((item) => (
-              <Linha key={item.id} item={item} />
-            ))}
+            {lista.data.content.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="tabela-vazio" role="status">
+                  {estado
+                    ? 'Nenhum TCC com essa situação.'
+                    : 'Nenhum TCC registrado. Consulte a secretaria.'}
+                </td>
+              </tr>
+            ) : (
+              lista.data.content.map((item) => <Linha key={item.id} item={item} />)
+            )}
           </tbody>
         </table>
       )}
@@ -100,12 +105,14 @@ function Linha({ item }: { item: Tcc }) {
         <span className={`badge estado-${item.estado.toLowerCase()}`}>{rotuloEstadoTcc(item.estado)}</span>
       </td>
       <td>{dataBr(item.dataDefesa)}</td>
-      <td className="actions">
-        {actions.can('self') && (
-          <Link to={`/tccs/${item.id}`} className="ghost-link">
-            Abrir
-          </Link>
-        )}
+      <td className="col-acoes">
+        <div className="actions actions-centered">
+          {actions.can('self') && (
+            <Link to={`/tccs/${item.id}`} className="button-link ghost">
+              Abrir
+            </Link>
+          )}
+        </div>
       </td>
     </tr>
   )

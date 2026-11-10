@@ -149,7 +149,11 @@ class AlunoDashboardApplicationService(
     companion object {
         private val LOG = LoggerFactory.getLogger(AlunoDashboardApplicationService::class.java)
         const val AUTHORITY_DASHBOARD: String = "dashboard.view_own"
+        const val AUTHORITY_REQUEST_VIEW_OWN: String = "request.view_own"
         const val AUTHORITY_REQUEST_OPEN: String = "request.open"
+        const val AUTHORITY_ATTENDANCE_VIEW_OPEN: String = "attendance.view_open"
+        const val AUTHORITY_FORMATIVE_VIEW_OWN: String = "formative.view_own"
+        const val AUTHORITY_CERTIFICATE_VIEW_OWN: String = "certificate.view_own"
 
         private fun toResponse(resumo: PeriodoVigenteResumo): PeriodoVigenteResponse =
             PeriodoVigenteResponse(
@@ -172,9 +176,22 @@ class AlunoDashboardApplicationService(
             )
 
         private fun links(authorities: List<String>?): Map<String, String> {
+            val caps = authorities?.toSet().orEmpty()
             val result = linkedMapOf("self" to "/bff/dashboard/aluno")
-            if (authorities != null && authorities.contains(AUTHORITY_REQUEST_OPEN)) {
+            if (AUTHORITY_REQUEST_VIEW_OWN in caps) {
+                result["solicitacoes"] = "/solicitacoes"
+            }
+            if (AUTHORITY_REQUEST_OPEN in caps) {
                 result["novaSolicitacao"] = "/solicitacoes/nova"
+            }
+            if (AUTHORITY_ATTENDANCE_VIEW_OPEN in caps) {
+                result["eventos"] = "/eventos"
+            }
+            if (AUTHORITY_FORMATIVE_VIEW_OWN in caps) {
+                result["formativas"] = "/formativas"
+            }
+            if (AUTHORITY_CERTIFICATE_VIEW_OWN in caps) {
+                result["certificados"] = "/certificados"
             }
             return result
         }

@@ -2,6 +2,7 @@ import { Link, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { eventosApi } from '../../api/eventos'
 import { useActions } from '../../hooks/useActions'
+import { rotuloCodigo } from '../../lib/rotulos'
 
 export function ProfessorEventoDetalhe() {
   const { id = '' } = useParams()
@@ -13,12 +14,9 @@ export function ProfessorEventoDetalhe() {
   const actions = useActions(detalhe.data?._links)
 
   return (
-    <section className="page">
+    <section className="page detalhe">
       <header className="page-head">
-        <div>
-          <h1>{detalhe.data?.titulo ?? 'Evento'}</h1>
-          <p className="muted">Detalhe do evento hospedado (RF-F3-002-a).</p>
-        </div>
+        <h1>{detalhe.data?.titulo ?? 'Evento'}</h1>
         <Link to="/professor/eventos" className="ghost-link">
           Voltar
         </Link>
@@ -38,22 +36,24 @@ export function ProfessorEventoDetalhe() {
         </p>
       )}
       {detalhe.data && (
-        <div className="attendance-card card">
+        <article className="panel evento-detalhe-card" aria-labelledby="evento-detalhes-titulo">
+          <h2 id="evento-detalhes-titulo">Detalhes</h2>
           <dl className="resumo">
             <div>
               <dt>Estado</dt>
-              <dd>{detalhe.data.estado}</dd>
+              <dd>{rotuloCodigo(detalhe.data.estado)}</dd>
             </div>
             <div>
               <dt>Modo</dt>
-              <dd>{detalhe.data.attendanceMode}</dd>
+              <dd>{rotuloCodigo(detalhe.data.attendanceMode)}</dd>
             </div>
             <div>
-              <dt>Agenda</dt>
-              <dd>
-                {new Date(detalhe.data.inicioEm).toLocaleString('pt-BR')} —{' '}
-                {new Date(detalhe.data.fimEm).toLocaleString('pt-BR')}
-              </dd>
+              <dt>Início</dt>
+              <dd>{new Date(detalhe.data.inicioEm).toLocaleString('pt-BR')}</dd>
+            </div>
+            <div>
+              <dt>Fim</dt>
+              <dd>{new Date(detalhe.data.fimEm).toLocaleString('pt-BR')}</dd>
             </div>
             <div>
               <dt>CH</dt>
@@ -67,7 +67,7 @@ export function ProfessorEventoDetalhe() {
               </Link>
             </p>
           )}
-        </div>
+        </article>
       )}
     </section>
   )

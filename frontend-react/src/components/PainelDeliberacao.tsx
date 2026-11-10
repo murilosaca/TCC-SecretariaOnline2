@@ -50,12 +50,13 @@ export function PainelDeliberacao({ links, pending = false, onDeliberar }: Paine
     <form className="painel-decisao panel" onSubmit={onSubmit}>
       <h2>Decisão</h2>
       <label htmlFor="parecer-deliberacao">
-        Parecer
+        <span className="sr-only">Parecer</span>
         <textarea
           id="parecer-deliberacao"
           name="parecer"
           rows={5}
           value={parecer}
+          placeholder="Digite aqui seu parecer antes de deferir, indeferir ou solicitar ajustes."
           onChange={(event) => {
             setParecer(event.target.value)
             if (erroParecer) {

@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { eventosApi } from '../../api/eventos'
 import { useActions } from '../../hooks/useActions'
+import { rotuloCodigo } from '../../lib/rotulos'
 import type { Evento } from '../../models/evento'
 
 export function Eventos() {
@@ -15,7 +16,10 @@ export function Eventos() {
       <header className="page-head">
         <div>
           <h1>Eventos</h1>
-          <p className="muted">Confirme presença apenas quando a janela estiver aberta (RF-F1-009).</p>
+          <p className="muted">
+            Eventos formativos do seu curso: consulte datas, carga horária e situação da presença.
+            O botão Presença aparece só enquanto a janela de validação estiver aberta.
+          </p>
         </div>
       </header>
 
@@ -33,12 +37,7 @@ export function Eventos() {
           Carregando eventos…
         </p>
       )}
-      {lista.data && lista.data.content.length === 0 && (
-        <p className="empty" role="status">
-          Nenhum evento disponível no momento.
-        </p>
-      )}
-      {lista.data && lista.data.content.length > 0 && (
+      {lista.data && (
         <table>
           <thead>
             <tr>
@@ -51,9 +50,15 @@ export function Eventos() {
             </tr>
           </thead>
           <tbody>
-            {lista.data.content.map((item) => (
-              <Linha key={item.id} item={item} />
-            ))}
+            {lista.data.content.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="tabela-vazio" role="status">
+                  Nenhum evento disponível no momento.
+                </td>
+              </tr>
+            ) : (
+              lista.data.content.map((item) => <Linha key={item.id} item={item} />)
+            )}
           </tbody>
         </table>
       )}
@@ -79,7 +84,7 @@ function Linha({ item }: { item: Evento }) {
       <td>{rotuloSituacao(item.situacaoPresenca)}</td>
       <td className="actions">
         {actions.can('sessao') && (
-          <Link to={`/eventos/${item.id}/presenca`} className="ghost-link">
+          <Link to={`/eventos/${item.id}/presenca`} className="button-link ghost">
             Presença
           </Link>
         )}
@@ -89,21 +94,9 @@ function Linha({ item }: { item: Evento }) {
 }
 
 function rotuloEstado(estado: string): string {
-  if (estado === 'EM_ANDAMENTO') {
-    return 'Em andamento'
-  }
-  if (estado === 'CONCLUIDO') {
-    return 'Concluído'
-  }
-  return 'Agendado'
+  return rotuloCodigo(estado)
 }
 
 function rotuloSituacao(situacao: string): string {
-  if (situacao === 'COMPLETA') {
-    return 'Completa'
-  }
-  if (situacao === 'PARCIAL') {
-    return 'Parcial'
-  }
-  return 'Pendente'
+  return rotuloCodigo(situacao)
 }

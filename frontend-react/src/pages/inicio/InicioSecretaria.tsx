@@ -4,6 +4,7 @@ import { ApiError } from '../../api/client'
 import { bffApi } from '../../api/bff'
 import { useActions } from '../../hooks/useActions'
 import { blocoKpi, blocoLista } from '../../lib/dashboardBlocks'
+import { rotuloCodigo } from '../../lib/rotulos'
 import type { FilaSecretariaDashboard, KpisSecretariaDashboard } from '../../models/dashboard'
 
 const STALE_MS = 60_000
@@ -92,7 +93,7 @@ export function InicioSecretaria() {
 
       {dashboard.data && (
         <>
-          <KpiRowSecretaria loading={carregando} kpis={dashboard.data.kpis} />
+          <KpiRowSecretaria loading={carregando} kpis={dashboard.data.kpis} actions={actions} />
           <FilaSecretaria
             loading={carregando}
             itens={dashboard.data.filaPriorizada}
@@ -113,9 +114,11 @@ export function InicioSecretaria() {
 function KpiRowSecretaria({
   loading,
   kpis,
+  actions,
 }: {
   loading: boolean
   kpis: KpisSecretariaDashboard
+  actions: ReturnType<typeof useActions>
 }) {
   if (loading) {
     return (
@@ -129,15 +132,40 @@ function KpiRowSecretaria({
   }
   return (
     <div className="kpi-row">
-      <Kpi label="Abertas" valor={kpis.abertas} />
-      <Kpi label="Atrasadas" valor={kpis.atrasadas} />
+      <Kpi
+        label="Abertas"
+        valor={kpis.abertas}
+        href={actions.href('fila-solicitacoes')}
+        ariaLabel="Ver fila de solicitações"
+      />
+      <Kpi
+        label="Atrasadas"
+        valor={kpis.atrasadas}
+        href={actions.href('atrasados')}
+        ariaLabel="Ver solicitações atrasadas"
+      />
       <Kpi label="Concluídas hoje" valor={kpis.concluidasHoje} />
-      <Kpi label="Eventos do dia" valor={kpis.eventosDia} />
+      <Kpi
+        label="Eventos do dia"
+        valor={kpis.eventosDia}
+        href={actions.href('eventos')}
+        ariaLabel="Ver eventos da secretaria"
+      />
     </div>
   )
 }
 
-function Kpi({ label, valor }: { label: string; valor: number | null }) {
+function Kpi({
+  label,
+  valor,
+  href,
+  ariaLabel,
+}: {
+  label: string
+  valor: number | null
+  href?: string
+  ariaLabel?: string
+}) {
   const estado = blocoKpi(valor)
   return (
     <article className="kpi-card">
@@ -145,7 +173,14 @@ function Kpi({ label, valor }: { label: string; valor: number | null }) {
       {estado === 'error' ? (
         <p className="muted">Indisponível neste momento.</p>
       ) : (
-        <p className="kpi-value">{valor}</p>
+        <>
+          <p className="kpi-value">{valor}</p>
+          {href ? (
+            <Link className="kpi-ver-link" to={href} aria-label={ariaLabel ?? `Ver ${label}`}>
+              Ver…
+            </Link>
+          ) : null}
+        </>
       )}
     </article>
   )
@@ -197,7 +232,7 @@ function FilaSecretaria({
                   <Link to={item.href}>{item.protocolo}</Link>
                 </td>
                 <td>{item.tipoNome}</td>
-                <td>{item.estado}</td>
+                <td>{rotuloCodigo(item.estado)}</td>
                 <td>
                   {item.slaStatus === 'danger' && <span className="sla-danger">SLA estourado</span>}
                   {item.slaStatus === 'warning' && <span className="sla-warning">Vence em 24 h</span>}

@@ -1,0 +1,23 @@
+@startuml F0.6-c-protocolo-404
+title F0.6-c — Protocolo não encontrado (404)
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Verificador" as Verificador
+participant "WebApp" as WebApp
+participant "ProtocoloController" as Ctrl
+participant "VerificarProtocoloUseCase" as UC
+database "Postgres" as Postgres
+
+Verificador -> WebApp: ID inexistente
+WebApp -> Ctrl: GET protocolo
+Ctrl -> UC: execute(id)
+UC -> Postgres: SELECT protocolo
+Postgres --> UC: vazio
+UC --> Ctrl: not found
+Ctrl --> WebApp: 404 Problem Details
+WebApp --> Verificador: EmptyState\n(sem zona de upload)
+
+@enduml

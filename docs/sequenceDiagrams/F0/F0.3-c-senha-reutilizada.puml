@@ -1,0 +1,31 @@
+@startuml F0.3-c-senha-reutilizada
+title F0.3-c — 422 senha reutilizada
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Usuário" as Usuario
+participant "WebApp" as WebApp
+participant "AuthController" as AuthController
+participant "ResetPasswordUseCase" as UC
+database "Postgres" as Postgres
+
+Usuario -> WebApp: senha reutilizada / Salvar
+WebApp -> AuthController: POST /auth/redefinir-senha
+AuthController -> UC: execute(...)
+UC -> Postgres: SELECT usuario + passwordHistory
+Postgres --> UC: histórico (3 últimas)
+
+UC -> UC: Argon2id.compare → MATCH\nRN-F0.3-06
+
+note right of UC
+  JTI NÃO entra na blacklist
+  token segue válido para retry
+end note
+
+UC --> AuthController: PasswordReuseException
+AuthController --> WebApp: 422 Problem Details\n("já foi utilizada recentemente")
+WebApp --> Usuario: limpa "Nova senha"\nbanner danger (RN-F0.3-05)
+
+@enduml

@@ -1,0 +1,24 @@
+@startuml F8.1-D03-sem-resultados
+title F8.1-D03 — Sem resultados (EmptyState)
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Usuario" as User
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "SearchController" as Ctrl
+participant "SearchUseCase" as UC
+database "Postgres" as Postgres
+
+User -> WebApp: digita "xyzxyz123"
+WebApp -> Jwt: GET /search?q=
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+UC -> Postgres: fan-out
+Postgres --> UC: vazio
+UC --> WebApp: 200 vazio
+WebApp --> User: EmptyState
+
+@enduml

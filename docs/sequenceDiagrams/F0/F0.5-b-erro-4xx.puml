@@ -1,0 +1,34 @@
+@startuml F0.5-b-erro-4xx
+title F0.5-b — API 4xx → /erro/:codigo
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Usuário" as Usuario
+participant "WebApp" as WebApp
+participant "TanStack Query" as TQ
+participant "API" as API
+
+Usuario -> WebApp: ação autenticada
+WebApp -> TQ: request
+TQ -> API: HTTP com JWT
+
+alt 401 sessão expirada
+  API --> TQ: 401
+  note right of TQ
+    Refresh implícito (F0.1-f)
+    antes do redirect, se houver
+  end note
+  TQ --> WebApp: /erro/401
+else 403 sem capability
+  API --> TQ: 403 access_denied
+  TQ --> WebApp: /erro/403
+else 404 recurso de API
+  API --> TQ: 404
+  TQ --> WebApp: /erro/404
+end
+
+WebApp --> Usuario: tela /erro/:codigo\n(botões conforme status)
+
+@enduml

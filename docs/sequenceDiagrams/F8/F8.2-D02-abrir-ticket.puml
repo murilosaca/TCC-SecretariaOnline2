@@ -1,0 +1,26 @@
+@startuml F8.2-D02-abrir-ticket
+title F8.2-D02 — Abrir ticket (motor de solicitações)
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Usuario" as User
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "RequestController" as Ctrl
+participant "CreateRequestUseCase" as UC
+database "Postgres" as Postgres
+participant "Outbox" as Outbox
+
+User -> WebApp: envia ticket
+WebApp -> Jwt: POST /requests\ntipoCodigo=SUPORTE_TECNICO
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+UC -> Postgres: BEGIN + INSERT request
+UC -> Outbox: enqueue notify suporte
+UC -> Postgres: COMMIT
+UC --> WebApp: 201 protocolo
+WebApp --> User: ticket aberto
+
+@enduml

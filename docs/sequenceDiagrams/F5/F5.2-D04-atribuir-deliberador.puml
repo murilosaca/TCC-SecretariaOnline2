@@ -1,0 +1,25 @@
+@startuml F5.2-D04-atribuir-deliberador
+title F5.2-D04 — Atribuir deliberador em massa
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Secretaria" as Sec
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "RequestController" as Ctrl
+database "Postgres" as Postgres
+
+Sec -> WebApp: Atribuir N selecionadas
+WebApp -> Jwt: PATCH /requests/bulk
+Jwt -> Ctrl: JWT ok
+Ctrl -> Postgres: UPDATE no escopo\n+ request_event cada
+note right of Ctrl
+  sem outbox ao aluno
+end note
+Postgres --> Ctrl: OK (COMMIT)
+Ctrl --> WebApp: 200
+WebApp --> Sec: coluna Deliberador
+
+@enduml

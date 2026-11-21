@@ -1,0 +1,31 @@
+@startuml F1.11-D02-submeter-formativa
+title F1.11-D02 — Submeter formativa manualmente
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Aluno" as Aluno
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "FormativeController" as Ctrl
+participant "SubmitFormativeUseCase" as UC
+database "Postgres" as Postgres
+
+Aluno -> WebApp: tipo + horas + PDF / Enviar
+WebApp -> Jwt: POST /formativas\n(multipart)
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+
+note right of UC
+  Valida elegibilidade do tipo
+  origem=COMPROVANTE
+end note
+
+UC -> Postgres: INSERT formative_entry\nAGUARDANDO_CAAF\n+ outbox_event
+Postgres --> UC: OK (COMMIT)
+UC --> Ctrl: entrada
+Ctrl --> WebApp: 201
+WebApp --> Aluno: lista atualizada
+
+@enduml

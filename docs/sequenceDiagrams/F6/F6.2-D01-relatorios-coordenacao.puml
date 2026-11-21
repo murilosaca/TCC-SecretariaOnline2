@@ -1,0 +1,27 @@
+@startuml F6.2-D01-relatorios-coordenacao
+title F6.2-D01 — Relatórios de coordenação (cache MISS)
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Coordenador" as Coord
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "ReportController" as Ctrl
+participant "CoordinatorReportUseCase" as UC
+database "Postgres" as Postgres
+
+Coord -> WebApp: /coordenacao/relatorios
+note right of WebApp
+  Skeleton (isLoading)
+end note
+WebApp -> Jwt: GET /reports/coordinator
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+UC -> Postgres: aggregations
+Postgres --> UC: datasets
+UC --> WebApp: 200 + _links
+WebApp --> Coord: KPIs + gráficos
+
+@enduml

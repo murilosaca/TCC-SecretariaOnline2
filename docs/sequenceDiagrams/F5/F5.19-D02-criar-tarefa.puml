@@ -1,0 +1,26 @@
+@startuml F5.19-D02-criar-tarefa
+title F5.19-D02 — Criar tarefa
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Secretaria" as Sec
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "TaskController" as Ctrl
+database "Postgres" as Postgres
+
+Sec -> WebApp: Salvar tarefa
+WebApp -> Jwt: POST /tasks
+Jwt -> Ctrl: JWT ok
+Ctrl -> Postgres: INSERT PENDENTE
+note right of Ctrl
+  estado nunca do body;
+  sem outbox
+end note
+Postgres --> Ctrl: OK (COMMIT)
+Ctrl --> WebApp: 201 + _links
+WebApp --> Sec: card em Pendentes
+
+@enduml

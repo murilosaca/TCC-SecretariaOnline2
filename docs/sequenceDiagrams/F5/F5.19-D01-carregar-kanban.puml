@@ -1,0 +1,22 @@
+@startuml F5.19-D01-carregar-kanban
+title F5.19-D01 — Carregar kanban
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Secretaria" as Sec
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "TaskController" as Ctrl
+database "Postgres" as Postgres
+
+Sec -> WebApp: /secretaria/tarefas
+WebApp -> Jwt: GET /tasks
+Jwt -> Ctrl: JWT ok
+Ctrl -> Postgres: SELECT do responsável
+Postgres --> Ctrl: tarefas
+Ctrl --> WebApp: 200 pendentes[]\n+ concluidas[]
+WebApp --> Sec: kanban 2 colunas
+
+@enduml

@@ -1,0 +1,29 @@
+@startuml F3.6-D02-parecer-documento
+title F3.6-D02 — Emitir parecer em documento
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Professor" as Prof
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "InternshipController" as Ctrl
+participant "ReviewDocumentUseCase" as UC
+database "Postgres" as Postgres
+
+Prof -> WebApp: Emitir parecer
+WebApp -> Jwt: POST /estagios/{id}/documentos/{docId}/parecer
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+UC -> Postgres: UPDATE documento\n+ outbox_event
+Postgres --> UC: OK (COMMIT)
+UC --> Ctrl: ok + _links
+note right of Ctrl
+  _links.arquivar se todos
+  obrigatórios APROVADO
+end note
+Ctrl --> WebApp: 200
+WebApp --> Prof: documento atualizado
+
+@enduml

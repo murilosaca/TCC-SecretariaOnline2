@@ -1,0 +1,48 @@
+@startuml F0.1-a-login-happy-path
+title F0.1-a — Login happy path (US-F0-001)
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+skinparam noteFontSize 11
+autonumber
+
+actor "Usuário" as Usuario
+participant "WebApp" as WebApp
+participant "AuthController" as AuthController
+participant "LoginUseCase" as UC
+database "Postgres" as Postgres
+
+Usuario -> WebApp: identificador + senha / Entrar
+WebApp -> AuthController: POST /auth/login\n{identificador, senha}
+AuthController -> UC: execute(identificador, senha, ip)
+
+note right of UC
+  Normaliza identificador
+  (e-mail @ufpr.br, pessoal ou GRR)
+  RN-F0.1-01
+end note
+
+UC -> Postgres: SELECT usuario BY identificador
+Postgres --> UC: usuario\n(ativo, senha_alterada=true)
+
+UC -> UC: Argon2id.verify(senha, senha_hash)\nRN-F0.1-02
+
+UC -> Postgres: UPDATE usuario\nINSERT refresh_token\nINSERT audit_log (iam.login_success)
+note right of UC
+  Emite JWT RS256 (TTL 15 min)
+  + refresh opaco (sessão)
+end note
+Postgres --> UC: OK (COMMIT)
+
+UC --> AuthController: LoginResult\n(accessToken, refresh, mustChangePassword=false)
+AuthController --> WebApp: 200 OK\nSet-Cookie so2_refresh\n(httpOnly; Secure; SameSite=Lax)\n+ body accessToken
+
+note right of WebApp
+  accessToken só em memória
+  refresh no cookie
+  RN-F0.1-03
+end note
+
+WebApp --> Usuario: redireciona /inicio
+
+@enduml

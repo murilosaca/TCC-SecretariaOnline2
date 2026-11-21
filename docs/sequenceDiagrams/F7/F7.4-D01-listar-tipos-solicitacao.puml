@@ -1,0 +1,30 @@
+@startuml F7.4-D01-listar-tipos-solicitacao
+title F7.4-D01 — Listar tipos e carregar editor
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Admin" as Admin
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "RTController" as Ctrl
+participant "ListRTUseCase" as ListUC
+participant "GetRTUseCase" as GetUC
+database "Postgres" as Postgres
+
+Admin -> WebApp: /admin/tipos-solicitacao
+WebApp -> Jwt: GET /request-types
+Jwt -> Ctrl: JWT ok
+Ctrl -> ListUC: execute(...)
+ListUC -> Postgres: SELECT tipos
+Postgres --> WebApp: 200 lista
+Admin -> WebApp: seleciona tipo
+WebApp -> Jwt: GET /request-types/{id}
+Jwt -> Ctrl: JWT ok
+Ctrl -> GetUC: execute(...)
+GetUC -> Postgres: SELECT schemas
+Postgres --> WebApp: 200 + _links
+WebApp --> Admin: três painéis
+
+@enduml

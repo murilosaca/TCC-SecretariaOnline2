@@ -1,0 +1,26 @@
+@startuml F3.8-D01-opcoes-audiencia
+title F3.8-D01 — Carregar opções de audiência
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Professor" as Prof
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "CommunicationController" as Ctrl
+database "Postgres" as Postgres
+
+Prof -> WebApp: /comunicacao/publicar
+WebApp -> Jwt: GET /communications/audiences
+Jwt -> Ctrl: JWT ok
+Ctrl -> Postgres: SELECT turmas/cursos\ndo professor
+note right of Ctrl
+  sem broadcast
+  (system.broadcast)
+end note
+Postgres --> Ctrl: lista scoped
+Ctrl --> WebApp: 200 audiences
+WebApp --> Prof: select pré-filtrado
+
+@enduml

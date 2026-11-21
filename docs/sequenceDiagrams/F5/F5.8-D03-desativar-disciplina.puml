@@ -1,0 +1,25 @@
+@startuml F5.8-D03-desativar-disciplina
+title F5.8-D03 — Desativar disciplina
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Secretaria" as Sec
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "SubjectController" as Ctrl
+database "Postgres" as Postgres
+
+Sec -> WebApp: Toggle desativar
+WebApp -> Jwt: PUT /academico/disciplinas/{id}\n{ ativo: false }
+Jwt -> Ctrl: JWT ok
+Ctrl -> Postgres: UPDATE ativo=false\n+ audit_log
+note right of Ctrl
+  matrículas preservadas
+end note
+Postgres --> Ctrl: OK (COMMIT)
+Ctrl --> WebApp: 200 + _links.activate
+WebApp --> Sec: badge Inativa
+
+@enduml

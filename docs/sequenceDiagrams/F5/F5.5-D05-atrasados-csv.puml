@@ -1,0 +1,27 @@
+@startuml F5.5-D05-atrasados-csv
+title F5.5-D05 — Atrasados com exportação CSV
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Secretaria" as Sec
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "RequestController" as Ctrl
+database "Postgres" as Postgres
+
+Sec -> WebApp: /secretaria/atrasados
+WebApp -> Jwt: GET /requests?slaBreached=true
+Jwt -> Ctrl: JWT ok
+Ctrl -> Postgres: SELECT atrasadas
+Postgres --> WebApp: 200 lista
+Sec -> WebApp: Exportar
+WebApp -> Jwt: GET ?format=csv
+Jwt -> Ctrl: JWT ok
+Ctrl -> Postgres: SELECT página
+Postgres --> Ctrl: rows
+Ctrl --> WebApp: CSV attachment\n(UTF-8 BOM)
+WebApp --> Sec: download CSV
+
+@enduml

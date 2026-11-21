@@ -1,0 +1,22 @@
+@startuml F1.16-D02-detalhe-tcc
+title F1.16-D02 — Detalhe do TCC
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Aluno" as Aluno
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "TccController" as Ctrl
+database "Postgres" as Postgres
+
+Aluno -> WebApp: /tccs/:id
+WebApp -> Jwt: GET /tccs/{id}
+Jwt -> Ctrl: JWT ok
+Ctrl -> Postgres: SELECT JOIN\nequipe + banca + datas + timeline
+Postgres --> Ctrl: agregado
+Ctrl --> WebApp: 200 + _links.upload-final?
+WebApp --> Aluno: detalhe TCC
+
+@enduml

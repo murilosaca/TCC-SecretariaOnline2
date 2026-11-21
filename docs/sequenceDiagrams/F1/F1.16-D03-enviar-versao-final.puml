@@ -1,0 +1,25 @@
+@startuml F1.16-D03-enviar-versao-final
+title F1.16-D03 — Enviar versão final do TCC
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Aluno" as Aluno
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "TccController" as Ctrl
+participant "SubmitTccUseCase" as UC
+database "Postgres" as Postgres
+
+Aluno -> WebApp: upload PDF final
+WebApp -> Jwt: POST /tccs/{id}/versao-final\n(multipart)
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+UC -> Postgres: UPDATE SUBMETIDO\nINSERT tcc_event + outbox
+Postgres --> UC: OK (COMMIT)
+UC --> Ctrl: ok
+Ctrl --> WebApp: 200\n(sem _links.upload-final)
+WebApp --> Aluno: SUBMETIDO\nbotão some
+
+@enduml

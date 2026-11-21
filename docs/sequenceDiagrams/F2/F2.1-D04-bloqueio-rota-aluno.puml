@@ -1,0 +1,21 @@
+@startuml F2.1-D04-bloqueio-rota-aluno
+title F2.1-D04 — Bloqueio de rota de aluno
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Egresso" as Egresso
+participant "WebApp" as WebApp
+
+Egresso -> WebApp: tenta /solicitacoes/nova
+
+note right of WebApp
+  RouteGuard lê authorities
+  Nenhuma chamada HTTP
+  RN-F2.1-02
+end note
+
+WebApp --> Egresso: /erro/403\n(Ir ao início → /egresso/inicio)
+
+@enduml

@@ -1,0 +1,26 @@
+@startuml F5.6-D02-cadastrar-aluno
+title F5.6-D02 — Cadastrar novo aluno
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Secretaria" as Sec
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "StudentController" as Ctrl
+database "Postgres" as Postgres
+
+Sec -> WebApp: Salvar novo aluno
+WebApp -> Jwt: POST /academico/alunos
+Jwt -> Ctrl: JWT ok
+note right of Ctrl
+  senha temp em memória
+  + Argon2id antes da TX
+end note
+Ctrl -> Postgres: INSERT user\n+ audit_log\n+ outbox_event
+Postgres --> Ctrl: OK (COMMIT)
+Ctrl --> WebApp: 201
+WebApp --> Sec: aluno na tabela
+
+@enduml

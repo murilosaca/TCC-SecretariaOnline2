@@ -1,0 +1,30 @@
+@startuml F7.5-D01-listar-templates
+title F7.5-D01 — Listar templates e carregar editor
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Admin" as Admin
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "CTController" as Ctrl
+participant "ListTemplatesUseCase" as ListUC
+participant "GetTemplateUseCase" as GetUC
+database "Postgres" as Postgres
+
+Admin -> WebApp: /admin/templates-comunicacao
+WebApp -> Jwt: GET /admin/templates-comunicacao
+Jwt -> Ctrl: JWT ok
+Ctrl -> ListUC: execute(...)
+ListUC -> Postgres: SELECT templates
+Postgres --> WebApp: 200 lista
+Admin -> WebApp: seleciona template
+WebApp -> Jwt: GET .../{id}
+Jwt -> Ctrl: JWT ok
+Ctrl -> GetUC: execute(...)
+GetUC -> Postgres: SELECT corpo + revisões
+Postgres --> WebApp: 200
+WebApp --> Admin: editor duas colunas
+
+@enduml

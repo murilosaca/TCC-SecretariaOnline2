@@ -1,0 +1,24 @@
+@startuml F5.9-D05-criar-periodo
+title F5.9-D05 — Criar período letivo
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Secretaria" as Sec
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "CalendarController" as Ctrl
+database "Postgres" as Postgres
+
+Sec -> WebApp: Salvar período
+WebApp -> Jwt: POST /academico/periodos
+Jwt -> Ctrl: JWT ok
+Ctrl -> Postgres: checar sobreposição\n(global, CA-06)
+Postgres --> Ctrl: livre
+Ctrl -> Postgres: INSERT período\n+ audit_log
+Postgres --> Ctrl: OK (COMMIT)
+Ctrl --> WebApp: 201
+WebApp --> Sec: período no calendário
+
+@enduml

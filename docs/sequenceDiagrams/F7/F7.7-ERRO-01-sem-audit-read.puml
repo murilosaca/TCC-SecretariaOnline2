@@ -1,0 +1,21 @@
+@startuml F7.7-ERRO-01-sem-audit-read
+title F7.7-ERRO-01 — 403 sem audit.read
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Admin" as Admin
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "AuditController" as Ctrl
+
+Admin -> WebApp: /admin/audit-log
+WebApp -> Jwt: GET /admin/audit-log
+note right of Jwt
+  audit.read ausente
+end note
+Jwt --> WebApp: 403 access_denied
+WebApp --> Admin: Problem Details
+
+@enduml

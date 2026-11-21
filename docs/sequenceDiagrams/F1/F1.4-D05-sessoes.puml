@@ -1,0 +1,35 @@
+@startuml F1.4-D05-sessoes
+title F1.4-D05 — Listar sessões + encerrar outra
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Aluno" as Aluno
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "SessionsController" as Ctrl
+database "Postgres" as Postgres
+
+Aluno -> WebApp: abre /perfil/seguranca
+WebApp -> Jwt: GET /me/sessions
+Jwt -> Ctrl: JWT ok
+Ctrl -> Postgres: SELECT sessões
+Postgres --> Ctrl: lista
+
+note right of Ctrl
+  Sessão atual SEM _links.encerrar
+  RN-F1.4-04
+end note
+
+Ctrl --> WebApp: 200 + _links
+
+Aluno -> WebApp: Encerrar (outra sessão)
+WebApp -> Jwt: DELETE /me/sessions/{id}
+Jwt -> Ctrl: JWT ok
+Ctrl -> Postgres: DELETE\nAND id != currentSessionId
+Postgres --> Ctrl: OK
+Ctrl --> WebApp: 204
+WebApp --> Aluno: remove da lista
+
+@enduml

@@ -1,0 +1,32 @@
+@startuml F4.1c-atribuir-membro
+title F4.1c — Atribuir a outro membro (AssignmentBoard)
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Professor" as Prof
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "CAAFController" as Ctrl
+participant "GetCAAFMembersUC" as Members
+participant "AssignFormativeUC" as Assign
+database "Postgres" as Postgres
+
+Prof -> WebApp: Abrir AssignmentBoard
+WebApp -> Jwt: GET /comissoes/caaf/membros
+Jwt -> Ctrl: JWT ok
+Ctrl -> Members: execute(...)
+Members -> Postgres: SELECT membros + carga
+Postgres --> Members: lista
+Members --> WebApp: 200
+Prof -> WebApp: Confirmar colega
+WebApp -> Jwt: POST /comissoes/caaf/atribuicoes
+Jwt -> Ctrl: JWT ok
+Ctrl -> Assign: execute(...)
+Assign -> Postgres: UPDATE assignee\n+ outbox_event
+Postgres --> Assign: OK (COMMIT)
+Assign --> WebApp: 200
+WebApp --> Prof: linha com responsável
+
+@enduml

@@ -1,0 +1,28 @@
+@startuml F8.1-D02-fanout-fgac-aluno
+title F8.1-D02 — Fan-out FGAC (perfil aluno)
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Aluno" as Aluno
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "SearchController" as Ctrl
+participant "SearchUseCase" as UC
+database "Postgres" as Postgres
+
+Aluno -> WebApp: busca "João"
+WebApp -> Jwt: GET /search?q=João
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+note right of UC
+  sem user.manage_all
+  → não lê users
+end note
+UC -> Postgres: alunos/requests\nescopo view_own
+Postgres --> UC: hits próprios
+UC --> WebApp: 200 usuarios:[]
+WebApp --> Aluno: resultados filtrados
+
+@enduml

@@ -1,0 +1,26 @@
+@startuml F3.1-D01-dashboard-professor
+title F3.1-D01 — Dashboard do professor
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Professor" as Prof
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "DashboardBFF" as BFF
+database "Postgres" as Postgres
+
+Prof -> WebApp: abre /inicio
+WebApp -> Jwt: GET /bff/dashboard/professor
+Jwt -> BFF: JWT ok
+BFF -> Postgres: queries paralelas\n(KPIs, fila, eventos…)
+note right of BFF
+  formativasCaaf só se
+  formative.review no JWT
+end note
+Postgres --> BFF: agregados
+BFF --> WebApp: 200 + _links
+WebApp --> Prof: painel HATEOAS
+
+@enduml

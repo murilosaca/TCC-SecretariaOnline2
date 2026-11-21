@@ -1,0 +1,28 @@
+@startuml F5.9-ERRO-D04-parcial
+title F5.9-ERRO-D04 — Processamento parcial
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Secretaria" as Sec
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "ImportController" as Ctrl
+participant "ConfirmImportUseCase" as UC
+database "Postgres" as Postgres
+
+Sec -> WebApp: Confirmar
+WebApp -> Jwt: POST /importacoes/{jobId}/confirm
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+UC -> Postgres: lote 1 COMMIT
+Postgres --> UC: OK
+UC -> Postgres: lote 2
+Postgres --> UC: erro (ROLLBACK)
+UC -> Postgres: status PARTIAL\n+ outbox
+Postgres --> UC: OK
+UC --> WebApp: 200 PARTIAL
+WebApp --> Sec: relatório parcial
+
+@enduml

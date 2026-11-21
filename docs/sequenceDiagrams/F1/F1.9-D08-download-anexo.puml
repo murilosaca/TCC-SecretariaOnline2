@@ -1,0 +1,23 @@
+@startuml F1.9-D08-download-anexo
+title F1.9-D08 — Download de anexo (presigned)
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Aluno" as Aluno
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "AttachmentController" as Ctrl
+participant "MinIO" as MinIO
+
+Aluno -> WebApp: Baixar anexo
+WebApp -> Jwt: pede URL do anexo
+Jwt -> Ctrl: JWT ok + dono
+Ctrl -> MinIO: gera URL GET\npresigned (TTL 15 min)
+MinIO --> Ctrl: URL
+Ctrl --> WebApp: 200 + URL
+WebApp -> MinIO: GET arquivo
+MinIO --> Aluno: download
+
+@enduml

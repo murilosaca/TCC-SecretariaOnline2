@@ -1,0 +1,22 @@
+@startuml F8.2-D03-rate-limit-ticket
+title F8.2-D03 — Rate limit ao abrir ticket
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Usuario" as User
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "RequestController" as Ctrl
+participant "RateLimiter" as RL
+
+User -> WebApp: envia ticket
+WebApp -> Jwt: POST /requests
+Jwt -> Ctrl: JWT ok
+Ctrl -> RL: check janela
+RL --> Ctrl: excedido
+Ctrl --> WebApp: 429 rate-limit
+WebApp --> User: aguarde e tente de novo
+
+@enduml

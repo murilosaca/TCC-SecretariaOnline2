@@ -1,0 +1,22 @@
+@startuml F5.19-D03-atualizar-estado
+title F5.19-D03 — Atualizar estado da tarefa
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Secretaria" as Sec
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "TaskController" as Ctrl
+database "Postgres" as Postgres
+
+Sec -> WebApp: Mover / Concluir
+WebApp -> Jwt: PATCH /tasks/{id}\n{ estado }
+Jwt -> Ctrl: JWT ok
+Ctrl -> Postgres: UPDATE estado
+Postgres --> Ctrl: OK (COMMIT)
+Ctrl --> WebApp: 200
+WebApp --> Sec: card na coluna
+
+@enduml

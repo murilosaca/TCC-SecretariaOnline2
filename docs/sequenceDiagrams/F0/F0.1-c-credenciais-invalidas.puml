@@ -1,0 +1,37 @@
+@startuml F0.1-c-credenciais-invalidas
+title F0.1-c — Login 401 — credenciais inválidas (anti-enumeração)
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Usuário" as Usuario
+participant "WebApp" as WebApp
+participant "AuthController" as AuthController
+participant "LoginUseCase" as UC
+database "Postgres" as Postgres
+
+Usuario -> WebApp: credenciais inválidas / Entrar
+WebApp -> AuthController: POST /auth/login
+AuthController -> UC: execute(...)
+UC -> Postgres: SELECT usuario BY identificador
+
+alt identificador inexistente
+  Postgres --> UC: vazio
+else senha incorreta
+  Postgres --> UC: usuario
+  UC -> UC: Argon2id.verify = false
+  UC -> Postgres: UPDATE falhas\n(+ audit se bloqueio)
+end
+
+note right of UC
+  Mesma CredenciaisInvalidasException
+  nos dois ramos — RN-F0.1-08
+end note
+
+UC -> Postgres: INSERT audit_log (iam.login_failed)
+UC --> AuthController: CredenciaisInvalidasException
+AuthController --> WebApp: 401 Problem Details\n(detail genérico)
+WebApp --> Usuario: AlertBanner danger\n(limpa campo senha)
+
+@enduml

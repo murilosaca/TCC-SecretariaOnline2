@@ -1,0 +1,26 @@
+@startuml F3.4-ERRO-a-token-ja-utilizado
+title F3.4-ERRO-a — Deep-link com token já utilizado
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Professor" as Prof
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "RequestController" as Ctrl
+database "Postgres" as Postgres
+
+Prof -> WebApp: abre deep-link reusado
+WebApp -> Jwt: GET /requests/{id}\n+ deepLinkToken
+Jwt -> Ctrl: sessão ok
+Ctrl -> Postgres: JTI na blacklist?
+Postgres --> Ctrl: sim
+Ctrl --> WebApp: 401 token_already_used
+note right of Ctrl
+  401 (token inválido),
+  não 403 de authority
+end note
+WebApp --> Prof: EmptyState → fila
+
+@enduml

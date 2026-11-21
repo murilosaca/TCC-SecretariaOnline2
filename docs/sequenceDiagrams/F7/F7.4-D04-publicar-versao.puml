@@ -1,0 +1,27 @@
+@startuml F7.4-D04-publicar-versao
+title F7.4-D04 — Publicar versão
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Admin" as Admin
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "RTController" as Ctrl
+participant "PublishRequestTypeUseCase" as UC
+database "Postgres" as Postgres
+
+Admin -> WebApp: Publicar
+WebApp -> Jwt: POST /request-types/{id}/publish
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+UC -> Postgres: INSERT version N+1\n+ status PUBLISHED
+note right of UC
+  abertas mantêm versão N
+end note
+Postgres --> UC: OK (COMMIT)
+UC --> WebApp: 200
+WebApp --> Admin: status PUBLISHED
+
+@enduml

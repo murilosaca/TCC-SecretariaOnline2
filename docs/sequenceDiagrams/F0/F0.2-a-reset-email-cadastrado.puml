@@ -1,0 +1,36 @@
+@startuml F0.2-a-reset-email-cadastrado
+title F0.2-a — Solicitar reset (e-mail cadastrado) — happy path
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Usuário" as Usuario
+participant "WebApp" as WebApp
+participant "AuthController" as AuthController
+participant "ForgotPasswordUseCase" as UC
+database "Postgres" as Postgres
+
+Usuario -> WebApp: e-mail / Enviar link
+WebApp -> AuthController: POST /auth/recuperar-senha
+AuthController -> UC: execute(email, ip)
+UC -> Postgres: SELECT usuario BY email
+Postgres --> UC: usuario encontrado
+
+note right of UC
+  JWT de reset gerado em memória
+  (não persiste antes do uso)
+  RN-F0.2-02
+end note
+
+UC -> Postgres: INSERT audit_log\n(iam.password_reset_requested)\nINSERT outbox_event\n(PASSWORD_RESET)
+note right of UC
+  TX atômica; e-mail assíncrono
+  via Outbox — RN-F0.2-03
+end note
+Postgres --> UC: OK (COMMIT)
+UC --> AuthController: ok
+AuthController --> WebApp: 202 Accepted
+WebApp --> Usuario: banner neutro\n(RN-F0.2-01 anti-enumeração)
+
+@enduml

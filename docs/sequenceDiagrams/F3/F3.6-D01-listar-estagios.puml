@@ -1,0 +1,26 @@
+@startuml F3.6-D01-listar-estagios
+title F3.6-D01 — Listar estágios para revisão
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Professor" as Prof
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "InternshipController" as Ctrl
+database "Postgres" as Postgres
+
+Prof -> WebApp: /estagios?to=me
+WebApp -> Jwt: GET /estagios?to=me
+Jwt -> Ctrl: JWT ok
+Ctrl -> Postgres: SELECT por orientador\nou vínculo COE
+note right of Ctrl
+  documentoPendente =
+  AGUARDANDO_PARECER
+end note
+Postgres --> Ctrl: page
+Ctrl --> WebApp: 200 lista
+WebApp --> Prof: fila de estágios
+
+@enduml

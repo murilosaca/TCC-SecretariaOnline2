@@ -1,0 +1,21 @@
+@startuml F7.4-ERRO-01-sem-request-type-manage
+title F7.4-ERRO-01 — 403 sem request_type.manage
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Admin" as Admin
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "RTController" as Ctrl
+
+Admin -> WebApp: /admin/tipos-solicitacao
+WebApp -> Jwt: GET /request-types
+note right of Jwt
+  request_type.manage ausente
+end note
+Jwt --> WebApp: 403 access_denied
+WebApp --> Admin: Problem Details
+
+@enduml

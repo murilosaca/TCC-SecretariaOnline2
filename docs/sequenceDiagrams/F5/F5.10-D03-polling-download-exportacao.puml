@@ -1,0 +1,30 @@
+@startuml F5.10-D03-polling-download-exportacao
+title F5.10-D03 — Polling PRONTO + download
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Secretaria" as Sec
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "ExportController" as Ctrl
+database "Postgres" as Postgres
+participant "MinIO" as MinIO
+
+loop polling ~10s
+  WebApp -> Jwt: GET /exportacoes
+  Jwt -> Ctrl: JWT ok
+  Ctrl -> Postgres: listar jobs
+  Postgres --> WebApp: PRONTO + _links
+end
+Sec -> WebApp: Baixar
+WebApp -> Jwt: GET download
+Jwt -> Ctrl: JWT ok
+Ctrl -> MinIO: URL pré-assinada\n(TTL 15 min)
+MinIO --> Ctrl: URL
+Ctrl --> WebApp: 200 URL
+WebApp -> MinIO: GET arquivo
+MinIO --> Sec: CSV
+
+@enduml

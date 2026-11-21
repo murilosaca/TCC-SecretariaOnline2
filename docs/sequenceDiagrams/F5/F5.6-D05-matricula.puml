@@ -1,0 +1,24 @@
+@startuml F5.6-D05-matricula
+title F5.6-D05 — Matrícula em disciplina
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Secretaria" as Sec
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "StudentController" as Ctrl
+database "Postgres" as Postgres
+
+Sec -> WebApp: Confirmar matrícula
+WebApp -> Jwt: POST /matricula
+Jwt -> Ctrl: JWT ok
+Ctrl -> Postgres: SELECT FOR UPDATE vagas
+Postgres --> Ctrl: vagas OK
+Ctrl -> Postgres: UPDATE vagas\n+ INSERT matrícula\n+ audit_log
+Postgres --> Ctrl: OK (COMMIT)
+Ctrl --> WebApp: 200
+WebApp --> Sec: matrículas ok
+
+@enduml

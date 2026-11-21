@@ -1,0 +1,25 @@
+@startuml F5.6-ERRO-02-sem-vagas
+title F5.6-ERRO-02 — 422 matrícula sem vagas
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Secretaria" as Sec
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "StudentController" as Ctrl
+database "Postgres" as Postgres
+
+Sec -> WebApp: Confirmar matrícula
+WebApp -> Jwt: POST /matricula
+Jwt -> Ctrl: JWT ok
+Ctrl -> Postgres: checar vagas
+Postgres --> Ctrl: vagas = 0
+note right of Ctrl
+  sem BEGIN TX
+end note
+Ctrl --> WebApp: 422 no_vacancies
+WebApp --> Sec: Drawer aberto
+
+@enduml

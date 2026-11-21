@@ -1,0 +1,25 @@
+@startuml F5.3-ERRO-aluno-fora-escopo
+title F5.3-ERRO — 403 nova interna fora do escopo
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Secretaria" as Sec
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "RequestController" as Ctrl
+database "Postgres" as Postgres
+
+Sec -> WebApp: Confirmar interna
+WebApp -> Jwt: POST /requests\n{ onBehalfOf }
+Jwt -> Ctrl: JWT ok
+Ctrl -> Postgres: curso do aluno
+Postgres --> Ctrl: fora de cursoIds
+note right of Ctrl
+  sem INSERT
+end note
+Ctrl --> WebApp: 403 forbidden_scope
+WebApp --> Sec: AlertBanner
+
+@enduml

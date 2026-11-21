@@ -1,0 +1,24 @@
+@startuml F1.19-D03-emissao-automatica
+title F1.19-D03 — Emissão automática de certificado
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+participant "OutboxScheduler" as Sched
+participant "CertificateIssuerUseCase" as UC
+database "Postgres" as Postgres
+participant "MinIO" as MinIO
+participant "NotificacaoDispatcher" as Notif
+
+Sched -> Postgres: SELECT outbox PENDING
+Postgres --> Sched: evento
+Sched -> UC: emitir
+UC -> UC: PDF + SHA-256 + ED25519
+UC -> MinIO: armazena PDF
+MinIO --> UC: OK
+UC -> Postgres: INSERT certificate\n+ notificação\nUPDATE outbox PROCESSED
+Postgres --> UC: OK (COMMIT)
+UC -> Notif: notificar aluno
+
+@enduml

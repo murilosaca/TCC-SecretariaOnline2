@@ -1,0 +1,22 @@
+@startuml F1.19-D01-listar-certificados
+title F1.19-D01 — Listar certificados
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Aluno" as Aluno
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "CertificateController" as Ctrl
+database "Postgres" as Postgres
+
+Aluno -> WebApp: abre /certificados
+WebApp -> Jwt: GET /certificates?beneficiario=me
+Jwt -> Ctrl: JWT ok
+Ctrl -> Postgres: SELECT certificados
+Postgres --> Ctrl: lista
+Ctrl --> WebApp: 200 + _links.download
+WebApp --> Aluno: tabela ou EmptyState
+
+@enduml

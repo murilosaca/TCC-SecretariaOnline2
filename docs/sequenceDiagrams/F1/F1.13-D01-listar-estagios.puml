@@ -1,0 +1,26 @@
+@startuml F1.13-D01-listar-estagios
+title F1.13-D01 — Listar estágios
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Aluno" as Aluno
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "InternshipsController" as Ctrl
+database "Postgres" as Postgres
+
+Aluno -> WebApp: abre /estagios
+WebApp -> Jwt: GET /estagios?aluno=me
+Jwt -> Ctrl: JWT ok
+Ctrl -> Postgres: SELECT estágios
+Postgres --> Ctrl: lista
+Ctrl --> WebApp: 200
+note right of WebApp
+  Sem _links.novo
+  (abertura pela secretaria)
+end note
+WebApp --> Aluno: tabela ou EmptyState
+
+@enduml

@@ -1,0 +1,23 @@
+@startuml F3.7-D03-download-tcc
+title F3.7-D03 — Download do arquivo TCC
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Professor" as Prof
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "TccController" as Ctrl
+participant "MinIO" as MinIO
+
+Prof -> WebApp: Baixar TCC
+WebApp -> Jwt: GET /tccs/{id}/presign
+Jwt -> Ctrl: JWT ok
+Ctrl -> MinIO: gerar URL pré-assinada\n(TTL 15 min)
+MinIO --> Ctrl: URL
+Ctrl --> WebApp: 200 URL
+WebApp -> MinIO: GET arquivo
+MinIO --> Prof: download PDF
+
+@enduml

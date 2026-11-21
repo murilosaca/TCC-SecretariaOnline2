@@ -1,0 +1,22 @@
+@startuml F1.6-D03-filtros-comunicacoes
+title F1.6-D03 — Filtros de comunicações (backend)
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Aluno" as Aluno
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "CommunicationsController" as Ctrl
+database "Postgres" as Postgres
+
+Aluno -> WebApp: Não lido + Institucional
+WebApp -> Jwt: GET /communications\n?lido=false&tipo=INSTITUCIONAL
+Jwt -> Ctrl: JWT ok
+Ctrl -> Postgres: SELECT + WHERE composto
+Postgres --> Ctrl: resultados
+Ctrl --> WebApp: 200
+WebApp --> Aluno: lista filtrada\nou EmptyState
+
+@enduml

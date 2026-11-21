@@ -1,0 +1,24 @@
+@startuml F7.2-D03-listar-autoridades
+title F7.2-D03 — Listar autoridades e matriz
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Admin" as Admin
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "IAMController" as Ctrl
+participant "ListAuthoritiesUseCase" as UC
+database "Postgres" as Postgres
+
+Admin -> WebApp: /admin/autoridades
+WebApp -> Jwt: GET /admin/autoridades
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+UC -> Postgres: SELECT authorities\n+ matriz role×auth
+Postgres --> UC: dados
+UC --> WebApp: 200
+WebApp --> Admin: tabela + matrix
+
+@enduml

@@ -1,0 +1,35 @@
+@startuml F0.7-b-certificado-revogado
+title F0.7-b — Certificado revogado
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Verificador" as Verificador
+participant "WebApp" as WebApp
+participant "Web Crypto API" as Crypto
+participant "CertificadoController" as Ctrl
+participant "VerificarCertificadoUseCase" as UC
+database "Postgres" as Postgres
+
+Verificador -> WebApp: hash revogado
+WebApp -> Ctrl: GET certificado
+Ctrl -> UC: execute(hash)
+UC -> Postgres: SELECT certificado
+Postgres --> UC: status=REVOGADO
+UC --> Ctrl: payload
+Ctrl --> WebApp: 200 + REVOGADO
+
+WebApp -> WebApp: GET /.well-known/jwks.json
+WebApp -> Crypto: SubtleCrypto.verify
+Crypto --> WebApp: true
+
+note right of WebApp
+  Assinatura ainda confere:
+  documento foi emitido de verdade
+  antes da revogação
+end note
+
+WebApp --> Verificador: badge warning "Revogado"\n+ dados históricos
+
+@enduml

@@ -1,0 +1,34 @@
+@startuml F1.1-D03-degradacao-graciosa
+title F1.1-D03 — Degradação graciosa (solicitações)
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Aluno" as Aluno
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "DashboardBFF" as BFF
+participant "SolicitacoesQuery" as SolQ
+participant "FormativasQuery" as FormQ
+
+Aluno -> WebApp: /inicio
+WebApp -> Jwt: GET /bff/dashboard/aluno
+Jwt -> BFF: JWT ok
+
+BFF -> SolQ: buscar solicitações
+SolQ --> BFF: timeout / 503
+
+BFF -> FormQ: buscar formativas
+FormQ --> BFF: OK
+
+note right of BFF
+  try/catch por módulo
+  HTTP 200 mesmo degradado
+  solicitacoes = null
+end note
+
+BFF --> WebApp: 200 parcial
+WebApp --> Aluno: AlertBanner na seção\ndemais blocos OK
+
+@enduml

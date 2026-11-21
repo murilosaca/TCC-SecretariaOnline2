@@ -1,0 +1,25 @@
+@startuml F4.1d-aprovacao-lote
+title F4.1d — Aprovação em lote (presença validada)
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Professor" as Prof
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "CAAFController" as Ctrl
+participant "BatchDecideFormativesUC" as UC
+database "Postgres" as Postgres
+
+Prof -> WebApp: Confirmar lote
+WebApp -> Jwt: POST /comissoes/caaf/lote
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+UC -> Postgres: UPDATE N itens\n+ event_log cada\n+ outbox lote
+Postgres --> UC: OK (COMMIT)
+UC --> Ctrl: ok
+Ctrl --> WebApp: 200
+WebApp --> Prof: banner certificados
+
+@enduml

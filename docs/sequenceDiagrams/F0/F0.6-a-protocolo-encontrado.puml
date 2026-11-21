@@ -1,0 +1,33 @@
+@startuml F0.6-a-protocolo-encontrado
+title F0.6-a — Verificar protocolo (encontrado)
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Verificador" as Verificador
+participant "WebApp" as WebApp
+participant "ProtocoloController" as Ctrl
+participant "VerificarProtocoloUseCase" as UC
+database "Postgres" as Postgres
+
+Verificador -> WebApp: /publico/verificar-protocolo/:id
+WebApp -> Ctrl: GET (público, sem JWT)
+note right of Ctrl
+  RateLimitFilter só por IP
+  RN-F0.6-01
+end note
+Ctrl -> UC: execute(id)
+UC -> Postgres: SELECT protocolo
+Postgres --> UC: protocolo
+
+note right of UC
+  Mascarar solicitanteNomeParcial
+  Nunca GRR — RN-F0.6-02 / LGPD
+end note
+
+UC --> Ctrl: metadados + hashSha256
+Ctrl --> WebApp: 200 OK
+WebApp --> Verificador: card + zona upload opcional
+
+@enduml

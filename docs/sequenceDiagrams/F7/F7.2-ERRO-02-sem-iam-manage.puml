@@ -1,0 +1,21 @@
+@startuml F7.2-ERRO-02-sem-iam-manage
+title F7.2-ERRO-02 — 403 sem iam.manage_roles / authorities
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Admin" as Admin
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "IAMController" as Ctrl
+
+Admin -> WebApp: /admin/perfis
+WebApp -> Jwt: GET /admin/perfis
+note right of Jwt
+  iam.manage_roles ausente
+end note
+Jwt --> WebApp: 403 access_denied
+WebApp --> Admin: Problem Details
+
+@enduml

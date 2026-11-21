@@ -1,0 +1,27 @@
+@startuml F7.1-D01-listar-usuarios
+title F7.1-D01 — Listar e filtrar usuários
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Admin" as Admin
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "IAMController" as Ctrl
+participant "ListUsersUseCase" as UC
+database "Postgres" as Postgres
+
+Admin -> WebApp: /admin/usuarios
+WebApp -> Jwt: GET /admin/usuarios
+Jwt -> Ctrl: user.manage_all ok
+Ctrl -> UC: execute(...)
+UC -> Postgres: SELECT page
+note right of UC
+  deactivate ausente se INATIVO
+end note
+Postgres --> UC: usuários
+UC --> WebApp: 200 + _links
+WebApp --> Admin: tabela
+
+@enduml

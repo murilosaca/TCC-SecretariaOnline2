@@ -1,0 +1,22 @@
+@startuml F5.11-ERRO-01-sem-diploma-register
+title F5.11-ERRO-01 — 403 sem diploma.register
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Secretaria" as Sec
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "GraduationController" as Ctrl
+
+Sec -> WebApp: Confirmar colação
+WebApp -> Jwt: POST /diplomas
+note right of Jwt
+  diploma.register ausente
+  — sem query
+end note
+Jwt --> WebApp: 403 access_denied
+WebApp --> Sec: Problem Details
+
+@enduml

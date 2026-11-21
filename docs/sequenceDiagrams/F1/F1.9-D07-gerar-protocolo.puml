@@ -1,0 +1,26 @@
+@startuml F1.9-D07-gerar-protocolo
+title F1.9-D07 — Gerar protocolo PDF
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Aluno" as Aluno
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "ProtocolUseCase" as UC
+database "Postgres" as Postgres
+participant "MinIO" as MinIO
+
+Aluno -> WebApp: Gerar protocolo
+WebApp -> Jwt: POST /requests/{id}/protocol
+Jwt -> UC: execute(...)
+UC -> Postgres: SELECT solicitação
+Postgres --> UC: dados
+UC -> MinIO: armazena PDF + QR
+MinIO --> UC: OK
+UC -> Postgres: registra protocolo
+UC --> WebApp: 200 + downloadUrl\n(presigned 15 min)
+WebApp --> Aluno: download direto
+
+@enduml

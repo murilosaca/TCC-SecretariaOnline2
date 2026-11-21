@@ -1,0 +1,25 @@
+@startuml F5.19-ERRO-01-feature-flag
+title F5.19-ERRO-01 — Feature flag desativada (404)
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Secretaria" as Sec
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "TaskController" as Ctrl
+
+Sec -> WebApp: /secretaria/tarefas
+note right of WebApp
+  guard: flag off
+end note
+WebApp -> Jwt: GET /tasks
+Jwt -> Ctrl: JWT ok
+note right of Ctrl
+  tasks.enabled=false
+end note
+Ctrl --> WebApp: 404
+WebApp --> Sec: redirect dashboard
+
+@enduml

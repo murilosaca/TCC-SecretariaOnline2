@@ -1,0 +1,24 @@
+@startuml F6.1-D01-carregar-config-curso
+title F6.1-D01 — Carregar configuração do curso
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Coordenador" as Coord
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "CourseController" as Ctrl
+participant "GetCourseConfigUC" as UC
+database "Postgres" as Postgres
+
+Coord -> WebApp: /coordenacao/cursos/{id}/configurar
+WebApp -> Jwt: GET /coordenacao/cursos/{id}/config
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+UC -> Postgres: SELECT config\n+ ownership
+Postgres --> UC: dados
+UC --> WebApp: 200 + _links.update
+WebApp --> Coord: formulário
+
+@enduml

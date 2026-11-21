@@ -1,0 +1,28 @@
+@startuml F1.2-D03-senha-temporaria
+title F1.2-D03 — 422 senha igual à temporária
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Aluno" as Aluno
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "FirstAccessController" as Ctrl
+participant "FirstAccessUseCase" as UC
+database "Postgres" as Postgres
+
+Aluno -> WebApp: senha temporária / Continuar
+WebApp -> Jwt: POST /auth/first-access
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+UC -> Postgres: SELECT usuario
+Postgres --> UC: usuario
+
+UC -> UC: Argon2id.verify = MATCH\n(RN-F1.2-05)
+
+UC --> Ctrl: SenhaReutilizadaException\n(ROLLBACK)
+Ctrl --> WebApp: 422 Problem Details
+WebApp --> Aluno: erro\npermanece em /primeiro-acesso
+
+@enduml

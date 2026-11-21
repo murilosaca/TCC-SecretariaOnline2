@@ -1,0 +1,40 @@
+@startuml F0.3-a-redefinir-senha-ok
+title F0.3-a — Redefinição bem-sucedida (happy path)
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Usuário" as Usuario
+participant "WebApp" as WebApp
+participant "AuthController" as AuthController
+participant "ResetPasswordUseCase" as UC
+database "Postgres" as Postgres
+
+Usuario -> WebApp: nova senha / Salvar
+WebApp -> AuthController: POST /auth/redefinir-senha\n{token, novaSenha}
+AuthController -> UC: execute(...)
+
+note right of UC
+  Verifica JWT em memória
+  (assinatura, audience, exp)
+  RN-F0.3-01
+end note
+
+UC -> Postgres: SELECT blacklist JTI\n+ usuario + passwordHistory
+Postgres --> UC: JTI livre + histórico
+
+UC -> UC: Argon2id.hash(novaSenha)\n(+ check histórico OK)\nRN-F0.3-02 / 06
+
+UC -> Postgres: UPDATE senha\n(senha_alterada=true)\ninvalida refresh tokens\nINSERT iam_jti_blacklist\nINSERT audit_log
+note right of UC
+  TX atômica
+  RN-F0.3-03 / 08
+end note
+Postgres --> UC: OK (COMMIT)
+
+UC --> AuthController: ok
+AuthController --> WebApp: 200 OK
+WebApp --> Usuario: redireciona /login\n(banner sucesso)
+
+@enduml

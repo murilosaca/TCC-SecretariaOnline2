@@ -1,0 +1,29 @@
+@startuml F0.1-d-rate-limit
+title F0.1-d — Login 429 — rate limit atingido
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Usuário" as Usuario
+participant "WebApp" as WebApp
+participant "RateLimitFilter" as RateLimit
+participant "AuthController" as AuthController
+
+Usuario -> WebApp: nova tentativa / Entrar
+WebApp -> RateLimit: POST /auth/login
+
+note right of RateLimit
+  ≥ 5 tentativas / min
+  (IP + identificador)
+  RN-F0.1-06
+end note
+
+RateLimit --> WebApp: 429 Problem Details\n(+ retryAfterSeconds)
+note over AuthController #EEEEEE
+  AuthController / LoginUseCase
+  nunca invocados
+end note
+WebApp --> Usuario: AlertBanner warning\n+ countdown (RN-F0.1-09)
+
+@enduml

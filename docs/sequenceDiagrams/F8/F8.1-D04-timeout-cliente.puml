@@ -1,0 +1,19 @@
+@startuml F8.1-D04-timeout-cliente
+title F8.1-D04 — Timeout 5s no cliente
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Usuario" as User
+participant "WebApp" as WebApp
+
+User -> WebApp: digita termo
+WebApp -> WebApp: GET /search\nAbortController 5s
+note right of WebApp
+  timeout — abort;
+  resposta descartada
+end note
+WebApp --> User: erro tente novamente
+
+@enduml

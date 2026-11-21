@@ -1,0 +1,30 @@
+@startuml F0.2-b-reset-email-inexistente
+title F0.2-b — Solicitar reset (e-mail não cadastrado) — anti-enumeração
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Usuário" as Usuario
+participant "WebApp" as WebApp
+participant "AuthController" as AuthController
+participant "ForgotPasswordUseCase" as UC
+database "Postgres" as Postgres
+
+Usuario -> WebApp: e-mail inexistente / Enviar link
+WebApp -> AuthController: POST /auth/recuperar-senha
+AuthController -> UC: execute(email, ip)
+UC -> Postgres: SELECT usuario BY email
+Postgres --> UC: vazio
+
+note right of UC
+  Sem JWT, sem outbox_event
+  Zero e-mails disparados
+end note
+
+UC -> Postgres: INSERT audit_log\n(tentativa, e-mail ofuscado)\nRN-F0.2-07
+UC --> AuthController: ok
+AuthController --> WebApp: 202 Accepted
+WebApp --> Usuario: mesmo banner do F0.2-a\n(RN-F0.2-01)
+
+@enduml

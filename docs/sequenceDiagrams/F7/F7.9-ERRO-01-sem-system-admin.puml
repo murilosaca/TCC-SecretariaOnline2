@@ -1,0 +1,21 @@
+@startuml F7.9-ERRO-01-sem-system-admin
+title F7.9-ERRO-01 — 403 sem system.admin
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Admin" as Admin
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "HealthController" as Ctrl
+
+Admin -> WebApp: /admin/sistema/saude
+WebApp -> Jwt: GET /admin/sistema/saude
+note right of Jwt
+  system.observe ≠ system.admin
+end note
+Jwt --> WebApp: 403 access_denied
+WebApp --> Admin: AlertBanner
+
+@enduml

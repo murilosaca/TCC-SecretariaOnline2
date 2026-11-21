@@ -1,0 +1,31 @@
+@startuml F1.1-D01-dashboard-cache-miss
+title F1.1-D01 — Dashboard aluno (cache MISS)
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Aluno" as Aluno
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "DashboardBFF" as BFF
+database "Postgres" as Postgres
+
+Aluno -> WebApp: navega /inicio
+note right of WebApp: DS/Skeleton nos blocos
+
+WebApp -> Jwt: GET /bff/dashboard/aluno
+Jwt -> BFF: JWT ok (dashboard.view_own)
+BFF -> Postgres: queries paralelas\n(kpis, pendências, solicitações, eventos…)
+Postgres --> BFF: agregados
+BFF --> WebApp: 200 + _links
+
+note right of WebApp
+  useActions(_links)
+  "Nova solicitação" só se
+  _links.novaSolicitacao
+end note
+
+WebApp --> Aluno: dashboard renderizado
+
+@enduml

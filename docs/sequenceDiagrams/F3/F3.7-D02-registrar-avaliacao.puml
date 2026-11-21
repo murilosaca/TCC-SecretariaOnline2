@@ -1,0 +1,29 @@
+@startuml F3.7-D02-registrar-avaliacao
+title F3.7-D02 — Registrar avaliação de TCC
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Professor" as Prof
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "TccController" as Ctrl
+participant "ReviewTccUseCase" as UC
+database "Postgres" as Postgres
+
+Prof -> WebApp: Registrar avaliação
+WebApp -> Jwt: POST /tccs/{id}/avaliacoes
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+note right of UC
+  situacao calculada
+  pela nota mínima
+end note
+UC -> Postgres: INSERT tcc_evaluation\n+ UPDATE TCC\n+ outbox_event
+Postgres --> UC: OK (COMMIT)
+UC --> Ctrl: ok
+Ctrl --> WebApp: 200
+WebApp --> Prof: avaliação registrada
+
+@enduml

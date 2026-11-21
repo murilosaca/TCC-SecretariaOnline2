@@ -1,0 +1,24 @@
+@startuml F5.19-D04-excluir-tarefa
+title F5.19-D04 — Excluir tarefa
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Secretaria" as Sec
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "TaskController" as Ctrl
+database "Postgres" as Postgres
+
+Sec -> WebApp: Excluir
+WebApp -> Jwt: DELETE /tasks/{id}
+Jwt -> Ctrl: JWT ok
+Ctrl -> Postgres: SELECT estado
+Postgres --> Ctrl: PENDENTE
+Ctrl -> Postgres: DELETE
+Postgres --> Ctrl: OK
+Ctrl --> WebApp: 204
+WebApp --> Sec: card removido
+
+@enduml

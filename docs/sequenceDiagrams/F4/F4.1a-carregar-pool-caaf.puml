@@ -1,0 +1,25 @@
+@startuml F4.1a-carregar-pool-caaf
+title F4.1a — Carregar pool CAAF
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Professor" as Prof
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "CAAFController" as Ctrl
+participant "GetCAAFDashboardUC" as UC
+database "Postgres" as Postgres
+
+Prof -> WebApp: /comissoes/caaf
+WebApp -> Jwt: GET /comissoes/caaf
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+UC -> Postgres: SELECT KPIs + pool\n(escopo curso)
+Postgres --> UC: dados
+UC --> Ctrl: dashboard + _links
+Ctrl --> WebApp: 200
+WebApp --> Prof: KPIs e tabela
+
+@enduml

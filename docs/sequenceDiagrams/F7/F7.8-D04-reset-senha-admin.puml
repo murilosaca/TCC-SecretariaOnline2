@@ -1,0 +1,27 @@
+@startuml F7.8-D04-reset-senha-admin
+title F7.8-D04 — Reset de senha administrativo
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Admin" as Admin
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "IAMController" as Ctrl
+participant "ResetPasswordAdminUseCase" as UC
+database "Postgres" as Postgres
+
+Admin -> WebApp: Confirmar envio
+WebApp -> Jwt: POST /admin/usuarios/{id}/reset-senha
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+UC -> Postgres: outbox link JWT\n+ audit_log
+note right of UC
+  admin não vê senha/link
+end note
+Postgres --> UC: OK (COMMIT)
+UC --> WebApp: 200
+WebApp --> Admin: banner Link enviado
+
+@enduml

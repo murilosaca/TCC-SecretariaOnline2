@@ -1,0 +1,25 @@
+@startuml F3.2-D05-encerrar-evento
+title F3.2-D05 — Encerrar evento
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Professor" as Prof
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "EventController" as Ctrl
+participant "CloseEventUseCase" as UC
+database "Postgres" as Postgres
+
+Prof -> WebApp: Encerrar evento
+WebApp -> Jwt: POST /events/{id}/encerrar
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+UC -> Postgres: UPDATE CONCLUIDO\n+ outbox_event events.closed
+Postgres --> UC: OK (COMMIT)
+UC --> Ctrl: ok
+Ctrl --> WebApp: 200
+WebApp --> Prof: estado CONCLUIDO
+
+@enduml

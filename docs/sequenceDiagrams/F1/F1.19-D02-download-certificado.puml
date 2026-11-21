@@ -1,0 +1,23 @@
+@startuml F1.19-D02-download-certificado
+title F1.19-D02 — Download do certificado
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Aluno" as Aluno
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "CertificateController" as Ctrl
+participant "MinIO" as MinIO
+
+Aluno -> WebApp: Download
+WebApp -> Jwt: GET download-url
+Jwt -> Ctrl: JWT ok + dono
+Ctrl -> MinIO: URL GET\npresigned 15 min
+MinIO --> Ctrl: URL
+Ctrl --> WebApp: 200 + URL
+WebApp -> MinIO: GET PDF
+MinIO --> Aluno: download
+
+@enduml

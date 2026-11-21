@@ -1,0 +1,26 @@
+@startuml F3.7-D01-listar-tccs
+title F3.7-D01 — Listar TCCs para avaliação
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Professor" as Prof
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "TccController" as Ctrl
+database "Postgres" as Postgres
+
+Prof -> WebApp: /tccs?to=me
+WebApp -> Jwt: GET /tccs?to=me
+Jwt -> Ctrl: JWT ok
+Ctrl -> Postgres: SELECT orientação\nou banca
+note right of Ctrl
+  _links.avaliar se arquivo
+  final e estado permite
+end note
+Postgres --> Ctrl: page
+Ctrl --> WebApp: 200 + _links
+WebApp --> Prof: fila de TCCs
+
+@enduml

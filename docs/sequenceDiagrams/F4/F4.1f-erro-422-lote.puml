@@ -1,0 +1,29 @@
+@startuml F4.1f-erro-422-lote
+title F4.1f — 422 batch com tipos incompatíveis
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Professor" as Prof
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "CAAFController" as Ctrl
+participant "BatchDecideFormativesUC" as UC
+database "Postgres" as Postgres
+
+Prof -> WebApp: Aprovar lote misto
+WebApp -> Jwt: POST /comissoes/caaf/lote
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+UC -> Postgres: SELECT tipos dos ids
+Postgres --> UC: tipos mistos
+note right of UC
+  validação antes do BEGIN TX
+  → sem UPDATE
+end note
+UC --> Ctrl: erro
+Ctrl --> WebApp: 422 + invalidIds
+WebApp --> Prof: Problem Details
+
+@enduml

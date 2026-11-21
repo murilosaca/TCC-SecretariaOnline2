@@ -1,0 +1,27 @@
+@startuml F1.17-D02-sessao-presenca
+title F1.17-D02 — Sessão de presença (modal)
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Aluno" as Aluno
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "AttendanceController" as Ctrl
+database "Postgres" as Postgres
+
+Aluno -> WebApp: abre detalhe do evento
+WebApp -> Jwt: GET /events/{id}/attendance/session
+Jwt -> Ctrl: JWT ok
+Ctrl -> Postgres: SELECT sessão
+Postgres --> Ctrl: modo + janelaExpira
+Ctrl --> WebApp: 200 + _links?
+
+alt janela ativa
+  WebApp --> Aluno: AttendanceWidget\n(_links.confirmar-presenca)
+else janela fechada
+  WebApp --> Aluno: só descrição\n(sem widget)
+end
+
+@enduml

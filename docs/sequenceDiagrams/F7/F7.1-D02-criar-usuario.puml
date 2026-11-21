@@ -1,0 +1,28 @@
+@startuml F7.1-D02-criar-usuario
+title F7.1-D02 — Criar usuário
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Admin" as Admin
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "IAMController" as Ctrl
+participant "CreateUserUseCase" as UC
+database "Postgres" as Postgres
+
+Admin -> WebApp: Salvar usuário
+WebApp -> Jwt: POST /admin/usuarios
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+note right of UC
+  senha temp + Argon2id;
+  admin não vê senha
+end note
+UC -> Postgres: INSERT user\n+ audit_log\n+ outbox_event
+Postgres --> UC: OK (COMMIT)
+UC --> WebApp: 201
+WebApp --> Admin: usuário na tabela
+
+@enduml

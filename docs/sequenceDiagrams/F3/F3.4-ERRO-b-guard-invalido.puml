@@ -1,0 +1,28 @@
+@startuml F3.4-ERRO-b-guard-invalido
+title F3.4-ERRO-b — Transição com guard inválido
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Professor" as Prof
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "RequestController" as Ctrl
+participant "DeliberateRequestUseCase" as UC
+database "Postgres" as Postgres
+
+Prof -> WebApp: Deferir (UI stale)
+WebApp -> Jwt: POST /requests/{id}/transitions\n{ action: DEFER }
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+note right of UC
+  authority granular ausente
+  ou guard workflow falhou
+  → sem TX
+end note
+UC --> Ctrl: erro
+Ctrl --> WebApp: 422 guard_failed
+WebApp --> Prof: Problem Details
+
+@enduml

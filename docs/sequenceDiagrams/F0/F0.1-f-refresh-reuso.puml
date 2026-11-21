@@ -1,0 +1,29 @@
+@startuml F0.1-f-refresh-reuso
+title F0.1-f — Refresh token — reuso detectado
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+participant "WebApp" as WebApp
+participant "AuthController" as AuthController
+participant "RefreshTokenUseCase" as UC
+database "Postgres" as Postgres
+
+WebApp -> AuthController: POST /auth/refresh\n(cookie so2_refresh)
+AuthController -> UC: execute(refreshRaw, ip)
+UC -> Postgres: SELECT refresh_token\nFOR UPDATE
+Postgres --> UC: sessão (isUsed=true)
+
+note right of UC
+  Reuso detectado
+  Revoga TODAS as sessões
+  RN-F0.1-10
+end note
+
+UC -> Postgres: invalidar sessões do usuário\nINSERT audit_log\n(iam.suspicious_token_reuse)
+UC --> AuthController: exceção de reuso
+AuthController --> WebApp: 401\nClear-Cookie so2_refresh
+WebApp -> WebApp: redireciona /login
+
+@enduml

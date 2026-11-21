@@ -1,0 +1,27 @@
+@startuml F7.5-D03-salvar-revisao
+title F7.5-D03 — Salvar revisão
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Admin" as Admin
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "CTController" as Ctrl
+participant "SaveRevisionUseCase" as UC
+database "Postgres" as Postgres
+
+Admin -> WebApp: Salvar
+WebApp -> Jwt: POST .../{id}/revisoes
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+UC -> Postgres: UPDATE ARCHIVED\n+ INSERT CURRENT\n+ audit_log
+note right of UC
+  um CURRENT só
+end note
+Postgres --> UC: OK (COMMIT)
+UC --> WebApp: 201
+WebApp --> Admin: histórico atualizado
+
+@enduml

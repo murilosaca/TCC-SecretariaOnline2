@@ -1,0 +1,27 @@
+@startuml F5.3-D02-nova-interna
+title F5.3-D02 — Nova interna em nome de aluno
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Secretaria" as Sec
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "RequestController" as Ctrl
+database "Postgres" as Postgres
+
+Sec -> WebApp: Buscar aluno (GRR/nome)
+WebApp -> Jwt: GET /alunos?q=
+Jwt -> Ctrl: JWT ok
+Ctrl -> Postgres: SELECT no escopo
+Postgres --> WebApp: candidatos
+Sec -> WebApp: Confirmar wizard
+WebApp -> Jwt: POST /requests\n{ onBehalfOf }
+Jwt -> Ctrl: JWT ok
+Ctrl -> Postgres: INSERT request\n+ outbox_event
+Postgres --> Ctrl: OK (COMMIT)
+Ctrl --> WebApp: 201
+WebApp --> Sec: na fila
+
+@enduml

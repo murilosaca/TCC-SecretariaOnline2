@@ -1,0 +1,27 @@
+@startuml F1.6-D02-marcar-lido
+title F1.6-D02 — Marcar comunicação como lida
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Aluno" as Aluno
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "CommunicationsController" as Ctrl
+database "Postgres" as Postgres
+
+Aluno -> WebApp: abre comunicação não lida
+note right of WebApp
+  Só dispara se
+  _links.marcar-lido existir
+end note
+
+WebApp -> Jwt: POST /communications/:id/read
+Jwt -> Ctrl: JWT ok
+Ctrl -> Postgres: UPDATE read_at\nAND destinatario_id = aluno
+Postgres --> Ctrl: OK
+Ctrl --> WebApp: 200
+WebApp --> Aluno: remove unread dot
+
+@enduml

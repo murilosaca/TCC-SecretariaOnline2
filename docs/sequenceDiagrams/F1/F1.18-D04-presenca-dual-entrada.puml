@@ -1,0 +1,25 @@
+@startuml F1.18-D04-presenca-dual-entrada
+title F1.18-D04 — DUAL fase ENTRADA
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Aluno" as Aluno
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "AttendanceController" as Ctrl
+participant "ConfirmAttendanceUseCase" as UC
+database "Postgres" as Postgres
+
+Aluno -> WebApp: PIN entrada / Confirmar
+WebApp -> Jwt: POST confirm\nfase=ENTRADA
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+UC -> Postgres: INSERT entrada\n(sem outbox ainda)
+Postgres --> UC: OK
+UC --> Ctrl: situacao PARCIAL
+Ctrl --> WebApp: 200
+WebApp --> Aluno: Entrada registrada\n(aguardar saída)
+
+@enduml

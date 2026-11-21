@@ -1,0 +1,26 @@
+@startuml F7.4-ERRO-02-schema-invalido
+title F7.4-ERRO-02 — 422 schema inválido no publish
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Admin" as Admin
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "RTController" as Ctrl
+participant "PublishRequestTypeUseCase" as UC
+database "Postgres" as Postgres
+
+Admin -> WebApp: Publicar
+WebApp -> Jwt: POST /request-types/{id}/publish
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+note right of UC
+  validate schema
+  → sem BEGIN TX
+end note
+UC --> WebApp: 422 invalid_schema
+WebApp --> Admin: erro no editor
+
+@enduml

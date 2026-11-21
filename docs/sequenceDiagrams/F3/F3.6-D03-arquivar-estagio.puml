@@ -1,0 +1,29 @@
+@startuml F3.6-D03-arquivar-estagio
+title F3.6-D03 — Arquivar estágio concluído
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Professor" as Prof
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "InternshipController" as Ctrl
+participant "CloseInternshipUseCase" as UC
+database "Postgres" as Postgres
+
+Prof -> WebApp: Arquivar estágio
+WebApp -> Jwt: POST /estagios/{id}/encerrar
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+note right of UC
+  docs obrigatórios APROVADO;
+  senão 422 documents_pending
+end note
+UC -> Postgres: UPDATE CONCLUIDO\n+ outbox_event
+Postgres --> UC: OK (COMMIT)
+UC --> Ctrl: ok
+Ctrl --> WebApp: 200
+WebApp --> Prof: estágio CONCLUIDO
+
+@enduml

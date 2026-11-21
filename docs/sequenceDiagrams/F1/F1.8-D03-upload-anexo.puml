@@ -1,0 +1,23 @@
+@startuml F1.8-D03-upload-anexo
+title F1.8-D03 — Upload de anexo no wizard
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Aluno" as Aluno
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "AttachmentController" as Ctrl
+participant "MinIO" as MinIO
+
+Aluno -> WebApp: solta PDF (≤ 10 MB)
+WebApp -> WebApp: SHA-256 local\n(crypto.subtle.digest)
+WebApp -> Jwt: upload anexo
+Jwt -> Ctrl: JWT ok
+Ctrl -> MinIO: armazena
+MinIO --> Ctrl: OK
+Ctrl --> WebApp: fileKey
+WebApp --> Aluno: anexo no wizard\n(fileKey para D04)
+
+@enduml

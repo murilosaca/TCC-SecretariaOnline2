@@ -1,0 +1,27 @@
+@startuml F3.5-D01-fila-caaf
+title F3.5-D01 — Fila de revisão CAAF
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Professor" as Prof
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "FormativeController" as Ctrl
+database "Postgres" as Postgres
+
+Prof -> WebApp: /formativas?to=me
+WebApp -> Jwt: GET /formativas?canReview=true
+Jwt -> Ctrl: JWT ok
+Ctrl -> Postgres: SELECT escopo curso CAAF
+note right of Ctrl
+  sem claim cursoIds;
+  batch-approve só se
+  EVENTO_INTERNO_PRESENCA_VALIDADA
+end note
+Postgres --> Ctrl: page
+Ctrl --> WebApp: 200 + _links
+WebApp --> Prof: fila CAAF
+
+@enduml

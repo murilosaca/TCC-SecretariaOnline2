@@ -1,0 +1,22 @@
+@startuml F5.19-ERRO-03-titulo-invalido
+title F5.19-ERRO-03 — 422 título inválido
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Secretaria" as Sec
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "TaskController" as Ctrl
+
+Sec -> WebApp: Salvar título vazio
+WebApp -> Jwt: POST /tasks
+Jwt -> Ctrl: JWT ok
+note right of Ctrl
+  @NotBlank / @Size(max=200)
+end note
+Ctrl --> WebApp: 422
+WebApp --> Sec: erro inline
+
+@enduml

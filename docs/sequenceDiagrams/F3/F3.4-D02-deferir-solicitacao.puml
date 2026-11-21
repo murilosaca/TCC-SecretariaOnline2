@@ -1,0 +1,29 @@
+@startuml F3.4-D02-deferir-solicitacao
+title F3.4-D02 — Deferir solicitação
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Professor" as Prof
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "RequestController" as Ctrl
+participant "DeliberateRequestUseCase" as UC
+database "Postgres" as Postgres
+
+Prof -> WebApp: Deferir com parecer
+WebApp -> Jwt: POST /requests/{id}/transitions\n{ action: DEFER }
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+note right of UC
+  request.deliberate x Transition
+  guard workflow; JTI se deep-link
+end note
+UC -> Postgres: UPDATE estado\n+ request_event\n+ audit_log\n+ outbox_event
+Postgres --> UC: OK (COMMIT)
+UC --> Ctrl: ok
+Ctrl --> WebApp: 200
+WebApp --> Prof: redireciona à fila
+
+@enduml

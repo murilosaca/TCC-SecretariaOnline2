@@ -1,0 +1,28 @@
+@startuml F5.17-D01-solicitar-exportacao
+title F5.17-D01 — Solicitar exportação
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Secretaria" as Sec
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "ExportController" as Ctrl
+participant "CreateExportUseCase" as UC
+database "Postgres" as Postgres
+
+Sec -> WebApp: Solicitar exportação
+WebApp -> Jwt: POST /exportacoes/{kind}
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+UC -> Postgres: INSERT export_job\nPROCESSANDO
+note right of UC
+  sem gerar arquivo aqui
+end note
+Postgres --> UC: OK
+UC --> Ctrl: job
+Ctrl --> WebApp: 202
+WebApp --> Sec: histórico PROCESSANDO
+
+@enduml

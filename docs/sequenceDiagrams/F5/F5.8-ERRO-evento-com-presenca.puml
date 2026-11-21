@@ -1,0 +1,27 @@
+@startuml F5.8-ERRO-evento-com-presenca
+title F5.8-ERRO — 422 excluir evento com presença
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Secretaria" as Sec
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "EventController" as Ctrl
+participant "DeleteEventUseCase" as UC
+database "Postgres" as Postgres
+
+Sec -> WebApp: Excluir evento
+WebApp -> Jwt: DELETE /events/{id}
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+UC -> Postgres: count attendances
+Postgres --> UC: count > 0
+note right of UC
+  sem DELETE
+end note
+UC --> WebApp: 422 event_has_attendances
+WebApp --> Sec: Toast erro
+
+@enduml

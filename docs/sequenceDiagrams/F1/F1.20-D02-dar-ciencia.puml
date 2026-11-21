@@ -1,0 +1,25 @@
+@startuml F1.20-D02-dar-ciencia
+title F1.20-D02 — Dar ciência
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Aluno" as Aluno
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "ServiceRecordController" as Ctrl
+participant "AcknowledgeUseCase" as UC
+database "Postgres" as Postgres
+
+Aluno -> WebApp: Estou ciente
+WebApp -> Jwt: POST /atendimentos/{id}/acknowledge
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+UC -> Postgres: UPDATE CIENCIA_DADA\n+ audit_log (IP)
+Postgres --> UC: OK (COMMIT)
+UC --> Ctrl: ok
+Ctrl --> WebApp: 200\n(sem _links.acknowledge)
+WebApp --> Aluno: badge Ciente
+
+@enduml

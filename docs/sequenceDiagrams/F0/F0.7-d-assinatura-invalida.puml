@@ -1,0 +1,35 @@
+@startuml F0.7-d-assinatura-invalida
+title F0.7-d — Assinatura ED25519 inválida
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Verificador" as Verificador
+participant "WebApp" as WebApp
+participant "Web Crypto API" as Crypto
+participant "CertificadoController" as Ctrl
+participant "VerificarCertificadoUseCase" as UC
+database "Postgres" as Postgres
+
+Verificador -> WebApp: hash existente
+WebApp -> Ctrl: GET certificado
+Ctrl -> UC: execute(hash)
+UC -> Postgres: SELECT certificado
+Postgres --> UC: payload + assinatura
+UC --> Ctrl: ok
+Ctrl --> WebApp: 200 OK
+
+WebApp -> WebApp: GET /.well-known/jwks.json
+WebApp -> Crypto: SubtleCrypto.verify
+Crypto --> WebApp: false
+
+note right of WebApp
+  JWKS é a fonte de verdade
+  independente do 200 do backend
+  RN-F0.7-05 / 06
+end note
+
+WebApp --> Verificador: "Certificado inválido"\n(sem dados do beneficiário)
+
+@enduml

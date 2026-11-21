@@ -1,0 +1,27 @@
+@startuml F7.4-ERRO-03-tipo-com-historico
+title F7.4-ERRO-03 — 422 excluir RequestType com histórico
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Admin" as Admin
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "RTController" as Ctrl
+participant "DeleteRequestTypeUseCase" as UC
+database "Postgres" as Postgres
+
+Admin -> WebApp: Excluir tipo
+WebApp -> Jwt: DELETE /request-types/{id}
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+UC -> Postgres: count histórico
+Postgres --> UC: N > 0
+note right of UC
+  sem DELETE
+end note
+UC --> WebApp: 422 request_type_in_use
+WebApp --> Admin: AlertBanner
+
+@enduml

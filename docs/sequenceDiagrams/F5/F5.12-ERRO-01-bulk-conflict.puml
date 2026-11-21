@@ -1,0 +1,25 @@
+@startuml F5.12-ERRO-01-bulk-conflict
+title F5.12-ERRO-01 — 409 falha parcial por concorrência
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Secretaria" as Sec
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "RequestController" as Ctrl
+database "Postgres" as Postgres
+
+Sec -> WebApp: Confirmar lote
+WebApp -> Jwt: PATCH /requests/bulk-deliberate
+Jwt -> Ctrl: JWT ok
+Ctrl -> Postgres: SELECT FOR UPDATE
+Postgres --> Ctrl: count < N
+note right of Ctrl
+  sem BEGIN TX
+end note
+Ctrl --> WebApp: 409 bulk_conflict
+WebApp --> Sec: AlertBanner failedIds
+
+@enduml

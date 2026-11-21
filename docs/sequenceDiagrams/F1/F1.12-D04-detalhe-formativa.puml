@@ -1,0 +1,22 @@
+@startuml F1.12-D04-detalhe-formativa
+title F1.12-D04 — Detalhe da formativa aprovada
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Aluno" as Aluno
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "FormativeController" as Ctrl
+database "Postgres" as Postgres
+
+Aluno -> WebApp: /formativas/:id
+WebApp -> Jwt: GET /formativas/{id}
+Jwt -> Ctrl: JWT ok
+Ctrl -> Postgres: SELECT formativa
+Postgres --> Ctrl: APROVADA + certificado
+Ctrl --> WebApp: 200 + _links.baixar-certificado
+WebApp --> Aluno: detalhe + Baixar certificado
+
+@enduml

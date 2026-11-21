@@ -1,0 +1,26 @@
+@startuml F7.2-D05-atribuir-roles
+title F7.2-D05 — Atribuir roles a usuário
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Admin" as Admin
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "IAMController" as Ctrl
+participant "AssignRolesUseCase" as UC
+database "Postgres" as Postgres
+participant "CapabilityCache" as Cache
+
+Admin -> WebApp: Confirmar roles
+WebApp -> Jwt: PUT /admin/usuarios/{id}/roles
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+UC -> Postgres: REPLACE user_roles\n+ audit_log
+Postgres --> UC: OK (COMMIT)
+UC -> Cache: invalidate user
+Cache --> WebApp: 200
+WebApp --> Admin: roles atualizados
+
+@enduml

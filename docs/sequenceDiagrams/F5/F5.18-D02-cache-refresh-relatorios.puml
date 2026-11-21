@@ -1,0 +1,25 @@
+@startuml F5.18-D02-cache-refresh-relatorios
+title F5.18-D02 — Cache HIT + refresh manual
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Secretaria" as Sec
+participant "WebApp" as WebApp
+
+Sec -> WebApp: reabre estatísticas
+note right of WebApp
+  cache HIT (< 5 min)
+  sem HTTP
+end note
+WebApp --> Sec: gráficos do cache
+Sec -> WebApp: Refresh
+note right of WebApp
+  invalidateQueries
+  + Skeleton
+end note
+WebApp -> WebApp: refetch F5.11-D01
+WebApp --> Sec: dados atualizados
+
+@enduml

@@ -1,0 +1,26 @@
+@startuml F5.9-D01-baixar-modelo-importacao
+title F5.9-D01 — Baixar modelo de importação
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Secretaria" as Sec
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "ImportController" as Ctrl
+participant "ImportTemplateUseCase" as UC
+
+Sec -> WebApp: Baixar modelo alunos
+WebApp -> Jwt: GET /importacoes/modelo?kind=alunos
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+note right of UC
+  schema + linha exemplo
+  (sem MinIO)
+end note
+UC --> Ctrl: bytes
+Ctrl --> WebApp: 200 arquivo
+WebApp --> Sec: download CSV
+
+@enduml

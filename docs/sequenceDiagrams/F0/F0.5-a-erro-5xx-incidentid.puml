@@ -1,0 +1,27 @@
+@startuml F0.5-a-erro-5xx-incidentid
+title F0.5-a — API 5xx → /erro/500 com incidentId
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Usuário" as Usuario
+participant "WebApp" as WebApp
+participant "TanStack Query" as TQ
+participant "API" as API
+
+Usuario -> WebApp: ação qualquer
+WebApp -> TQ: useQuery / useMutation
+TQ -> API: HTTP request
+API --> TQ: 5xx Problem Details\ninstance = INC-YYYY-XXXX
+
+note right of TQ
+  Interceptor global extrai instance
+  navigate(/erro/500, { incidentId })
+  RN-F0.5-05 / 09
+end note
+
+TQ --> WebApp: redireciona /erro/500
+WebApp --> Usuario: tela 500\nID copiável (sem stack trace)
+
+@enduml

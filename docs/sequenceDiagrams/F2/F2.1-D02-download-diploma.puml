@@ -1,0 +1,29 @@
+@startuml F2.1-D02-download-diploma
+title F2.1-D02 — Download do diploma
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Egresso" as Egresso
+participant "WebApp" as WebApp
+participant "AlumniController" as Ctrl
+participant "DiplomaDownloadUC" as UC
+participant "MinIO" as MinIO
+
+Egresso -> WebApp: Download diploma
+WebApp -> Ctrl: pede URL
+Ctrl -> UC: execute(...)
+UC -> MinIO: URL GET\npresigned 15 min
+MinIO --> UC: URL
+UC --> Ctrl: URL
+Ctrl --> WebApp: 200
+WebApp -> MinIO: GET PDF
+MinIO --> Egresso: download
+
+note right of UC
+  Não regenera nem reassina
+  Arquivo oficial da secretaria
+end note
+
+@enduml

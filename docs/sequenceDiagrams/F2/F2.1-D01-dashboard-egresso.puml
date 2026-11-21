@@ -1,0 +1,27 @@
+@startuml F2.1-D01-dashboard-egresso
+title F2.1-D01 — Dashboard do egresso
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Egresso" as Egresso
+participant "WebApp" as WebApp
+participant "AlumniController" as Ctrl
+participant "GetAlumniProfileUC" as UC
+database "Postgres" as Postgres
+
+Egresso -> WebApp: abre /egresso/inicio
+WebApp -> Ctrl: GET /egressos/me
+Ctrl -> UC: execute(alumniId do JWT)
+UC -> Postgres: SELECT perfil\n(só o próprio)
+Postgres --> UC: diploma + certificados + colação
+UC --> Ctrl: perfil + _links
+Ctrl --> WebApp: 200
+note right of WebApp
+  useActions — só download/reemitir
+  Sem CTAs de criação
+end note
+WebApp --> Egresso: dashboard read-only
+
+@enduml

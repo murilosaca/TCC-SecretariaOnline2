@@ -1,0 +1,28 @@
+@startuml F7.7-D01-listar-audit-log
+title F7.7-D01 — Listar trilha de auditoria
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Admin" as Admin
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "AuditController" as Ctrl
+participant "ListAuditLogUseCase" as UC
+database "Postgres" as Postgres
+
+Admin -> WebApp: /admin/audit-log
+WebApp -> Jwt: GET /admin/audit-log
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+UC -> Postgres: SELECT page DESC
+Postgres --> UC: eventos + payloads
+UC --> WebApp: 200
+note right of WebApp
+  Drawer/diff no client;
+  sem links de mutação
+end note
+WebApp --> Admin: tabela imutável
+
+@enduml

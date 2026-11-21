@@ -1,0 +1,24 @@
+@startuml F7.5-D02-criar-template
+title F7.5-D02 — Criar template
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Admin" as Admin
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "CTController" as Ctrl
+participant "CreateTemplateUseCase" as UC
+database "Postgres" as Postgres
+
+Admin -> WebApp: Salvar novo template
+WebApp -> Jwt: POST /admin/templates-comunicacao
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+UC -> Postgres: INSERT template\n+ revisão CURRENT\n+ audit_log
+Postgres --> UC: OK (COMMIT)
+UC --> WebApp: 201
+WebApp --> Admin: template na lista
+
+@enduml

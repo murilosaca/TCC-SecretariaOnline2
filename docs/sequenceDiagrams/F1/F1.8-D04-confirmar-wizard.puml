@@ -1,0 +1,32 @@
+@startuml F1.8-D04-confirmar-wizard
+title F1.8-D04 — Confirmar wizard (POST /requests)
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Aluno" as Aluno
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "OpenRequestController" as Ctrl
+participant "OpenRequestUseCase" as UC
+database "Postgres" as Postgres
+
+Aluno -> WebApp: Confirmar (passo 3)
+WebApp -> Jwt: POST /requests
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+
+note right of UC
+  Revalida form_schema
+  numero_anual + prazo_em
+  RN-F1.8-03 / 06
+end note
+
+UC -> Postgres: INSERT request\n+ workflow + outbox_event
+Postgres --> UC: OK (COMMIT)
+UC --> Ctrl: solicitação criada
+Ctrl --> WebApp: 201
+WebApp --> Aluno: /solicitacoes/:id
+
+@enduml

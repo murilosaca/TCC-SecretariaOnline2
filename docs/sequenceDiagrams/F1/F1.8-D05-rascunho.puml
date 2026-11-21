@@ -1,0 +1,25 @@
+@startuml F1.8-D05-rascunho
+title F1.8-D05 — Salvar rascunho
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Aluno" as Aluno
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "OpenRequestController" as Ctrl
+database "Postgres" as Postgres
+
+Aluno -> WebApp: sai do wizard\n(dados parciais)
+WebApp -> Jwt: POST /requests/draft
+Jwt -> Ctrl: JWT ok
+Ctrl -> Postgres: INSERT/UPDATE\nestado=RASCUNHO
+Postgres --> Ctrl: OK
+Ctrl --> WebApp: 200
+note right of WebApp
+  Cópia local opcional (PWA)
+  Modal Continuar/Novo = client-side
+end note
+
+@enduml

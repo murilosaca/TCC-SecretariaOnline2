@@ -1,0 +1,22 @@
+@startuml F7.5-ERRO-01-sem-manage-templates
+title F7.5-ERRO-01 — 403 sem communication.manage_templates
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Admin" as Admin
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "CTController" as Ctrl
+
+Admin -> WebApp: /admin/templates-comunicacao
+WebApp -> Jwt: GET /admin/templates-comunicacao
+note right of Jwt
+  communication.manage_templates
+  ausente
+end note
+Jwt --> WebApp: 403 access_denied
+WebApp --> Admin: Problem Details
+
+@enduml

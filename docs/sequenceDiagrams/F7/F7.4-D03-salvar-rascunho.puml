@@ -1,0 +1,24 @@
+@startuml F7.4-D03-salvar-rascunho
+title F7.4-D03 — Salvar rascunho
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Admin" as Admin
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "RTController" as Ctrl
+participant "SaveDraftUseCase" as UC
+database "Postgres" as Postgres
+
+Admin -> WebApp: Salvar rascunho
+WebApp -> Jwt: PATCH /request-types/{id}
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+UC -> Postgres: UPDATE schemas\n+ audit_log
+Postgres --> UC: OK (COMMIT)
+UC --> WebApp: 200
+WebApp --> Admin: preview atualizado
+
+@enduml

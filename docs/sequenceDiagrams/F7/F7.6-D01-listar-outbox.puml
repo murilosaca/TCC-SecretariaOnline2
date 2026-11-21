@@ -1,0 +1,27 @@
+@startuml F7.6-D01-listar-outbox
+title F7.6-D01 — Listar eventos do Outbox
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Admin" as Admin
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "OutboxController" as Ctrl
+participant "ListOutboxEventsUseCase" as UC
+database "Postgres" as Postgres
+
+Admin -> WebApp: /admin/jobs
+WebApp -> Jwt: GET /admin/outbox?status=FAILED
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+UC -> Postgres: SELECT page + meta
+note right of UC
+  retry só FAILED/DEAD
+end note
+Postgres --> UC: eventos
+UC --> WebApp: 200 + _links
+WebApp --> Admin: tabela Outbox
+
+@enduml

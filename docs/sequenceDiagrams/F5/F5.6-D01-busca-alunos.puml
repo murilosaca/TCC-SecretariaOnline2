@@ -1,0 +1,26 @@
+@startuml F5.6-D01-busca-alunos
+title F5.6-D01 — Busca de alunos
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Secretaria" as Sec
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "StudentController" as Ctrl
+database "Postgres" as Postgres
+
+Sec -> WebApp: Buscar "João"
+WebApp -> Jwt: GET /academico/alunos?q=
+Jwt -> Ctrl: JWT ok
+Ctrl -> Postgres: SELECT trgm / GRR / email
+note right of Ctrl
+  sem filtro curso na busca;
+  _links só se curso no escopo
+end note
+Postgres --> Ctrl: page
+Ctrl --> WebApp: 200 + _links
+WebApp --> Sec: tabela HATEOAS
+
+@enduml

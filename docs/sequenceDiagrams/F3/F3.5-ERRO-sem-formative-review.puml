@@ -1,0 +1,22 @@
+@startuml F3.5-ERRO-sem-formative-review
+title F3.5-ERRO — 403 sem formative.review
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Professor" as Prof
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "FormativeController" as Ctrl
+
+Prof -> WebApp: /formativas?to=me
+WebApp -> Jwt: GET /formativas?canReview=true
+note right of Jwt
+  formative.review ausente
+  FormativeController não executa
+end note
+Jwt --> WebApp: 403
+WebApp --> Prof: acesso negado
+
+@enduml

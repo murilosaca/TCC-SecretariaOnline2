@@ -1,0 +1,20 @@
+@startuml F5.10-D02-worker-exportacao
+title F5.10-D02 — Worker gera CSV e publica
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+participant "ExportWorker" as Worker
+database "Postgres" as Postgres
+participant "MinIO" as MinIO
+
+Worker -> Postgres: SELECT FOR UPDATE\nSKIP LOCKED
+Postgres --> Worker: job PROCESSANDO
+Worker -> Worker: gerar CSV
+Worker -> MinIO: PUT arquivo
+MinIO --> Worker: OK
+Worker -> Postgres: UPDATE PRONTO\n+ outbox_event
+Postgres --> Worker: OK (COMMIT)
+
+@enduml

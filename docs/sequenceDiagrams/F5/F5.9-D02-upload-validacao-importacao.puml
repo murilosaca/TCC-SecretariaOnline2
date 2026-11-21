@@ -1,0 +1,29 @@
+@startuml F5.9-D02-upload-validacao-importacao
+title F5.9-D02 — Upload e validação assíncrona
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Secretaria" as Sec
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "ImportController" as Ctrl
+participant "ValidateImportUseCase" as UC
+database "Postgres" as Postgres
+
+Sec -> WebApp: Upload CSV
+WebApp -> Jwt: POST /importacoes
+Jwt -> Ctrl: JWT ok
+Ctrl -> Postgres: INSERT job + rows
+Postgres --> Ctrl: OK
+Ctrl --> WebApp: 202 jobId
+loop polling ~2s
+  WebApp -> Jwt: GET /importacoes/{jobId}
+  Jwt -> Ctrl: JWT ok
+  Ctrl -> Postgres: status
+  Postgres --> WebApp: VALIDATED + preview
+end
+WebApp --> Sec: linhas OK / erros
+
+@enduml

@@ -1,0 +1,24 @@
+@startuml F7.2-D02-criar-perfil
+title F7.2-D02 — Criar perfil customizado
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Admin" as Admin
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "IAMController" as Ctrl
+participant "CreateRoleUseCase" as UC
+database "Postgres" as Postgres
+
+Admin -> WebApp: Salvar perfil
+WebApp -> Jwt: POST /admin/perfis
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+UC -> Postgres: INSERT role\n+ perfil_authority\n+ audit_log
+Postgres --> UC: OK (COMMIT)
+UC --> WebApp: 201
+WebApp --> Admin: badge Customizado
+
+@enduml

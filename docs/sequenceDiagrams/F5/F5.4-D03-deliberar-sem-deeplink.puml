@@ -1,0 +1,27 @@
+@startuml F5.4-D03-deliberar-sem-deeplink
+title F5.4-D03 — Deliberar sem deep-link
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Secretaria" as Sec
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "RequestController" as Ctrl
+database "Postgres" as Postgres
+
+Sec -> WebApp: /solicitacoes/{id}/deliberar
+WebApp -> Jwt: GET /requests/{id}
+Jwt -> Ctrl: JWT ok
+Ctrl -> Postgres: SELECT + _links
+Postgres --> WebApp: 200 detalhe
+Sec -> WebApp: Confirmar decisão
+WebApp -> Jwt: PATCH /requests/{id}/deliberate
+Jwt -> Ctrl: JWT ok
+Ctrl -> Postgres: UPDATE + event\n+ outbox_event
+Postgres --> Ctrl: OK (COMMIT)
+Ctrl --> WebApp: 200
+WebApp --> Sec: fila atualizada
+
+@enduml

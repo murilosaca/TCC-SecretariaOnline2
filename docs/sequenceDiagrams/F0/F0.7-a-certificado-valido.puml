@@ -1,0 +1,31 @@
+@startuml F0.7-a-certificado-valido
+title F0.7-a — Certificado válido (GET + JWKS + ED25519.verify)
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Verificador" as Verificador
+participant "WebApp" as WebApp
+participant "Web Crypto API" as Crypto
+participant "CertificadoController" as Ctrl
+participant "VerificarCertificadoUseCase" as UC
+database "Postgres" as Postgres
+
+Verificador -> WebApp: /publico/verificar-certificado/:hash
+WebApp -> Ctrl: GET (público)
+note right of Ctrl
+  RateLimit por IP — RN-F0.7-10
+end note
+Ctrl -> UC: execute(hash)
+UC -> Postgres: SELECT certificado
+Postgres --> UC: metadados + assinaturaEd25519\nstatus=VALIDO
+UC --> Ctrl: payload (sem GRR/e-mail)
+Ctrl --> WebApp: 200 OK
+
+WebApp -> WebApp: GET /.well-known/jwks.json
+WebApp -> Crypto: SubtleCrypto.verify
+Crypto --> WebApp: true
+WebApp --> Verificador: selo "Certificado válido"\n+ dados do beneficiário
+
+@enduml

@@ -1,0 +1,29 @@
+@startuml F4.2d-atribuicao-lote
+title F4.2d — Atribuição em lote (só Atribuir)
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Professor" as Prof
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "COEController" as Ctrl
+participant "AssignInternshipUC" as UC
+database "Postgres" as Postgres
+
+Prof -> WebApp: Atribuir selecionados
+note right of WebApp
+  BulkActionBar sem
+  "Aprovar" (RN-F4.2-07)
+end note
+WebApp -> Jwt: POST /comissoes/coe/assign\n{ internshipIds[] }
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+UC -> Postgres: UPDATE N\n+ outbox por estágio
+Postgres --> UC: OK (COMMIT)
+UC --> Ctrl: ok
+Ctrl --> WebApp: 200
+WebApp --> Prof: N linhas atualizadas
+
+@enduml

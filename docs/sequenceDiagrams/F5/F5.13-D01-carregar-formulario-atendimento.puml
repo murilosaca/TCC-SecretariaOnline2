@@ -1,0 +1,30 @@
+@startuml F5.13-D01-carregar-formulario-atendimento
+title F5.13-D01 — Carregar formulário de atendimento
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Secretaria" as Sec
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "ServiceController" as Ctrl
+database "Postgres" as Postgres
+
+Sec -> WebApp: /secretaria/atendimentos
+WebApp -> Jwt: GET /atendimentos/categorias
+Jwt -> Ctrl: JWT ok
+Ctrl -> Postgres: SELECT categorias
+Postgres --> WebApp: 200
+Sec -> WebApp: digita GRR
+WebApp -> Jwt: GET /alunos?q=
+Jwt -> Ctrl: JWT ok
+Ctrl -> Postgres: SELECT no escopo
+Postgres --> WebApp: candidatos
+note right of WebApp
+  preview de notificação
+  só no React state
+end note
+WebApp --> Sec: formulário pronto
+
+@enduml

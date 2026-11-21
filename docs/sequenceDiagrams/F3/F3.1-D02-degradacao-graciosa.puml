@@ -1,0 +1,25 @@
+@startuml F3.1-D02-degradacao-graciosa
+title F3.1-D02 — Degradação graciosa (professor)
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Professor" as Prof
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "DashboardBFF" as BFF
+participant "SolicitacoesQuery" as SolQ
+participant "EventosQuery" as EvQ
+
+Prof -> WebApp: /inicio
+WebApp -> Jwt: GET /bff/dashboard/professor
+Jwt -> BFF: JWT ok
+BFF -> SolQ: buscar fila
+SolQ --> BFF: timeout / 503
+BFF -> EvQ: buscar eventos
+EvQ --> BFF: OK
+BFF --> WebApp: 200\nfilaSolicitacoes=null
+WebApp --> Prof: AlertBanner na fila\ndemais blocos OK
+
+@enduml

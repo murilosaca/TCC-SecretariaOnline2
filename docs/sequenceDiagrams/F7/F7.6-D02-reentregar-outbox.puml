@@ -1,0 +1,24 @@
+@startuml F7.6-D02-reentregar-outbox
+title F7.6-D02 — Reentregar evento FAILED/DEAD
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Admin" as Admin
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "OutboxController" as Ctrl
+participant "RetryOutboxEventUseCase" as UC
+database "Postgres" as Postgres
+
+Admin -> WebApp: Reentregar
+WebApp -> Jwt: POST /admin/outbox/{id}/reentrega
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+UC -> Postgres: SELECT FOR UPDATE\n→ PENDING tentativas=0
+Postgres --> UC: OK (COMMIT)
+UC --> WebApp: 200
+WebApp --> Admin: toast reenfileirado
+
+@enduml

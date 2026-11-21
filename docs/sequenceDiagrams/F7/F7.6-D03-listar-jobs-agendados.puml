@@ -1,0 +1,28 @@
+@startuml F7.6-D03-listar-jobs-agendados
+title F7.6-D03 — Listar jobs agendados
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Admin" as Admin
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "JobsController" as Ctrl
+participant "ListScheduledJobsUseCase" as UC
+database "Postgres" as Postgres
+
+Admin -> WebApp: seção Scheduled Jobs
+WebApp -> Jwt: GET jobs agendados
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+UC -> Postgres: SELECT runs
+note right of UC
+  OK / ATRASADO / FALHOU
+  (somente leitura)
+end note
+Postgres --> UC: jobs
+UC --> WebApp: 200
+WebApp --> Admin: cards com status
+
+@enduml

@@ -1,0 +1,29 @@
+@startuml F4.2b-self-assign
+title F4.2b — Self-assign de estágio (notifica aluno)
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Professor" as Prof
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "COEController" as Ctrl
+participant "AssignInternshipUC" as UC
+database "Postgres" as Postgres
+
+Prof -> WebApp: Atribuir a mim
+WebApp -> Jwt: POST /comissoes/coe/atribuicoes
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+UC -> Postgres: UPDATE orientador\n+ outbox_event
+Postgres --> UC: OK (COMMIT)
+note right of UC
+  self filtrado;
+  aluno notificado
+end note
+UC --> Ctrl: ok
+Ctrl --> WebApp: 200
+WebApp --> Prof: badge "Comigo"
+
+@enduml

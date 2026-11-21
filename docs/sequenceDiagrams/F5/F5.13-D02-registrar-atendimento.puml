@@ -1,0 +1,25 @@
+@startuml F5.13-D02-registrar-atendimento
+title F5.13-D02 — Registrar atendimento com anexo
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Secretaria" as Sec
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "ServiceController" as Ctrl
+participant "MinIO" as MinIO
+database "Postgres" as Postgres
+
+Sec -> WebApp: Registrar
+WebApp -> Jwt: POST /atendimentos\n(multipart)
+Jwt -> Ctrl: JWT ok
+Ctrl -> MinIO: PUT PDF
+MinIO --> Ctrl: OK
+Ctrl -> Postgres: INSERT service_record\n+ outbox_event
+Postgres --> Ctrl: OK (COMMIT)
+Ctrl --> WebApp: 201
+WebApp --> Sec: toast confirmação
+
+@enduml

@@ -1,0 +1,27 @@
+@startuml F8.1-D01-busca-global
+title F8.1-D01 — Busca global (debounce + fan-out)
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Usuario" as User
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "SearchController" as Ctrl
+participant "SearchUseCase" as UC
+database "Postgres" as Postgres
+
+User -> WebApp: digita "joão" (Ctrl+K)
+note right of WebApp
+  debounce 200 ms
+end note
+WebApp -> Jwt: GET /search?q=joão
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+UC -> Postgres: 4 queries paralelas\n(pg_trgm + FGAC)
+Postgres --> UC: hits
+UC --> WebApp: 200 agrupado
+WebApp --> User: seções por tipo
+
+@enduml

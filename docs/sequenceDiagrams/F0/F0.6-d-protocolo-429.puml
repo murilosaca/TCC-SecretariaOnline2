@@ -1,0 +1,24 @@
+@startuml F0.6-d-protocolo-429
+title F0.6-d — Rate limit protocolo (429)
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Verificador" as Verificador
+participant "WebApp" as WebApp
+participant "RateLimitFilter" as RateLimit
+
+Verificador -> WebApp: nova verificação
+WebApp -> RateLimit: GET protocolo
+
+note right of RateLimit
+  ≥ 10 req/min por IP
+  ProtocoloController nunca invocado
+  RN-F0.6-07
+end note
+
+RateLimit --> WebApp: 429
+WebApp --> Verificador: banner warning\n"Aguarde antes de tentar..."
+
+@enduml

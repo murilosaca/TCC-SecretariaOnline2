@@ -1,0 +1,28 @@
+@startuml F7.5-D04-carregar-versao-anterior
+title F7.5-D04 — Carregar versão anterior
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Admin" as Admin
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "CTController" as Ctrl
+participant "GetRevisionUseCase" as UC
+database "Postgres" as Postgres
+
+Admin -> WebApp: clica versão 1
+WebApp -> Jwt: GET .../revisoes/1
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+UC -> Postgres: SELECT revisão
+Postgres --> UC: ARCHIVED
+UC --> WebApp: 200
+note right of WebApp
+  banner somente leitura;
+  Salvar desabilitado
+end note
+WebApp --> Admin: editor readonly
+
+@enduml

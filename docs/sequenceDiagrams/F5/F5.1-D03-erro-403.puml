@@ -1,0 +1,22 @@
+@startuml F5.1-D03-erro-403
+title F5.1-D03 — 403 sem dashboard.view_secretary
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "OutroUsuario" as User
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "DashboardBFF" as BFF
+
+User -> WebApp: GET dashboard secretary
+WebApp -> Jwt: GET /bff/dashboard/secretary
+note right of Jwt
+  dashboard.view_secretary
+  ausente — sem query
+end note
+Jwt --> WebApp: 403 access_denied
+WebApp --> User: Problem Details
+
+@enduml

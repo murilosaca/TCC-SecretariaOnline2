@@ -1,0 +1,25 @@
+@startuml F5.12-D01-listar-autorizacoes-imagem
+title F5.12-D01 — Listar autorizações com thumbnails
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Secretaria" as Sec
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "RequestController" as Ctrl
+database "Postgres" as Postgres
+participant "MinIO" as MinIO
+
+Sec -> WebApp: /secretaria/autorizacoes-imagem
+WebApp -> Jwt: GET /requests?type=AUTORIZACAO_IMAGEM
+Jwt -> Ctrl: JWT ok
+Ctrl -> Postgres: SELECT ABERTA no escopo
+Postgres --> Ctrl: page
+Ctrl -> MinIO: presign thumbnails\n(TTL 15 min)
+MinIO --> Ctrl: URLs
+Ctrl --> WebApp: 200 + _links
+WebApp --> Sec: tabela com fotos
+
+@enduml

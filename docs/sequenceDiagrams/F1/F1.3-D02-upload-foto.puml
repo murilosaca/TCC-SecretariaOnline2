@@ -1,0 +1,31 @@
+@startuml F1.3-D02-upload-foto
+title F1.3-D02 — Upload de foto (POST /me/foto)
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Aluno" as Aluno
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "ProfileController" as Ctrl
+participant "MinIO" as MinIO
+database "Postgres" as Postgres
+
+Aluno -> WebApp: confirma crop circular
+WebApp -> Jwt: POST /me/foto\n(multipart)
+Jwt -> Ctrl: JWT ok
+
+note right of Ctrl
+  Browser NÃO faz PUT no MinIO
+  Upload só via API
+end note
+
+Ctrl -> MinIO: armazena imagem
+MinIO --> Ctrl: OK
+Ctrl -> Postgres: UPDATE foto_perfil
+Postgres --> Ctrl: OK
+Ctrl --> WebApp: 200 + URL avatar
+WebApp --> Aluno: DS/Avatar atualizado
+
+@enduml

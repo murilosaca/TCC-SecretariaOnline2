@@ -1,0 +1,28 @@
+@startuml F1.6-D01-listar-comunicacoes
+title F1.6-D01 — Listagem de comunicações
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Aluno" as Aluno
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "CommunicationsController" as Ctrl
+database "Postgres" as Postgres
+
+Aluno -> WebApp: abre /comunicacao
+note right of WebApp: DS/Skeleton
+
+WebApp -> Jwt: GET /communications
+Jwt -> Ctrl: JWT ok
+Ctrl -> Postgres: SELECT lista\n+ COUNT não lidos por tipo
+Postgres --> Ctrl: dados
+Ctrl --> WebApp: 200 + _links
+note right of WebApp
+  useActions(_links)
+  marcar-lido / CTAs Inbox
+end note
+WebApp --> Aluno: tabs + lista
+
+@enduml

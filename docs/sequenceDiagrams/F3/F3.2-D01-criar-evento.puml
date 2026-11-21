@@ -1,0 +1,29 @@
+@startuml F3.2-D01-criar-evento
+title F3.2-D01 — Criar evento
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Professor" as Prof
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "EventController" as Ctrl
+participant "CreateEventUseCase" as UC
+database "Postgres" as Postgres
+
+Prof -> WebApp: Salvar evento
+WebApp -> Jwt: POST /events
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+note right of UC
+  Valida fimEm > inicioEm,
+  janelas e chCreditadas
+end note
+UC -> Postgres: INSERT evento\nAGENDADO
+Postgres --> UC: OK
+UC --> Ctrl: evento + _links
+Ctrl --> WebApp: 201
+WebApp --> Prof: /professor/eventos/:id
+
+@enduml

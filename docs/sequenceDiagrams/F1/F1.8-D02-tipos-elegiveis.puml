@@ -1,0 +1,22 @@
+@startuml F1.8-D02-tipos-elegiveis
+title F1.8-D02 — Tipos de solicitação elegíveis
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Aluno" as Aluno
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "RequestTypesController" as Ctrl
+database "Postgres" as Postgres
+
+Aluno -> WebApp: Nova solicitação
+WebApp -> Jwt: GET /request-types
+Jwt -> Ctrl: JWT ok
+Ctrl -> Postgres: SELECT tipos elegíveis\n(+ form_schema)
+Postgres --> Ctrl: só elegíveis
+Ctrl --> WebApp: 200
+WebApp --> Aluno: grid de cards
+
+@enduml

@@ -1,0 +1,26 @@
+@startuml F0.2-c-reset-rate-limit
+title F0.2-c — Solicitar reset — 429 rate limit
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Usuário" as Usuario
+participant "WebApp" as WebApp
+participant "RateLimitFilter" as RateLimit
+
+Usuario -> WebApp: nova tentativa / Enviar link
+WebApp -> RateLimit: POST /auth/recuperar-senha
+
+note right of RateLimit
+  ≥ 3 solicitações / hora
+  (e-mail + IP)
+  ForgotPasswordUseCase
+  nunca invocado
+  RN-F0.2-08
+end note
+
+RateLimit --> WebApp: 429 Problem Details\n(+ retryAfterSeconds)
+WebApp --> Usuario: botão desabilitado\naté liberar
+
+@enduml

@@ -1,0 +1,25 @@
+@startuml F1.14-D03-enviar-documento-estagio
+title F1.14-D03 — Enviar documento de estágio
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Aluno" as Aluno
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "InternshipsController" as Ctrl
+participant "UploadDocumentUseCase" as UC
+database "Postgres" as Postgres
+
+Aluno -> WebApp: upload PDF
+WebApp -> Jwt: POST /estagios/{id}/documentos\n(multipart)
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+UC -> Postgres: UPDATE documento\n+ outbox_event
+Postgres --> UC: OK (COMMIT)
+UC --> Ctrl: ok
+Ctrl --> WebApp: 200
+WebApp --> Aluno: Enviado - aguardando parecer
+
+@enduml

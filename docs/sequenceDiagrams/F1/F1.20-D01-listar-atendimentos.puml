@@ -1,0 +1,22 @@
+@startuml F1.20-D01-listar-atendimentos
+title F1.20-D01 — Listar atendimentos
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Aluno" as Aluno
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "ServiceRecordController" as Ctrl
+database "Postgres" as Postgres
+
+Aluno -> WebApp: abre /meus-atendimentos
+WebApp -> Jwt: GET /atendimentos?aluno=me
+Jwt -> Ctrl: JWT ok
+Ctrl -> Postgres: SELECT atendimentos
+Postgres --> Ctrl: lista
+Ctrl --> WebApp: 200 + _links.acknowledge?
+WebApp --> Aluno: tabela\n(Estou ciente se link)
+
+@enduml

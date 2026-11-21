@@ -1,0 +1,28 @@
+@startuml F7.9-D01-saude-sistema
+title F7.9-D01 — Carregar KPIs de saúde
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Admin" as Admin
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "HealthController" as Ctrl
+participant "SystemHealthUseCase" as UC
+participant "ActuatorService" as Act
+
+Admin -> WebApp: /admin/sistema/saude
+WebApp -> Jwt: GET /admin/sistema/saude
+Jwt -> Ctrl: system.admin ok
+Ctrl -> UC: execute(...)
+UC -> Act: 4 metrics paralelo
+note right of Act
+  Actuator interno
+  (não exposto ao browser)
+end note
+Act --> UC: valores
+UC --> WebApp: 200 KPIs + sla
+WebApp --> Admin: KpiCards
+
+@enduml

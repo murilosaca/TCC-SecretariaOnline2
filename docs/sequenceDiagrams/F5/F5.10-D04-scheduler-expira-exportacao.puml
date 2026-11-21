@@ -1,0 +1,19 @@
+@startuml F5.10-D04-scheduler-expira-exportacao
+title F5.10-D04 — Scheduler expira exportação
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+participant "ExportScheduler" as Sched
+database "Postgres" as Postgres
+participant "MinIO" as MinIO
+
+Sched -> Postgres: SELECT expirados\nSKIP LOCKED
+Postgres --> Sched: jobs
+Sched -> MinIO: DELETE arquivo
+MinIO --> Sched: OK
+Sched -> Postgres: UPDATE EXPIRADO
+Postgres --> Sched: OK
+
+@enduml

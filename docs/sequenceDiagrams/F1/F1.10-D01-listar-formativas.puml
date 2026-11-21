@@ -1,0 +1,25 @@
+@startuml F1.10-D01-listar-formativas
+title F1.10-D01 — Listar formativas
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Aluno" as Aluno
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "FormativeController" as Ctrl
+database "Postgres" as Postgres
+
+Aluno -> WebApp: abre /formativas
+WebApp -> Jwt: GET /formativas
+Jwt -> Ctrl: JWT ok
+Ctrl -> Postgres: SELECT + filtros
+Postgres --> Ctrl: lista
+Ctrl --> WebApp: 200 + _links
+note right of WebApp
+  _links.nova só se formative.submit
+end note
+WebApp --> Aluno: tabela / badges
+
+@enduml

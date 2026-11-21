@@ -1,0 +1,30 @@
+@startuml F3.3-D01-fila-deliberacao
+title F3.3-D01 — Fila de deliberação
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Professor" as Prof
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "RequestController" as Ctrl
+database "Postgres" as Postgres
+
+Prof -> WebApp: /solicitacoes?to=me
+WebApp -> Jwt: GET /requests?canDeliberate=true
+Jwt -> Ctrl: JWT ok
+Ctrl -> Postgres: SELECT fila\n(canDeliberate)
+note right of Ctrl
+  workflow + requiresAuthority
+  x authorities do professor
+end note
+Postgres --> Ctrl: page
+Ctrl --> WebApp: 200 lista
+note right of WebApp
+  prazo_em < now
+  → badge danger (client)
+end note
+WebApp --> Prof: fila por prazo ASC
+
+@enduml

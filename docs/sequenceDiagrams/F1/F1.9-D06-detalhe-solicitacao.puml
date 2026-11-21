@@ -1,0 +1,26 @@
+@startuml F1.9-D06-detalhe-solicitacao
+title F1.9-D06 — Detalhe da solicitação
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Aluno" as Aluno
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "RequestsController" as Ctrl
+database "Postgres" as Postgres
+
+Aluno -> WebApp: /solicitacoes/:id
+WebApp -> Jwt: GET /requests/{id}
+Jwt -> Ctrl: JWT ok + dono (anti-IDOR)
+Ctrl -> Postgres: SELECT request\n+ events DESC
+Postgres --> Ctrl: dados
+Ctrl --> WebApp: 200 + timeline + _links
+note right of WebApp
+  ActionBar só via useActions
+  RN-F1.9-01
+end note
+WebApp --> Aluno: detalhe + ações
+
+@enduml

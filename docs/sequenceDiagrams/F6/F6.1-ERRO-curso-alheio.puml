@@ -1,0 +1,24 @@
+@startuml F6.1-ERRO-curso-alheio
+title F6.1-ERRO — 403 curso alheio
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Coordenador" as Coord
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "CourseController" as Ctrl
+participant "GetCourseConfigUC" as UC
+database "Postgres" as Postgres
+
+Coord -> WebApp: /coordenacao/cursos/ec/configurar
+WebApp -> Jwt: GET config
+Jwt -> Ctrl: course.config ok
+Ctrl -> UC: execute(...)
+UC -> Postgres: ownership
+Postgres --> UC: coordenador ≠ userId
+UC --> WebApp: 403 course_ownership_denied
+WebApp --> Coord: AlertBanner
+
+@enduml

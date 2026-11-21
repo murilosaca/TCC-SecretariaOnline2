@@ -1,0 +1,32 @@
+@startuml F1.5-D06-preferencias-notif
+title F1.5-D06 — Preferências de notificação
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Aluno" as Aluno
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "NotifPrefsController" as Ctrl
+participant "NotifPrefsUseCase" as UC
+database "Postgres" as Postgres
+
+Aluno -> WebApp: ajusta canais/DND/digest / Salvar
+WebApp -> Jwt: PATCH /me/notifications
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+
+note right of UC
+  Revalida CRITICAL
+  (backend não confia no cliente)
+  RN-F1.5-01
+end note
+
+UC -> Postgres: UPSERT notif_prefs
+Postgres --> UC: OK
+UC --> Ctrl: ok
+Ctrl --> WebApp: 200 OK
+WebApp --> Aluno: preferências salvas
+
+@enduml

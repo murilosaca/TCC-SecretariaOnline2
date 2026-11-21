@@ -1,0 +1,22 @@
+@startuml F5.6-ERRO-03-sem-manage-students
+title F5.6-ERRO-03 — 403 sem user.manage_students
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "OutroUsuario" as User
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "StudentController" as Ctrl
+
+User -> WebApp: /secretaria/alunos
+WebApp -> Jwt: GET /academico/alunos
+note right of Jwt
+  user.manage_students ausente
+  — sem query
+end note
+Jwt --> WebApp: 403 access_denied
+WebApp --> User: redirect BFF do perfil
+
+@enduml

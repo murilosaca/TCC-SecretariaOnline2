@@ -1,0 +1,32 @@
+@startuml F3.4-D03-deeplink-sem-sessao
+title F3.4-D03 — Deep-link por e-mail (sem sessão)
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Professor" as Prof
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "RequestController" as Ctrl
+database "Postgres" as Postgres
+
+Prof -> WebApp: abre /solicitacoes/{id}/deliberar?token=JWT
+note right of WebApp
+  sem sessão: preview local
+  + banner "Faça login..."
+end note
+Prof -> WebApp: Fazer login
+WebApp -> WebApp: login F0.1-a\n(returnUrl)
+WebApp -> Jwt: GET /requests/{id}\n+ deepLinkToken
+Jwt -> Ctrl: sessão ok
+Ctrl -> Postgres: valida audience,\nsub, exp, JTI
+Postgres --> Ctrl: token válido
+note right of Ctrl
+  JTI ainda NÃO blacklisted
+  (só após transição OK)
+end note
+Ctrl --> WebApp: 200 + _links
+WebApp --> Prof: ações liberadas
+
+@enduml

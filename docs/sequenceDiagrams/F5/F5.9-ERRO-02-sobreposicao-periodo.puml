@@ -1,0 +1,25 @@
+@startuml F5.9-ERRO-02-sobreposicao-periodo
+title F5.9-ERRO-02 — 422 sobreposição de período letivo
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Secretaria" as Sec
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "CalendarController" as Ctrl
+database "Postgres" as Postgres
+
+Sec -> WebApp: Salvar período
+WebApp -> Jwt: POST /academico/periodos
+Jwt -> Ctrl: JWT ok
+Ctrl -> Postgres: checar intervalo
+Postgres --> Ctrl: sobrepõe 2026/2
+note right of Ctrl
+  sem BEGIN TX
+end note
+Ctrl --> WebApp: 422 period_overlap
+WebApp --> Sec: mensagem com conflito
+
+@enduml

@@ -1,0 +1,32 @@
+@startuml F1.3-D01-editar-perfil
+title F1.3-D01 — Editar dados pessoais (PATCH /me)
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Aluno" as Aluno
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "ProfileController" as Ctrl
+participant "UpdateProfileUseCase" as UC
+database "Postgres" as Postgres
+
+Aluno -> WebApp: altera telefone / Salvar
+WebApp -> Jwt: PATCH /me
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(patch)
+
+note right of UC
+  Merge parcial
+  GRR / e-mail institucional
+  ignorados (allowlist)
+end note
+
+UC -> Postgres: UPDATE usuario
+Postgres --> UC: OK
+UC --> Ctrl: usuario atualizado
+Ctrl --> WebApp: 200 OK
+WebApp --> Aluno: toast "Perfil atualizado"
+
+@enduml

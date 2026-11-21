@@ -1,0 +1,25 @@
+@startuml F3.5-D02-aprovar-formativa
+title F3.5-D02 — Aprovar formativa individual
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Professor" as Prof
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "FormativeController" as Ctrl
+participant "ApproveFormativeUseCase" as UC
+database "Postgres" as Postgres
+
+Prof -> WebApp: Aprovar (horasValidadas)
+WebApp -> Jwt: POST /formativas/{id}/aprovar
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+UC -> Postgres: UPDATE APROVADA\n+ event_log\n+ certificado\n+ outbox_event
+Postgres --> UC: OK (COMMIT)
+UC --> Ctrl: ok
+Ctrl --> WebApp: 200
+WebApp --> Prof: formativa APROVADA
+
+@enduml

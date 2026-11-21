@@ -1,0 +1,22 @@
+@startuml F1.17-D01-listar-eventos
+title F1.17-D01 — Listar eventos
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Aluno" as Aluno
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "EventsController" as Ctrl
+database "Postgres" as Postgres
+
+Aluno -> WebApp: abre /eventos
+WebApp -> Jwt: GET /events?audience=me
+Jwt -> Ctrl: JWT ok
+Ctrl -> Postgres: SELECT eventos
+Postgres --> Ctrl: lista + situacaoPresenca
+Ctrl --> WebApp: 200
+WebApp --> Aluno: tabela\n(+ badge Janela aberta)
+
+@enduml

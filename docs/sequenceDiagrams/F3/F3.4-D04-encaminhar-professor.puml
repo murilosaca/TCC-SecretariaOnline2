@@ -1,0 +1,25 @@
+@startuml F3.4-D04-encaminhar-professor
+title F3.4-D04 — Encaminhar para outro professor
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Professor" as Prof
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "RequestController" as Ctrl
+participant "ForwardRequestUseCase" as UC
+database "Postgres" as Postgres
+
+Prof -> WebApp: Confirmar encaminhamento
+WebApp -> Jwt: POST /requests/{id}/transitions\n{ action: FORWARD }
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+UC -> Postgres: UPDATE deliberante\n+ request_event\n+ JTI deep-link\n+ outbox_event
+Postgres --> UC: OK (COMMIT)
+UC --> Ctrl: ok
+Ctrl --> WebApp: 200
+WebApp --> Prof: timeline ENCAMINHADA
+
+@enduml

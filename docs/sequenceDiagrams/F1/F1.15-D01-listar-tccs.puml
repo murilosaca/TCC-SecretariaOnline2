@@ -1,0 +1,26 @@
+@startuml F1.15-D01-listar-tccs
+title F1.15-D01 — Listar TCCs
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Aluno" as Aluno
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "TccController" as Ctrl
+database "Postgres" as Postgres
+
+Aluno -> WebApp: abre /tccs
+WebApp -> Jwt: GET /tccs?aluno=me
+Jwt -> Ctrl: JWT ok
+Ctrl -> Postgres: SELECT tccs
+Postgres --> Ctrl: lista
+Ctrl --> WebApp: 200
+note right of WebApp
+  Sem _links.novo
+  (secretaria cadastra)
+end note
+WebApp --> Aluno: tabela ou EmptyState
+
+@enduml

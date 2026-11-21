@@ -1,0 +1,26 @@
+@startuml F5.10-D01-EGRESSOS-listar
+title F5.10-D01-EGRESSOS — Listar egressos
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Secretaria" as Sec
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "EgressosController" as Ctrl
+database "Postgres" as Postgres
+
+Sec -> WebApp: /secretaria/egressos
+WebApp -> Jwt: GET /egressos
+Jwt -> Ctrl: JWT ok
+Ctrl -> Postgres: SELECT + JOIN\ngraduation_record
+note right of Ctrl
+  confirm-delivery só se
+  situacao = PENDENTE
+end note
+Postgres --> Ctrl: page
+Ctrl --> WebApp: 200 + _links
+WebApp --> Sec: tabela filtrada
+
+@enduml

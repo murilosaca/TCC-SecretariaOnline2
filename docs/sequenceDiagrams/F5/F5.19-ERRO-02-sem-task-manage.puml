@@ -1,0 +1,21 @@
+@startuml F5.19-ERRO-02-sem-task-manage
+title F5.19-ERRO-02 — 403 sem task.manage
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Secretaria" as Sec
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "TaskController" as Ctrl
+
+Sec -> WebApp: /secretaria/tarefas
+WebApp -> Jwt: GET /tasks
+note right of Jwt
+  task.manage ausente
+end note
+Jwt --> WebApp: 403
+WebApp --> Sec: acesso negado
+
+@enduml

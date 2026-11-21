@@ -1,0 +1,27 @@
+@startuml F7.4-D02-criar-request-type
+title F7.4-D02 — Criar RequestType (DRAFT)
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Admin" as Admin
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "RTController" as Ctrl
+participant "CreateRTUseCase" as UC
+database "Postgres" as Postgres
+
+Admin -> WebApp: Criar e salvar
+WebApp -> Jwt: POST /request-types
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+note right of UC
+  valida schemas
+end note
+UC -> Postgres: INSERT DRAFT\n+ audit_log
+Postgres --> UC: OK (COMMIT)
+UC --> WebApp: 201
+WebApp --> Admin: tipo DRAFT na lista
+
+@enduml

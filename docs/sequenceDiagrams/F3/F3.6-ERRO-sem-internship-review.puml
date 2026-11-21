@@ -1,0 +1,22 @@
+@startuml F3.6-ERRO-sem-internship-review
+title F3.6-ERRO — 403 sem internship.review
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Professor" as Prof
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "InternshipController" as Ctrl
+
+Prof -> WebApp: /estagios?to=me
+WebApp -> Jwt: GET /estagios?to=me
+note right of Jwt
+  internship.review ausente
+  InternshipController não executa
+end note
+Jwt --> WebApp: 403
+WebApp --> Prof: acesso negado
+
+@enduml

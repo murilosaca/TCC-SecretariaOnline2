@@ -1,0 +1,22 @@
+@startuml F5.7-ERRO-01-sigla-duplicada
+title F5.7-ERRO-01 — 409 sigla de curso duplicada
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Secretaria" as Sec
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "CourseController" as Ctrl
+database "Postgres" as Postgres
+
+Sec -> WebApp: Salvar curso
+WebApp -> Jwt: POST /academico/cursos
+Jwt -> Ctrl: JWT ok
+Ctrl -> Postgres: INSERT
+Postgres --> Ctrl: 23505 unique_violation
+Ctrl --> WebApp: 409 conflict
+WebApp --> Sec: erro inline Sigla
+
+@enduml

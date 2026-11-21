@@ -1,0 +1,29 @@
+@startuml F3.2-D02-evento-concluido
+title F3.2-D02 — Evento CONCLUIDO (imutável)
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Professor" as Prof
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "EventController" as Ctrl
+participant "GetEventUseCase" as UC
+database "Postgres" as Postgres
+
+Prof -> WebApp: abre evento CONCLUIDO
+WebApp -> Jwt: GET /events/{id}
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+UC -> Postgres: SELECT evento
+Postgres --> UC: CONCLUIDO
+note right of UC
+  Suprime _links.editar
+  e _links.excluir
+end note
+UC --> Ctrl: payload read-only
+Ctrl --> WebApp: 200
+WebApp --> Prof: campos disabled\n+ banner info
+
+@enduml

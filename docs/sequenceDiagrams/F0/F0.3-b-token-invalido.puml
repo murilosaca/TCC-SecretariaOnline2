@@ -1,0 +1,36 @@
+@startuml F0.3-b-token-invalido
+title F0.3-b — 401 token inválido, expirado ou já consumido
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Usuário" as Usuario
+participant "WebApp" as WebApp
+participant "AuthController" as AuthController
+participant "ResetPasswordUseCase" as UC
+database "Postgres" as Postgres
+
+Usuario -> WebApp: token ruim / Salvar
+WebApp -> AuthController: POST /auth/redefinir-senha
+AuthController -> UC: execute(...)
+
+alt assinatura inválida ou expirado (CA-06)
+  note right of UC
+    JWT verify falha em memória
+    sem SELECT — RN-F0.3-01
+  end note
+else JTI já consumido (CA-07)
+  UC -> Postgres: SELECT blacklist JTI
+  Postgres --> UC: JTI presente
+end
+
+UC --> AuthController: InvalidResetTokenException
+AuthController --> WebApp: 401 Problem Details\n(mensagem genérica)
+note right of WebApp
+  Não distingue inválido /
+  expirado / já usado
+end note
+WebApp --> Usuario: EmptyState\nSolicitar novo link → /recuperar-senha
+
+@enduml

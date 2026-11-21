@@ -1,0 +1,32 @@
+@startuml F4.1e-erro-403
+title F4.1e — 403 sem formative.review / escopo de curso
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Professor" as Prof
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "CAAFController" as Ctrl
+participant "AssignFormativeUC" as UC
+database "Postgres" as Postgres
+
+== Cenário A — sem authority ==
+Prof -> WebApp: /comissoes/caaf
+WebApp -> Jwt: GET /comissoes/caaf
+note right of Jwt
+  formative.review ausente
+end note
+Jwt --> WebApp: 403 access_denied
+
+== Cenário B — escopo de curso ==
+Prof -> WebApp: Atribuir item outro curso
+WebApp -> Jwt: POST /comissoes/caaf/atribuicoes
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+UC -> Postgres: SELECT item
+Postgres --> UC: fora do curso
+UC --> WebApp: 403 course_scope_violation
+
+@enduml

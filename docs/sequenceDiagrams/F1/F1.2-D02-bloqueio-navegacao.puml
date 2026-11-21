@@ -1,0 +1,22 @@
+@startuml F1.2-D02-bloqueio-navegacao
+title F1.2-D02 — Bloqueio mustChangePassword (guard)
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Aluno" as Aluno
+participant "WebApp" as WebApp
+
+Aluno -> WebApp: tenta /inicio\n(ou outra rota protegida)
+
+note right of WebApp
+  RequireFirstAccess
+  lê mustChangePassword na store
+  Nenhuma chamada HTTP
+  RN-F1.2-01
+end note
+
+WebApp --> Aluno: redireciona /primeiro-acesso\n(sidebar sem links)
+
+@enduml

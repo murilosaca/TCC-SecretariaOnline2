@@ -1,0 +1,28 @@
+@startuml F1.1-D02-dashboard-cache-hit
+title F1.1-D02 — Dashboard aluno (cache HIT)
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Aluno" as Aluno
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "DashboardBFF" as BFF
+database "Postgres" as Postgres
+
+Aluno -> WebApp: navega /inicio de novo
+
+note right of WebApp
+  TanStack Query cache HIT
+  Sem Redis — RN-F1.1-10
+end note
+
+note over Jwt, Postgres #EEEEEE
+  Sem nova chamada HTTP
+  neste HIT
+end note
+
+WebApp --> Aluno: dashboard do cache local\n(FCP rápido)
+
+@enduml

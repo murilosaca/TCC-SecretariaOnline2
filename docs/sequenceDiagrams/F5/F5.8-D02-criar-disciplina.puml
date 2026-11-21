@@ -1,0 +1,22 @@
+@startuml F5.8-D02-criar-disciplina
+title F5.8-D02 — Criar disciplina
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Secretaria" as Sec
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "SubjectController" as Ctrl
+database "Postgres" as Postgres
+
+Sec -> WebApp: Salvar disciplina
+WebApp -> Jwt: POST /academico/disciplinas
+Jwt -> Ctrl: JWT ok
+Ctrl -> Postgres: INSERT disciplina\n+ audit_log
+Postgres --> Ctrl: OK (COMMIT)
+Ctrl --> WebApp: 201
+WebApp --> Sec: badge Ativa
+
+@enduml

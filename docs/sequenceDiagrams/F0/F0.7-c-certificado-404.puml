@@ -1,0 +1,30 @@
+@startuml F0.7-c-certificado-404
+title F0.7-c — 404 hash não encontrado
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Verificador" as Verificador
+participant "WebApp" as WebApp
+participant "CertificadoController" as Ctrl
+participant "VerificarCertificadoUseCase" as UC
+database "Postgres" as Postgres
+
+Verificador -> WebApp: hash inexistente
+WebApp -> Ctrl: GET certificado
+Ctrl -> UC: execute(hash)
+UC -> Postgres: SELECT certificado
+Postgres --> UC: vazio
+UC --> Ctrl: not found
+Ctrl --> WebApp: 404
+
+note right of WebApp
+  Sem GET JWKS
+  Sem dados do beneficiário
+  RN-F0.7-09
+end note
+
+WebApp --> Verificador: selo "Certificado inválido"
+
+@enduml

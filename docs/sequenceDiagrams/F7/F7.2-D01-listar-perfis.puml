@@ -1,0 +1,27 @@
+@startuml F7.2-D01-listar-perfis
+title F7.2-D01 — Listar perfis
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Admin" as Admin
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "IAMController" as Ctrl
+participant "ListRolesUseCase" as UC
+database "Postgres" as Postgres
+
+Admin -> WebApp: /admin/perfis
+WebApp -> Jwt: GET /admin/perfis
+Jwt -> Ctrl: iam.manage_roles ok
+Ctrl -> UC: execute(...)
+UC -> Postgres: SELECT roles
+note right of UC
+  delete ausente se SYSTEM
+end note
+Postgres --> UC: page
+UC --> WebApp: 200 + _links
+WebApp --> Admin: tabela perfis
+
+@enduml

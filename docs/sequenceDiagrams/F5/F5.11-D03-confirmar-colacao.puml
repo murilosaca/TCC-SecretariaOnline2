@@ -1,0 +1,26 @@
+@startuml F5.11-D03-confirmar-colacao
+title F5.11-D03 — Confirmar colação em lote
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Secretaria" as Sec
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "GraduationController" as Ctrl
+database "Postgres" as Postgres
+
+Sec -> WebApp: Confirmar colação
+WebApp -> Jwt: POST /diplomas
+Jwt -> Ctrl: JWT ok
+Ctrl -> Postgres: INSERT N graduation_record\n+ audit_log\n+ outbox × N
+note right of Ctrl
+  TX única; sem role=EGRESSO
+  (CA-03 / FGAC 4.11)
+end note
+Postgres --> Ctrl: OK (COMMIT)
+Ctrl --> WebApp: 201
+WebApp --> Sec: colação registrada
+
+@enduml

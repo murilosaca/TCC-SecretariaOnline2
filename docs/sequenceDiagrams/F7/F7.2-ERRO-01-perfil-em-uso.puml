@@ -1,0 +1,27 @@
+@startuml F7.2-ERRO-01-perfil-em-uso
+title F7.2-ERRO-01 — 422 excluir perfil em uso
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Admin" as Admin
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "IAMController" as Ctrl
+participant "DeleteRoleUseCase" as UC
+database "Postgres" as Postgres
+
+Admin -> WebApp: Excluir perfil
+WebApp -> Jwt: DELETE /admin/perfis/{id}
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+UC -> Postgres: count usuários
+Postgres --> UC: N > 0
+note right of UC
+  sem DELETE
+end note
+UC --> WebApp: 422 role_in_use
+WebApp --> Admin: AlertBanner
+
+@enduml

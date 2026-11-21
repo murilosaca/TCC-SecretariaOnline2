@@ -1,0 +1,25 @@
+@startuml F5.9-D03-confirmar-importacao
+title F5.9-D03 — Confirmar importação
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Secretaria" as Sec
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "ImportController" as Ctrl
+participant "ConfirmImportUseCase" as UC
+database "Postgres" as Postgres
+
+Sec -> WebApp: Confirmar importação
+WebApp -> Jwt: POST /importacoes/{jobId}/confirm
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+UC -> Postgres: INSERT lote(s)\n+ audit_log\n+ outbox_event
+Postgres --> UC: OK (COMMIT)
+UC --> Ctrl: SUCCESS
+Ctrl --> WebApp: 200 relatório
+WebApp --> Sec: N importados
+
+@enduml

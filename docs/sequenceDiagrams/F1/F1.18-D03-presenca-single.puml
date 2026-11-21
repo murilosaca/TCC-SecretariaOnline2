@@ -1,0 +1,31 @@
+@startuml F1.18-D03-presenca-single
+title F1.18-D03 — Presença SECRET_SINGLE
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Aluno" as Aluno
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "AttendanceController" as Ctrl
+participant "ConfirmAttendanceUseCase" as UC
+database "Postgres" as Postgres
+
+Aluno -> WebApp: PIN + Confirmar
+WebApp -> Jwt: POST /events/{id}/attendance/confirm\n{pin, deviceUuid, fase ENTRADA}
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+
+note right of UC
+  Valida PIN em memória
+  Device binding no INSERT
+end note
+
+UC -> Postgres: INSERT presença\n+ outbox_event
+Postgres --> UC: OK (COMMIT)
+UC --> Ctrl: ok
+Ctrl --> WebApp: 200
+WebApp --> Aluno: Presença registrada
+
+@enduml

@@ -1,0 +1,21 @@
+@startuml F7.1-ERRO-01-sem-manage-all
+title F7.1-ERRO-01 — 403 sem user.manage_all
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Admin" as Admin
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "IAMController" as Ctrl
+
+Admin -> WebApp: /admin/usuarios
+WebApp -> Jwt: GET /admin/usuarios
+note right of Jwt
+  user.manage_all ausente
+end note
+Jwt --> WebApp: 403 access_denied
+WebApp --> Admin: Problem Details
+
+@enduml

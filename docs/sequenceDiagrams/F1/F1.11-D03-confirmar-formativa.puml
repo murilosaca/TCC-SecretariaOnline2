@@ -1,0 +1,25 @@
+@startuml F1.11-D03-confirmar-formativa
+title F1.11-D03 — Confirmar formativa pré-validada
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Aluno" as Aluno
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "FormativeController" as Ctrl
+participant "ConfirmFormativeUseCase" as UC
+database "Postgres" as Postgres
+
+Aluno -> WebApp: Confirmar\n(form pré-preenchido)
+WebApp -> Jwt: POST /formativas/{id}/confirmar
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+UC -> Postgres: UPDATE\nAND estado=PENDENTE_CONFIRMACAO\n→ AGUARDANDO_CAAF
+Postgres --> UC: OK
+UC --> Ctrl: ok
+Ctrl --> WebApp: 200
+WebApp --> Aluno: confirmada\n(sem upload)
+
+@enduml

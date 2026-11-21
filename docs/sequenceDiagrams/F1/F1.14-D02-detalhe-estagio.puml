@@ -1,0 +1,22 @@
+@startuml F1.14-D02-detalhe-estagio
+title F1.14-D02 — Detalhe do estágio
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Aluno" as Aluno
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "InternshipsController" as Ctrl
+database "Postgres" as Postgres
+
+Aluno -> WebApp: /estagios/:id
+WebApp -> Jwt: GET /estagios/{id}
+Jwt -> Ctrl: JWT ok
+Ctrl -> Postgres: SELECT JOIN\ndocumentos + pareceres
+Postgres --> Ctrl: agregado
+Ctrl --> WebApp: 200 + _links.upload
+WebApp --> Aluno: tabs Documentos / Pareceres
+
+@enduml

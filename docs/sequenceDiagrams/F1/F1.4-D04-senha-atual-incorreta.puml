@@ -1,0 +1,25 @@
+@startuml F1.4-D04-senha-atual-incorreta
+title F1.4-D04 — 401 senha atual incorreta
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Aluno" as Aluno
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "ChangePasswordUseCase" as UC
+database "Postgres" as Postgres
+
+Aluno -> WebApp: senha atual errada / Salvar
+WebApp -> Jwt: PATCH /me/password
+Jwt -> UC: execute(...)
+UC -> Postgres: SELECT senha_hash
+Postgres --> UC: hash
+
+UC -> UC: Argon2id.verify = false
+
+UC --> WebApp: 401 Problem Details
+WebApp --> Aluno: erro inline\n"Senha atual incorreta."
+
+@enduml

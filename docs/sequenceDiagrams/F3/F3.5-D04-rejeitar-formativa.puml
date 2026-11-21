@@ -1,0 +1,29 @@
+@startuml F3.5-D04-rejeitar-formativa
+title F3.5-D04 — Rejeitar formativa com parecer
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Professor" as Prof
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "FormativeController" as Ctrl
+participant "RejectFormativeUseCase" as UC
+database "Postgres" as Postgres
+
+Prof -> WebApp: Indeferir com parecer
+note right of WebApp
+  parecer < 20 chars
+  → bloqueio client (sem HTTP)
+end note
+WebApp -> Jwt: POST /formativas/{id}/indeferir
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+UC -> Postgres: UPDATE INDEFERIDA\n+ event_log\n+ outbox_event
+Postgres --> UC: OK (COMMIT)
+UC --> Ctrl: ok
+Ctrl --> WebApp: 200
+WebApp --> Prof: formativa INDEFERIDA
+
+@enduml

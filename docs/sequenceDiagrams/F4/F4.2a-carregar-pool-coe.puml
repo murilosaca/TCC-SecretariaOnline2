@@ -1,0 +1,29 @@
+@startuml F4.2a-carregar-pool-coe
+title F4.2a — Carregar pool COE
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Professor" as Prof
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "COEController" as Ctrl
+participant "GetCOEDashboardUC" as UC
+database "Postgres" as Postgres
+
+Prof -> WebApp: /comissoes/coe
+WebApp -> Jwt: GET /comissoes/coe
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+UC -> Postgres: SELECT KPIs + estágios\n(estado != CONCLUIDO)
+Postgres --> UC: dados + due_date
+UC --> Ctrl: dashboard
+Ctrl --> WebApp: 200
+note right of WebApp
+  due_date < now
+  → status/danger (client)
+end note
+WebApp --> Prof: KPIs e tabela
+
+@enduml

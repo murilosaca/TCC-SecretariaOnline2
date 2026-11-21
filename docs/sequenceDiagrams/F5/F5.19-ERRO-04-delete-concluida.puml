@@ -1,0 +1,25 @@
+@startuml F5.19-ERRO-04-delete-concluida
+title F5.19-ERRO-04 — 409 DELETE tarefa CONCLUIDA
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Secretaria" as Sec
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "TaskController" as Ctrl
+database "Postgres" as Postgres
+
+Sec -> WebApp: Excluir concluída
+WebApp -> Jwt: DELETE /tasks/{id}
+Jwt -> Ctrl: JWT ok
+Ctrl -> Postgres: SELECT estado
+Postgres --> Ctrl: CONCLUIDA
+note right of Ctrl
+  sem DELETE
+end note
+Ctrl --> WebApp: 409
+WebApp --> Sec: conflito
+
+@enduml

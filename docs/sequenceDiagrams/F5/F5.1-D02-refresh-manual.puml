@@ -1,0 +1,26 @@
+@startuml F5.1-D02-refresh-manual
+title F5.1-D02 — Refresh manual do dashboard
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Secretaria" as Sec
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "DashboardBFF" as BFF
+database "Postgres" as Postgres
+
+Sec -> WebApp: Refresh
+note right of WebApp
+  invalidateQueries
+  + Skeleton
+end note
+WebApp -> Jwt: GET /bff/dashboard/secretary
+Jwt -> BFF: JWT ok
+BFF -> Postgres: queries
+Postgres --> BFF: dados
+BFF --> WebApp: 200
+WebApp --> Sec: dashboard atualizado
+
+@enduml

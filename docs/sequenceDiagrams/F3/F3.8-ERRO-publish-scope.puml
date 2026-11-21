@@ -1,0 +1,34 @@
+@startuml F3.8-ERRO-publish-scope
+title F3.8-ERRO — 403 FGAC / 422 audiência fora de scope
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Professor" as Prof
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "CommunicationController" as Ctrl
+participant "PublishCommunicationUseCase" as UC
+database "Postgres" as Postgres
+
+== Cenário A — 403 ==
+Prof -> WebApp: /comunicacao/publicar
+WebApp -> Jwt: POST /communications
+note right of Jwt
+  communication.publish_class
+  ausente
+end note
+Jwt --> WebApp: 403
+
+== Cenário B — 422 ==
+Prof -> WebApp: Publicar audiência adulterada
+WebApp -> Jwt: POST /communications
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+UC -> Postgres: valida vínculo\nprofessor ↔ audiência
+Postgres --> UC: fora de scope
+UC --> Ctrl: erro
+Ctrl --> WebApp: 422
+
+@enduml

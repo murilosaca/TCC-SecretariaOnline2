@@ -1,0 +1,26 @@
+@startuml F5.11-D02-ELEGIVEIS-buscar
+title F5.11-D02-ELEGIVEIS — Buscar elegíveis para colação
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Secretaria" as Sec
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "GraduationController" as Ctrl
+database "Postgres" as Postgres
+
+Sec -> WebApp: curso e período
+WebApp -> Jwt: GET /diplomas/elegiveis
+Jwt -> Ctrl: JWT ok
+Ctrl -> Postgres: avaliar 5 critérios
+note right of Ctrl
+  TCC, disciplinas, horas,
+  financeiro, solicitações
+end note
+Postgres --> Ctrl: eligible + bloqueio
+Ctrl --> WebApp: 200 lista
+WebApp --> Sec: checkboxes + tooltips
+
+@enduml

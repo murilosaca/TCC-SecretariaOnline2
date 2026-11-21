@@ -1,0 +1,25 @@
+@startuml F3.8-D02-publicar-comunicado
+title F3.8-D02 — Publicar comunicado
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Professor" as Prof
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "CommunicationController" as Ctrl
+participant "PublishCommunicationUseCase" as UC
+database "Postgres" as Postgres
+
+Prof -> WebApp: Publicar
+WebApp -> Jwt: POST /communications
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+UC -> Postgres: INSERT communication\n+ outbox_event
+Postgres --> UC: OK (COMMIT)
+UC --> Ctrl: ok
+Ctrl --> WebApp: 201
+WebApp --> Prof: banner + /comunicacao
+
+@enduml

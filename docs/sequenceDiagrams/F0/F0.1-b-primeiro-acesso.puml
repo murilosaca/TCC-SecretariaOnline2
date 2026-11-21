@@ -1,0 +1,33 @@
+@startuml F0.1-b-primeiro-acesso
+title F0.1-b — Login → primeiro acesso (mustChangePassword)
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Usuário" as Usuario
+participant "WebApp" as WebApp
+participant "AuthController" as AuthController
+participant "LoginUseCase" as UC
+database "Postgres" as Postgres
+
+Usuario -> WebApp: credenciais / Entrar
+WebApp -> AuthController: POST /auth/login
+AuthController -> UC: execute(...)
+UC -> Postgres: SELECT usuario BY identificador
+Postgres --> UC: usuario (senha_alterada=false)
+UC -> UC: Argon2id.verify OK
+UC -> Postgres: INSERT refresh_token\nINSERT audit_log (iam.login_success)
+Postgres --> UC: OK
+UC --> AuthController: LoginResult\n(mustChangePassword=true)
+AuthController --> WebApp: 200 + accessToken + flag
+
+note right of WebApp
+  Token válido para /primeiro-acesso
+  Bloqueia /inicio e demais rotas
+  RN-F0.1-04
+end note
+
+WebApp --> Usuario: redireciona /primeiro-acesso
+
+@enduml

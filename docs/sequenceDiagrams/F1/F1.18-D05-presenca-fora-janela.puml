@@ -1,0 +1,25 @@
+@startuml F1.18-D05-presenca-fora-janela
+title F1.18-D05 — Presença fora da janela (403)
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Aluno" as Aluno
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "AttendanceController" as Ctrl
+participant "ConfirmAttendanceUseCase" as UC
+database "Postgres" as Postgres
+
+Aluno -> WebApp: tenta Confirmar
+WebApp -> Jwt: POST confirm
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+UC -> Postgres: checa janela
+Postgres --> UC: expirada / inativa
+UC --> Ctrl: 403
+Ctrl --> WebApp: 403 Problem Details
+WebApp --> Aluno: EmptyState\n"janela encerrou"
+
+@enduml

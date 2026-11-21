@@ -1,0 +1,22 @@
+@startuml F3.2-ERRO-sem-event-host
+title F3.2-ERRO — 403 sem event.host
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Professor" as Prof
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "EventController" as Ctrl
+
+Prof -> WebApp: Abrir janela
+WebApp -> Jwt: POST .../windows/entry
+note right of Jwt
+  event.host ausente
+  EventController não executa
+end note
+Jwt --> WebApp: 403
+WebApp --> Prof: acesso negado
+
+@enduml

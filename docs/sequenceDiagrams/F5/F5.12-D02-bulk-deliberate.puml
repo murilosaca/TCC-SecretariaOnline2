@@ -1,0 +1,24 @@
+@startuml F5.12-D02-bulk-deliberate
+title F5.12-D02 — Aprovar ou rejeitar em lote
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Secretaria" as Sec
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "RequestController" as Ctrl
+database "Postgres" as Postgres
+
+Sec -> WebApp: Confirmar lote
+WebApp -> Jwt: PATCH /requests/bulk-deliberate
+Jwt -> Ctrl: JWT ok
+Ctrl -> Postgres: SELECT FOR UPDATE
+Postgres --> Ctrl: N linhas ABERTA
+Ctrl -> Postgres: UPDATE + events\n+ outbox × N + audit
+Postgres --> Ctrl: OK (COMMIT)
+Ctrl --> WebApp: 200
+WebApp --> Sec: status atualizado
+
+@enduml

@@ -1,0 +1,22 @@
+@startuml F3.7-ERRO-sem-tcc-supervise
+title F3.7-ERRO — 403 sem tcc.supervise
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Professor" as Prof
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "TccController" as Ctrl
+
+Prof -> WebApp: /tccs?to=me
+WebApp -> Jwt: GET /tccs?to=me
+note right of Jwt
+  tcc.supervise ausente
+  TccController não executa
+end note
+Jwt --> WebApp: 403
+WebApp --> Prof: acesso negado
+
+@enduml

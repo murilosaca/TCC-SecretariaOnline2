@@ -1,0 +1,22 @@
+@startuml F8.2-D01-carregar-faq
+title F8.2-D01 — Carregar FAQ por perfil
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Usuario" as User
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "SupportController" as Ctrl
+database "Postgres" as Postgres
+
+User -> WebApp: /suporte
+WebApp -> Jwt: GET /suporte/faq
+Jwt -> Ctrl: JWT ok
+Ctrl -> Postgres: SELECT faq por perfil
+Postgres --> Ctrl: itens
+Ctrl --> WebApp: 200
+WebApp --> User: Accordion FAQ
+
+@enduml

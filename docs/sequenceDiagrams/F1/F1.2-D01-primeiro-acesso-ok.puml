@@ -1,0 +1,37 @@
+@startuml F1.2-D01-primeiro-acesso-ok
+title F1.2-D01 — Primeiro acesso (happy path)
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Aluno" as Aluno
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "FirstAccessController" as Ctrl
+participant "FirstAccessUseCase" as UC
+database "Postgres" as Postgres
+
+Aluno -> WebApp: senha + aceite LGPD / Continuar
+WebApp -> Jwt: POST /auth/first-access
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+UC -> Postgres: SELECT usuario
+Postgres --> UC: usuario
+
+UC -> UC: Argon2id.verify\n(nova ≠ senha temporária)
+
+UC -> Postgres: UPDATE senha\n(senha_alterada=true)\naceite_lgpd_em\nINSERT audit_log
+Postgres --> UC: OK (COMMIT)
+
+UC --> Ctrl: ok
+Ctrl --> WebApp: 200 OK
+
+note right of WebApp
+  Limpa mustChangePassword na store
+  Sem novo JWT
+end note
+
+WebApp --> Aluno: redireciona /inicio
+
+@enduml

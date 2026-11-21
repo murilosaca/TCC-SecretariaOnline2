@@ -1,0 +1,26 @@
+@startuml F7.2-D04-salvar-matriz
+title F7.2-D04 — Salvar matriz role × authority
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Admin" as Admin
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "IAMController" as Ctrl
+participant "UpdateRoleAuthoritiesUseCase" as UC
+database "Postgres" as Postgres
+participant "CapabilityCache" as Cache
+
+Admin -> WebApp: Salvar matriz
+WebApp -> Jwt: PATCH /admin/perfis/{id}/authorities
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+UC -> Postgres: delta add/remove\n+ audit_log
+Postgres --> UC: OK (COMMIT)
+UC -> Cache: invalidate perfil
+Cache --> WebApp: 200
+WebApp --> Admin: matriz atualizada
+
+@enduml

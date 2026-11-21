@@ -1,0 +1,28 @@
+@startuml F3.2-D03-operacao-qr
+title F3.2-D03 — Operação QR_SINGLE
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Professor" as Prof
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "EventController" as Ctrl
+participant "AttendanceWindowUseCase" as UC
+database "Postgres" as Postgres
+
+Prof -> WebApp: Abrir janela entrada
+WebApp -> Jwt: POST .../windows/entry
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+UC -> Postgres: abre janela
+Postgres --> UC: OK
+UC --> Ctrl: ok
+Ctrl --> WebApp: 200
+WebApp -> Jwt: GET QR
+Jwt -> Ctrl: JWT ok
+Ctrl --> WebApp: token QR
+WebApp --> Prof: QRDisplay + countdown\n(+ polling)
+
+@enduml

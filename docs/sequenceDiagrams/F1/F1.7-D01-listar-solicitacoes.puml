@@ -1,0 +1,26 @@
+@startuml F1.7-D01-listar-solicitacoes
+title F1.7-D01 — Listar solicitações
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Aluno" as Aluno
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "RequestsController" as Ctrl
+database "Postgres" as Postgres
+
+Aluno -> WebApp: abre /solicitacoes
+WebApp -> Jwt: GET /requests?solicitante=me
+Jwt -> Ctrl: JWT ok
+Ctrl -> Postgres: SELECT paginado + filtros
+Postgres --> Ctrl: página
+Ctrl --> WebApp: 200 + _links
+note right of WebApp
+  Nova solicitação só se
+  _links.novaSolicitacao
+end note
+WebApp --> Aluno: tabela / cards
+
+@enduml

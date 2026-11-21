@@ -1,0 +1,33 @@
+@startuml F2.1-D03-reemitir-certificado
+title F2.1-D03 — Reemitir certificado
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Egresso" as Egresso
+participant "WebApp" as WebApp
+participant "CertificateController" as Ctrl
+participant "ReissueCertificateUC" as UC
+database "Postgres" as Postgres
+participant "MinIO" as MinIO
+
+Egresso -> WebApp: Reemitir PDF
+WebApp -> Ctrl: reemitir
+Ctrl -> UC: execute(...)
+UC -> Postgres: SELECT certificate\n(owner = alumniId)
+Postgres --> UC: storage_key EMITIDO
+UC -> MinIO: URL GET\ndo PDF existente
+MinIO --> UC: URL
+UC --> Ctrl: URL
+Ctrl --> WebApp: 200
+
+note right of UC
+  Sem novo certificado
+  Mesmo hash / ED25519
+end note
+
+WebApp -> MinIO: GET PDF
+MinIO --> Egresso: PDF original
+
+@enduml

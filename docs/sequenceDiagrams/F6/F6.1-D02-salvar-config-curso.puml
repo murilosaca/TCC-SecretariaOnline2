@@ -1,0 +1,28 @@
+@startuml F6.1-D02-salvar-config-curso
+title F6.1-D02 — Salvar configuração do curso
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Coordenador" as Coord
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "CourseController" as Ctrl
+participant "UpdateCourseConfigUC" as UC
+database "Postgres" as Postgres
+
+Coord -> WebApp: Salvar
+WebApp -> Jwt: PATCH /coordenacao/cursos/{id}/config
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+UC -> Postgres: SELECT FOR UPDATE\n+ UPDATE\n+ audit_log (diff)
+note right of UC
+  sem recalcular
+  elegibilidades (CA-05)
+end note
+Postgres --> UC: OK (COMMIT)
+UC --> WebApp: 200
+WebApp --> Coord: toast salva
+
+@enduml

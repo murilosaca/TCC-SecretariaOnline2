@@ -1,0 +1,31 @@
+@startuml F0.6-b-hash-local
+title F0.6-b — Integridade por upload (SHA-256 local)
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Verificador" as Verificador
+participant "WebApp\n(FileDropzone + Web Crypto)" as WebApp
+
+Verificador -> WebApp: solta / seleciona PDF
+
+note right of WebApp
+  FileReader.readAsArrayBuffer
+  PDF nunca sobe ao servidor
+  RN-F0.6-04 / 06
+end note
+
+WebApp -> WebApp: SubtleCrypto.digest(SHA-256)
+
+alt hash confere
+  WebApp --> Verificador: banner success\n"Hash confere..."
+else hash diverge
+  WebApp --> Verificador: banner danger\n"NÃO confere..."\n(contatar secretaria)
+end
+
+note across
+  Zero HTTP — servidor só forneceu o hash em F0.6-a
+end note
+
+@enduml

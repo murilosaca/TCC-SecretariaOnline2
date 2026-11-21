@@ -1,0 +1,24 @@
+@startuml F7.1-D03-desativar-usuario
+title F7.1-D03 — Desativar usuário
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Admin" as Admin
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "IAMController" as Ctrl
+participant "DeactivateUserUseCase" as UC
+database "Postgres" as Postgres
+
+Admin -> WebApp: Confirmar desativar
+WebApp -> Jwt: POST /admin/usuarios/{id}/desativar
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+UC -> Postgres: UPDATE INATIVO\n+ jti_blacklist\n+ audit_log
+Postgres --> UC: OK (COMMIT)
+UC --> WebApp: 200
+WebApp --> Admin: badge Inativo
+
+@enduml

@@ -1,0 +1,25 @@
+@startuml F1.1-D04-pull-to-refresh
+title F1.1-D04 — Pull-to-refresh (mobile)
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Aluno" as Aluno
+participant "MobileApp" as App
+participant "TanStackQuery" as TQ
+participant "DashboardBFF" as BFF
+database "Postgres" as Postgres
+
+Aluno -> App: puxa a tela
+note right of App: RefreshControl nativo
+
+App -> TQ: invalidate dashboard
+TQ -> BFF: GET /bff/dashboard/aluno
+BFF -> Postgres: queries
+Postgres --> BFF: dados
+BFF --> TQ: 200
+TQ --> App: atualiza UI
+App --> Aluno: dashboard atualizado
+
+@enduml

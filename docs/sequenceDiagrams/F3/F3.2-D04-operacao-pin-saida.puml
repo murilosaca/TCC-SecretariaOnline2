@@ -1,0 +1,29 @@
+@startuml F3.2-D04-operacao-pin-saida
+title F3.2-D04 — Operação SECRET_DUAL (saída)
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+actor "Professor" as Prof
+participant "WebApp" as WebApp
+participant "JwtFilter" as Jwt
+participant "EventController" as Ctrl
+participant "AttendanceWindowUseCase" as UC
+database "Postgres" as Postgres
+
+Prof -> WebApp: Abrir janela saída
+WebApp -> Jwt: POST .../windows/exit
+Jwt -> Ctrl: JWT ok
+Ctrl -> UC: execute(...)
+note right of UC
+  Exige entrada concluída
+  Inelegíveis sem entrada
+end note
+UC -> Postgres: abre saída
+Postgres --> UC: OK + exitPin
+UC --> Ctrl: ok
+Ctrl --> WebApp: 200
+WebApp --> Prof: PINDisplay saída
+
+@enduml
